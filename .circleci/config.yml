@@ -78,3 +78,6 @@ workflows:
           requires:
             - node-10
             - node-latest
+      - docs-deploy:
+          requires:
+            - docs-build
