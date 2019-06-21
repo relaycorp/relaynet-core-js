@@ -37,20 +37,6 @@ jobs:
       - run: npm test
       - run: npx nyc report --reporter=lcov | npx codecov
       - run: npm run cov:check
-  'docs-deploy':
-    docker:
-        - image: circleci/node:10
-    working_directory: ~/typescript-starter
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            - v1-dependencies-
-      - run: npm run doc:html
-      - run: git config user.email "ci-build@klukas.net"
-      - run: git config user.name "ci-build"
-      - run: npm run doc:publish
 
 workflows:
   version: 2
@@ -58,7 +44,3 @@ workflows:
     jobs:
       - node-10
       - node-latest
-      - docs-deploy:
-          requires:
-            - node-10
-            - node-latest
