@@ -7,11 +7,9 @@ jobs:
     working_directory: ~/typescript-starter
     steps:
       - checkout
-      # Download and cache dependencies
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
       - run: npm install
       - save_cache:
@@ -39,10 +37,25 @@ jobs:
       - run: npm test
       - run: npx nyc report --reporter=lcov | npx codecov
       - run: npm run cov:check
+    'docs-build':
+      docker:
+          - image: circleci/node:10
+      working_directory: ~/typescript-starter
+      steps:
+        - checkout
+        - restore_cache:
+            keys:
+              - v1-dependencies-{{ checksum "package.json" }}
+              - v1-dependencies-
+        - run: npm run doc:html
 
 workflows:
   version: 2
   build:
     jobs:
-      - 'node-10'
-      - 'node-latest'
+      - node-10
+      - node-latest
+      - docs-build:
+          requires:
+            - node-10
+            - node-latest
