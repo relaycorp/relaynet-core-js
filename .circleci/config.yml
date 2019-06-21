@@ -49,8 +49,8 @@ jobs:
             - v1-dependencies-
       - run: npm run doc:html
       - persist_to_workspace:
-        root: docs
-        paths:
+          root: docs
+          paths:
           - .
   'docs-deploy':
      docker:
