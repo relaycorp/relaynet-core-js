@@ -18,7 +18,6 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
       - run: npm test
       - run: npm run cov:send
-      - run: npm run cov:check
   'node-latest':
     docker:
       - image: circleci/node:latest
@@ -36,7 +35,6 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
       - run: npm test
       - run: npm run cov:send
-      - run: npm run cov:check
 
 workflows:
   version: 2

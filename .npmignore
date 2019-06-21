@@ -10,5 +10,4 @@ tslint.json
 build/docs
 **/*.spec.*
 coverage
-.nyc_output
 *.log
