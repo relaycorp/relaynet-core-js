@@ -37,17 +37,17 @@ jobs:
       - run: npm test
       - run: npx nyc report --reporter=lcov | npx codecov
       - run: npm run cov:check
-    'docs-build':
-      docker:
-          - image: circleci/node:10
-      working_directory: ~/typescript-starter
-      steps:
-        - checkout
-        - restore_cache:
-            keys:
-              - v1-dependencies-{{ checksum "package.json" }}
-              - v1-dependencies-
-        - run: npm run doc:html
+  'docs-build':
+    docker:
+        - image: circleci/node:10
+    working_directory: ~/typescript-starter
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies-
+      - run: npm run doc:html
 
 workflows:
   version: 2
