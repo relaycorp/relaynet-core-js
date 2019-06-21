@@ -50,7 +50,8 @@ jobs:
       - run: npm run doc:html
       - persist_to_workspace:
         root: docs
-        paths: .
+        paths:
+          - .
   'docs-deploy':
      docker:
        - image: circleci/node:10
