@@ -48,6 +48,24 @@ jobs:
             - v1-dependencies-{{ checksum "package.json" }}
             - v1-dependencies-
       - run: npm run doc:html
+      - persist_to_workspace:
+        root: docs
+        paths: .
+  'docs-deploy':
+     docker:
+       - image: circleci/node:10
+     steps:
+       - checkout
+       - attach_workspace:
+           at: docs
+       - run:
+           name: Install and configure dependencies
+           command: |
+             git config user.email "ci-build@klukas.net"
+             git config user.name "ci-build"
+       - run:
+           name: Deploy docs to gh-pages branch
+           command: npm run doc:publish
 
 workflows:
   version: 2
