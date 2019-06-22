@@ -46,7 +46,10 @@
   "engines": {
     "node": ">=8.9"
   },
-  "dependencies": {},
+  "dependencies": {
+    "node-webcrypto-ossl": "^1.0.47",
+    "pkijs": "^2.1.78"
+  },
   "devDependencies": {
     "@types/jest": "^24.0.15",
     "codecov": "^3.5.0",
