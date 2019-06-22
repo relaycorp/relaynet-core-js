@@ -10,7 +10,7 @@ const cryptoEngine = new CryptoEngine({
 setEngine('nodeEngine', webcrypto, cryptoEngine);
 
 /**
- * Generate an RSA symmetric key
+ * Generate an RSA key pair
  *
  * @param modulus The RSA modulus for the keys (2048 or greater).
  * @param hashingAlgorithm The hashing algorithm (e.g., SHA-256, SHA-384, SHA-512).
