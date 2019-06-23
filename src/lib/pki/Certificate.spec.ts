@@ -1,4 +1,5 @@
 import * as asn1js from 'asn1js';
+import { createHash } from 'crypto';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 import { generateRsaKeys } from '../crypto';
@@ -75,7 +76,7 @@ describe('issue', () => {
     );
   });
 
-  test('Certificate is signed with the specified private key', async () => {
+  test('The certificate is signed with the specified private key', async () => {
     const { privateKey, publicKey } = await generateRsaKeys();
     spyOn(pkijs.Certificate.prototype, 'sign');
     await Certificate.issue(privateKey, {
@@ -115,7 +116,7 @@ describe('issue', () => {
       validityEndDate: futureDate
     });
 
-    expect(cert.pkijsCertificate.notBefore.value.getTime()).toBe(now.getTime());
+    expect(cert.pkijsCertificate.notBefore.value).toEqual(now);
   });
 
   test('The certificate start date should be customizable', async () => {
@@ -153,6 +154,32 @@ describe('issue', () => {
       Certificate.issue(keyPair.privateKey, attributes)
     ).rejects.toThrow('The end date must be later than the start date');
   });
+
+  test('Subject CN should correspond to private node if public address is missing', async () => {
+    const { privateKey, publicKey } = await generateRsaKeys();
+    const cert = await Certificate.issue(privateKey, {
+      serialNumber: 1,
+      subjectPublicKey: publicKey,
+      validityEndDate: futureDate
+    });
+
+    const publicKeyDer = Buffer.from(
+      await cryptoEngine.exportKey('spki', publicKey)
+    );
+    const publicKeyHash = createHash('sha256')
+      .update(publicKeyDer)
+      .digest('hex');
+    const subjectDnAttributes = cert.pkijsCertificate.subject.typesAndValues;
+    expect(subjectDnAttributes.length).toBe(1);
+    expect(subjectDnAttributes[0].type).toBe(OID_COMMON_NAME);
+    expect(subjectDnAttributes[0].value.valueBlock.value).toBe(
+      `0${publicKeyHash}`
+    );
+  });
+
+  test.todo('Subject CN should contain public address if present');
+
+  test.todo('Issuer DN should be stored');
 });
 
 async function generateCertBuffer(): Promise<Buffer> {

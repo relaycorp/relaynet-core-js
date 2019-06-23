@@ -1,8 +1,12 @@
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
+import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
+import { getPkijsCrypto } from './_utils';
 import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
+
+const OID_COMMON_NAME = '2.5.4.3';
 
 export default class Certificate {
   /**
@@ -41,6 +45,16 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notAfter.value = attributes.validityEndDate;
 
+    const nodeAddress = await computePrivateNodeAddress(
+      attributes.subjectPublicKey
+    );
+    pkijsCert.subject.typesAndValues.push(
+      new pkijs.AttributeTypeAndValue({
+        type: OID_COMMON_NAME,
+        value: new asn1js.BmpString({ value: nodeAddress })
+      })
+    );
+
     await pkijsCert.subjectPublicKeyInfo.importKey(attributes.subjectPublicKey);
 
     const signatureHashAlgo = (issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
@@ -50,4 +64,18 @@ export default class Certificate {
   }
 
   protected constructor(public readonly pkijsCertificate: pkijs.Certificate) {}
+}
+
+async function computePrivateNodeAddress(
+  publicKey: CryptoKey
+): Promise<string> {
+  const pkijsCrypto = getPkijsCrypto();
+  const publicKeyDer = Buffer.from(
+    await pkijsCrypto.exportKey('spki', publicKey)
+  );
+
+  const publicKeyHash = createHash('sha256')
+    .update(publicKeyDer)
+    .digest('hex');
+  return `0${publicKeyHash}`;
 }
