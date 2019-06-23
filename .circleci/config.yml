@@ -32,12 +32,11 @@ commands:
       - restore_cache:
           keys:
             - v1-dependencies-node<< parameters.nodeVersion >>-{{ checksum "package.json" }}
-            - v1-dependencies-
       - run: npm install
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v1-dependencies-node<< parameters.nodeVersion >>-{{ checksum "package.json" }}
       - run: npm test
       - run: npm run cov:send
 
