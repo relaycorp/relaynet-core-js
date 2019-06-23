@@ -15,11 +15,6 @@ declare module 'pkijs' {
 
   // Export all the stuff that "@types/pkijs" doesn't export but we use here
 
-  interface Engine {
-    name: string;
-    crypto: Crypto;
-    subtle: SubtleCrypto;
-  }
   export function setEngine(
     name: string,
     crypto: Crypto,
