@@ -26,7 +26,7 @@ commands:
   test:
     parameters:
       nodeVersion:
-        type: string
+        type: integer
     steps:
       - checkout
       - restore_cache:
