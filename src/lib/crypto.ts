@@ -31,7 +31,7 @@ export async function generateRsaKeys({
 
   const algorithm = getAlgorithmParameters('RSA-PSS', 'generatekey');
   // tslint:disable-next-line:no-object-mutation
-  algorithm.algorithm.hash.name = hashingAlgorithm;
+  (algorithm.algorithm.hash as Algorithm).name = hashingAlgorithm;
   // tslint:disable-next-line:no-object-mutation
   algorithm.algorithm.modulusLength = modulus;
 

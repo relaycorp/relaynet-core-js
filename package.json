@@ -19,7 +19,7 @@
     "test": "run-s build test:lint test:prettier test:unit",
     "test:lint": "tslint --project .",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
-    "test:unit": "jest",
+    "test:unit": "jest --verbose",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
     "cov": "run-s build test:unit && opn coverage/lcov-report/index.html",
     "cov:send": "codecov",
@@ -48,15 +48,21 @@
     "node": ">=8.9"
   },
   "dependencies": {
+    "buffer-to-arraybuffer": "0.0.5",
     "node-webcrypto-ossl": "^1.0.47",
     "pkijs": "^2.1.78"
   },
   "devDependencies": {
+    "@types/asn1js": "0.0.1",
     "@types/jest": "^24.0.15",
+    "@types/pkijs": "0.0.2",
+    "asn1js": "^2.0.22",
     "codecov": "^3.5.0",
     "cz-conventional-changelog": "^2.1.0",
     "gh-pages": "^2.0.1",
     "jest": "^24.8.0",
+    "jest-date-mock": "^1.0.7",
+    "jest-extended": "^0.11.1",
     "npm-run-all": "^4.1.5",
     "opn-cli": "^4.0.0",
     "prettier": "^1.15.2",
