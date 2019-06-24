@@ -28,7 +28,9 @@ export default class Certificate {
       throw new CertificateError('Certificate is not DER-encoded');
     }
     const pkijsCert = new pkijs.Certificate({ schema: asn1.result });
-    return new Certificate(pkijsCert);
+    const certificate = new Certificate(pkijsCert);
+    certificate.validate();
+    return certificate;
   }
 
   /**
@@ -113,6 +115,16 @@ export default class Certificate {
       );
     }
     return matchingDnAttr[0].value.valueBlock.value;
+  }
+
+  public validate(): void {
+    // X.509 versioning starts at 0
+    const x509CertVersion = this.pkijsCertificate.version + 1;
+    if (x509CertVersion !== 3) {
+      throw new CertificateError(
+        `Only X.509 v3 certificates are supported (got v${x509CertVersion})`
+      );
+    }
   }
 }
 

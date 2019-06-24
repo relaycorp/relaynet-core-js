@@ -25,6 +25,7 @@ afterEach(() => {
 
 describe('deserialize', () => {
   test('should deserialize valid DER-encoded certificates', async () => {
+    // Serialize manually just in this test to avoid depending on .serialize()
     const pkijsCert = (await generateStubCert()).pkijsCertificate;
     const certDer = pkijsCert.toSchema(true).toBER(false);
 
@@ -46,8 +47,15 @@ describe('deserialize', () => {
     );
   });
 
-  describe('Validation', () => {
-    test.todo('X.509 certificates with version != 3 are invalid');
+  test('should validate the certificate', async () => {
+    const cert = await generateStubCert();
+
+    const error = new Error('Fewer');
+    jest.spyOn(Certificate.prototype, 'validate').mockImplementationOnce(() => {
+      throw error;
+    });
+
+    expect(() => Certificate.deserialize(cert.serialize())).toThrow(error);
   });
 });
 
@@ -266,6 +274,29 @@ describe('getAddress', () => {
       CertificateError,
       'Could not find subject node address in certificate'
     );
+  });
+});
+
+describe('validate', () => {
+  describe('X.509 certificate version', () => {
+    test('It should accept version 3', async () => {
+      const cert = await generateStubCert();
+      // tslint:disable-next-line:no-object-mutation
+      cert.pkijsCertificate.version = 2; // Versioning starts at 0
+
+      cert.validate();
+    });
+
+    test('It should refuse versions other than 3', async () => {
+      const cert = await generateStubCert();
+      // tslint:disable-next-line:no-object-mutation
+      cert.pkijsCertificate.version = 1;
+
+      expect(() => cert.validate()).toThrowWithMessage(
+        CertificateError,
+        'Only X.509 v3 certificates are supported (got v2)'
+      );
+    });
   });
 });
 
