@@ -1,6 +1,7 @@
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
+import * as lodash from 'lodash';
 import * as pkijs from 'pkijs';
 import { getPkijsCrypto } from './_utils';
 import CertificateAttributes from './CertificateAttributes';
@@ -26,7 +27,8 @@ export default class Certificate {
 
   public static async issue(
     issuerPrivateKey: CryptoKey,
-    attributes: CertificateAttributes
+    attributes: CertificateAttributes,
+    issuerCertificate?: Certificate
   ): Promise<Certificate> {
     const validityStartDate = attributes.validityStartDate || new Date();
     if (attributes.validityEndDate < validityStartDate) {
@@ -53,6 +55,18 @@ export default class Certificate {
         type: OID_COMMON_NAME,
         value: new asn1js.BmpString({ value: nodeAddress })
       })
+    );
+
+    const issuerDn = issuerCertificate
+      ? issuerCertificate.pkijsCertificate.subject.typesAndValues
+      : pkijsCert.subject.typesAndValues;
+    // tslint:disable-next-line:no-object-mutation
+    pkijsCert.issuer.typesAndValues = issuerDn.map(
+      attribute =>
+        new pkijs.AttributeTypeAndValue({
+          type: attribute.type,
+          value: lodash.cloneDeep(attribute.value)
+        })
     );
 
     await pkijsCert.subjectPublicKeyInfo.importKey(attributes.subjectPublicKey);

@@ -193,7 +193,49 @@ describe('issue', () => {
     expect(subjectDnAttributes[0].value.valueBlock.value).toBe(publicAddress);
   });
 
-  test.todo('Issuer DN should be stored');
+  test('Issuer DN should fall back to that of subject when self-signed', async () => {
+    const subjectKeyPair = await generateRsaKeys();
+    const cert = await Certificate.issue(subjectKeyPair.privateKey, {
+      serialNumber: 1,
+      subjectPublicKey: subjectKeyPair.publicKey,
+      validityEndDate: futureDate
+    });
+
+    const subjectDn = cert.pkijsCertificate.subject.typesAndValues;
+    const issuerDn = cert.pkijsCertificate.issuer.typesAndValues;
+    expect(issuerDn.length).toBe(1);
+    expect(issuerDn[0].type).toBe(OID_COMMON_NAME);
+    expect(issuerDn[0].value.valueBlock.value).toBe(
+      subjectDn[0].value.valueBlock.value
+    );
+  });
+
+  test('Issuer DN should be stored', async () => {
+    const issuerKeyPair = await generateRsaKeys();
+    const issuerCn = 'rng:gateway.redcross.org';
+    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+      publicAddress: issuerCn,
+      serialNumber: 1,
+      subjectPublicKey: issuerKeyPair.publicKey,
+      validityEndDate: futureDate
+    });
+
+    const subjectKeyPair = await generateRsaKeys();
+    const subjectCert = await Certificate.issue(
+      subjectKeyPair.privateKey,
+      {
+        serialNumber: 1,
+        subjectPublicKey: subjectKeyPair.publicKey,
+        validityEndDate: futureDate
+      },
+      issuerCert
+    );
+
+    const issuerDn = subjectCert.pkijsCertificate.issuer.typesAndValues;
+    expect(issuerDn.length).toBe(1);
+    expect(issuerDn[0].type).toBe(OID_COMMON_NAME);
+    expect(issuerDn[0].value.valueBlock.value).toBe(issuerCn);
+  });
 });
 
 async function generateCertBuffer(): Promise<Buffer> {
