@@ -9,6 +9,12 @@ import CertificateError from './CertificateError';
 
 const OID_COMMON_NAME = '2.5.4.3';
 
+/**
+ * Relaynet PKI Certificate.
+ *
+ * This is a high-level class on top of PKI.js Certificate, to make the use
+ * of Relaynet certificates easy and safe.
+ */
 export default class Certificate {
   /**
    * Deserialize certificate from DER-encoded value.
@@ -94,6 +100,9 @@ export default class Certificate {
     return Buffer.from(certAsn1js.toBER(false));
   }
 
+  /**
+   * Get the Relaynet node address from the subject Common Name (CN).
+   */
   public getAddress(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
       a => ((a.type as unknown) as string) === OID_COMMON_NAME
