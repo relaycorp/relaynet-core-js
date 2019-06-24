@@ -93,6 +93,18 @@ export default class Certificate {
     const certAsn1js = this.pkijsCertificate.toSchema(true);
     return Buffer.from(certAsn1js.toBER(false));
   }
+
+  public getAddress(): string {
+    const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
+      a => ((a.type as unknown) as string) === OID_COMMON_NAME
+    );
+    if (matchingDnAttr.length === 0) {
+      throw new CertificateError(
+        'Could not find subject node address in certificate'
+      );
+    }
+    return matchingDnAttr[0].value.valueBlock.value;
+  }
 }
 
 async function computePrivateNodeAddress(

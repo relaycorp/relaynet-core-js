@@ -4,6 +4,7 @@ import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 import { generateRsaKeys } from '../crypto';
 import Certificate from './Certificate';
+import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
 
 const RELAYNET_NODE_ADDRESS = 'foo';
@@ -263,6 +264,46 @@ test('serialize() should return a DER-encoded buffer', async () => {
   expect(issuerDnAttributes[0].type).toBe(OID_COMMON_NAME);
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
 });
+
+describe('getAddress', () => {
+  test('should return the address when found', async () => {
+    const cert = await generateStubCert({
+      attributes: { publicAddress: RELAYNET_NODE_ADDRESS }
+    });
+
+    expect(cert.getAddress()).toEqual(RELAYNET_NODE_ADDRESS);
+  });
+
+  test('should error out when the address is not found', async () => {
+    const cert = await generateStubCert({
+      attributes: { publicAddress: RELAYNET_NODE_ADDRESS }
+    });
+
+    // tslint:disable-next-line:no-object-mutation
+    cert.pkijsCertificate.subject.typesAndValues = [];
+
+    expect(() => cert.getAddress()).toThrowWithMessage(
+      CertificateError,
+      'Could not find subject node address in certificate'
+    );
+  });
+});
+
+interface StubCertConfig {
+  readonly attributes?: Partial<CertificateAttributes>;
+  readonly issuerPrivateKey?: CryptoKey;
+  readonly subjectPublicKey?: CryptoKey;
+}
+
+async function generateStubCert(config: StubCertConfig): Promise<Certificate> {
+  const keyPair = await generateRsaKeys();
+  return Certificate.issue(config.issuerPrivateKey || keyPair.privateKey, {
+    serialNumber: 1,
+    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+    validityEndDate: futureDate,
+    ...config.attributes
+  });
+}
 
 async function generateCertBuffer(): Promise<Buffer> {
   const certificate = new pkijs.Certificate({
