@@ -180,22 +180,6 @@ describe('issue', () => {
     );
   });
 
-  test('Subject CN should contain public address if set', async () => {
-    const { privateKey, publicKey } = await generateRsaKeys();
-    const publicAddress = 'rng:gateway.redcross.org';
-    const cert = await Certificate.issue(privateKey, {
-      publicAddress,
-      serialNumber: 1,
-      subjectPublicKey: publicKey,
-      validityEndDate: futureDate
-    });
-
-    const subjectDnAttributes = cert.pkijsCertificate.subject.typesAndValues;
-    expect(subjectDnAttributes.length).toBe(1);
-    expect(subjectDnAttributes[0].type).toBe(OID_COMMON_NAME);
-    expect(subjectDnAttributes[0].value.valueBlock.value).toBe(publicAddress);
-  });
-
   test('Issuer DN should fall back to that of subject when self-signed', async () => {
     const subjectKeyPair = await generateRsaKeys();
     const cert = await Certificate.issue(subjectKeyPair.privateKey, {
@@ -213,11 +197,9 @@ describe('issue', () => {
     );
   });
 
-  test('Issuer DN should be stored', async () => {
+  test('Issuer DN should be honored when signed by another entity', async () => {
     const issuerKeyPair = await generateRsaKeys();
-    const issuerCn = 'rng:gateway.redcross.org';
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
-      publicAddress: issuerCn,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate
@@ -234,10 +216,14 @@ describe('issue', () => {
       issuerCert
     );
 
-    const issuerDn = subjectCert.pkijsCertificate.issuer.typesAndValues;
-    expect(issuerDn.length).toBe(1);
-    expect(issuerDn[0].type).toBe(OID_COMMON_NAME);
-    expect(issuerDn[0].value.valueBlock.value).toBe(issuerCn);
+    const subjectCertIssuerDn =
+      subjectCert.pkijsCertificate.issuer.typesAndValues;
+    expect(subjectCertIssuerDn.length).toBe(1);
+    expect(subjectCertIssuerDn[0].type).toBe(OID_COMMON_NAME);
+    const issuerCn =
+      issuerCert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock
+        .value;
+    expect(subjectCertIssuerDn[0].value.valueBlock.value).toBe(issuerCn);
   });
 });
 
@@ -262,20 +248,16 @@ test('serialize() should return a DER-encoded buffer', async () => {
 });
 
 describe('getAddress', () => {
-  const RELAYNET_NODE_ADDRESS = 'foo';
-
   test('should return the address when found', async () => {
-    const cert = await generateStubCert({
-      attributes: { publicAddress: RELAYNET_NODE_ADDRESS }
-    });
+    const cert = await generateStubCert();
 
-    expect(cert.getAddress()).toEqual(RELAYNET_NODE_ADDRESS);
+    const subjectDn = cert.pkijsCertificate.subject.typesAndValues;
+
+    expect(cert.getAddress()).toEqual(subjectDn[0].value.valueBlock.value);
   });
 
   test('should error out when the address is not found', async () => {
-    const cert = await generateStubCert({
-      attributes: { publicAddress: RELAYNET_NODE_ADDRESS }
-    });
+    const cert = await generateStubCert();
 
     // tslint:disable-next-line:no-object-mutation
     cert.pkijsCertificate.subject.typesAndValues = [];

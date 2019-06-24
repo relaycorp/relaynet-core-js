@@ -60,13 +60,13 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notAfter.value = attributes.validityEndDate;
 
-    const nodeAddress =
-      attributes.publicAddress ||
-      (await computePrivateNodeAddress(attributes.subjectPublicKey));
+    const address = await computePrivateNodeAddress(
+      attributes.subjectPublicKey
+    );
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: OID_COMMON_NAME,
-        value: new asn1js.BmpString({ value: nodeAddress })
+        value: new asn1js.BmpString({ value: address })
       })
     );
 

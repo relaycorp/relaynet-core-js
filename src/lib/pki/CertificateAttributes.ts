@@ -3,5 +3,4 @@ export default interface CertificateAttributes {
   readonly serialNumber: number;
   readonly validityStartDate?: Date;
   readonly validityEndDate: Date;
-  readonly publicAddress?: string;
 }
