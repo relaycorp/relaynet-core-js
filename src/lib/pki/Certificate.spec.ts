@@ -177,7 +177,21 @@ describe('issue', () => {
     );
   });
 
-  test.todo('Subject CN should contain public address if present');
+  test('Subject CN should contain public address if set', async () => {
+    const { privateKey, publicKey } = await generateRsaKeys();
+    const publicAddress = 'rng:gateway.redcross.org';
+    const cert = await Certificate.issue(privateKey, {
+      publicAddress,
+      serialNumber: 1,
+      subjectPublicKey: publicKey,
+      validityEndDate: futureDate
+    });
+
+    const subjectDnAttributes = cert.pkijsCertificate.subject.typesAndValues;
+    expect(subjectDnAttributes.length).toBe(1);
+    expect(subjectDnAttributes[0].type).toBe(OID_COMMON_NAME);
+    expect(subjectDnAttributes[0].value.valueBlock.value).toBe(publicAddress);
+  });
 
   test.todo('Issuer DN should be stored');
 });

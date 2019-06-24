@@ -45,9 +45,9 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notAfter.value = attributes.validityEndDate;
 
-    const nodeAddress = await computePrivateNodeAddress(
-      attributes.subjectPublicKey
-    );
+    const nodeAddress =
+      attributes.publicAddress ||
+      (await computePrivateNodeAddress(attributes.subjectPublicKey));
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: OID_COMMON_NAME,
