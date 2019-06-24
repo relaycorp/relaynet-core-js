@@ -8,8 +8,6 @@ import Certificate from './Certificate';
 import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
 
-const RELAYNET_NODE_ADDRESS = 'foo';
-
 const OID_COMMON_NAME = '2.5.4.3';
 
 const futureDate = new Date();
@@ -264,6 +262,8 @@ test('serialize() should return a DER-encoded buffer', async () => {
 });
 
 describe('getAddress', () => {
+  const RELAYNET_NODE_ADDRESS = 'foo';
+
   test('should return the address when found', async () => {
     const cert = await generateStubCert({
       attributes: { publicAddress: RELAYNET_NODE_ADDRESS }
