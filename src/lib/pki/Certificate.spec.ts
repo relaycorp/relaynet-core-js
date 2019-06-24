@@ -27,7 +27,7 @@ afterEach(() => {
 
 describe('deserialize', () => {
   test('should deserialize valid DER-encoded certificates', async () => {
-    const pkijsCert = (await generateStubCert({})).pkijsCertificate;
+    const pkijsCert = (await generateStubCert()).pkijsCertificate;
     const certDer = pkijsCert.toSchema(true).toBER(false);
 
     const cert = Certificate.deserialize(Buffer.from(certDer));
@@ -244,14 +244,7 @@ describe('issue', () => {
 });
 
 test('serialize() should return a DER-encoded buffer', async () => {
-  const subjectKeyPair = await generateRsaKeys();
-  const cert = await Certificate.issue(subjectKeyPair.privateKey, {
-    serialNumber: 1,
-    subjectPublicKey: subjectKeyPair.publicKey,
-    validityEndDate: futureDate
-  });
-  const nodeAddress =
-    cert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value;
+  const cert = await generateStubCert();
 
   const certDer = cert.serialize();
 
@@ -262,12 +255,12 @@ test('serialize() should return a DER-encoded buffer', async () => {
   const subjectDnAttributes = pkijsCert.subject.typesAndValues;
   expect(subjectDnAttributes.length).toBe(1);
   expect(subjectDnAttributes[0].type).toBe(OID_COMMON_NAME);
-  expect(subjectDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
+  expect(subjectDnAttributes[0].value.valueBlock.value).toBe(cert.getAddress());
 
   const issuerDnAttributes = pkijsCert.issuer.typesAndValues;
   expect(issuerDnAttributes.length).toBe(1);
   expect(issuerDnAttributes[0].type).toBe(OID_COMMON_NAME);
-  expect(issuerDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
+  expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getAddress());
 });
 
 describe('getAddress', () => {
@@ -300,7 +293,9 @@ interface StubCertConfig {
   readonly subjectPublicKey?: CryptoKey;
 }
 
-async function generateStubCert(config: StubCertConfig): Promise<Certificate> {
+async function generateStubCert(
+  config: StubCertConfig = {}
+): Promise<Certificate> {
   const keyPair = await generateRsaKeys();
   return Certificate.issue(config.issuerPrivateKey || keyPair.privateKey, {
     serialNumber: 1,
