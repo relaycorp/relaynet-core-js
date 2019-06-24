@@ -1,4 +1,5 @@
 import * as asn1js from 'asn1js';
+import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
@@ -25,15 +26,18 @@ afterEach(() => {
 });
 
 describe('deserialize', () => {
-  test('should support self-signed certificate', async () => {
-    const certBuffer = await generateCertBuffer();
-    const cert = Certificate.deserialize(certBuffer);
+  test('should deserialize valid DER-encoded certificates', async () => {
+    const pkijsCert = (await generateStubCert({})).pkijsCertificate;
+    const certDer = pkijsCert.toSchema(true).toBER(false);
+
+    const cert = Certificate.deserialize(Buffer.from(certDer));
+
     expect(cert.pkijsCertificate.subject.typesAndValues[0].type).toBe(
-      OID_COMMON_NAME
+      pkijsCert.subject.typesAndValues[0].type
     );
     expect(
       cert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value
-    ).toBe(RELAYNET_NODE_ADDRESS);
+    ).toBe(pkijsCert.subject.typesAndValues[0].value.valueBlock.value);
   });
 
   test('should error out with invalid DER values', () => {
@@ -251,15 +255,16 @@ test('serialize() should return a DER-encoded buffer', async () => {
 
   const certDer = cert.serialize();
 
-  const certDeserialized = Certificate.deserialize(certDer);
-  const subjectDnAttributes =
-    certDeserialized.pkijsCertificate.subject.typesAndValues;
+  const asn1 = asn1js.fromBER(bufferToArrayBuffer(certDer));
+  expect(asn1.result).not.toBe(-1);
+  const pkijsCert = new pkijs.Certificate({ schema: asn1.result });
+
+  const subjectDnAttributes = pkijsCert.subject.typesAndValues;
   expect(subjectDnAttributes.length).toBe(1);
   expect(subjectDnAttributes[0].type).toBe(OID_COMMON_NAME);
   expect(subjectDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
 
-  const issuerDnAttributes =
-    certDeserialized.pkijsCertificate.issuer.typesAndValues;
+  const issuerDnAttributes = pkijsCert.issuer.typesAndValues;
   expect(issuerDnAttributes.length).toBe(1);
   expect(issuerDnAttributes[0].type).toBe(OID_COMMON_NAME);
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
@@ -303,35 +308,4 @@ async function generateStubCert(config: StubCertConfig): Promise<Certificate> {
     validityEndDate: futureDate,
     ...config.attributes
   });
-}
-
-async function generateCertBuffer(): Promise<Buffer> {
-  const certificate = new pkijs.Certificate({
-    serialNumber: new asn1js.Integer({ value: 1 }),
-    version: 2
-  });
-  // tslint:disable-next-line:no-object-mutation
-  certificate.notBefore.value = new Date(2016, 1, 1);
-
-  // tslint:disable-next-line:no-object-mutation
-  certificate.notAfter.value = new Date(2029, 1, 1);
-  const keyPair = await generateRsaKeys();
-
-  await certificate.subjectPublicKeyInfo.importKey(keyPair.publicKey);
-  certificate.issuer.typesAndValues.push(
-    new pkijs.AttributeTypeAndValue({
-      type: OID_COMMON_NAME,
-      value: new asn1js.BmpString({ value: RELAYNET_NODE_ADDRESS })
-    })
-  );
-
-  certificate.subject.typesAndValues.push(
-    new pkijs.AttributeTypeAndValue({
-      type: OID_COMMON_NAME,
-      value: new asn1js.BmpString({ value: RELAYNET_NODE_ADDRESS })
-    })
-  );
-
-  await certificate.sign(keyPair.privateKey, 'SHA-256');
-  return Buffer.from(certificate.toSchema(true).toBER(false));
 }
