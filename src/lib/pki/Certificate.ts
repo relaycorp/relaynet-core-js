@@ -11,7 +11,7 @@ const OID_COMMON_NAME = '2.5.4.3';
 
 export default class Certificate {
   /**
-   * Initialize certificate from DER-encoded value.
+   * Deserialize certificate from DER-encoded value.
    *
    * @param certDer DER-encoded X.509 certificate
    * @throws {CertificateError}
@@ -25,6 +25,13 @@ export default class Certificate {
     return new Certificate(pkijsCert);
   }
 
+  /**
+   * Issue a Relaynet PKI certificate.
+   *
+   * @param issuerPrivateKey
+   * @param attributes
+   * @param issuerCertificate Absent when the certificate is self-signed
+   */
   public static async issue(
     issuerPrivateKey: CryptoKey,
     attributes: CertificateAttributes,
@@ -78,6 +85,14 @@ export default class Certificate {
   }
 
   protected constructor(public readonly pkijsCertificate: pkijs.Certificate) {}
+
+  /**
+   * Serialize certificate as DER-encoded buffer.
+   */
+  public serialize(): Buffer {
+    const certAsn1js = this.pkijsCertificate.toSchema(true);
+    return Buffer.from(certAsn1js.toBER(false));
+  }
 }
 
 async function computePrivateNodeAddress(

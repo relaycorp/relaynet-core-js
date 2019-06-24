@@ -10,6 +10,9 @@ const RELAYNET_NODE_ADDRESS = 'foo';
 
 const OID_COMMON_NAME = '2.5.4.3';
 
+const futureDate = new Date();
+futureDate.setDate(futureDate.getDate() + 1);
+
 const cryptoEngine = pkijs.getCrypto();
 if (cryptoEngine === undefined) {
   throw new Error('PKI.js crypto engine is undefined');
@@ -46,9 +49,6 @@ describe('deserialize', () => {
 });
 
 describe('issue', () => {
-  const futureDate = new Date();
-  futureDate.setDate(futureDate.getDate() + 1);
-
   test('The X.509 certificate version should be 3', async () => {
     const keyPair = await generateRsaKeys();
     const cert = await Certificate.issue(keyPair.privateKey, {
@@ -236,6 +236,32 @@ describe('issue', () => {
     expect(issuerDn[0].type).toBe(OID_COMMON_NAME);
     expect(issuerDn[0].value.valueBlock.value).toBe(issuerCn);
   });
+});
+
+test('serialize() should return a DER-encoded buffer', async () => {
+  const subjectKeyPair = await generateRsaKeys();
+  const cert = await Certificate.issue(subjectKeyPair.privateKey, {
+    serialNumber: 1,
+    subjectPublicKey: subjectKeyPair.publicKey,
+    validityEndDate: futureDate
+  });
+  const nodeAddress =
+    cert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value;
+
+  const certDer = cert.serialize();
+
+  const certDeserialized = Certificate.deserialize(certDer);
+  const subjectDnAttributes =
+    certDeserialized.pkijsCertificate.subject.typesAndValues;
+  expect(subjectDnAttributes.length).toBe(1);
+  expect(subjectDnAttributes[0].type).toBe(OID_COMMON_NAME);
+  expect(subjectDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
+
+  const issuerDnAttributes =
+    certDeserialized.pkijsCertificate.issuer.typesAndValues;
+  expect(issuerDnAttributes.length).toBe(1);
+  expect(issuerDnAttributes[0].type).toBe(OID_COMMON_NAME);
+  expect(issuerDnAttributes[0].value.valueBlock.value).toBe(nodeAddress);
 });
 
 async function generateCertBuffer(): Promise<Buffer> {
