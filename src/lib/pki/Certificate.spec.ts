@@ -23,7 +23,7 @@ afterEach(() => {
   jestDateMock.clear();
 });
 
-describe('deserialize', () => {
+describe('deserialize()', () => {
   test('should deserialize valid DER-encoded certificates', async () => {
     // Serialize manually just in this test to avoid depending on .serialize()
     const pkijsCert = (await generateStubCert()).pkijsCertificate;
@@ -59,8 +59,8 @@ describe('deserialize', () => {
   });
 });
 
-describe('issue', () => {
-  test('The X.509 certificate version should be 3', async () => {
+describe('issue()', () => {
+  test('should create a X.509 v3 certificate', async () => {
     const keyPair = await generateRsaKeys();
     const cert = await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
@@ -72,7 +72,7 @@ describe('issue', () => {
     expect(cert.pkijsCertificate.version).toBe(0x2);
   });
 
-  test('The public key should be imported into the certificate', async () => {
+  test('should import the public key into the certificate', async () => {
     const keyPair = await generateRsaKeys();
     spyOn(pkijs.PublicKeyInfo.prototype, 'importKey');
     await Certificate.issue(keyPair.privateKey, {
@@ -87,7 +87,7 @@ describe('issue', () => {
     );
   });
 
-  test('The certificate is signed with the specified private key', async () => {
+  test('should be signed with the specified private key', async () => {
     const { privateKey, publicKey } = await generateRsaKeys();
     spyOn(pkijs.Certificate.prototype, 'sign');
     await Certificate.issue(privateKey, {
@@ -103,7 +103,7 @@ describe('issue', () => {
     );
   });
 
-  test('The serial number should be stored', async () => {
+  test('should store the specified serial number', async () => {
     const keyPair = await generateRsaKeys();
     const serialNumber = 2019;
     const cert = await Certificate.issue(keyPair.privateKey, {
@@ -117,7 +117,7 @@ describe('issue', () => {
     );
   });
 
-  test('The certificate is valid from now by default', async () => {
+  test('should create a certificate valid from now by default', async () => {
     const keyPair = await generateRsaKeys();
     const now = new Date();
     jestDateMock.advanceTo(now);
@@ -130,7 +130,7 @@ describe('issue', () => {
     expect(cert.pkijsCertificate.notBefore.value).toEqual(now);
   });
 
-  test('The certificate start date should be customizable', async () => {
+  test('should honor a custom start validity date', async () => {
     const keyPair = await generateRsaKeys();
     const startDate = new Date(2019, 1, 1);
     const cert = await Certificate.issue(keyPair.privateKey, {
@@ -143,7 +143,7 @@ describe('issue', () => {
     expect(cert.pkijsCertificate.notBefore.value).toBe(startDate);
   });
 
-  test('The end date should be stored', async () => {
+  test('should honor a custom end validity date', async () => {
     const keyPair = await generateRsaKeys();
     const cert = await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
@@ -154,7 +154,7 @@ describe('issue', () => {
     expect(cert.pkijsCertificate.notAfter.value).toBe(futureDate);
   });
 
-  test('The end date should not come before the start date', async () => {
+  test('should not accept an end date before the start date', async () => {
     const keyPair = await generateRsaKeys();
     const attributes = {
       serialNumber: 1,
@@ -166,7 +166,7 @@ describe('issue', () => {
     ).rejects.toThrow('The end date must be later than the start date');
   });
 
-  test('Subject CN should correspond to private node if public address is missing', async () => {
+  test('should set the subject CN to the private node address', async () => {
     const { privateKey, publicKey } = await generateRsaKeys();
     const cert = await Certificate.issue(privateKey, {
       serialNumber: 1,
@@ -188,7 +188,7 @@ describe('issue', () => {
     );
   });
 
-  test('Issuer DN should fall back to that of subject when self-signed', async () => {
+  test('should set issuer DN to that of subject when self-issuing certificates', async () => {
     const subjectKeyPair = await generateRsaKeys();
     const cert = await Certificate.issue(subjectKeyPair.privateKey, {
       serialNumber: 1,
@@ -205,7 +205,7 @@ describe('issue', () => {
     );
   });
 
-  test('Issuer DN should be honored when signed by another entity', async () => {
+  test('should set issuer DN to that of CA', async () => {
     const issuerKeyPair = await generateRsaKeys();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       serialNumber: 1,
@@ -255,7 +255,7 @@ test('serialize() should return a DER-encoded buffer', async () => {
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getAddress());
 });
 
-describe('getAddress', () => {
+describe('getAddress()', () => {
   test('should return the address when found', async () => {
     const cert = await generateStubCert();
 
@@ -277,9 +277,9 @@ describe('getAddress', () => {
   });
 });
 
-describe('validate', () => {
+describe('validate()', () => {
   describe('X.509 certificate version', () => {
-    test('It should accept version 3', async () => {
+    test('it should accept version 3', async () => {
       const cert = await generateStubCert();
       // tslint:disable-next-line:no-object-mutation
       cert.pkijsCertificate.version = 2; // Versioning starts at 0
@@ -287,7 +287,7 @@ describe('validate', () => {
       cert.validate();
     });
 
-    test('It should refuse versions other than 3', async () => {
+    test('it should refuse versions other than 3', async () => {
       const cert = await generateStubCert();
       // tslint:disable-next-line:no-object-mutation
       cert.pkijsCertificate.version = 1;
