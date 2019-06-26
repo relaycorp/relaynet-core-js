@@ -6,6 +6,7 @@ declare module 'pkijs' {
   // following expression to export things in bulk didn't have any effect:
   //   export * from "pkijs/src/_x509";
 
+  import Attribute from 'pkijs/src/Attribute';
   import AttributeTypeAndValue from 'pkijs/src/AttributeTypeAndValue';
   import AuthorityKeyIdentifier from 'pkijs/src/AuthorityKeyIdentifier';
   import Certificate from 'pkijs/src/Certificate';
@@ -15,10 +16,12 @@ declare module 'pkijs' {
   import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
   import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
+  import SignedAndUnsignedAttributes from 'pkijs/src/SignedAndUnsignedAttributes';
   import SignedData from 'pkijs/src/SignedData';
   import SignerInfo from 'pkijs/src/SignerInfo';
 
   export {
+    Attribute,
     AttributeTypeAndValue,
     AuthorityKeyIdentifier,
     Certificate,
@@ -28,6 +31,7 @@ declare module 'pkijs' {
     IssuerAndSerialNumber,
     PublicKeyInfo,
     RelativeDistinguishedNames,
+    SignedAndUnsignedAttributes,
     SignedData,
     SignerInfo
   };
