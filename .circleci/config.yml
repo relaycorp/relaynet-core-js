@@ -37,8 +37,7 @@ commands:
           paths:
             - node_modules
           key: v1-dependencies-node<< parameters.nodeVersion >>-{{ checksum "package.json" }}
-      - run: npm test
-      - run: npm run cov:send
+      - run: npm run test:ci
 
 workflows:
   version: 2
