@@ -9,17 +9,27 @@ declare module 'pkijs' {
   import AttributeTypeAndValue from 'pkijs/src/AttributeTypeAndValue';
   import AuthorityKeyIdentifier from 'pkijs/src/AuthorityKeyIdentifier';
   import Certificate from 'pkijs/src/Certificate';
+  import ContentInfo from 'pkijs/src/ContentInfo';
   import CryptoEngine from 'pkijs/src/CryptoEngine';
   import Extension from 'pkijs/src/Extension';
+  import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
+  import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
+  import SignedData from 'pkijs/src/SignedData';
+  import SignerInfo from 'pkijs/src/SignerInfo';
 
   export {
     AttributeTypeAndValue,
     AuthorityKeyIdentifier,
     Certificate,
+    ContentInfo,
     CryptoEngine,
     Extension,
-    PublicKeyInfo
+    IssuerAndSerialNumber,
+    PublicKeyInfo,
+    RelativeDistinguishedNames,
+    SignedData,
+    SignerInfo
   };
 
   // Export all the stuff that "@types/pkijs" doesn't export but we use here

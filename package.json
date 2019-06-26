@@ -18,6 +18,7 @@
     "fix:tslint": "tslint --fix --project .",
     "test": "run-s test:lint test:prettier test:unit",
     "test:unit": "jest --verbose",
+    "test:unit:changed": "run-s \"test:unit -- -o\"",
     "test:lint": "tslint --project .",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
     "test:ci": "run-s build test:lint test:prettier test:ci:unit cov:send",

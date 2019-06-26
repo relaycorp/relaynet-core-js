@@ -1,21 +1,18 @@
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
-import { createHash } from 'crypto';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
+import { asn1DerDecode, generateStubCert, sha256Hex } from '../_test_utils';
+import { getPkijsCrypto } from '../_utils';
 import { generateRsaKeys } from '../crypto';
 import * as oids from '../oids';
 import Certificate from './Certificate';
-import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
 
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 1);
 
-const cryptoEngine = pkijs.getCrypto();
-if (cryptoEngine === undefined) {
-  throw new Error('PKI.js crypto engine is undefined');
-}
+const pkijsCrypto = getPkijsCrypto();
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -176,7 +173,7 @@ describe('issue()', () => {
     const subjectDnAttributes = cert.pkijsCertificate.subject.typesAndValues;
     expect(subjectDnAttributes.length).toBe(1);
     expect(subjectDnAttributes[0].type).toBe(oids.COMMON_NAME);
-    const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+    const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
     const publicKeyHash = sha256Hex(publicKeyDer);
     expect(subjectDnAttributes[0].value.valueBlock.value).toBe(
       `0${publicKeyHash}`
@@ -404,40 +401,8 @@ describe('validate()', () => {
   });
 });
 
-interface StubCertConfig {
-  readonly attributes?: Partial<CertificateAttributes>;
-  readonly issuerPrivateKey?: CryptoKey;
-  readonly subjectPublicKey?: CryptoKey;
-}
-
-async function generateStubCert(
-  config: StubCertConfig = {}
-): Promise<Certificate> {
-  const keyPair = await generateRsaKeys();
-  return Certificate.issue(config.issuerPrivateKey || keyPair.privateKey, {
-    serialNumber: 1,
-    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
-    validityEndDate: futureDate,
-    ...config.attributes
-  });
-}
-
-function asn1DerDecode(asn1Value: ArrayBuffer): asn1js.LocalBaseBlock {
-  const asn1 = asn1js.fromBER(asn1Value);
-  if (asn1.offset === -1) {
-    throw new Error('Value is not DER-encoded');
-  }
-  return asn1.result;
-}
-
-function sha256Hex(plaintext: ArrayBuffer): string {
-  return createHash('sha256')
-    .update(Buffer.from(plaintext))
-    .digest('hex');
-}
-
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<string> {
   // @ts-ignore
-  const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+  const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
   return sha256Hex(publicKeyDer);
 }

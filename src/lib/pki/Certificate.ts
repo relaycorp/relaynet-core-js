@@ -1,8 +1,8 @@
 import * as asn1js from 'asn1js';
 import * as lodash from 'lodash';
 import * as pkijs from 'pkijs';
+import { getPkijsCrypto } from '../_utils';
 import * as oids from '../oids';
-import { getPkijsCrypto } from './_utils';
 import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
 
