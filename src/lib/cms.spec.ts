@@ -1,4 +1,4 @@
-import asn1js = require('asn1js');
+import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 import {
   asn1DerDecode,
