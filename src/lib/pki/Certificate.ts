@@ -1,5 +1,4 @@
 import * as asn1js from 'asn1js';
-import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import * as lodash from 'lodash';
 import * as pkijs from 'pkijs';
 import * as oids from '../oids';
@@ -22,8 +21,8 @@ export default class Certificate {
    * @param certDer DER-encoded X.509 certificate
    * @throws {CertificateError}
    */
-  public static deserialize(certDer: Buffer): Certificate {
-    const asn1 = asn1js.fromBER(bufferToArrayBuffer(certDer));
+  public static deserialize(certDer: ArrayBuffer): Certificate {
+    const asn1 = asn1js.fromBER(certDer);
     if (asn1.offset === -1) {
       throw new CertificateError('Certificate is not DER-encoded');
     }
@@ -104,9 +103,9 @@ export default class Certificate {
   /**
    * Serialize certificate as DER-encoded buffer.
    */
-  public serialize(): Buffer {
+  public serialize(): ArrayBuffer {
     const certAsn1js = this.pkijsCertificate.toSchema(true);
-    return Buffer.from(certAsn1js.toBER(false));
+    return certAsn1js.toBER(false);
   }
 
   /**

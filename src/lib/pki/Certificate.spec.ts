@@ -28,7 +28,7 @@ describe('deserialize()', () => {
     const pkijsCert = (await generateStubCert()).pkijsCertificate;
     const certDer = pkijsCert.toSchema(true).toBER(false);
 
-    const cert = Certificate.deserialize(Buffer.from(certDer));
+    const cert = Certificate.deserialize(certDer);
 
     expect(cert.pkijsCertificate.subject.typesAndValues[0].type).toBe(
       pkijsCert.subject.typesAndValues[0].type
@@ -39,7 +39,7 @@ describe('deserialize()', () => {
   });
 
   test('should error out with invalid DER values', () => {
-    const invalidDer = Buffer.from('nope');
+    const invalidDer = bufferToArrayBuffer(Buffer.from('nope'));
     expect(() => Certificate.deserialize(invalidDer)).toThrowWithMessage(
       CertificateError,
       'Certificate is not DER-encoded'
@@ -344,7 +344,7 @@ test('serialize() should return a DER-encoded buffer', async () => {
 
   const certDer = cert.serialize();
 
-  const asn1 = asn1js.fromBER(bufferToArrayBuffer(certDer));
+  const asn1 = asn1js.fromBER(certDer);
   expect(asn1.result).not.toBe(-1);
   const pkijsCert = new pkijs.Certificate({ schema: asn1.result });
 
