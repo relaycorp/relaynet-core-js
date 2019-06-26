@@ -1,13 +1,13 @@
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
-import { createHash } from 'crypto';
 import * as lodash from 'lodash';
 import * as pkijs from 'pkijs';
+import * as oids from '../oids';
 import { getPkijsCrypto } from './_utils';
 import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
 
-const OID_COMMON_NAME = '2.5.4.3';
+const pkijsCrypto = getPkijsCrypto();
 
 /**
  * Relaynet PKI Certificate.
@@ -52,7 +52,14 @@ export default class Certificate {
       );
     }
 
+    const issuerPublicKey = issuerCertificate
+      ? await issuerCertificate.pkijsCertificate.getPublicKey()
+      : attributes.subjectPublicKey;
     const pkijsCert = new pkijs.Certificate({
+      extensions: [
+        await makeAuthorityKeyIdExtension(issuerPublicKey),
+        await makeSubjectKeyIdExtension(attributes.subjectPublicKey)
+      ],
       serialNumber: new asn1js.Integer({ value: attributes.serialNumber }),
       version: 2
     });
@@ -67,7 +74,7 @@ export default class Certificate {
     );
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
-        type: OID_COMMON_NAME,
+        type: oids.COMMON_NAME,
         value: new asn1js.BmpString({ value: address })
       })
     );
@@ -107,7 +114,7 @@ export default class Certificate {
    */
   public getAddress(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
-      a => ((a.type as unknown) as string) === OID_COMMON_NAME
+      a => ((a.type as unknown) as string) === oids.COMMON_NAME
     );
     if (matchingDnAttr.length === 0) {
       throw new CertificateError(
@@ -128,16 +135,37 @@ export default class Certificate {
   }
 }
 
+async function makeAuthorityKeyIdExtension(
+  publicKey: CryptoKey
+): Promise<pkijs.Extension> {
+  const keyDigest = await getPublicKeyDigest(publicKey);
+  const keyIdEncoded = new asn1js.OctetString({ valueHex: keyDigest });
+  return new pkijs.Extension({
+    extnID: oids.AUTHORITY_KEY_ID,
+    extnValue: new pkijs.AuthorityKeyIdentifier({ keyIdentifier: keyIdEncoded })
+      .toSchema()
+      .toBER(false)
+  });
+}
+
+async function makeSubjectKeyIdExtension(
+  publicKey: CryptoKey
+): Promise<pkijs.Extension> {
+  const keyDigest = await getPublicKeyDigest(publicKey);
+  return new pkijs.Extension({
+    extnID: oids.SUBJECT_KEY_ID,
+    extnValue: new asn1js.OctetString({ valueHex: keyDigest }).toBER(false)
+  });
+}
+
 async function computePrivateNodeAddress(
   publicKey: CryptoKey
 ): Promise<string> {
-  const pkijsCrypto = getPkijsCrypto();
-  const publicKeyDer = Buffer.from(
-    await pkijsCrypto.exportKey('spki', publicKey)
-  );
+  const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
+  return `0${publicKeyDigest.toString('hex')}`;
+}
 
-  const publicKeyHash = createHash('sha256')
-    .update(publicKeyDer)
-    .digest('hex');
-  return `0${publicKeyHash}`;
+async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
+  const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
+  return pkijsCrypto.digest({ name: 'SHA-256' }, publicKeyDer);
 }
