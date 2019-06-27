@@ -14,10 +14,10 @@ export function asn1DerDecode(asn1Value: ArrayBuffer): asn1js.LocalBaseBlock {
 type PkijsValueType = pkijs.RelativeDistinguishedNames;
 
 export function expectPkijsValuesToBeEqual(
-  value1: PkijsValueType,
-  value2: PkijsValueType
+  expectedValue: PkijsValueType,
+  actualValue: PkijsValueType
 ): void {
-  expectAsn1ValuesToBeEqual(value1.toSchema(), value2.toSchema());
+  expectAsn1ValuesToBeEqual(expectedValue.toSchema(), actualValue.toSchema());
 }
 
 type Asn1jsToBER = (sizeOnly?: boolean) => ArrayBuffer;
@@ -27,11 +27,11 @@ interface Asn1jsSerializable {
 }
 
 export function expectAsn1ValuesToBeEqual(
-  value1: Asn1jsSerializable,
-  value2: Asn1jsSerializable
+  expectedValue: Asn1jsSerializable,
+  actualValue: Asn1jsSerializable
 ): void {
-  expect(sha256Hex(value1.toBER(false))).toEqual(
-    sha256Hex(value2.toBER(false))
+  expect(sha256Hex(expectedValue.toBER(false))).toEqual(
+    sha256Hex(actualValue.toBER(false))
   );
 }
 

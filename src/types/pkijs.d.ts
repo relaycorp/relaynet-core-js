@@ -12,6 +12,7 @@ declare module 'pkijs' {
   import Certificate from 'pkijs/src/Certificate';
   import ContentInfo from 'pkijs/src/ContentInfo';
   import CryptoEngine from 'pkijs/src/CryptoEngine';
+  import EncapsulatedContentInfo from 'pkijs/src/EncapsulatedContentInfo';
   import Extension from 'pkijs/src/Extension';
   import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
@@ -27,6 +28,7 @@ declare module 'pkijs' {
     Certificate,
     ContentInfo,
     CryptoEngine,
+    EncapsulatedContentInfo,
     Extension,
     IssuerAndSerialNumber,
     PublicKeyInfo,
