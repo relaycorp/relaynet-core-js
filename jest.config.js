@@ -28,6 +28,7 @@ module.exports = {
 
   // An array of regexp pattern strings used to skip coverage collection
   coveragePathIgnorePatterns: [
+    "_test_utils.ts",
     "/types"
   ],
 

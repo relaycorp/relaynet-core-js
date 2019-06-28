@@ -76,3 +76,29 @@ function initSignerInfo(
     version: 1
   });
 }
+
+export async function verifySignature(
+  signature: ArrayBuffer,
+  plaintext: ArrayBuffer
+): Promise<void> {
+  const asn1 = asn1js.fromBER(signature);
+  if (asn1.offset === -1) {
+    throw new CMSError('Signature is not DER-encoded');
+  }
+  const contentInfo = new pkijs.ContentInfo({ schema: asn1.result });
+
+  const signedData = new pkijs.SignedData({
+    schema: contentInfo.content
+  });
+
+  const { signatureVerified, code } = await signedData.verify({
+    data: plaintext,
+    extendedMode: true,
+    signer: 0
+  });
+
+  if (!signatureVerified) {
+    throw new CMSError(`Invalid signature (code: ${code})`);
+  }
+  return;
+}

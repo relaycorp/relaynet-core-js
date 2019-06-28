@@ -60,3 +60,17 @@ export function sha256Hex(plaintext: ArrayBuffer): string {
     .update(Buffer.from(plaintext))
     .digest('hex');
 }
+
+export async function expectPromiseToReject(
+  promise: Promise<any>,
+  expectedError: Error
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(error.message).toEqual(expectedError.message);
+    expect(error).toBeInstanceOf(expectedError.constructor);
+    return;
+  }
+  throw new Error(`Expected promise to throw error ${expectedError}`);
+}

@@ -6,6 +6,7 @@ import {
   asn1DerDecode,
   expectAsn1ValuesToBeEqual,
   expectPkijsValuesToBeEqual,
+  expectPromiseToReject,
   generateStubCert,
   sha256Hex
 } from './_test_utils';
@@ -17,20 +18,20 @@ import Certificate from './pki/Certificate';
 
 const plaintext = bufferToArray(Buffer.from('Winter is coming'));
 
-describe('sign', () => {
-  // tslint:disable-next-line:no-let
-  let privateKey: CryptoKey;
-  // tslint:disable-next-line:no-let
-  let certificate: Certificate;
-  beforeAll(async () => {
-    const keyPair = await generateRsaKeys();
-    privateKey = keyPair.privateKey;
-    certificate = await generateStubCert({
-      issuerPrivateKey: privateKey,
-      subjectPublicKey: keyPair.publicKey
-    });
+// tslint:disable-next-line:no-let
+let privateKey: CryptoKey;
+// tslint:disable-next-line:no-let
+let certificate: Certificate;
+beforeAll(async () => {
+  const keyPair = await generateRsaKeys();
+  privateKey = keyPair.privateKey;
+  certificate = await generateStubCert({
+    issuerPrivateKey: privateKey,
+    subjectPublicKey: keyPair.publicKey
   });
+});
 
+describe('sign', () => {
   test('SignedData value should be wrapped in ContentInfo', async () => {
     const contentInfoDer = await cms.sign(plaintext, privateKey, certificate);
 
@@ -240,6 +241,46 @@ describe('sign', () => {
       }
     });
   });
+});
+
+describe('verify', () => {
+  test('An error should be thrown if the signature is not DER encoded', async () => {
+    const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
+    await expectPromiseToReject(
+      cms.verifySignature(invalidSignature, plaintext),
+      new CMSError('Signature is not DER-encoded')
+    );
+  });
+
+  test('Well-formed but invalid signatures should be rejected', async () => {
+    const differentPlaintext = bufferToArray(Buffer.from('Different'));
+    const signatureDer = await cms.sign(
+      differentPlaintext,
+      privateKey,
+      certificate,
+      [certificate]
+    );
+    await expectPromiseToReject(
+      cms.verifySignature(signatureDer, plaintext),
+      new CMSError('Invalid signature (code: 14)')
+    );
+  });
+
+  test('Valid signatures should be accepted', async () => {
+    const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
+      certificate
+    ]);
+    await cms.verifySignature(signatureDer, plaintext);
+  });
+
+  test('Signer certificate should be taken from embedded certs if not passed', async () => {
+    const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
+      certificate
+    ]);
+    await cms.verifySignature(signatureDer, plaintext);
+  });
+
+  test.todo('Embedded certificates should be returned if verification passes');
 });
 
 function deserializeContentInfo(
