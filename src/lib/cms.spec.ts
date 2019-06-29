@@ -262,7 +262,7 @@ describe('verify', () => {
     );
     await expectPromiseToReject(
       cms.verifySignature(signatureDer, plaintext),
-      new CMSError('Invalid signature (code: 14)')
+      new CMSError('Invalid signature: "" (PKI.js code: 14)')
     );
   });
 
@@ -277,10 +277,31 @@ describe('verify', () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
       certificate
     ]);
-    await cms.verifySignature(signatureDer, plaintext);
+    await expect(cms.verifySignature(signatureDer, plaintext)).resolves.toEqual(
+      expect.anything()
+    );
   });
 
-  test.todo('Embedded certificates should be returned if verification passes');
+  // Reinstate test once the following bug has been fixed:
+  // https://github.com/PeculiarVentures/PKI.js/issues/234
+  test.skip('Signature should be verified against any passed certificate', async () => {
+    const signatureDer = await cms.sign(plaintext, privateKey, certificate);
+    await expect(
+      cms.verifySignature(signatureDer, plaintext, certificate)
+    ).resolves.toEqual(undefined);
+  });
+
+  test('Embedded certificates should be returned if verification passes', async () => {
+    const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
+      certificate
+    ]);
+    const embeddedCerts = await cms.verifySignature(signatureDer, plaintext);
+    expect(embeddedCerts).toHaveLength(1);
+    // @ts-ignore
+    expect(await embeddedCerts[0].pkijsCertificate.getPublicKey()).toEqual(
+      await certificate.pkijsCertificate.getPublicKey()
+    );
+  });
 });
 
 function deserializeContentInfo(

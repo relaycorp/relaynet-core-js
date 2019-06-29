@@ -77,28 +77,51 @@ function initSignerInfo(
   });
 }
 
+/**
+ * Verify CMS SignedData signature.
+ *
+ * @param signature The CMS SignedData signature, DER-encoded.
+ * @param plaintext The plaintext to be verified against signature.
+ * @param signerCertificate The expected signer certificate.
+ * @return Certificates embedded in `signature` unless signerCertificate is
+ *   passed.
+ */
 export async function verifySignature(
   signature: ArrayBuffer,
-  plaintext: ArrayBuffer
-): Promise<void> {
+  plaintext: ArrayBuffer,
+  signerCertificate?: Certificate
+): Promise<ReadonlyArray<Certificate> | undefined> {
   const asn1 = asn1js.fromBER(signature);
   if (asn1.offset === -1) {
     throw new CMSError('Signature is not DER-encoded');
   }
   const contentInfo = new pkijs.ContentInfo({ schema: asn1.result });
 
-  const signedData = new pkijs.SignedData({
-    schema: contentInfo.content
-  });
+  const signedData = new pkijs.SignedData({ schema: contentInfo.content });
+  if (signerCertificate) {
+    // tslint:disable-next-line
+    signedData.certificates = [signerCertificate.pkijsCertificate];
+  }
 
-  const { signatureVerified, code } = await signedData.verify({
-    data: plaintext,
-    extendedMode: true,
-    signer: 0
-  });
+  try {
+    const verificationResult = await signedData.verify({
+      data: plaintext,
+      extendedMode: true,
+      signer: 0
+    });
 
-  if (!signatureVerified) {
-    throw new CMSError(`Invalid signature (code: ${code})`);
+    if (!verificationResult.signatureVerified) {
+      throw verificationResult;
+    }
+  } catch (e) {
+    throw new CMSError(
+      `Invalid signature: "${e.message}" (PKI.js code: ${e.code})`
+    );
+  }
+
+  if (!signerCertificate) {
+    // @ts-ignore
+    return signedData.certificates.map(c => new Certificate(c));
   }
   return;
 }
