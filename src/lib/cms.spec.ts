@@ -282,9 +282,7 @@ describe('verify', () => {
     );
   });
 
-  // Reinstate test once the following bug has been fixed:
-  // https://github.com/PeculiarVentures/PKI.js/issues/234
-  test.skip('Signature should be verified against any passed certificate', async () => {
+  test('Signature should be verified against any passed certificate', async () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate);
     await expect(
       cms.verifySignature(signatureDer, plaintext, certificate)

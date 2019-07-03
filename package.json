@@ -52,7 +52,6 @@
   },
   "dependencies": {
     "buffer-to-arraybuffer": "0.0.5",
-    "lodash": "^4.17.11",
     "node-webcrypto-ossl": "^1.0.47",
     "pkijs": "^2.1.78"
   },

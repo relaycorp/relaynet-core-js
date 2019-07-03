@@ -1,5 +1,5 @@
 import * as asn1js from 'asn1js';
-import * as lodash from 'lodash';
+import * as assert from 'assert';
 import * as pkijs from 'pkijs';
 import { getPkijsCrypto } from '../_utils';
 import * as oids from '../oids';
@@ -86,7 +86,7 @@ export default class Certificate {
       attribute =>
         new pkijs.AttributeTypeAndValue({
           type: attribute.type,
-          value: lodash.cloneDeep(attribute.value)
+          value: cloneAsn1jsValue(attribute.value)
         })
     );
 
@@ -167,4 +167,15 @@ async function computePrivateNodeAddress(
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
   const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
   return pkijsCrypto.digest({ name: 'SHA-256' }, publicKeyDer);
+}
+
+interface Asn1jsSerializable {
+  readonly toBER: (sizeOnly?: boolean) => ArrayBuffer;
+}
+
+function cloneAsn1jsValue(value: Asn1jsSerializable): asn1js.LocalBaseBlock {
+  const valueSerialized = value.toBER(false);
+  const asn1jsValue = asn1js.fromBER(valueSerialized);
+  assert.notStrictEqual(asn1jsValue.offset, -1);
+  return asn1jsValue.result;
 }
