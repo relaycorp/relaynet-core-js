@@ -17,7 +17,7 @@
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
     "test": "run-s test:lint test:prettier test:unit",
-    "test:unit": "jest --verbose",
+    "test:unit": "jest",
     "test:unit:changed": "run-s \"test:unit -- -o\"",
     "test:lint": "tslint --project .",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
@@ -53,7 +53,7 @@
   "dependencies": {
     "buffer-to-arraybuffer": "0.0.5",
     "node-webcrypto-ossl": "^1.0.47",
-    "pkijs": "^2.1.78"
+    "pkijs": "^2.1.80"
   },
   "devDependencies": {
     "@types/asn1js": "0.0.1",
