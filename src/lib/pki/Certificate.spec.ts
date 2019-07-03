@@ -248,7 +248,6 @@ describe('issue()', () => {
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1
       });
-      // @ts-ignore
       const keyIdBuffer = Buffer.from(
         akiExtensionRestored.keyIdentifier.valueBlock.valueHex
       );
