@@ -91,7 +91,24 @@ describe('encrypt', () => {
       ).toEqual('2.16.840.1.101.3.4.1.6');
     });
 
-    test.todo('Should support AES-GCM with 256 and 512 keys');
+    test.each([
+      [192, '2.16.840.1.101.3.4.1.26'],
+      [256, '2.16.840.1.101.3.4.1.46']
+    ])(
+      'Should support AES-GCM with %s-bit keys',
+      async (aesKeySize, expectedOid) => {
+        // @ts-ignore
+        const contentInfoDer = await cms.encrypt(plaintext, certificate, {
+          aesKeySize
+        });
+
+        const envelopedData = deserializeEnvelopedData(contentInfoDer);
+        expect(
+          envelopedData.encryptedContentInfo.contentEncryptionAlgorithm
+            .algorithmId
+        ).toEqual(expectedOid);
+      }
+    );
   });
 });
 
