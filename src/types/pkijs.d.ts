@@ -13,9 +13,12 @@ declare module 'pkijs' {
   import ContentInfo from 'pkijs/src/ContentInfo';
   import CryptoEngine from 'pkijs/src/CryptoEngine';
   import EncapsulatedContentInfo from 'pkijs/src/EncapsulatedContentInfo';
+  import EnvelopedData from 'pkijs/src/EnvelopedData';
   import Extension from 'pkijs/src/Extension';
   import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
+  import KeyTransRecipientInfo from 'pkijs/src/KeyTransRecipientInfo';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
+  import RecipientInfo from 'pkijs/src/RecipientInfo';
   import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
   import SignedAndUnsignedAttributes from 'pkijs/src/SignedAndUnsignedAttributes';
   import SignedData from 'pkijs/src/SignedData';
@@ -29,9 +32,12 @@ declare module 'pkijs' {
     ContentInfo,
     CryptoEngine,
     EncapsulatedContentInfo,
+    EnvelopedData,
     Extension,
     IssuerAndSerialNumber,
+    KeyTransRecipientInfo,
     PublicKeyInfo,
+    RecipientInfo,
     RelativeDistinguishedNames,
     SignedAndUnsignedAttributes,
     SignedData,

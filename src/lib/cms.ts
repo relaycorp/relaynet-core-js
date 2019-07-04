@@ -7,6 +7,21 @@ import Certificate from './pki/Certificate';
 
 const pkijsCrypto = getPkijsCrypto();
 
+export async function encrypt(
+  plaintext: ArrayBuffer,
+  certificate: Certificate
+): Promise<ArrayBuffer> {
+  const cmsEnveloped = new pkijs.EnvelopedData();
+  cmsEnveloped.addRecipientByCertificate(certificate.pkijsCertificate, {}, 1);
+  // @ts-ignore
+  await cmsEnveloped.encrypt({ name: 'AES-GCM', length: 128 }, plaintext);
+  const contentInfo = new pkijs.ContentInfo({
+    content: cmsEnveloped.toSchema(),
+    contentType: oids.CMS_ENVELOPED_DATA
+  });
+  return contentInfo.toSchema().toBER(false);
+}
+
 /**
  * Generate DER-encoded CMS SignedData signature for `plaintext`.
  *

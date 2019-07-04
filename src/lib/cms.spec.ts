@@ -31,6 +31,70 @@ beforeAll(async () => {
   });
 });
 
+describe('encrypt', () => {
+  test('EnvelopedData value should be wrapped in ContentInfo', async () => {
+    const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+    const contentInfo = deserializeContentInfo(contentInfoDer);
+    expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
+    expect(contentInfo.content).toBeInstanceOf(asn1js.Sequence);
+  });
+
+  describe('RecipientInfo', () => {
+    test('There should only be one RecipientInfo', async () => {
+      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      expect(envelopedData.recipientInfos).toHaveLength(1);
+      expect(envelopedData.recipientInfos[0]).toBeInstanceOf(
+        pkijs.RecipientInfo
+      );
+    });
+
+    test('RecipientInfo should be of type KeyTransRecipientInfo', async () => {
+      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      expect(envelopedData.recipientInfos[0].value).toBeInstanceOf(
+        pkijs.KeyTransRecipientInfo
+      );
+    });
+
+    test('KeyTransRecipientInfo should use issuerAndSerialNumber choice', async () => {
+      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+      expect(keyTransRecipientInfo.version).toEqual(0);
+      expect(keyTransRecipientInfo.rid).toBeInstanceOf(
+        pkijs.IssuerAndSerialNumber
+      );
+      expectPkijsValuesToBeEqual(
+        keyTransRecipientInfo.rid.issuer,
+        certificate.pkijsCertificate.issuer
+      );
+      expectAsn1ValuesToBeEqual(
+        keyTransRecipientInfo.rid.serialNumber,
+        certificate.pkijsCertificate.serialNumber
+      );
+    });
+  });
+
+  describe('EncryptedContentInfo', () => {
+    test('Should use AES-GCM-128 by default', async () => {
+      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      expect(
+        envelopedData.encryptedContentInfo.contentEncryptionAlgorithm
+          .algorithmId
+      ).toEqual('2.16.840.1.101.3.4.1.6');
+    });
+
+    test.todo('Should support AES-GCM with 256 and 512 keys');
+  });
+});
+
 describe('sign', () => {
   test('SignedData value should be wrapped in ContentInfo', async () => {
     const contentInfoDer = await cms.sign(plaintext, privateKey, certificate);
@@ -328,4 +392,11 @@ function deserializeSignerInfoAttribute(
   const matchingAttrs = attributes.filter(a => a.type === attributeOid);
   expect(matchingAttrs).toHaveLength(1);
   return matchingAttrs[0];
+}
+
+function deserializeEnvelopedData(
+  contentInfoDer: ArrayBuffer
+): pkijs.EnvelopedData {
+  const contentInfo = deserializeContentInfo(contentInfoDer);
+  return new pkijs.EnvelopedData({ schema: contentInfo.content });
 }
