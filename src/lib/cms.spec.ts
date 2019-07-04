@@ -78,6 +78,16 @@ describe('encrypt', () => {
         certificate.pkijsCertificate.serialNumber
       );
     });
+
+    test('KeyTransRecipientInfo should use RSA-OAEP', async () => {
+      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+      expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(
+        '1.2.840.113549.1.1.7'
+      );
+    });
   });
 
   describe('EncryptedContentInfo', () => {
