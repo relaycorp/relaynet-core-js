@@ -20,6 +20,7 @@ declare module 'pkijs' {
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
   import RecipientInfo from 'pkijs/src/RecipientInfo';
   import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
+  import RSAESOAEPParams from 'pkijs/src/RSAESOAEPParams';
   import SignedAndUnsignedAttributes from 'pkijs/src/SignedAndUnsignedAttributes';
   import SignedData from 'pkijs/src/SignedData';
   import SignerInfo from 'pkijs/src/SignerInfo';
@@ -39,6 +40,7 @@ declare module 'pkijs' {
     PublicKeyInfo,
     RecipientInfo,
     RelativeDistinguishedNames,
+    RSAESOAEPParams,
     SignedAndUnsignedAttributes,
     SignedData,
     SignerInfo

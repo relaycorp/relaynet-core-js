@@ -16,9 +16,11 @@ import { generateRsaKeys } from './crypto';
 import * as oids from './oids';
 import Certificate from './pki/Certificate';
 
+const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';
 const OID_AES_GCM_192 = '2.16.840.1.101.3.4.1.26';
 const OID_AES_GCM_256 = '2.16.840.1.101.3.4.1.46';
+const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
 
 const plaintext = bufferToArray(Buffer.from('Winter is coming'));
 
@@ -89,8 +91,19 @@ describe('encrypt', () => {
       const envelopedData = deserializeEnvelopedData(contentInfoDer);
       const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
       expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(
-        '1.2.840.113549.1.1.7'
+        OID_RSA_OAEP
       );
+    });
+
+    test('RSA-OAEP should be used with SHA-256', async () => {
+      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+
+      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+      const algorithmParams = new pkijs.RSAESOAEPParams({
+        schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams
+      });
+      expect(algorithmParams.hashAlgorithm.algorithmId).toEqual(OID_SHA256);
     });
   });
 

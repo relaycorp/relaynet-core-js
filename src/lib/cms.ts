@@ -27,7 +27,11 @@ export async function encrypt(
 ): Promise<ArrayBuffer> {
   const cmsEnveloped = new pkijs.EnvelopedData();
 
-  cmsEnveloped.addRecipientByCertificate(certificate.pkijsCertificate, {}, 1);
+  cmsEnveloped.addRecipientByCertificate(
+    certificate.pkijsCertificate,
+    { oaepHashAlgorithm: 'SHA-256' },
+    1
+  );
 
   if (options.aesKeySize && !AES_KEY_SIZES.includes(options.aesKeySize)) {
     throw new CMSError(`Invalid AES key size (${options.aesKeySize})`);
