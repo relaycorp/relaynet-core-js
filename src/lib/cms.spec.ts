@@ -16,6 +16,10 @@ import { generateRsaKeys } from './crypto';
 import * as oids from './oids';
 import Certificate from './pki/Certificate';
 
+const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';
+const OID_AES_GCM_192 = '2.16.840.1.101.3.4.1.26';
+const OID_AES_GCM_256 = '2.16.840.1.101.3.4.1.46';
+
 const plaintext = bufferToArray(Buffer.from('Winter is coming'));
 
 // tslint:disable-next-line:no-let
@@ -91,21 +95,18 @@ describe('encrypt', () => {
   });
 
   describe('EncryptedContentInfo', () => {
-    test('Should use AES-GCM-128 by default', async () => {
+    test('AES-GCM-128 should be used by default', async () => {
       const contentInfoDer = await cms.encrypt(plaintext, certificate);
 
       const envelopedData = deserializeEnvelopedData(contentInfoDer);
       expect(
         envelopedData.encryptedContentInfo.contentEncryptionAlgorithm
           .algorithmId
-      ).toEqual('2.16.840.1.101.3.4.1.6');
+      ).toEqual(OID_AES_GCM_128);
     });
 
-    test.each([
-      [192, '2.16.840.1.101.3.4.1.26'],
-      [256, '2.16.840.1.101.3.4.1.46']
-    ])(
-      'Should support AES-GCM with %s-bit keys',
+    test.each([[192, OID_AES_GCM_192], [256, OID_AES_GCM_256]])(
+      'AES-GCM-%s should also be supported',
       async (aesKeySize, expectedOid) => {
         // @ts-ignore
         const contentInfoDer = await cms.encrypt(plaintext, certificate, {
