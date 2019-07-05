@@ -120,6 +120,12 @@ describe('encrypt', () => {
         ).toEqual(expectedOid);
       }
     );
+
+    test('Key sizes other than 128, 192 and 256 should be refused', async () => {
+      await expect(
+        cms.encrypt(plaintext, certificate, { aesKeySize: 512 })
+      ).rejects.toEqual(new CMSError('Invalid AES key size (512)'));
+    });
   });
 });
 

@@ -7,10 +7,19 @@ import Certificate from './pki/Certificate';
 
 const pkijsCrypto = getPkijsCrypto();
 
+const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
+
 export interface EncryptionOptions {
   readonly aesKeySize: number;
 }
 
+/**
+ * Encrypt `plaintext` and return DER-encoded CMS EnvelopedData representation.
+ *
+ * @param plaintext
+ * @param certificate
+ * @param options
+ */
 export async function encrypt(
   plaintext: ArrayBuffer,
   certificate: Certificate,
@@ -19,6 +28,10 @@ export async function encrypt(
   const cmsEnveloped = new pkijs.EnvelopedData();
 
   cmsEnveloped.addRecipientByCertificate(certificate.pkijsCertificate, {}, 1);
+
+  if (options.aesKeySize && !AES_KEY_SIZES.includes(options.aesKeySize)) {
+    throw new CMSError(`Invalid AES key size (${options.aesKeySize})`);
+  }
 
   const aesKeySize = options.aesKeySize || 128;
   await cmsEnveloped.encrypt(
