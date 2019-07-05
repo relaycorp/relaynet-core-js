@@ -135,10 +135,42 @@ describe('encrypt', () => {
     );
 
     test('Key sizes other than 128, 192 and 256 should be refused', async () => {
-      await expect(
-        cms.encrypt(plaintext, certificate, { aesKeySize: 512 })
-      ).rejects.toEqual(new CMSError('Invalid AES key size (512)'));
+      await expectPromiseToReject(
+        cms.encrypt(plaintext, certificate, { aesKeySize: 512 }),
+        new CMSError('Invalid AES key size (512)')
+      );
     });
+  });
+});
+
+describe('decrypt', () => {
+  test('An error should be thrown if input is not DER encoded', async () => {
+    const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
+    await expectPromiseToReject(
+      cms.decrypt(invalidDer, privateKey),
+      new CMSError('Value is not encoded in DER')
+    );
+  });
+
+  test('A well-formed but invalid ciphertext should be refused', async () => {
+    const differentCertificate = await generateStubCert();
+    const ciphertext = await cms.encrypt(plaintext, differentCertificate);
+
+    expect.hasAssertions();
+    try {
+      await cms.decrypt(ciphertext, privateKey);
+    } catch (error) {
+      expect(error).toBeInstanceOf(CMSError);
+      expect(error.message).toStartWith('Decryption failed: ');
+    }
+  });
+
+  test('Decryption should succeed with the right private key', async () => {
+    const ciphertext = await cms.encrypt(plaintext, certificate);
+    const actualPlaintext = await cms.decrypt(ciphertext, privateKey);
+    expect(
+      Buffer.from(actualPlaintext).equals(Buffer.from(plaintext))
+    ).toBeTrue();
   });
 });
 
@@ -359,7 +391,7 @@ describe('verify', () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.verifySignature(invalidSignature, plaintext),
-      new CMSError('Signature is not DER-encoded')
+      new CMSError('Value is not encoded in DER')
     );
   });
 

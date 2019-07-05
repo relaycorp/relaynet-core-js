@@ -25,9 +25,9 @@ export async function encrypt(
   certificate: Certificate,
   options: Partial<EncryptionOptions> = {}
 ): Promise<ArrayBuffer> {
-  const cmsEnveloped = new pkijs.EnvelopedData();
+  const envelopedData = new pkijs.EnvelopedData();
 
-  cmsEnveloped.addRecipientByCertificate(
+  envelopedData.addRecipientByCertificate(
     certificate.pkijsCertificate,
     { oaepHashAlgorithm: 'SHA-256' },
     1
@@ -38,17 +38,44 @@ export async function encrypt(
   }
 
   const aesKeySize = options.aesKeySize || 128;
-  await cmsEnveloped.encrypt(
+  await envelopedData.encrypt(
     // @ts-ignore
     { name: 'AES-GCM', length: aesKeySize },
     plaintext
   );
 
   const contentInfo = new pkijs.ContentInfo({
-    content: cmsEnveloped.toSchema(),
+    content: envelopedData.toSchema(),
     contentType: oids.CMS_ENVELOPED_DATA
   });
   return contentInfo.toSchema().toBER(false);
+}
+
+/**
+ * Decrypt `ciphertext` and return plaintext.
+ *
+ * @param ciphertext DER-encoded CMS EnvelopedData
+ * @param privateKey
+ * @throws CMSError if `ciphertext` is malformed or could not be decrypted
+ *   with `privateKey`
+ */
+export async function decrypt(
+  ciphertext: ArrayBuffer,
+  privateKey: CryptoKey
+): Promise<ArrayBuffer> {
+  const cmsContentInfo = deserializeContentInfo(ciphertext);
+  const cmsEnvelopedSimp = new pkijs.EnvelopedData({ schema: cmsContentInfo });
+
+  const privateKeyBuffer = await pkijsCrypto.exportKey('pkcs8', privateKey);
+  try {
+    return await cmsEnvelopedSimp.decrypt(
+      0,
+      // @ts-ignore
+      { recipientPrivateKey: privateKeyBuffer }
+    );
+  } catch (error) {
+    throw new CMSError(`Decryption failed: ${error}`);
+  }
 }
 
 /**
@@ -78,7 +105,7 @@ export async function sign(
     plaintext
   );
   const signerInfo = initSignerInfo(signerCertificate, digest);
-  const cmsSigned = new pkijs.SignedData({
+  const signedData = new pkijs.SignedData({
     certificates: embeddedCertificates.map(c => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
       eContentType: oids.CMS_DATA
@@ -86,10 +113,10 @@ export async function sign(
     signerInfos: [signerInfo],
     version: 1
   });
-  await cmsSigned.sign(privateKey, 0, hashingAlgorithmName, plaintext);
+  await signedData.sign(privateKey, 0, hashingAlgorithmName, plaintext);
 
   const contentInfo = new pkijs.ContentInfo({
-    content: cmsSigned.toSchema(true),
+    content: signedData.toSchema(true),
     contentType: oids.CMS_SIGNED_DATA
   });
   return contentInfo.toSchema().toBER(false);
@@ -129,19 +156,16 @@ function initSignerInfo(
  * @param signerCertificate The expected signer certificate.
  * @return Certificates embedded in `signature` unless signerCertificate is
  *   passed.
+ * @throws {CMSError} If `signature` could not be decoded or verified.
  */
 export async function verifySignature(
   signature: ArrayBuffer,
   plaintext: ArrayBuffer,
   signerCertificate?: Certificate
 ): Promise<ReadonlyArray<Certificate> | undefined> {
-  const asn1 = asn1js.fromBER(signature);
-  if (asn1.offset === -1) {
-    throw new CMSError('Signature is not DER-encoded');
-  }
-  const contentInfo = new pkijs.ContentInfo({ schema: asn1.result });
+  const contentInfo = deserializeContentInfo(signature);
 
-  const signedData = new pkijs.SignedData({ schema: contentInfo.content });
+  const signedData = new pkijs.SignedData({ schema: contentInfo });
   if (signerCertificate) {
     // tslint:disable-next-line
     signedData.certificates = [signerCertificate.pkijsCertificate];
@@ -168,4 +192,13 @@ export async function verifySignature(
     return signedData.certificates.map(c => new Certificate(c));
   }
   return;
+}
+
+function deserializeContentInfo(derValue: ArrayBuffer): asn1js.Sequence {
+  const asn1 = asn1js.fromBER(derValue);
+  if (asn1.offset === -1) {
+    throw new CMSError('Value is not encoded in DER');
+  }
+  const contentInfo = new pkijs.ContentInfo({ schema: asn1.result });
+  return contentInfo.content;
 }

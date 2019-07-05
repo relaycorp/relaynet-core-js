@@ -68,8 +68,8 @@ export async function expectPromiseToReject(
   try {
     await promise;
   } catch (error) {
-    expect(error.message).toEqual(expectedError.message);
     expect(error).toBeInstanceOf(expectedError.constructor);
+    expect(error).toHaveProperty('message', expectedError.message);
     return;
   }
   throw new Error(`Expected promise to throw error ${expectedError}`);
