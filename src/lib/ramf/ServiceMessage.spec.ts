@@ -17,6 +17,7 @@ describe('ServiceMessage', () => {
         'a'.repeat(maxLength + 1),
         Buffer.alloc(0)
       );
+
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
         'Service message type exceeds maximum length'
@@ -28,6 +29,7 @@ describe('ServiceMessage', () => {
       const value = Buffer.alloc(0);
       jest.spyOn(value, 'length', 'get').mockReturnValueOnce(maxLength + 1);
       const message = new ServiceMessage('text/plain', value);
+
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
         'Service message value exceeds maximum length'
@@ -38,6 +40,7 @@ describe('ServiceMessage', () => {
       const type = 'text/plain';
       const value = Buffer.from('Hi');
       const message = new ServiceMessage(type, value);
+
       const messageParts = serviceMessageParser.parse(message.serialize());
       expect(messageParts).toHaveProperty('messageTypeLength', type.length);
       expect(messageParts).toHaveProperty('messageType', type);
@@ -48,8 +51,20 @@ describe('ServiceMessage', () => {
     test('Type should be encoded in UTF-8', () => {
       const type = 'こんにちは';
       const message = new ServiceMessage(type, Buffer.from('Hi'));
+
       const messageParts = serviceMessageParser.parse(message.serialize());
       expect(messageParts).toHaveProperty('messageType', type);
+    });
+
+    test('Value length prefix should be encoded in little-endian', () => {
+      const valueLength = 0x0100; // Two *different* octets, so endianness matters
+      const message = new ServiceMessage(
+        'text/plain',
+        Buffer.from('A'.repeat(valueLength))
+      );
+
+      const messageParts = serviceMessageParser.parse(message.serialize());
+      expect(messageParts).toHaveProperty('messageLength', valueLength);
     });
   });
 
@@ -67,6 +82,7 @@ describe('ServiceMessage', () => {
         Buffer.from('Hey')
       );
       const serviceMessageSerialized = originalServiceMessage.serialize();
+
       const finalServiceMessage = ServiceMessage.deserialize(
         serviceMessageSerialized
       );
@@ -74,6 +90,20 @@ describe('ServiceMessage', () => {
       expect(
         finalServiceMessage.value.equals(originalServiceMessage.value)
       ).toBeTrue();
+    });
+
+    test('Value length prefix should be decoded in little-endian', () => {
+      const valueLength = 0x0100; // Two *different* octets, so endianness matters
+      const originalServiceMessage = new ServiceMessage(
+        'text/plain',
+        Buffer.from('A'.repeat(valueLength))
+      );
+      const serviceMessageSerialized = originalServiceMessage.serialize();
+
+      const finalServiceMessage = ServiceMessage.deserialize(
+        serviceMessageSerialized
+      );
+      expect(finalServiceMessage.value).toHaveLength(valueLength);
     });
   });
 });
