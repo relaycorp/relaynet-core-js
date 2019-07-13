@@ -1,4 +1,4 @@
-import bufferToArray = require('buffer-to-arraybuffer');
+import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 import uuid4 from 'uuid4';
 import Certificate from '../pki/Certificate';
