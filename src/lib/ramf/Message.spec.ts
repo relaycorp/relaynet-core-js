@@ -7,11 +7,11 @@ import Message from './Message';
 import Payload from './Payload';
 import RAMFError from './RAMFError';
 
-const FIXED_UUID4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
+const mockUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => FIXED_UUID4)
+    default: jest.fn().mockImplementation(() => mockUuid4)
   };
 });
 
@@ -95,7 +95,7 @@ describe('Message', () => {
           payload
         );
 
-        expect(message.id).toEqual(FIXED_UUID4);
+        expect(message.id).toEqual(mockUuid4);
       });
 
       test('A custom id with a length of up to 8 bits should be accepted', () => {
@@ -229,7 +229,7 @@ describe('Message', () => {
         );
         expect(messageDeserialized).toHaveProperty(
           'messageIdLength',
-          FIXED_UUID4.length
+          mockUuid4.length
         );
         expect(messageDeserialized).toHaveProperty('messageId', stubMessage.id);
       });
