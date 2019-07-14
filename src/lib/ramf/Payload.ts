@@ -1,3 +1,3 @@
-export default abstract class Payload {
-  public abstract serialize(): Buffer;
+export default interface Payload {
+  readonly serialize: () => ArrayBuffer;
 }

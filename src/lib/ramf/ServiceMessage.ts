@@ -1,4 +1,5 @@
 import { Parser } from 'binary-parser';
+import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 import Payload from './Payload';
 import RAMFError from './RAMFError';
@@ -16,7 +17,7 @@ const PARSER = new Parser()
 /**
  * Service message as encapsulated in a parcel.
  */
-export default class ServiceMessage extends Payload {
+export default class ServiceMessage implements Payload {
   /**
    * Initialize a service message from the `serialization`.
    *
@@ -34,14 +35,12 @@ export default class ServiceMessage extends Payload {
     return new ServiceMessage(messageParts.messageType, messageParts.message);
   }
 
-  constructor(readonly type: string, readonly value: Buffer) {
-    super();
-  }
+  constructor(readonly type: string, readonly value: Buffer) {}
 
   /**
    * Serialize service message.
    */
-  public serialize(): Buffer {
+  public serialize(): ArrayBuffer {
     const typeLength = Buffer.byteLength(this.type);
     if (MAX_TYPE_LENGTH < typeLength) {
       throw new RAMFError('Service message type exceeds maximum length');
@@ -56,6 +55,6 @@ export default class ServiceMessage extends Payload {
     serialization.writeString(this.type);
     serialization.writeUInt32LE(this.value.length);
     serialization.writeBuffer(this.value);
-    return serialization.toBuffer();
+    return bufferToArray(serialization.toBuffer());
   }
 }

@@ -1,6 +1,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 import uuid4 from 'uuid4';
+import { encrypt, EncryptionOptions } from '../cms';
 import Certificate from '../pki/Certificate';
 import Payload from './Payload';
 import RAMFError from './RAMFError';
@@ -19,7 +20,7 @@ interface MessageOptions {
   readonly ttl: number;
 }
 
-export default abstract class Message {
+export default abstract class Message<PayloadSpecialization extends Payload> {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
@@ -27,7 +28,7 @@ export default abstract class Message {
   constructor(
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
-    readonly payload: Payload,
+    readonly payload: PayloadSpecialization,
     options: Partial<MessageOptions> = {}
   ) {
     //region Recipient address
@@ -67,7 +68,10 @@ export default abstract class Message {
     //endregion
   }
 
-  public async serialize(): Promise<ArrayBuffer> {
+  public async serialize(
+    recipientCertificate: Certificate,
+    encryptionOptions?: Partial<EncryptionOptions>
+  ): Promise<ArrayBuffer> {
     const serialization = new SmartBuffer();
 
     //region File format signature
@@ -95,6 +99,16 @@ export default abstract class Message {
     const ttlBuffer = Buffer.allocUnsafe(3);
     ttlBuffer.writeUIntLE(this.ttl, 0, 3);
     serialization.writeBuffer(ttlBuffer);
+    //endregion
+
+    //region Payload
+    const cmsEnvelopedData = await encrypt(
+      this.payload.serialize(),
+      recipientCertificate,
+      encryptionOptions
+    );
+    serialization.writeUInt32LE(cmsEnvelopedData.byteLength);
+    serialization.writeBuffer(Buffer.from(cmsEnvelopedData));
     //endregion
 
     return bufferToArray(serialization.toBuffer());

@@ -1,7 +1,9 @@
 /* tslint:disable:no-let max-classes-per-file */
 import { Parser } from 'binary-parser';
+import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 import { generateStubCert } from '../_test_utils';
+import * as cms from '../cms';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
 import Message from './Message';
@@ -18,7 +20,7 @@ jest.mock('uuid4', () => {
 
 const NON_ASCII_STRING = 'こんにちは';
 
-class StubMessage extends Message {
+class StubMessage extends Message<StubPayload> {
   public static readonly CONCRETE_MESSAGE_TYPE_OCTET = 0x44;
   public static readonly CONCRETE_MESSAGE_VERSION_OCTET = 0x2;
 
@@ -31,9 +33,11 @@ class StubMessage extends Message {
   }
 }
 
-class StubPayload extends Payload {
-  public serialize(): Buffer {
-    return Buffer.from('Hi');
+class StubPayload implements Payload {
+  public static readonly BUFFER = bufferToArray(Buffer.from('Hi'));
+
+  public serialize(): ArrayBuffer {
+    return StubPayload.BUFFER;
   }
 }
 
@@ -49,7 +53,9 @@ const PARSER = new Parser()
   .uint8('messageIdLength')
   .string('messageId', { length: 'messageIdLength', encoding: 'ascii' })
   .uint32('date')
-  .buffer('ttlBuffer', { length: 3 });
+  .buffer('ttlBuffer', { length: 3 })
+  .uint32('payloadLength')
+  .buffer('payload', { length: 'payloadLength' });
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -59,6 +65,7 @@ afterEach(() => {
 describe('Message', () => {
   let recipientAddress: string;
   let recipientCertificate: Certificate;
+  let recipientPrivateKey: CryptoKey;
   // let senderPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
   beforeAll(async () => {
@@ -67,6 +74,7 @@ describe('Message', () => {
       subjectPublicKey: recipientKeyPair.publicKey
     });
     recipientAddress = recipientCertificate.getAddress();
+    recipientPrivateKey = recipientKeyPair.privateKey;
 
     const senderKeyPair = await generateRsaKeys();
     // senderPrivateKey = senderKeyPair.privateKey;
@@ -261,13 +269,17 @@ describe('Message', () => {
       });
 
       test('The ASCII string "Relaynet" should be at the start', async () => {
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const staticPrefixBuffer = Buffer.from(messageSerialized, 0, 8);
         expect(staticPrefixBuffer.toString('ascii')).toEqual('Relaynet');
       });
 
       test('The concrete message type should be represented with an octet', async () => {
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const concreteMessageBuffer = Buffer.from(messageSerialized, 8, 1);
         expect(concreteMessageBuffer.readUInt8(0)).toEqual(
           StubMessage.CONCRETE_MESSAGE_TYPE_OCTET
@@ -275,7 +287,9 @@ describe('Message', () => {
       });
 
       test('The concrete message version should be at the end', async () => {
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const concreteMessageBuffer = Buffer.from(messageSerialized, 9, 1);
         expect(concreteMessageBuffer.readUInt8(0)).toEqual(
           StubMessage.CONCRETE_MESSAGE_VERSION_OCTET
@@ -292,7 +306,9 @@ describe('Message', () => {
           payload
         );
 
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const messageDeserialized = PARSER.parse(
           Buffer.from(messageSerialized)
         );
@@ -310,7 +326,9 @@ describe('Message', () => {
           payload
         );
 
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const messageDeserialized = PARSER.parse(
           Buffer.from(messageSerialized)
         );
@@ -329,7 +347,9 @@ describe('Message', () => {
           payload
         );
 
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const messageDeserialized = PARSER.parse(
           Buffer.from(messageSerialized)
         );
@@ -348,7 +368,9 @@ describe('Message', () => {
           { id: NON_ASCII_STRING }
         );
 
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const messageDeserialized = PARSER.parse(
           Buffer.from(messageSerialized)
         );
@@ -367,7 +389,9 @@ describe('Message', () => {
           payload
         );
 
-        const messageSerialized = await stubMessage.serialize();
+        const messageSerialized = await stubMessage.serialize(
+          recipientCertificate
+        );
         const messageDeserialized = PARSER.parse(
           Buffer.from(messageSerialized)
         );
@@ -384,12 +408,62 @@ describe('Message', () => {
           payload
         );
 
-        const messageSerialized = await message.serialize();
+        const messageSerialized = await message.serialize(recipientCertificate);
         const messageDeserialized = PARSER.parse(
           Buffer.from(messageSerialized)
         );
         const ttlDeserialized = messageDeserialized.ttlBuffer;
         expect(ttlDeserialized.readUIntLE(0, 3)).toEqual(message.ttl);
+      });
+    });
+
+    describe('Payload', () => {
+      test('Payload should be encrypted', async () => {
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload
+        );
+        jest.spyOn(cms, 'encrypt');
+
+        const messageSerialized = await message.serialize(recipientCertificate);
+
+        expect(cms.encrypt).toBeCalledTimes(1);
+        expect(cms.encrypt).toBeCalledWith(
+          StubPayload.BUFFER,
+          recipientCertificate,
+          undefined
+        );
+
+        const messageDeserialized = PARSER.parse(
+          Buffer.from(messageSerialized)
+        );
+        const payloadCiphertext = messageDeserialized.payload;
+        expect(
+          await cms.decrypt(
+            bufferToArray(payloadCiphertext),
+            recipientPrivateKey
+          )
+        ).toEqual(StubPayload.BUFFER);
+      });
+
+      test('Encryption options should be honoured', async () => {
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload
+        );
+        jest.spyOn(cms, 'encrypt');
+
+        const encryptionOptions = { aesKeySize: 256 };
+        await message.serialize(recipientCertificate, encryptionOptions);
+
+        expect(cms.encrypt).toBeCalledTimes(1);
+        expect(cms.encrypt).toBeCalledWith(
+          StubPayload.BUFFER,
+          recipientCertificate,
+          encryptionOptions
+        );
       });
     });
   });

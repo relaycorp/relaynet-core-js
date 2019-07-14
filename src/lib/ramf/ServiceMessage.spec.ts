@@ -41,7 +41,8 @@ describe('ServiceMessage', () => {
       const value = Buffer.from('Hi');
       const message = new ServiceMessage(type, value);
 
-      const messageParts = serviceMessageParser.parse(message.serialize());
+      const serialization = Buffer.from(message.serialize());
+      const messageParts = serviceMessageParser.parse(serialization);
       expect(messageParts).toHaveProperty('messageTypeLength', type.length);
       expect(messageParts).toHaveProperty('messageType', type);
       expect(messageParts).toHaveProperty('messageLength', value.byteLength);
@@ -52,7 +53,8 @@ describe('ServiceMessage', () => {
       const type = 'こんにちは';
       const message = new ServiceMessage(type, Buffer.from('Hi'));
 
-      const messageParts = serviceMessageParser.parse(message.serialize());
+      const serialization = Buffer.from(message.serialize());
+      const messageParts = serviceMessageParser.parse(serialization);
       expect(messageParts).toHaveProperty('messageType', type);
     });
 
@@ -63,7 +65,8 @@ describe('ServiceMessage', () => {
         Buffer.from('A'.repeat(valueLength))
       );
 
-      const messageParts = serviceMessageParser.parse(message.serialize());
+      const serialization = Buffer.from(message.serialize());
+      const messageParts = serviceMessageParser.parse(serialization);
       expect(messageParts).toHaveProperty('messageLength', valueLength);
     });
   });
@@ -77,33 +80,27 @@ describe('ServiceMessage', () => {
     });
 
     test('A valid serialization should result in a new ServiceMessage', () => {
-      const originalServiceMessage = new ServiceMessage(
+      const originalMessage = new ServiceMessage(
         'text/plain',
         Buffer.from('Hey')
       );
-      const serviceMessageSerialized = originalServiceMessage.serialize();
+      const serialization = Buffer.from(originalMessage.serialize());
 
-      const finalServiceMessage = ServiceMessage.deserialize(
-        serviceMessageSerialized
-      );
-      expect(finalServiceMessage.type).toEqual(originalServiceMessage.type);
-      expect(
-        finalServiceMessage.value.equals(originalServiceMessage.value)
-      ).toBeTrue();
+      const finalMessage = ServiceMessage.deserialize(serialization);
+      expect(finalMessage.type).toEqual(originalMessage.type);
+      expect(finalMessage.value.equals(originalMessage.value)).toBeTrue();
     });
 
     test('Value length prefix should be decoded in little-endian', () => {
       const valueLength = 0x0100; // Two *different* octets, so endianness matters
-      const originalServiceMessage = new ServiceMessage(
+      const originalMessage = new ServiceMessage(
         'text/plain',
         Buffer.from('A'.repeat(valueLength))
       );
-      const serviceMessageSerialized = originalServiceMessage.serialize();
+      const serialization = Buffer.from(originalMessage.serialize());
 
-      const finalServiceMessage = ServiceMessage.deserialize(
-        serviceMessageSerialized
-      );
-      expect(finalServiceMessage.value).toHaveLength(valueLength);
+      const finalMessage = ServiceMessage.deserialize(serialization);
+      expect(finalMessage.value).toHaveLength(valueLength);
     });
   });
 });
