@@ -48,7 +48,8 @@ const PARSER = new Parser()
   .string('recipientAddress', { length: 'recipientAddressLength' })
   .uint8('messageIdLength')
   .string('messageId', { length: 'messageIdLength', encoding: 'ascii' })
-  .uint32('date');
+  .uint32('date')
+  .buffer('ttlBuffer', { length: 3 });
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -195,15 +196,56 @@ describe('Message', () => {
     });
 
     describe('TTL', () => {
-      test.todo('TTL should default to 5 minutes');
+      test('5 minutes should be the default TTL', () => {
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload
+        );
 
-      test.todo('A custom TTL should be accepted');
+        expect(message.ttl).toEqual(5 * 60);
+      });
 
-      test.todo('A custom TTL of zero should be accepted');
+      test('A custom TTL under 2^24 should be accepted', () => {
+        const ttl = 2 ** 24 - 1;
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload,
+          { ttl }
+        );
 
-      test.todo('A custom TTL should not be negative');
+        expect(message.ttl).toEqual(ttl);
+      });
 
-      test.todo('A custom TTL should be less than 2 ^ 24');
+      test('A custom TTL of zero should be accepted', () => {
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload,
+          { ttl: 0 }
+        );
+
+        expect(message.ttl).toEqual(0);
+      });
+
+      test('A custom TTL should not be negative', () => {
+        expect(
+          () =>
+            new StubMessage(recipientAddress, senderCertificate, payload, {
+              ttl: -1
+            })
+        ).toThrowWithMessage(RAMFError, 'TTL cannot be negative');
+      });
+
+      test('A custom TTL should be less than 2 ^ 24', () => {
+        expect(
+          () =>
+            new StubMessage(recipientAddress, senderCertificate, payload, {
+              ttl: 2 ** 24
+            })
+        ).toThrowWithMessage(RAMFError, 'TTL must be less than 2^24');
+      });
     });
   });
 
@@ -335,7 +377,20 @@ describe('Message', () => {
     });
 
     describe('TTL', () => {
-      test.todo('TTL should be serialized as 24-bit unsigned integer');
+      test('TTL should be serialized as 24-bit unsigned integer', async () => {
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload
+        );
+
+        const messageSerialized = await message.serialize();
+        const messageDeserialized = PARSER.parse(
+          Buffer.from(messageSerialized)
+        );
+        const ttlDeserialized = messageDeserialized.ttlBuffer;
+        expect(ttlDeserialized.readUIntLE(0, 3)).toEqual(message.ttl);
+      });
     });
   });
 });
