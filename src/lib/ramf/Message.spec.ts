@@ -1,5 +1,6 @@
 /* tslint:disable:no-let max-classes-per-file */
 import { Parser } from 'binary-parser';
+import * as jestDateMock from 'jest-date-mock';
 import { generateStubCert } from '../_test_utils';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
@@ -46,7 +47,13 @@ const PARSER = new Parser()
   .uint16('recipientAddressLength')
   .string('recipientAddress', { length: 'recipientAddressLength' })
   .uint8('messageIdLength')
-  .string('messageId', { length: 'messageIdLength', encoding: 'ascii' });
+  .string('messageId', { length: 'messageIdLength', encoding: 'ascii' })
+  .uint32('date');
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  jestDateMock.clear();
+});
 
 describe('Message', () => {
   let recipientAddress: string;
@@ -121,13 +128,70 @@ describe('Message', () => {
     });
 
     describe('Date', () => {
-      test.todo('The current date should be used by default');
+      test('The current date should be used by default', () => {
+        const now = new Date(2019, 1, 1, 1, 1, 1, 1);
+        jestDateMock.advanceTo(now);
 
-      test.todo('A custom date should be accepted');
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload
+        );
 
-      test.todo('A custom date should not be before Unix epoch');
+        expect(message.date).toEqual(now);
+        expect(message.date.getTimezoneOffset()).toEqual(0);
+      });
 
-      test.todo('The timestamp of a custom date should be less than 2 ^ 32');
+      test('A custom date should be accepted', () => {
+        const date = new Date(2020, 1, 1, 1, 1, 1, 1);
+
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload,
+          { date }
+        );
+
+        expect(message.date).toEqual(date);
+      });
+
+      test('A custom date should not be before Unix epoch', () => {
+        const invalidDate = new Date(1969, 11, 31, 23, 59, 59);
+
+        expect(
+          () =>
+            new StubMessage(recipientAddress, senderCertificate, payload, {
+              date: invalidDate
+            })
+        ).toThrowWithMessage(RAMFError, 'Date cannot be before Unix epoch');
+      });
+
+      test('The timestamp of a custom date should be less than 2 ^ 32', () => {
+        const invalidDate = new Date(2 ** 32 * 1000);
+
+        expect(
+          () =>
+            new StubMessage(recipientAddress, senderCertificate, payload, {
+              date: invalidDate
+            })
+        ).toThrowWithMessage(
+          RAMFError,
+          'Date timestamp cannot be represented with 32 bits'
+        );
+      });
+
+      test('A custom date should be stored in UTC', () => {
+        const date = new Date('01 Jan 2019 12:00:00 GMT+11:00');
+
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload,
+          { date }
+        );
+
+        expect(message.date).toEqual(new Date('01 Jan 2019 01:00:00 GMT'));
+      });
     });
 
     describe('TTL', () => {
@@ -254,7 +318,20 @@ describe('Message', () => {
     });
 
     describe('Date', () => {
-      test.todo('Date should be serialized as 32-bit unsigned integer');
+      test('Date should be serialized as 32-bit unsigned integer', async () => {
+        const stubMessage = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          payload
+        );
+
+        const messageSerialized = await stubMessage.serialize();
+        const messageDeserialized = PARSER.parse(
+          Buffer.from(messageSerialized)
+        );
+        const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
+        expect(messageDeserialized).toHaveProperty('date', expectedTimestamp);
+      });
     });
 
     describe('TTL', () => {
