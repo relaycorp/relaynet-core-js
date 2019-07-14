@@ -32,7 +32,7 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
     options: Partial<MessageOptions> = {}
   ) {
     //region Recipient address
-    if (MAX_RECIPIENT_ADDRESS_LENGTH < recipientAddress.length) {
+    if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
       throw new RAMFError('Recipient address exceeds maximum length');
     }
     //endregion

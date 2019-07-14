@@ -101,6 +101,16 @@ describe('Message', () => {
           'Recipient address exceeds maximum length'
         );
       });
+
+      test('Multi-byte characters should be accounted for in length validation', () => {
+        const invalidAddress = '❤'.repeat(2 ** 10 - 1);
+        expect(
+          () => new StubMessage(invalidAddress, senderCertificate, payload)
+        ).toThrowWithMessage(
+          RAMFError,
+          'Recipient address exceeds maximum length'
+        );
+      });
     });
 
     describe('Id', () => {
