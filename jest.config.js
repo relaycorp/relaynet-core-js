@@ -17,8 +17,9 @@ module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
 
-  // Indicates whether the coverage information should be collected while executing the test
-  collectCoverage: true,
+  // Disable coverage here as a workaround to make debugging work in WebStorm
+  // Coverage should still be enabled in package.json scripts.
+  collectCoverage: false,
 
   // An array of glob patterns indicating a set of files for which coverage information should be collected
   collectCoverageFrom: ["**/*.ts"],
