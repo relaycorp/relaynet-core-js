@@ -305,7 +305,7 @@ describe('sign', () => {
         plaintext,
         privateKey,
         certificate,
-        [certificate, certificate2]
+        new Set([certificate, certificate2])
       );
 
       const signedData = deserializeSignedData(contentInfoDer);
@@ -348,8 +348,8 @@ describe('sign', () => {
           plaintext,
           privateKey,
           certificate,
-          [],
-          hashingAlgorithmName
+          new Set(),
+          { hashingAlgorithmName }
         );
 
         // @ts-ignore
@@ -377,7 +377,9 @@ describe('sign', () => {
       expect.hasAssertions();
 
       try {
-        await cms.sign(plaintext, privateKey, certificate, [], 'SHA-1');
+        await cms.sign(plaintext, privateKey, certificate, new Set(), {
+          hashingAlgorithmName: 'SHA-1'
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toEqual('SHA-1 is disallowed by RS-018');
@@ -401,7 +403,7 @@ describe('verify', () => {
       differentPlaintext,
       privateKey,
       certificate,
-      [certificate]
+      new Set([certificate])
     );
     await expectPromiseToReject(
       cms.verifySignature(signatureDer, plaintext),
@@ -410,16 +412,22 @@ describe('verify', () => {
   });
 
   test('Valid signatures should be accepted', async () => {
-    const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
-      certificate
-    ]);
+    const signatureDer = await cms.sign(
+      plaintext,
+      privateKey,
+      certificate,
+      new Set([certificate])
+    );
     await cms.verifySignature(signatureDer, plaintext);
   });
 
   test('Signer certificate should be taken from attached certs if not passed', async () => {
-    const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
-      certificate
-    ]);
+    const signatureDer = await cms.sign(
+      plaintext,
+      privateKey,
+      certificate,
+      new Set([certificate])
+    );
     await expect(cms.verifySignature(signatureDer, plaintext)).resolves.toEqual(
       expect.anything()
     );
@@ -433,9 +441,12 @@ describe('verify', () => {
   });
 
   test('Attached certificates should be returned if verification passes', async () => {
-    const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
-      certificate
-    ]);
+    const signatureDer = await cms.sign(
+      plaintext,
+      privateKey,
+      certificate,
+      new Set([certificate])
+    );
     const attachedCerts = await cms.verifySignature(signatureDer, plaintext);
     expect(attachedCerts).toHaveLength(1);
     // @ts-ignore

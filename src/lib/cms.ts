@@ -78,6 +78,10 @@ export async function decrypt(
   }
 }
 
+export interface SignatureOptions {
+  readonly hashingAlgorithmName: string;
+}
+
 /**
  * Generate DER-encoded CMS SignedData signature for `plaintext`.
  *
@@ -85,35 +89,36 @@ export async function decrypt(
  * @param privateKey
  * @param signerCertificate
  * @param attachedCertificates
- * @param hashingAlgorithmName
- * @throws {CMSError} If attempting to use SHA-1 as the hashing function
+ * @param options
+ * @throws `CMSError` when attempting to use SHA-1 as the hashing function
  */
 export async function sign(
   plaintext: ArrayBuffer,
   privateKey: CryptoKey,
   signerCertificate: Certificate,
-  attachedCertificates: ReadonlyArray<Certificate> = [],
-  hashingAlgorithmName = 'SHA-256'
+  attachedCertificates: ReadonlySet<Certificate> = new Set(),
+  options: Partial<SignatureOptions> = {}
 ): Promise<ArrayBuffer> {
   // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
-  if (hashingAlgorithmName === 'SHA-1') {
+  if (options.hashingAlgorithmName === 'SHA-1') {
     throw new CMSError('SHA-1 is disallowed by RS-018');
   }
 
+  const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
   const digest = await pkijsCrypto.digest(
     { name: hashingAlgorithmName },
     plaintext
   );
   const signerInfo = initSignerInfo(signerCertificate, digest);
   const signedData = new pkijs.SignedData({
-    certificates: attachedCertificates.map(c => c.pkijsCertificate),
+    certificates: Array.from(attachedCertificates).map(c => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
       eContentType: oids.CMS_DATA
     }),
     signerInfos: [signerInfo],
     version: 1
   });
-  await signedData.sign(privateKey, 0, hashingAlgorithmName, plaintext);
+  await signedData.sign(privateKey, 0, hashingAlgorithmName);
 
   const contentInfo = new pkijs.ContentInfo({
     content: signedData.toSchema(true),
