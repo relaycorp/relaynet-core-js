@@ -291,15 +291,15 @@ describe('sign', () => {
     });
   });
 
-  describe('Embedded certificates', () => {
-    test('The signer certificate should not be embedded', async () => {
+  describe('Attached certificates', () => {
+    test('The signer certificate should not be attached', async () => {
       const contentInfoDer = await cms.sign(plaintext, privateKey, certificate);
 
       const signedData = deserializeSignedData(contentInfoDer);
       expect(signedData).toHaveProperty('certificates', []);
     });
 
-    test('Certificates should optionally be embedded', async () => {
+    test('Certificates should optionally be attached', async () => {
       const certificate2 = await generateStubCert();
       const contentInfoDer = await cms.sign(
         plaintext,
@@ -416,7 +416,7 @@ describe('verify', () => {
     await cms.verifySignature(signatureDer, plaintext);
   });
 
-  test('Signer certificate should be taken from embedded certs if not passed', async () => {
+  test('Signer certificate should be taken from attached certs if not passed', async () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
       certificate
     ]);
@@ -432,14 +432,14 @@ describe('verify', () => {
     ).resolves.toEqual(undefined);
   });
 
-  test('Embedded certificates should be returned if verification passes', async () => {
+  test('Attached certificates should be returned if verification passes', async () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate, [
       certificate
     ]);
-    const embeddedCerts = await cms.verifySignature(signatureDer, plaintext);
-    expect(embeddedCerts).toHaveLength(1);
+    const attachedCerts = await cms.verifySignature(signatureDer, plaintext);
+    expect(attachedCerts).toHaveLength(1);
     // @ts-ignore
-    expect(await embeddedCerts[0].pkijsCertificate.getPublicKey()).toEqual(
+    expect(await attachedCerts[0].pkijsCertificate.getPublicKey()).toEqual(
       await certificate.pkijsCertificate.getPublicKey()
     );
   });

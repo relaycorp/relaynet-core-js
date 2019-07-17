@@ -84,7 +84,7 @@ export async function decrypt(
  * @param plaintext
  * @param privateKey
  * @param signerCertificate
- * @param embeddedCertificates
+ * @param attachedCertificates
  * @param hashingAlgorithmName
  * @throws {CMSError} If attempting to use SHA-1 as the hashing function
  */
@@ -92,7 +92,7 @@ export async function sign(
   plaintext: ArrayBuffer,
   privateKey: CryptoKey,
   signerCertificate: Certificate,
-  embeddedCertificates: ReadonlyArray<Certificate> = [],
+  attachedCertificates: ReadonlyArray<Certificate> = [],
   hashingAlgorithmName = 'SHA-256'
 ): Promise<ArrayBuffer> {
   // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
@@ -106,7 +106,7 @@ export async function sign(
   );
   const signerInfo = initSignerInfo(signerCertificate, digest);
   const signedData = new pkijs.SignedData({
-    certificates: embeddedCertificates.map(c => c.pkijsCertificate),
+    certificates: attachedCertificates.map(c => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
       eContentType: oids.CMS_DATA
     }),
@@ -154,7 +154,7 @@ function initSignerInfo(
  * @param signature The CMS SignedData signature, DER-encoded.
  * @param plaintext The plaintext to be verified against signature.
  * @param signerCertificate The expected signer certificate.
- * @return Certificates embedded in `signature` unless signerCertificate is
+ * @return Certificates attached to `signature` unless `signerCertificate` is
  *   passed.
  * @throws {CMSError} If `signature` could not be decoded or verified.
  */
