@@ -18,7 +18,7 @@ jest.mock('uuid4', () => {
   };
 });
 
-const NON_ASCII_STRING = 'こんにちは';
+const NON_ASCII_STRING = '❤こんにちは';
 
 class StubMessage extends Message<StubPayload> {
   public static readonly CONCRETE_MESSAGE_TYPE_OCTET = 0x44;
@@ -46,8 +46,8 @@ const payload = new StubPayload();
 const PARSER = new Parser()
   .endianess('little')
   .string('magic', { length: 8, assert: 'Relaynet' })
-  .uint8('formatSignature')
-  .uint8('formatVersion')
+  .uint8('concreteMessageSignature')
+  .uint8('concreteMessageVersion')
   .uint16('recipientAddressLength')
   .string('recipientAddress', { length: 'recipientAddressLength' })
   .uint8('messageIdLength')
@@ -309,8 +309,8 @@ describe('Message', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const staticPrefixBuffer = Buffer.from(messageSerialized, 0, 8);
-        expect(staticPrefixBuffer.toString('ascii')).toEqual('Relaynet');
+        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
+        expect(messageParts).toHaveProperty('magic', 'Relaynet');
       });
 
       test('The concrete message type should be represented with an octet', async () => {
@@ -318,8 +318,9 @@ describe('Message', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const concreteMessageBuffer = Buffer.from(messageSerialized, 8, 1);
-        expect(concreteMessageBuffer.readUInt8(0)).toEqual(
+        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
+        expect(messageParts).toHaveProperty(
+          'concreteMessageSignature',
           StubMessage.CONCRETE_MESSAGE_TYPE_OCTET
         );
       });
@@ -329,8 +330,9 @@ describe('Message', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const concreteMessageBuffer = Buffer.from(messageSerialized, 9, 1);
-        expect(concreteMessageBuffer.readUInt8(0)).toEqual(
+        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
+        expect(messageParts).toHaveProperty(
+          'concreteMessageVersion',
           StubMessage.CONCRETE_MESSAGE_VERSION_OCTET
         );
       });
