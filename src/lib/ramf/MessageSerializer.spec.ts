@@ -125,7 +125,7 @@ describe('MessageSerializer', () => {
       test('Id should be serialized with a length prefix', async () => {
         const idLength = 2 ** 8 - 1;
         const id = 'a'.repeat(idLength);
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, {id});
+        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, { id });
 
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
