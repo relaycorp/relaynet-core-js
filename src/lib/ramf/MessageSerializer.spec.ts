@@ -332,8 +332,7 @@ describe('MessageSerializer', () => {
       });
 
       test('A non-matching concrete message type should be refused', async () => {
-        class AltStubMessage extends Message<StubPayload> {
-        }
+        class AltStubMessage extends Message<StubPayload> {}
 
         const altSerializer = new MessageSerializer<AltStubMessage>(
           STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet + 1,
@@ -353,8 +352,7 @@ describe('MessageSerializer', () => {
       });
 
       test('A non-matching concrete message version should be refused', async () => {
-        class AltStubMessage extends Message<StubPayload> {
-        }
+        class AltStubMessage extends Message<StubPayload> {}
 
         const altSerializer = new MessageSerializer<AltStubMessage>(
           STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet,
@@ -418,11 +416,59 @@ describe('MessageSerializer', () => {
     });
 
     describe('Message id', () => {
-      test.todo('Id should be serialized with length prefix');
+      test.skip('Id should be serialized with length prefix', async () => {
+        const id = 'a'.repeat(2 ** 8 - 1);
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { id });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        expect(deserialization.id).toEqual(id);
+      });
 
-      test.todo('Length prefix should not exceed 8 bits');
+      test.skip('Id should be ASCII-encoded', async () => {
+        const id = NON_ASCII_STRING;
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { id });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        const expectedId = Buffer.from(id, 'ascii').toString('ascii');
+        expect(deserialization.id).toEqual(expectedId);
+      });
+    });
 
-      test.todo('Id should be ASCII-encoded');
+    describe('Date', () => {
+      test.skip('Date should be serialized as 32-bit unsigned integer', async () => {
+        const maxTimestampMs = 2 ** 32 * 1000 - 1;
+        const date = new Date(maxTimestampMs);
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { date });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        expect(deserialization.date).toEqual(date);
+      });
+    });
+
+    describe('TTL', () => {
+      test.skip('TTL should be serialized as 24-bit unsigned integer', async () => {
+        const ttl = 2 ** 24 - 1;
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { ttl });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        expect(deserialization.ttl).toEqual(ttl);
+      });
     });
   });
 });
