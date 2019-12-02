@@ -2,7 +2,6 @@ import uuid4 from 'uuid4';
 
 import Certificate from '../pki/Certificate';
 import * as field_validators from './_field_validators';
-import Payload from './Payload';
 
 const DEFAULT_TTL = 5 * 60; // 5 minutes
 
@@ -16,7 +15,7 @@ interface MessageOptions {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class Message<PayloadSpecialization extends Payload> {
+export default abstract class Message {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
@@ -25,7 +24,7 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
   constructor(
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
-    readonly payload: PayloadSpecialization,
+    payloadPlaintext?: ArrayBuffer,
     options: Partial<MessageOptions> = {}
   ) {
     //region Recipient address
@@ -54,8 +53,17 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
     this.ttl = Object.keys(options).includes('ttl') ? (options.ttl as number) : DEFAULT_TTL;
     //endregion
 
+    //region Payload
+    if (payloadPlaintext) {
+      this.importPayload(payloadPlaintext);
+    }
+    //endregion
+
     //region Sender certificate (chain)
     this.senderCertificateChain = options.senderCertificateChain || new Set();
     //endregion
   }
+
+  public abstract exportPayload(): ArrayBuffer;
+  protected abstract importPayload(payloadPlaintext: ArrayBuffer): void;
 }

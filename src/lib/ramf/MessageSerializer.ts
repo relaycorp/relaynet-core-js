@@ -6,7 +6,6 @@ import { encrypt, EncryptionOptions, sign, SignatureOptions } from '../cms';
 import Certificate from '../pki/Certificate';
 import * as field_validators from './_field_validators';
 import Message from './Message';
-import Payload from './Payload';
 import RAMFError from './RAMFError';
 
 const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
@@ -26,7 +25,7 @@ interface MessageParts {
   readonly recipientAddress: string;
 }
 
-export class MessageSerializer<MessageSpecialization extends Message<Payload>> {
+export class MessageSerializer<MessageSpecialization extends Message> {
   // Ideally, the members of this class would be part of `Message`, but TS
   // doesn't support static abstract members:
   // https://github.com/microsoft/TypeScript/issues/34516
@@ -82,7 +81,7 @@ export class MessageSerializer<MessageSpecialization extends Message<Payload>> {
 
     //region Payload
     const cmsEnvelopedData = await encrypt(
-      message.payload.serialize(),
+      message.exportPayload(),
       recipientCertificate,
       options as EncryptionOptions
     );

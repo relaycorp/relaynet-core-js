@@ -13,7 +13,6 @@ import {
   StubMessage,
   StubPayload
 } from './_test_utils';
-import Message from './Message';
 import { MessageSerializer } from './MessageSerializer';
 import RAMFError from './RAMFError';
 
@@ -25,7 +24,7 @@ jest.mock('uuid4', () => {
   };
 });
 
-const payload = new StubPayload();
+const payload = bufferToArray(Buffer.from('Hi'));
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -332,13 +331,11 @@ describe('MessageSerializer', () => {
       });
 
       test('A non-matching concrete message type should be refused', async () => {
-        class AltStubMessage extends Message<StubPayload> {}
-
-        const altSerializer = new MessageSerializer<AltStubMessage>(
+        const altSerializer = new MessageSerializer<StubMessage>(
           STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet + 1,
           STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet
         );
-        const altMessage = new AltStubMessage(recipientAddress, senderCertificate, payload);
+        const altMessage = new StubMessage(recipientAddress, senderCertificate, payload);
         const serialization = await altSerializer.serialize(
           altMessage,
           senderPrivateKey,
@@ -352,13 +349,11 @@ describe('MessageSerializer', () => {
       });
 
       test('A non-matching concrete message version should be refused', async () => {
-        class AltStubMessage extends Message<StubPayload> {}
-
-        const altSerializer = new MessageSerializer<AltStubMessage>(
+        const altSerializer = new MessageSerializer<StubMessage>(
           STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet,
           STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet + 1
         );
-        const altMessage = new AltStubMessage(recipientAddress, senderCertificate, payload);
+        const altMessage = new StubMessage(recipientAddress, senderCertificate, payload);
         const serialization = await altSerializer.serialize(
           altMessage,
           senderPrivateKey,

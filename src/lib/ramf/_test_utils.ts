@@ -1,13 +1,27 @@
 /* tslint:disable:max-classes-per-file */
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
+
 import Message from './Message';
 import { MessageSerializer } from './MessageSerializer';
 import Payload from './Payload';
 
 export const NON_ASCII_STRING = '❤こんにちは';
 
-export class StubMessage extends Message<StubPayload> {}
+export class StubMessage extends Message {
+  // @ts-ignore
+  // tslint:disable-next-line:readonly-keyword
+  public payloadPlaintext: ArrayBuffer;
+
+  public exportPayload(): ArrayBuffer {
+    return this.payloadPlaintext;
+  }
+
+  protected importPayload(payloadPlaintext: ArrayBuffer): void {
+    // tslint:disable-next-line:no-object-mutation
+    this.payloadPlaintext = payloadPlaintext;
+  }
+}
 
 export const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(0x44, 0x2);
 

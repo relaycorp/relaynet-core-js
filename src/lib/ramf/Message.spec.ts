@@ -1,10 +1,11 @@
 /* tslint:disable:no-let max-classes-per-file */
+import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert } from '../_test_utils';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
-import { StubMessage, StubPayload } from './_test_utils';
+import { StubMessage } from './_test_utils';
 import RAMFError from './RAMFError';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
@@ -15,7 +16,7 @@ jest.mock('uuid4', () => {
   };
 });
 
-const payload = new StubPayload();
+const payload = bufferToArray(Buffer.from('Hi'));
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -175,6 +176,20 @@ describe('Message', () => {
               ttl: 2 ** 24
             })
         ).toThrowWithMessage(RAMFError, 'TTL must be less than 2^24');
+      });
+    });
+
+    describe('Payload', () => {
+      test('Payload should be imported when present', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+
+        expect(message.payloadPlaintext).toBe(payload);
+      });
+
+      test('Payload import should be skipped when it is absent', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate);
+
+        expect(message.payloadPlaintext).toBe(undefined);
       });
     });
 
