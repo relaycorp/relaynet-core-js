@@ -14,11 +14,11 @@ import {
 } from './_test_utils';
 import RAMFError from './RAMFError';
 
-const STUB_UUID4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
+const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => STUB_UUID4)
+    default: jest.fn().mockImplementation(() => mockStubUuid4)
   };
 });
 
@@ -131,7 +131,7 @@ describe('MessageSerializer', () => {
           recipientCertificate
         );
         const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty('messageIdLength', STUB_UUID4.length);
+        expect(messageParts).toHaveProperty('messageIdLength', mockStubUuid4.length);
         expect(messageParts).toHaveProperty('messageId', stubMessage.id);
       });
 
