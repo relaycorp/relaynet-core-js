@@ -4,9 +4,10 @@ import * as jestDateMock from 'jest-date-mock';
 import { generateStubCert } from '../_test_utils';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
-import { STUB_UUID4, StubMessage, StubPayload } from './_test_utils';
+import { StubMessage, StubPayload } from './_test_utils';
 import RAMFError from './RAMFError';
 
+const STUB_UUID4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
   return {
     __esModule: true,

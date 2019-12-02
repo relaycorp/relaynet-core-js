@@ -34,5 +34,3 @@ export const MESSAGE_PARSER = new Parser()
   .buffer('payload', { length: 'payloadLength' })
   .uint16('signatureLength')
   .buffer('signature', { length: 'signatureLength' });
-
-export const STUB_UUID4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
