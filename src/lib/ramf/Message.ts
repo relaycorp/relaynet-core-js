@@ -1,7 +1,5 @@
-import bufferToArray from 'buffer-to-arraybuffer';
-import { SmartBuffer } from 'smart-buffer';
 import uuid4 from 'uuid4';
-import { encrypt, EncryptionOptions, sign, SignatureOptions } from '../cms';
+
 import Certificate from '../pki/Certificate';
 import Payload from './Payload';
 import RAMFError from './RAMFError';
@@ -11,7 +9,6 @@ const MAX_ID_LENGTH = 2 ** 8 - 1;
 const MAX_DATE_TIMESTAMP_SEC = 2 ** 32;
 const MAX_DATE_TIMESTAMP_MS = MAX_DATE_TIMESTAMP_SEC * 1_000 - 1;
 const MAX_TTL = 2 ** 24 - 1;
-const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
 
 const DEFAULT_TTL = 5 * 60; // 5 minutes
 
@@ -77,91 +74,4 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
     this.senderCertificateChain = options.senderCertificateChain || new Set();
     //endregion
   }
-
-  /**
-   * Encrypt, sign and encode the current message.
-   *
-   * @param senderPrivateKey The private key to sign the message.
-   * @param recipientCertificate The certificate whose public key is to be used
-   *   to encrypt the payload.
-   * @param options Any encryption/signature options.
-   */
-  public async serialize(
-    senderPrivateKey: CryptoKey,
-    recipientCertificate: Certificate,
-    options?: Partial<EncryptionOptions | SignatureOptions>
-  ): Promise<ArrayBuffer> {
-    const serialization = new SmartBuffer();
-
-    //region File format signature
-    serialization.writeString('Relaynet');
-    serialization.writeUInt8(this.getConcreteMessageTypeOctet());
-    serialization.writeUInt8(this.getConcreteMessageVersionOctet());
-    //endregion
-
-    //region Recipient address
-    serialization.writeUInt16LE(Buffer.byteLength(this.recipientAddress));
-    serialization.writeString(this.recipientAddress);
-    //endregion
-
-    //region Message id
-    const messageId = this.id;
-    serialization.writeInt8(messageId.length);
-    serialization.writeString(messageId, 'ascii');
-    //endregion
-
-    //region Date
-    serialization.writeUInt32LE(Math.floor(this.date.getTime() / 1_000));
-    //endregion
-
-    //region TTL
-    const ttlBuffer = Buffer.allocUnsafe(3);
-    ttlBuffer.writeUIntLE(this.ttl, 0, 3);
-    serialization.writeBuffer(ttlBuffer);
-    //endregion
-
-    //region Payload
-    const cmsEnvelopedData = await encrypt(
-      this.payload.serialize(),
-      recipientCertificate,
-      options as EncryptionOptions
-    );
-    serialization.writeUInt32LE(cmsEnvelopedData.byteLength);
-    serialization.writeBuffer(Buffer.from(cmsEnvelopedData));
-    //endregion
-
-    const serializationBeforeSignature = serialization.toBuffer();
-
-    //region Signature
-    const signature = await sign(
-      bufferToArray(serializationBeforeSignature),
-      senderPrivateKey,
-      this.senderCertificate,
-      new Set([this.senderCertificate, ...this.senderCertificateChain]),
-      options as SignatureOptions
-    );
-    if (MAX_SIGNATURE_LENGTH < signature.byteLength) {
-      throw new RAMFError('Resulting signature must be less than 16 KiB');
-    }
-    const signatureLengthPrefix = Buffer.allocUnsafe(2);
-    signatureLengthPrefix.writeUInt16LE(signature.byteLength, 0);
-    //endregion
-
-    const finalSerialization = Buffer.concat([
-      serializationBeforeSignature,
-      signatureLengthPrefix,
-      Buffer.from(signature)
-    ]);
-    return bufferToArray(finalSerialization);
-  }
-
-  /**
-   * Return the octet denoting the type of the concrete message.
-   */
-  protected abstract getConcreteMessageTypeOctet(): number;
-
-  /**
-   * Return the octet denoting the version of the concrete message type.
-   */
-  protected abstract getConcreteMessageVersionOctet(): number;
 }

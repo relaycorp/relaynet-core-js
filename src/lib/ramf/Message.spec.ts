@@ -1,63 +1,20 @@
 /* tslint:disable:no-let max-classes-per-file */
-import { Parser } from 'binary-parser';
-import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
-import { expectPromiseToReject, generateStubCert } from '../_test_utils';
-import * as cms from '../cms';
+
+import { generateStubCert } from '../_test_utils';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
-import Message from './Message';
-import Payload from './Payload';
+import { STUB_UUID4, StubMessage, StubPayload } from './_test_utils';
 import RAMFError from './RAMFError';
 
-const mockUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => mockUuid4)
+    default: jest.fn().mockImplementation(() => STUB_UUID4)
   };
 });
 
-const NON_ASCII_STRING = '❤こんにちは';
-
-class StubMessage extends Message<StubPayload> {
-  public static readonly CONCRETE_MESSAGE_TYPE_OCTET = 0x44;
-  public static readonly CONCRETE_MESSAGE_VERSION_OCTET = 0x2;
-
-  protected getConcreteMessageTypeOctet(): number {
-    return StubMessage.CONCRETE_MESSAGE_TYPE_OCTET;
-  }
-
-  protected getConcreteMessageVersionOctet(): number {
-    return StubMessage.CONCRETE_MESSAGE_VERSION_OCTET;
-  }
-}
-
-class StubPayload implements Payload {
-  public static readonly BUFFER = bufferToArray(Buffer.from('Hi'));
-
-  public serialize(): ArrayBuffer {
-    return StubPayload.BUFFER;
-  }
-}
-
 const payload = new StubPayload();
-
-const PARSER = new Parser()
-  .endianess('little')
-  .string('magic', { length: 8, assert: 'Relaynet' })
-  .uint8('concreteMessageSignature')
-  .uint8('concreteMessageVersion')
-  .uint16('recipientAddressLength')
-  .string('recipientAddress', { length: 'recipientAddressLength' })
-  .uint8('messageIdLength')
-  .string('messageId', { length: 'messageIdLength', encoding: 'ascii' })
-  .uint32('date')
-  .buffer('ttlBuffer', { length: 3 })
-  .uint32('payloadLength')
-  .buffer('payload', { length: 'payloadLength' })
-  .uint16('signatureLength')
-  .buffer('signature', { length: 'signatureLength' });
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -67,8 +24,6 @@ afterEach(() => {
 describe('Message', () => {
   let recipientAddress: string;
   let recipientCertificate: Certificate;
-  let recipientPrivateKey: CryptoKey;
-  let senderPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
   beforeAll(async () => {
     const recipientKeyPair = await generateRsaKeys();
@@ -76,10 +31,8 @@ describe('Message', () => {
       subjectPublicKey: recipientKeyPair.publicKey
     });
     recipientAddress = recipientCertificate.getAddress();
-    recipientPrivateKey = recipientKeyPair.privateKey;
 
     const senderKeyPair = await generateRsaKeys();
-    senderPrivateKey = senderKeyPair.privateKey;
     senderCertificate = await generateStubCert({
       subjectPublicKey: senderKeyPair.publicKey
     });
@@ -123,7 +76,7 @@ describe('Message', () => {
           payload
         );
 
-        expect(message.id).toEqual(mockUuid4);
+        expect(message.id).toEqual(STUB_UUID4);
       });
 
       test('A custom id with a length of up to 8 bits should be accepted', () => {
@@ -290,330 +243,6 @@ describe('Message', () => {
 
         expect(message.senderCertificateChain).toEqual(chain);
       });
-    });
-  });
-
-  describe('serialize', () => {
-    describe('Format signature', () => {
-      let stubMessage: StubMessage;
-      beforeAll(() => {
-        stubMessage = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-      });
-
-      test('The ASCII string "Relaynet" should be at the start', async () => {
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty('magic', 'Relaynet');
-      });
-
-      test('The concrete message type should be represented with an octet', async () => {
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty(
-          'concreteMessageSignature',
-          StubMessage.CONCRETE_MESSAGE_TYPE_OCTET
-        );
-      });
-
-      test('The concrete message version should be at the end', async () => {
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty(
-          'concreteMessageVersion',
-          StubMessage.CONCRETE_MESSAGE_VERSION_OCTET
-        );
-      });
-    });
-
-    describe('Recipient address', () => {
-      test('Address should be serialized with length prefix', async () => {
-        const address = recipientCertificate.getAddress();
-        const stubMessage = new StubMessage(
-          address,
-          senderCertificate,
-          payload
-        );
-
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty(
-          'recipientAddressLength',
-          address.length
-        );
-        expect(messageParts).toHaveProperty('recipientAddress', address);
-      });
-
-      test('Non-ASCII recipient addresses should be UTF-8 encoded', async () => {
-        const stubMessage = new StubMessage(
-          NON_ASCII_STRING,
-          senderCertificate,
-          payload
-        );
-
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty(
-          'recipientAddress',
-          NON_ASCII_STRING
-        );
-      });
-    });
-
-    describe('Message id', () => {
-      test('Id should be serialized with a length prefix', async () => {
-        const stubMessage = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty(
-          'messageIdLength',
-          mockUuid4.length
-        );
-        expect(messageParts).toHaveProperty('messageId', stubMessage.id);
-      });
-
-      test('Id should be ASCII-encoded', async () => {
-        const stubMessage = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { id: NON_ASCII_STRING }
-        );
-
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        const expectedId = Buffer.from(NON_ASCII_STRING, 'ascii').toString(
-          'ascii'
-        );
-        expect(messageParts).toHaveProperty('messageId', expectedId);
-      });
-    });
-
-    describe('Date', () => {
-      test('Date should be serialized as 32-bit unsigned integer', async () => {
-        const stubMessage = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-
-        const messageSerialized = await stubMessage.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
-        expect(messageParts).toHaveProperty('date', expectedTimestamp);
-      });
-    });
-
-    describe('TTL', () => {
-      test('TTL should be serialized as 24-bit unsigned integer', async () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-
-        const messageSerialized = await message.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        const ttlDeserialized = messageParts.ttlBuffer;
-        expect(ttlDeserialized.readUIntLE(0, 3)).toEqual(message.ttl);
-      });
-    });
-
-    describe('Payload', () => {
-      test('Payload should be encrypted', async () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-        jest.spyOn(cms, 'encrypt');
-
-        const messageSerialized = await message.serialize(
-          senderPrivateKey,
-          recipientCertificate
-        );
-
-        expect(cms.encrypt).toBeCalledTimes(1);
-        expect(cms.encrypt).toBeCalledWith(
-          StubPayload.BUFFER,
-          recipientCertificate,
-          undefined
-        );
-
-        const messageParts = PARSER.parse(Buffer.from(messageSerialized));
-        const payloadCiphertext = messageParts.payload;
-        expect(
-          await cms.decrypt(
-            bufferToArray(payloadCiphertext),
-            recipientPrivateKey
-          )
-        ).toEqual(StubPayload.BUFFER);
-      });
-
-      test('Encryption options should be honoured', async () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-        jest.spyOn(cms, 'encrypt');
-
-        const encryptionOptions = { aesKeySize: 256 };
-        await message.serialize(
-          senderPrivateKey,
-          recipientCertificate,
-          encryptionOptions
-        );
-
-        expect(cms.encrypt).toBeCalledTimes(1);
-        expect(cms.encrypt).toBeCalledWith(
-          StubPayload.BUFFER,
-          recipientCertificate,
-          encryptionOptions
-        );
-      });
-    });
-
-    describe('Signature', () => {
-      let senderCertificateChain: Set<Certificate>;
-      let serialization: Buffer;
-      let cmsSignArgs: readonly any[];
-      let signature: Buffer;
-      beforeAll(async () => {
-        senderCertificateChain = new Set([await generateStubCert()]);
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { senderCertificateChain }
-        );
-
-        jest.spyOn(cms, 'sign');
-        serialization = Buffer.from(
-          await message.serialize(senderPrivateKey, recipientCertificate)
-        );
-        expect(cms.sign).toBeCalledTimes(1);
-        // @ts-ignore
-        cmsSignArgs = cms.sign.mock.calls[0];
-
-        const messageParts = PARSER.parse(serialization);
-        signature = messageParts.signature;
-      });
-
-      test('Plaintext should be preceding RAMF message octets', () => {
-        const plaintext = Buffer.from(cmsSignArgs[0]);
-        const expectedPlaintextLength =
-          serialization.length - 2 - signature.length;
-        const expectedPlaintext = serialization.slice(
-          0,
-          expectedPlaintextLength
-        );
-
-        expect(plaintext.equals(expectedPlaintext)).toBeTrue();
-      });
-
-      test('The sender private key should be used to generate signature', () => {
-        const actualSenderPrivateKey = cmsSignArgs[1];
-
-        expect(actualSenderPrivateKey).toBe(senderPrivateKey);
-      });
-
-      test('The sender certificate should be used to generate signature', () => {
-        const actualSenderCertificate = cmsSignArgs[2];
-
-        expect(actualSenderCertificate).toBe(senderCertificate);
-      });
-
-      test('Sender certificate should be attached', () => {
-        const attachedCertificates = cmsSignArgs[3];
-
-        expect(attachedCertificates).toContain(senderCertificate);
-      });
-
-      test('Sender certificate chain should be attached', () => {
-        const attachedCertificates = cmsSignArgs[3];
-
-        for (const cert of senderCertificateChain) {
-          expect(attachedCertificates).toContain(cert);
-        }
-      });
-
-      test('Signature should be less than 16 KiB', async () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
-        const mockSignature = new ArrayBuffer(0);
-        jest.spyOn(mockSignature, 'byteLength', 'get').mockReturnValue(2 ** 16);
-        jest.spyOn(cms, 'sign').mockReturnValue(Promise.resolve(mockSignature));
-
-        await expectPromiseToReject(
-          message.serialize(senderPrivateKey, recipientCertificate),
-          new RAMFError('Resulting signature must be less than 16 KiB')
-        );
-      });
-
-      test('SHA-256 should be used by default', () => {
-        const signatureOptions = cmsSignArgs[4];
-
-        expect(signatureOptions).toBe(undefined);
-      });
-
-      test.each([['SHA-384', 'SHA-512']])(
-        '%s should also be supported',
-        async hashingAlgorithmName => {
-          const message = new StubMessage(
-            recipientAddress,
-            senderCertificate,
-            payload
-          );
-
-          jest.spyOn(cms, 'sign');
-          await message.serialize(senderPrivateKey, recipientCertificate, {
-            hashingAlgorithmName
-          });
-          expect(cms.sign).toBeCalledTimes(1);
-          // @ts-ignore
-          const signatureArgs = cms.sign.mock.calls[0];
-          expect(signatureArgs[4]).toEqual({ hashingAlgorithmName });
-        }
-      );
     });
   });
 });
