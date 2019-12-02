@@ -123,7 +123,9 @@ describe('MessageSerializer', () => {
 
     describe('Message id', () => {
       test('Id should be serialized with a length prefix', async () => {
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload);
+        const idLength = 2 ** 8 - 1;
+        const id = 'a'.repeat(idLength);
+        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, {id});
 
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
@@ -131,7 +133,7 @@ describe('MessageSerializer', () => {
           recipientCertificate
         );
         const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty('messageIdLength', mockStubUuid4.length);
+        expect(messageParts).toHaveProperty('messageIdLength', idLength);
         expect(messageParts).toHaveProperty('messageId', stubMessage.id);
       });
 

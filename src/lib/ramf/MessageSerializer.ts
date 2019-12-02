@@ -49,7 +49,7 @@ export class MessageSerializer<MessageSpecialization extends Message<Payload>> {
 
     //region Message id
     const messageId = message.id;
-    serialization.writeInt8(messageId.length);
+    serialization.writeUInt8(messageId.length);
     serialization.writeString(messageId, 'ascii');
     //endregion
 
