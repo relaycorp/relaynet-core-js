@@ -13,10 +13,7 @@ describe('ServiceMessage', () => {
 
     test('A type with a length longer than 8 bits should be refused', () => {
       const maxLength = 2 ** 8 - 1; // 8 bits
-      const message = new ServiceMessage(
-        'a'.repeat(maxLength + 1),
-        Buffer.alloc(0)
-      );
+      const message = new ServiceMessage('a'.repeat(maxLength + 1), Buffer.alloc(0));
 
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
@@ -60,10 +57,7 @@ describe('ServiceMessage', () => {
 
     test('Value length prefix should be encoded in little-endian', () => {
       const valueLength = 0x0100; // Two *different* octets, so endianness matters
-      const message = new ServiceMessage(
-        'text/plain',
-        Buffer.from('A'.repeat(valueLength))
-      );
+      const message = new ServiceMessage('text/plain', Buffer.from('A'.repeat(valueLength)));
 
       const serialization = Buffer.from(message.serialize());
       const messageParts = serviceMessageParser.parse(serialization);
@@ -74,16 +68,14 @@ describe('ServiceMessage', () => {
   describe('deserialize', () => {
     test('Invalid buffers should result in an error', () => {
       const invalidBuffer = Buffer.from('nope.jpeg');
-      expect(() =>
-        ServiceMessage.deserialize(invalidBuffer)
-      ).toThrowWithMessage(RAMFError, 'Invalid service message serialization');
+      expect(() => ServiceMessage.deserialize(invalidBuffer)).toThrowWithMessage(
+        RAMFError,
+        'Invalid service message serialization'
+      );
     });
 
     test('A valid serialization should result in a new ServiceMessage', () => {
-      const originalMessage = new ServiceMessage(
-        'text/plain',
-        Buffer.from('Hey')
-      );
+      const originalMessage = new ServiceMessage('text/plain', Buffer.from('Hey'));
       const serialization = Buffer.from(originalMessage.serialize());
 
       const finalMessage = ServiceMessage.deserialize(serialization);

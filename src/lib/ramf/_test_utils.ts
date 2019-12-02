@@ -9,10 +9,7 @@ export const NON_ASCII_STRING = '❤こんにちは';
 
 export class StubMessage extends Message<StubPayload> {}
 
-export const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(
-  0x44,
-  0x2
-);
+export const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(0x44, 0x2);
 
 export class StubPayload implements Payload {
   public static readonly BUFFER = bufferToArray(Buffer.from('Hi'));

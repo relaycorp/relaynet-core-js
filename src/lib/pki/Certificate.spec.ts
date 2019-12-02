@@ -30,9 +30,9 @@ describe('deserialize()', () => {
     expect(cert.pkijsCertificate.subject.typesAndValues[0].type).toBe(
       pkijsCert.subject.typesAndValues[0].type
     );
-    expect(
-      cert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value
-    ).toBe(pkijsCert.subject.typesAndValues[0].value.valueBlock.value);
+    expect(cert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value).toBe(
+      pkijsCert.subject.typesAndValues[0].value.valueBlock.value
+    );
   });
 
   test('should error out with invalid DER values', () => {
@@ -78,9 +78,7 @@ describe('issue()', () => {
     });
 
     expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledTimes(1);
-    expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledWith(
-      keyPair.publicKey
-    );
+    expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledWith(keyPair.publicKey);
   });
 
   test('should be signed with the specified private key', async () => {
@@ -108,9 +106,7 @@ describe('issue()', () => {
       validityEndDate: futureDate
     });
 
-    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(
-      serialNumber
-    );
+    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(serialNumber);
   });
 
   test('should create a certificate valid from now by default', async () => {
@@ -157,9 +153,9 @@ describe('issue()', () => {
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: new Date(2000, 1, 1)
     };
-    await expect(
-      Certificate.issue(keyPair.privateKey, attributes)
-    ).rejects.toThrow('The end date must be later than the start date');
+    await expect(Certificate.issue(keyPair.privateKey, attributes)).rejects.toThrow(
+      'The end date must be later than the start date'
+    );
   });
 
   test('should set the subject CN to the private node address', async () => {
@@ -175,9 +171,7 @@ describe('issue()', () => {
     expect(subjectDnAttributes[0].type).toBe(oids.COMMON_NAME);
     const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
     const publicKeyHash = sha256Hex(publicKeyDer);
-    expect(subjectDnAttributes[0].value.valueBlock.value).toBe(
-      `0${publicKeyHash}`
-    );
+    expect(subjectDnAttributes[0].value.valueBlock.value).toBe(`0${publicKeyHash}`);
   });
 
   test('should set issuer DN to that of subject when self-issuing certificates', async () => {
@@ -192,9 +186,7 @@ describe('issue()', () => {
     const issuerDn = cert.pkijsCertificate.issuer.typesAndValues;
     expect(issuerDn.length).toBe(1);
     expect(issuerDn[0].type).toBe(oids.COMMON_NAME);
-    expect(issuerDn[0].value.valueBlock.value).toBe(
-      subjectDn[0].value.valueBlock.value
-    );
+    expect(issuerDn[0].value.valueBlock.value).toBe(subjectDn[0].value.valueBlock.value);
   });
 
   test('should set issuer DN to that of CA', async () => {
@@ -216,13 +208,10 @@ describe('issue()', () => {
       issuerCert
     );
 
-    const subjectCertIssuerDn =
-      subjectCert.pkijsCertificate.issuer.typesAndValues;
+    const subjectCertIssuerDn = subjectCert.pkijsCertificate.issuer.typesAndValues;
     expect(subjectCertIssuerDn.length).toBe(1);
     expect(subjectCertIssuerDn[0].type).toBe(oids.COMMON_NAME);
-    const issuerCn =
-      issuerCert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock
-        .value;
+    const issuerCn = issuerCert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value;
     expect(subjectCertIssuerDn[0].value.valueBlock.value).toBe(issuerCn);
   });
 
@@ -236,24 +225,16 @@ describe('issue()', () => {
       });
 
       const extensions = cert.pkijsCertificate.extensions || [];
-      const matchingExtensions = extensions.filter(
-        e => e.extnID === oids.AUTHORITY_KEY_ID
-      );
+      const matchingExtensions = extensions.filter(e => e.extnID === oids.AUTHORITY_KEY_ID);
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
-      const akiExtensionAsn1 = asn1DerDecode(
-        akiExtension.extnValue.valueBlock.valueHex
-      );
+      const akiExtensionAsn1 = asn1DerDecode(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1
       });
-      const keyIdBuffer = Buffer.from(
-        akiExtensionRestored.keyIdentifier.valueBlock.valueHex
-      );
-      expect(keyIdBuffer.toString('hex')).toEqual(
-        await getPublicKeyDigest(keyPair.publicKey)
-      );
+      const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
+      expect(keyIdBuffer.toString('hex')).toEqual(await getPublicKeyDigest(keyPair.publicKey));
     });
 
     test('should correspond to issuer key when different from subject', async () => {
@@ -276,21 +257,15 @@ describe('issue()', () => {
       );
 
       const extensions = subjectCert.pkijsCertificate.extensions || [];
-      const matchingExtensions = extensions.filter(
-        e => e.extnID === oids.AUTHORITY_KEY_ID
-      );
+      const matchingExtensions = extensions.filter(e => e.extnID === oids.AUTHORITY_KEY_ID);
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
-      const akiExtensionAsn1 = asn1DerDecode(
-        akiExtension.extnValue.valueBlock.valueHex
-      );
+      const akiExtensionAsn1 = asn1DerDecode(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1
       });
-      const keyIdBuffer = Buffer.from(
-        akiExtensionRestored.keyIdentifier.valueBlock.valueHex
-      );
+      const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
       expect(keyIdBuffer.toString('hex')).toEqual(
         await getPublicKeyDigest(issuerKeyPair.publicKey)
       );
@@ -317,21 +292,15 @@ describe('issue()', () => {
     );
 
     const extensions = subjectCert.pkijsCertificate.extensions || [];
-    const matchingExtensions = extensions.filter(
-      e => e.extnID === oids.SUBJECT_KEY_ID
-    );
+    const matchingExtensions = extensions.filter(e => e.extnID === oids.SUBJECT_KEY_ID);
     expect(matchingExtensions).toHaveLength(1);
     const skiExtension = matchingExtensions[0];
     expect(skiExtension.critical).toBe(false);
-    const skiExtensionAsn1 = asn1DerDecode(
-      skiExtension.extnValue.valueBlock.valueHex
-    );
+    const skiExtensionAsn1 = asn1DerDecode(skiExtension.extnValue.valueBlock.valueHex);
     expect(skiExtensionAsn1).toBeInstanceOf(asn1js.OctetString);
     // @ts-ignore
     const keyIdBuffer = Buffer.from(skiExtensionAsn1.valueBlock.valueHex);
-    expect(keyIdBuffer.toString('hex')).toEqual(
-      await getPublicKeyDigest(subjectKeyPair.publicKey)
-    );
+    expect(keyIdBuffer.toString('hex')).toEqual(await getPublicKeyDigest(subjectKeyPair.publicKey));
   });
 });
 

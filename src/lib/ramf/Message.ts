@@ -65,9 +65,7 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
     if (options.ttl && MAX_TTL < options.ttl) {
       throw new RAMFError('TTL must be less than 2^24');
     }
-    this.ttl = Object.keys(options).includes('ttl')
-      ? (options.ttl as number)
-      : DEFAULT_TTL;
+    this.ttl = Object.keys(options).includes('ttl') ? (options.ttl as number) : DEFAULT_TTL;
     //endregion
 
     //region Sender certificate (chain)

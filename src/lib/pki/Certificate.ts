@@ -46,9 +46,7 @@ export default class Certificate {
   ): Promise<Certificate> {
     const validityStartDate = attributes.validityStartDate || new Date();
     if (attributes.validityEndDate < validityStartDate) {
-      throw new CertificateError(
-        'The end date must be later than the start date'
-      );
+      throw new CertificateError('The end date must be later than the start date');
     }
 
     const issuerPublicKey = issuerCertificate
@@ -68,9 +66,7 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notAfter.value = attributes.validityEndDate;
 
-    const address = await computePrivateNodeAddress(
-      attributes.subjectPublicKey
-    );
+    const address = await computePrivateNodeAddress(attributes.subjectPublicKey);
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: oids.COMMON_NAME,
@@ -116,9 +112,7 @@ export default class Certificate {
       a => ((a.type as unknown) as string) === oids.COMMON_NAME
     );
     if (matchingDnAttr.length === 0) {
-      throw new CertificateError(
-        'Could not find subject node address in certificate'
-      );
+      throw new CertificateError('Could not find subject node address in certificate');
     }
     return matchingDnAttr[0].value.valueBlock.value;
   }
@@ -134,9 +128,7 @@ export default class Certificate {
   }
 }
 
-async function makeAuthorityKeyIdExtension(
-  publicKey: CryptoKey
-): Promise<pkijs.Extension> {
+async function makeAuthorityKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Extension> {
   const keyDigest = await getPublicKeyDigest(publicKey);
   const keyIdEncoded = new asn1js.OctetString({ valueHex: keyDigest });
   return new pkijs.Extension({
@@ -147,9 +139,7 @@ async function makeAuthorityKeyIdExtension(
   });
 }
 
-async function makeSubjectKeyIdExtension(
-  publicKey: CryptoKey
-): Promise<pkijs.Extension> {
+async function makeSubjectKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Extension> {
   const keyDigest = await getPublicKeyDigest(publicKey);
   return new pkijs.Extension({
     extnID: oids.SUBJECT_KEY_ID,
@@ -157,9 +147,7 @@ async function makeSubjectKeyIdExtension(
   });
 }
 
-async function computePrivateNodeAddress(
-  publicKey: CryptoKey
-): Promise<string> {
+async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
   const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
   return `0${publicKeyDigest.toString('hex')}`;
 }

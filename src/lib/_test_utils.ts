@@ -30,9 +30,7 @@ export function expectAsn1ValuesToBeEqual(
   expectedValue: Asn1jsSerializable,
   actualValue: Asn1jsSerializable
 ): void {
-  expect(sha256Hex(expectedValue.toBER(false))).toEqual(
-    sha256Hex(actualValue.toBER(false))
-  );
+  expect(sha256Hex(expectedValue.toBER(false))).toEqual(sha256Hex(actualValue.toBER(false)));
 }
 
 interface StubCertConfig {
@@ -41,9 +39,7 @@ interface StubCertConfig {
   readonly subjectPublicKey?: CryptoKey;
 }
 
-export async function generateStubCert(
-  config: StubCertConfig = {}
-): Promise<Certificate> {
+export async function generateStubCert(config: StubCertConfig = {}): Promise<Certificate> {
   const keyPair = await generateRsaKeys();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);

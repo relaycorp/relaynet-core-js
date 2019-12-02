@@ -60,9 +60,9 @@ describe('generateRsaKeys', () => {
     });
 
     test('SHA-1 should not be supported', async () => {
-      await expect(
-        generateRsaKeys({ hashingAlgorithm: 'SHA-1' })
-      ).rejects.toThrow('SHA-1 is disallowed by RS-018');
+      await expect(generateRsaKeys({ hashingAlgorithm: 'SHA-1' })).rejects.toThrow(
+        'SHA-1 is disallowed by RS-018'
+      );
     });
   });
 });

@@ -48,11 +48,7 @@ declare module 'pkijs' {
 
   // Export all the stuff that "@types/pkijs" doesn't export but we use here
 
-  export function setEngine(
-    name: string,
-    crypto: Crypto,
-    subtle: SubtleCrypto
-  ): void;
+  export function setEngine(name: string, crypto: Crypto, subtle: SubtleCrypto): void;
   export function getCrypto(): SubtleCrypto | undefined;
 
   export function getAlgorithmParameters(

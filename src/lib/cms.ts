@@ -105,10 +105,7 @@ export async function sign(
   }
 
   const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
-  const digest = await pkijsCrypto.digest(
-    { name: hashingAlgorithmName },
-    plaintext
-  );
+  const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
   const signerInfo = initSignerInfo(signerCertificate, digest);
   const signedData = new pkijs.SignedData({
     certificates: Array.from(attachedCertificates).map(c => c.pkijsCertificate),
@@ -127,10 +124,7 @@ export async function sign(
   return contentInfo.toSchema().toBER(false);
 }
 
-function initSignerInfo(
-  signerCertificate: Certificate,
-  digest: ArrayBuffer
-): pkijs.SignerInfo {
+function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pkijs.SignerInfo {
   const signerIdentifier = new pkijs.IssuerAndSerialNumber({
     issuer: signerCertificate.pkijsCertificate.issuer,
     serialNumber: signerCertificate.pkijsCertificate.serialNumber
@@ -187,9 +181,7 @@ export async function verifySignature(
       throw verificationResult;
     }
   } catch (e) {
-    throw new CMSError(
-      `Invalid signature: "${e.message}" (PKI.js code: ${e.code})`
-    );
+    throw new CMSError(`Invalid signature: "${e.message}" (PKI.js code: ${e.code})`);
   }
 
   if (!signerCertificate) {

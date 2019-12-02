@@ -51,42 +51,29 @@ describe('Message', () => {
         const invalidAddress = 'a'.repeat(2 ** 10);
         expect(
           () => new StubMessage(invalidAddress, senderCertificate, payload)
-        ).toThrowWithMessage(
-          RAMFError,
-          'Recipient address exceeds maximum length'
-        );
+        ).toThrowWithMessage(RAMFError, 'Recipient address exceeds maximum length');
       });
 
       test('Multi-byte characters should be accounted for in length validation', () => {
         const invalidAddress = '❤'.repeat(2 ** 10 - 1);
         expect(
           () => new StubMessage(invalidAddress, senderCertificate, payload)
-        ).toThrowWithMessage(
-          RAMFError,
-          'Recipient address exceeds maximum length'
-        );
+        ).toThrowWithMessage(RAMFError, 'Recipient address exceeds maximum length');
       });
     });
 
     describe('Id', () => {
       test('Random ids should be assigned by default', () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
         expect(message.id).toEqual(STUB_UUID4);
       });
 
       test('A custom id with a length of up to 8 bits should be accepted', () => {
         const customId = 'a'.repeat(2 ** 8 - 1);
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { id: customId }
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          id: customId
+        });
         expect(message.id).toEqual(customId);
       });
 
@@ -106,11 +93,7 @@ describe('Message', () => {
         const now = new Date(2019, 1, 1, 1, 1, 1, 1);
         jestDateMock.advanceTo(now);
 
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
         expect(message.date).toEqual(now);
         expect(message.date.getTimezoneOffset()).toEqual(0);
@@ -119,12 +102,7 @@ describe('Message', () => {
       test('A custom date should be accepted', () => {
         const date = new Date(2020, 1, 1, 1, 1, 1, 1);
 
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { date }
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { date });
 
         expect(message.date).toEqual(date);
       });
@@ -148,21 +126,13 @@ describe('Message', () => {
             new StubMessage(recipientAddress, senderCertificate, payload, {
               date: invalidDate
             })
-        ).toThrowWithMessage(
-          RAMFError,
-          'Date timestamp cannot be represented with 32 bits'
-        );
+        ).toThrowWithMessage(RAMFError, 'Date timestamp cannot be represented with 32 bits');
       });
 
       test('A custom date should be stored in UTC', () => {
         const date = new Date('01 Jan 2019 12:00:00 GMT+11:00');
 
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { date }
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { date });
 
         expect(message.date).toEqual(new Date('01 Jan 2019 01:00:00 GMT'));
       });
@@ -170,34 +140,20 @@ describe('Message', () => {
 
     describe('TTL', () => {
       test('5 minutes should be the default TTL', () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
         expect(message.ttl).toEqual(5 * 60);
       });
 
       test('A custom TTL under 2^24 should be accepted', () => {
         const ttl = 2 ** 24 - 1;
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { ttl }
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { ttl });
 
         expect(message.ttl).toEqual(ttl);
       });
 
       test('A custom TTL of zero should be accepted', () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { ttl: 0 }
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { ttl: 0 });
 
         expect(message.ttl).toEqual(0);
       });
@@ -223,23 +179,16 @@ describe('Message', () => {
 
     describe('Sender certificate chain', () => {
       test('Sender certificate chain should be empty by default', () => {
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
         expect(message.senderCertificateChain).toHaveProperty('size', 0);
       });
 
       test('A custom sender certificate chain should be accepted', async () => {
         const chain = new Set([await generateStubCert()]);
-        const message = new StubMessage(
-          recipientAddress,
-          senderCertificate,
-          payload,
-          { senderCertificateChain: chain }
-        );
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          senderCertificateChain: chain
+        });
 
         expect(message.senderCertificateChain).toEqual(chain);
       });
