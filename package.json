@@ -57,12 +57,14 @@
     "node-webcrypto-ossl": "^1.0.47",
     "pkijs": "^2.1.80",
     "smart-buffer": "^4.0.2",
-    "uuid4": "^1.1.4"
+    "uuid4": "^1.1.4",
+    "verror": "^1.10.0"
   },
   "devDependencies": {
     "@types/asn1js": "0.0.1",
     "@types/jest": "^24.0.15",
     "@types/pkijs": "0.0.2",
+    "@types/verror": "^1.10.3",
     "asn1js": "^2.0.22",
     "codecov": "^3.5.0",
     "cz-conventional-changelog": "^2.1.0",
