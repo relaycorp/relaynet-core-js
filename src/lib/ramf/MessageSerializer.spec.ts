@@ -1,5 +1,6 @@
 /* tslint:disable:no-let max-classes-per-file */
 import bufferToArray from 'buffer-to-arraybuffer';
+import { SmartBuffer } from 'smart-buffer';
 
 import { expectPromiseToReject, generateStubCert } from '../_test_utils';
 import * as cms from '../cms';
@@ -12,6 +13,8 @@ import {
   StubMessage,
   StubPayload
 } from './_test_utils';
+import Message from './Message';
+import { MessageSerializer } from './MessageSerializer';
 import RAMFError from './RAMFError';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
@@ -317,4 +320,114 @@ describe('MessageSerializer', () => {
       );
     });
   });
+
+  describe('deserialize', () => {
+    describe('Format signature', () => {
+      test('Input should be refused if it does not start with "Relaynet"', async () => {
+        const serialization = SmartBuffer.fromBuffer(Buffer.from('Relaycorp'));
+        await expectPromiseToReject(
+          deserializeFromSmartBuffer(serialization),
+          new RAMFError('Serialization is not a valid RAMF message: Relaynet is not defined')
+        );
+      });
+
+      test('A non-matching concrete message type should be refused', async () => {
+        class AltStubMessage extends Message<StubPayload> {
+        }
+
+        const altSerializer = new MessageSerializer<AltStubMessage>(
+          STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet + 1,
+          STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet
+        );
+        const altMessage = new AltStubMessage(recipientAddress, senderCertificate, payload);
+        const serialization = await altSerializer.serialize(
+          altMessage,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
+          new RAMFError('Expected concrete message type 0x44 but got 0x45')
+        );
+      });
+
+      test('A non-matching concrete message version should be refused', async () => {
+        class AltStubMessage extends Message<StubPayload> {
+        }
+
+        const altSerializer = new MessageSerializer<AltStubMessage>(
+          STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet,
+          STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet + 1
+        );
+        const altMessage = new AltStubMessage(recipientAddress, senderCertificate, payload);
+        const serialization = await altSerializer.serialize(
+          altMessage,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
+          new RAMFError('Expected concrete message version 0x2 but got 0x3')
+        );
+      });
+    });
+
+    describe('Recipient address', () => {
+      const partialSerialization = new SmartBuffer();
+      beforeEach(() => {
+        partialSerialization.writeString('Relaynet');
+        partialSerialization.writeUInt8(STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet);
+        partialSerialization.writeUInt8(STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet);
+      });
+
+      test.skip('Address should be serialized with length prefix', async () => {
+        const address = 'a'.repeat(2 ** 10 - 1);
+        const message = new StubMessage(address, senderCertificate, payload);
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        expect(deserialization.address).toEqual(address);
+      });
+
+      test('Length prefix should not exceed 10 bits', async () => {
+        const address = 'a'.repeat(2 ** 10);
+        partialSerialization.writeUInt16LE(address.length);
+        partialSerialization.writeString(address);
+        await expectPromiseToReject(
+          deserializeFromSmartBuffer(partialSerialization),
+          new RAMFError('Recipient address exceeds maximum length')
+        );
+      });
+
+      test.skip('Address should be UTF-8 encoded', async () => {
+        const address = `scheme://${NON_ASCII_STRING}.com`;
+        const message = new StubMessage(address, senderCertificate, payload);
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        expect(deserialization.address).toEqual(address);
+      });
+    });
+
+    describe('Message id', () => {
+      test.todo('Id should be serialized with length prefix');
+
+      test.todo('Length prefix should not exceed 8 bits');
+
+      test.todo('Id should be ASCII-encoded');
+    });
+  });
 });
+
+function deserializeFromSmartBuffer(buffer: SmartBuffer): any {
+  const serialization = bufferToArray(buffer.toBuffer());
+  return STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+}
