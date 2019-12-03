@@ -110,7 +110,30 @@ describe('MessageSerializer', () => {
         expect(messageParts).toHaveProperty('recipientAddress', address);
       });
 
-      test('Non-ASCII recipient addresses should be UTF-8 encoded', async () => {
+      test('Address should be representable with 10 bits', async () => {
+        const address = 'a'.repeat(2 ** 10 - 1);
+        const stubMessage = new StubMessage(address, senderCertificate, payload);
+
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          stubMessage,
+          senderPrivateKey,
+          recipientCertificate
+        );
+        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        expect(messageParts).toHaveProperty('recipientAddress', address);
+      });
+
+      test('Address should not exceed 10 bits length', async () => {
+        const invalidAddress = 'a'.repeat(2 ** 10);
+        const stubMessage = new StubMessage(invalidAddress, senderCertificate, payload);
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          new RAMFError('Recipient address exceeds maximum length')
+        );
+      });
+
+      test('Non-ASCII addresses should be UTF-8 encoded', async () => {
         const stubMessage = new StubMessage(NON_ASCII_STRING, senderCertificate, payload);
 
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
@@ -121,10 +144,20 @@ describe('MessageSerializer', () => {
         const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
         expect(messageParts).toHaveProperty('recipientAddress', NON_ASCII_STRING);
       });
+
+      test('Multi-byte characters should be accounted for in length validation', async () => {
+        const invalidAddress = '❤'.repeat(2 ** 10 - 1);
+        const stubMessage = new StubMessage(invalidAddress, senderCertificate, payload);
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          new RAMFError('Recipient address exceeds maximum length')
+        );
+      });
     });
 
     describe('Message id', () => {
-      test('Id should be serialized with a length prefix', async () => {
+      test('Id should be up to 8 bits long', async () => {
         const idLength = 2 ** 8 - 1;
         const id = 'a'.repeat(idLength);
         const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, { id });
@@ -137,6 +170,16 @@ describe('MessageSerializer', () => {
         const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
         expect(messageParts).toHaveProperty('messageIdLength', idLength);
         expect(messageParts).toHaveProperty('messageId', stubMessage.id);
+      });
+
+      test('A custom id with a length greater than 8 bits should be refused', async () => {
+        const id = 'a'.repeat(2 ** 8);
+        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, { id });
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          new RAMFError('Custom id exceeds maximum length')
+        );
       });
 
       test('Id should be ASCII-encoded', async () => {
@@ -168,6 +211,44 @@ describe('MessageSerializer', () => {
         const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
         expect(messageParts).toHaveProperty('date', expectedTimestamp);
       });
+
+      test('Date should not be before Unix epoch', async () => {
+        const invalidDate = new Date(1969, 11, 31, 23, 59, 59);
+        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: invalidDate
+        });
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          new RAMFError('Date cannot be before Unix epoch')
+        );
+      });
+
+      test('Timestamp should be less than 2 ^ 32', async () => {
+        const invalidDate = new Date(2 ** 32 * 1000);
+        const stubMessage = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: invalidDate
+        });
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          new RAMFError('Date timestamp cannot be represented with 32 bits')
+        );
+      });
+
+      test('Date should be serialized as UTC', async () => {
+        const date = new Date('01 Jan 2019 12:00:00 GMT+11:00');
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { date });
+
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        expect(messageParts).toHaveProperty('date', date.getTime() / 1_000);
+      });
     });
 
     describe('TTL', () => {
@@ -180,8 +261,40 @@ describe('MessageSerializer', () => {
           recipientCertificate
         );
         const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
-        const ttlDeserialized = messageParts.ttlBuffer;
-        expect(ttlDeserialized.readUIntLE(0, 3)).toEqual(message.ttl);
+        expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(message.ttl);
+      });
+
+      test('TTL of zero should be accepted', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, { ttl: 0 });
+
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(0);
+      });
+
+      test('TTL should not be negative', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          ttl: -1
+        });
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
+          new RAMFError('TTL cannot be negative')
+        );
+      });
+
+      test('TTL should not be more than 24 bits long', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          ttl: 2 ** 24
+        });
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
+          new RAMFError('TTL must be less than 2^24')
+        );
       });
     });
 
@@ -558,3 +671,7 @@ describe('MessageSerializer', () => {
     return STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey);
   }
 });
+
+function parse24BitNumber(buffer: Buffer): number {
+  return buffer.readUIntLE(0, 3);
+}

@@ -4,10 +4,14 @@ import { SmartBuffer } from 'smart-buffer';
 
 import { encrypt, EncryptionOptions, sign, SignatureOptions } from '../cms';
 import Certificate from '../pki/Certificate';
-import * as field_validators from './_field_validators';
 import Message from './Message';
 import RAMFError from './RAMFError';
 
+const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
+const MAX_ID_LENGTH = 2 ** 8 - 1;
+const MAX_DATE_TIMESTAMP_SEC = 2 ** 32;
+const MAX_DATE_TIMESTAMP_MS = MAX_DATE_TIMESTAMP_SEC * 1_000 - 1;
+const MAX_TTL = 2 ** 24 - 1;
 const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
 
 const PARSER = new Parser()
@@ -17,7 +21,7 @@ const PARSER = new Parser()
   .uint8('concreteMessageVersion')
   .uint16('recipientAddressLength')
   .string('recipientAddress', { length: 'recipientAddressLength' });
-interface MessageParts {
+interface MessageFields {
   readonly magic: string;
   readonly concreteMessageType: number;
   readonly concreteMessageVersion: number;
@@ -50,6 +54,13 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     recipientCertificate: Certificate,
     options?: Partial<EncryptionOptions | SignatureOptions>
   ): Promise<ArrayBuffer> {
+    //region Validation
+    validateRecipientAddressLength(message.recipientAddress);
+    validateMessageIdLength(message.id);
+    validateDate(message.date.getTime());
+    validateTtl(message.ttl);
+    //endregion
+
     const serialization = new SmartBuffer();
 
     //region File format signature
@@ -122,14 +133,14 @@ export class MessageSerializer<MessageSpecialization extends Message> {
   ): Promise<MessageSpecialization> {
     const messageParts = parseMessage(serialization);
 
-    this.validateMessageParts(messageParts);
+    this.validateMessageFields(messageParts);
   }
 
-  private validateMessageParts(messageParts: MessageParts): void {
+  private validateMessageFields(messageFields: MessageFields): void {
     //region Message type validation
-    if (messageParts.concreteMessageType !== this.concreteMessageTypeOctet) {
+    if (messageFields.concreteMessageType !== this.concreteMessageTypeOctet) {
       const expectedMessageTypeHex = decimalToHex(this.concreteMessageTypeOctet);
-      const actualMessageTypeHex = decimalToHex(messageParts.concreteMessageType);
+      const actualMessageTypeHex = decimalToHex(messageFields.concreteMessageType);
       throw new RAMFError(
         `Expected concrete message type ${expectedMessageTypeHex} but got ${actualMessageTypeHex}`
       );
@@ -137,20 +148,20 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Message version validation
-    if (messageParts.concreteMessageVersion !== this.concreteMessageVersionOctet) {
+    if (messageFields.concreteMessageVersion !== this.concreteMessageVersionOctet) {
       const expectedVersionHex = decimalToHex(this.concreteMessageVersionOctet);
-      const actualVersionHex = decimalToHex(messageParts.concreteMessageVersion);
+      const actualVersionHex = decimalToHex(messageFields.concreteMessageVersion);
       throw new RAMFError(
         `Expected concrete message version ${expectedVersionHex} but got ${actualVersionHex}`
       );
     }
     //endregion
 
-    field_validators.validateRecipientAddressLength(messageParts.recipientAddress);
+    validateRecipientAddressLength(messageFields.recipientAddress);
   }
 }
 
-function parseMessage(serialization: ArrayBuffer): MessageParts {
+function parseMessage(serialization: ArrayBuffer): MessageFields {
   try {
     return PARSER.parse(Buffer.from(serialization));
   } catch (error) {
@@ -161,3 +172,37 @@ function parseMessage(serialization: ArrayBuffer): MessageParts {
 function decimalToHex(numberDecimal: number): string {
   return '0x' + numberDecimal.toString(16);
 }
+
+//region Validation
+
+function validateRecipientAddressLength(recipientAddress: string): void {
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
+    throw new RAMFError('Recipient address exceeds maximum length');
+  }
+}
+
+function validateMessageIdLength(messageId: string): void {
+  if (MAX_ID_LENGTH < messageId.length) {
+    throw new RAMFError('Custom id exceeds maximum length');
+  }
+}
+
+function validateDate(timestampMs: number): void {
+  if (timestampMs < 0) {
+    throw new RAMFError('Date cannot be before Unix epoch');
+  }
+  if (MAX_DATE_TIMESTAMP_MS < timestampMs) {
+    throw new RAMFError('Date timestamp cannot be represented with 32 bits');
+  }
+}
+
+function validateTtl(ttl: number): void {
+  if (ttl < 0) {
+    throw new RAMFError('TTL cannot be negative');
+  }
+  if (MAX_TTL < ttl) {
+    throw new RAMFError('TTL must be less than 2^24');
+  }
+}
+
+//endregion

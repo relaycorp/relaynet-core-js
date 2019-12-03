@@ -6,7 +6,7 @@ import Message from './Message';
 import { MessageSerializer } from './MessageSerializer';
 import Payload from './Payload';
 
-export const NON_ASCII_STRING = '❤こんにちは';
+export const NON_ASCII_STRING = '❤こんにちは'; // Multi-byte characters
 
 export class StubMessage extends Message {
   // @ts-ignore
