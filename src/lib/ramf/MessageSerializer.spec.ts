@@ -609,7 +609,7 @@ describe('MessageSerializer', () => {
         );
 
         // @ts-ignore
-        const payloadCiphertext = cms.encrypt.results[0];
+        const payloadCiphertext = await cms.encrypt.mock.results[0].value;
         expect(cms.decrypt).toBeCalledWith(payloadCiphertext, recipientPrivateKey);
 
         expect(messageDeserialized.exportPayload()).toEqual(payload);
