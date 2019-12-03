@@ -343,7 +343,7 @@ describe('MessageSerializer', () => {
         );
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
           new RAMFError('Expected concrete message type 0x44 but got 0x45')
         );
       });
@@ -361,7 +361,7 @@ describe('MessageSerializer', () => {
         );
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
           new RAMFError('Expected concrete message version 0x2 but got 0x3')
         );
       });
@@ -383,8 +383,11 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
-        expect(deserialization.address).toEqual(address);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
+        expect(deserialization.recipientAddress).toEqual(address);
       });
 
       test('Length prefix should not exceed 10 bits', async () => {
@@ -405,8 +408,11 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
-        expect(deserialization.address).toEqual(address);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
+        expect(deserialization.recipientAddress).toEqual(address);
       });
     });
 
@@ -419,7 +425,10 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
         expect(deserialization.id).toEqual(id);
       });
 
@@ -431,7 +440,10 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
         const expectedId = Buffer.from(id, 'ascii').toString('ascii');
         expect(deserialization.id).toEqual(expectedId);
       });
@@ -447,7 +459,10 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
         expect(deserialization.date).toEqual(date);
       });
     });
@@ -461,14 +476,85 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
         expect(deserialization.ttl).toEqual(ttl);
       });
     });
-  });
-});
 
-function deserializeFromSmartBuffer(buffer: SmartBuffer): any {
-  const serialization = bufferToArray(buffer.toBuffer());
-  return STUB_MESSAGE_SERIALIZER.deserialize(serialization);
-}
+    describe('Payload', () => {
+      test.skip('Payload should be decrypted', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        jest.spyOn(cms, 'encrypt');
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jest.spyOn(cms, 'decrypt');
+        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
+          messageSerialized,
+          recipientPrivateKey
+        );
+
+        // @ts-ignore
+        const payloadCiphertext = cms.encrypt.results[0];
+        expect(cms.decrypt).toBeCalledWith(payloadCiphertext, recipientPrivateKey);
+
+        expect(messageDeserialized.exportPayload()).toEqual(payload);
+      });
+    });
+
+    describe.skip('Signature', () => {
+      test('Signature should be serialized with length prefix', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        jest.spyOn(cms, 'sign');
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jest.spyOn(cms, 'verifySignature');
+        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
+          messageSerialized,
+          recipientPrivateKey
+        );
+
+        // @ts-ignore
+        const signatureCiphertext = cms.sign.results[0];
+        expect(cms.decrypt).toBeCalledWith(signatureCiphertext, recipientPrivateKey);
+
+        expect(messageDeserialized.senderCertificate).toBe(senderCertificate);
+      });
+
+      test('Length prefix should not exceed 14 bits', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+
+        jest
+          .spyOn(cms, 'sign')
+          .mockImplementationOnce(async () => bufferToArray(Buffer.from('a'.repeat(2 ** 14))));
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
+          new RAMFError('Signature exceeds maximum length')
+        );
+      });
+
+      test.todo('Sender certificate chain should be retrieved');
+    });
+  });
+
+  function deserializeFromSmartBuffer(buffer: SmartBuffer): Promise<StubMessage> {
+    const serialization = bufferToArray(buffer.toBuffer());
+    return STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey);
+  }
+});

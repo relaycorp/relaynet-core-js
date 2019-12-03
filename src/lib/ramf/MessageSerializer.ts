@@ -114,7 +114,12 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     return bufferToArray(finalSerialization);
   }
 
-  public async deserialize(serialization: ArrayBuffer): Promise<any> {
+  public async deserialize(
+    serialization: ArrayBuffer,
+    // @ts-ignore
+    recipientPrivateKey: CryptoKey
+    // @ts-ignore
+  ): Promise<MessageSpecialization> {
     const messageParts = parseMessage(serialization);
 
     this.validateMessageParts(messageParts);
