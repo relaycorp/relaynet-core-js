@@ -23,7 +23,7 @@ export class StubMessage extends Message {
   }
 }
 
-export const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(0x44, 0x2);
+export const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(StubMessage, 0x44, 0x2);
 
 export class StubPayload implements Payload {
   public static readonly BUFFER = bufferToArray(Buffer.from('Hi'));

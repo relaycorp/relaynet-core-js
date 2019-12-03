@@ -2,7 +2,7 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import { encrypt, EncryptionOptions, sign, SignatureOptions } from '../cms';
+import { decrypt, encrypt, EncryptionOptions, sign, SignatureOptions } from '../cms';
 import Certificate from '../pki/Certificate';
 import Message from './Message';
 import RAMFError from './RAMFError';
@@ -20,13 +20,24 @@ const PARSER = new Parser()
   .uint8('concreteMessageType')
   .uint8('concreteMessageVersion')
   .uint16('recipientAddressLength')
-  .string('recipientAddress', { length: 'recipientAddressLength' });
+  .string('recipientAddress', { length: 'recipientAddressLength' })
+  .uint8('idLength')
+  .string('id', { length: 'idLength' })
+  .uint32('dateTimestamp')
+  .buffer('ttlBuffer', { length: 3 })
+  .uint32('payloadLength')
+  .buffer('payload', { length: 'payloadLength' })
+  .uint16('signatureLength')
+  .buffer('signature', { length: 'signatureLength' });
 interface MessageFields {
-  readonly magic: string;
   readonly concreteMessageType: number;
   readonly concreteMessageVersion: number;
-  readonly recipientAddressLength: number;
   readonly recipientAddress: string;
+  readonly id: string;
+  readonly dateTimestamp: number;
+  readonly ttlBuffer: Buffer;
+  readonly payload: Buffer;
+  readonly signature: Buffer;
 }
 
 export class MessageSerializer<MessageSpecialization extends Message> {
@@ -35,6 +46,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
   // https://github.com/microsoft/TypeScript/issues/34516
 
   constructor(
+    protected readonly messageClass: new (...args: readonly any[]) => MessageSpecialization,
     readonly concreteMessageTypeOctet: number,
     readonly concreteMessageVersionOctet: number
   ) {}
@@ -127,13 +139,22 @@ export class MessageSerializer<MessageSpecialization extends Message> {
 
   public async deserialize(
     serialization: ArrayBuffer,
-    // @ts-ignore
     recipientPrivateKey: CryptoKey
-    // @ts-ignore
   ): Promise<MessageSpecialization> {
     const messageParts = parseMessage(serialization);
 
     this.validateMessageFields(messageParts);
+
+    const payloadPlaintext = await decrypt(
+      bufferToArray(messageParts.payload),
+      recipientPrivateKey
+    );
+
+    return new this.messageClass(messageParts.recipientAddress, undefined, payloadPlaintext, {
+      date: new Date(messageParts.dateTimestamp * 1_000),
+      id: messageParts.id,
+      ttl: messageParts.ttlBuffer.readUIntLE(0, 3)
+    });
   }
 
   private validateMessageFields(messageFields: MessageFields): void {
