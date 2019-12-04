@@ -145,7 +145,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
 
     this.validateMessageFields(messageParts);
 
-    const senderCertificateChain = await verifySignature(
+    const signatureVerification = await verifySignature(
       serialization,
       bufferToArray(messageParts.signature)
     );
@@ -156,12 +156,17 @@ export class MessageSerializer<MessageSpecialization extends Message> {
       recipientPrivateKey
     );
 
-    return new this.messageClass(messageParts.recipientAddress, undefined, payloadPlaintext, {
-      date: new Date(messageParts.dateTimestamp * 1_000),
-      id: messageParts.id,
-      senderCertificateChain,
-      ttl: messageParts.ttlBuffer.readUIntLE(0, 3)
-    });
+    return new this.messageClass(
+      messageParts.recipientAddress,
+      signatureVerification.signerCertificate,
+      payloadPlaintext,
+      {
+        date: new Date(messageParts.dateTimestamp * 1_000),
+        id: messageParts.id,
+        senderCertificateChain: signatureVerification.signerCertificateChain,
+        ttl: messageParts.ttlBuffer.readUIntLE(0, 3)
+      }
+    );
   }
 
   private validateMessageFields(messageFields: MessageFields): void {
@@ -205,16 +210,17 @@ function decimalToHex(numberDecimal: number): string {
 async function verifySignature(
   messageSerialized: ArrayBuffer,
   signatureCiphertext: ArrayBuffer
-): Promise<ReadonlySet<Certificate>> {
+): Promise<cms.SignatureVerification> {
   const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
   const signaturePlaintext = messageSerialized.slice(
     0,
     messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix
   );
   try {
-    return (await cms.verifySignature(signatureCiphertext, signaturePlaintext)) as ReadonlySet<
-      Certificate
-    >;
+    return (await cms.verifySignature(
+      signatureCiphertext,
+      signaturePlaintext
+    )) as cms.SignatureVerification;
   } catch (error) {
     throw new RAMFError(error, 'Invalid RAMF message signature');
   }

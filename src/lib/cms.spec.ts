@@ -2,6 +2,7 @@ import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
+
 import {
   asn1DerDecode,
   expectAsn1ValuesToBeEqual,
@@ -337,7 +338,7 @@ describe('sign', () => {
   });
 });
 
-describe('verify', () => {
+describe('verifySignature', () => {
   test('An error should be thrown if the signature is not DER encoded', async () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
@@ -377,12 +378,36 @@ describe('verify', () => {
     );
   });
 
+  test('Sender certificate should be returned if verification passes', async () => {
+    const superfluousCertificate = await generateStubCert({
+      subjectPublicKey: (await generateRsaKeys()).publicKey
+    });
+    const signatureDer = await cms.sign(
+      plaintext,
+      privateKey,
+      certificate,
+      new Set([superfluousCertificate, certificate])
+    );
+
+    const { signerCertificate } = (await cms.verifySignature(
+      signatureDer,
+      plaintext
+    )) as cms.SignatureVerification;
+
+    expectPkijsValuesToBeEqual(signerCertificate.pkijsCertificate, certificate.pkijsCertificate);
+  });
+
   test('Attached certificates should be returned if verification passes', async () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate, new Set([certificate]));
-    const attachedCerts = await cms.verifySignature(signatureDer, plaintext);
-    expect(attachedCerts).toBeInstanceOf(Set);
-    expect(attachedCerts).toHaveProperty('size', 1);
-    const attachedCert = Array.from(attachedCerts as Set<Certificate>)[0];
+
+    const { signerCertificateChain } = (await cms.verifySignature(
+      signatureDer,
+      plaintext
+    )) as cms.SignatureVerification;
+
+    expect(signerCertificateChain).toBeInstanceOf(Set);
+    expect(signerCertificateChain).toHaveProperty('size', 1);
+    const attachedCert = Array.from(signerCertificateChain as Set<Certificate>)[0];
     expect(await attachedCert.pkijsCertificate.getPublicKey()).toEqual(
       await certificate.pkijsCertificate.getPublicKey()
     );

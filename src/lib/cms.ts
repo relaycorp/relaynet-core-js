@@ -13,6 +13,11 @@ export interface EncryptionOptions {
   readonly aesKeySize: number;
 }
 
+export interface SignatureVerification {
+  readonly signerCertificate: Certificate;
+  readonly signerCertificateChain: ReadonlySet<Certificate>;
+}
+
 /**
  * Encrypt `plaintext` and return DER-encoded CMS EnvelopedData representation.
  *
@@ -161,7 +166,7 @@ export async function verifySignature(
   signature: ArrayBuffer,
   plaintext: ArrayBuffer,
   signerCertificate?: Certificate // TODO: Is this expected to ever be passed?
-): Promise<ReadonlySet<Certificate> | undefined> {
+): Promise<SignatureVerification | undefined> {
   const contentInfo = deserializeContentInfo(signature);
 
   const signedData = new pkijs.SignedData({ schema: contentInfo });
@@ -170,8 +175,11 @@ export async function verifySignature(
     signedData.certificates = [signerCertificate.pkijsCertificate];
   }
 
+  // tslint:disable-next-line:no-let
+  let verificationResult;
   try {
-    const verificationResult = await signedData.verify({
+    // TODO: Should we pass checkChain=true?
+    verificationResult = await signedData.verify({
       data: plaintext,
       extendedMode: true,
       signer: 0
@@ -185,8 +193,11 @@ export async function verifySignature(
   }
 
   if (!signerCertificate) {
-    // @ts-ignore
-    return new Set(signedData.certificates.map(c => new Certificate(c)));
+    const pkijsCertificateChain = signedData.certificates as ReadonlyArray<pkijs.Certificate>;
+    return {
+      signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
+      signerCertificateChain: new Set(pkijsCertificateChain.map(c => new Certificate(c)))
+    };
   }
   return;
 }

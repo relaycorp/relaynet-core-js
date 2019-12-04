@@ -679,7 +679,10 @@ describe('MessageSerializer', () => {
           recipientPrivateKey
         );
 
-        expect(messageDeserialized.senderCertificate).toBe(senderCertificate);
+        expectPkijsValuesToBeEqual(
+          messageDeserialized.senderCertificate.pkijsCertificate,
+          senderCertificate.pkijsCertificate
+        );
       });
 
       test('Sender certificate chain should be extracted from signature', async () => {
