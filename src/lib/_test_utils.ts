@@ -11,7 +11,7 @@ export function asn1DerDecode(asn1Value: ArrayBuffer): asn1js.LocalBaseBlock {
   return asn1.result;
 }
 
-type PkijsValueType = pkijs.RelativeDistinguishedNames;
+type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
 export function expectPkijsValuesToBeEqual(
   expectedValue: PkijsValueType,

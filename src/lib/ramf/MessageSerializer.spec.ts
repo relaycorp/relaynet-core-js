@@ -2,7 +2,11 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import { expectPromiseToReject, generateStubCert } from '../_test_utils';
+import {
+  expectPkijsValuesToBeEqual,
+  expectPromiseToReject,
+  generateStubCert
+} from '../_test_utils';
 import * as cms from '../cms';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
@@ -397,15 +401,16 @@ describe('MessageSerializer', () => {
         }
       });
 
-      test('Signature should be less than 16 KiB', async () => {
+      test('Signature should be less than 14 bits long', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
         const mockSignature = new ArrayBuffer(0);
-        jest.spyOn(mockSignature, 'byteLength', 'get').mockReturnValue(2 ** 16);
+        const signatureLength = 2 ** 14;
+        jest.spyOn(mockSignature, 'byteLength', 'get').mockReturnValue(signatureLength);
         jest.spyOn(cms, 'sign').mockReturnValue(Promise.resolve(mockSignature));
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
-          new RAMFError('Resulting signature must be less than 16 KiB')
+          new RAMFError(`Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`)
         );
       });
 
@@ -500,7 +505,7 @@ describe('MessageSerializer', () => {
 
       test('Length prefix should not exceed 10 bits', async () => {
         const address = 'a'.repeat(2 ** 10);
-        const messageSerialized = serializeWithoutValidation({ address });
+        const messageSerialized = await serializeWithoutValidation({ address });
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
           new RAMFError('Recipient address exceeds maximum length')
@@ -639,7 +644,27 @@ describe('MessageSerializer', () => {
         expect(cms.verifySignature).toBeCalledWith(signatureCiphertext, signaturePlaintext);
       });
 
-      test.todo('Signature should not be accepted if invalid');
+      test('Signature should not be accepted if invalid', async () => {
+        const signerKeyPair = await generateRsaKeys();
+        const signerCertificate = await generateStubCert({
+          subjectPublicKey: signerKeyPair.publicKey
+        });
+        const invalidSignature = await cms.sign(
+          bufferToArray(Buffer.from('Hello world')),
+          signerKeyPair.privateKey,
+          signerCertificate
+        );
+
+        const messageSerialized = await serializeWithoutValidation({}, invalidSignature);
+
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
+          new RAMFError(
+            'Invalid RAMF message signature: Invalid signature: ' +
+              '"Unable to find signer certificate" (PKI.js code: 3)'
+          )
+        );
+      });
 
       test('Sender certificate should be extracted from signature', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
@@ -657,38 +682,69 @@ describe('MessageSerializer', () => {
         expect(messageDeserialized.senderCertificate).toBe(senderCertificate);
       });
 
-      test.todo('Sender certificate chain should be extracted from signature');
-
-      test('Length prefix should not exceed 14 bits', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, payload);
-
-        jest
-          .spyOn(cms, 'sign')
-          .mockImplementationOnce(async () => bufferToArray(Buffer.from('a'.repeat(2 ** 14))));
+      test('Sender certificate chain should be extracted from signature', async () => {
+        const caKeyPair = await generateRsaKeys();
+        const caCertificate = await generateStubCert({ subjectPublicKey: caKeyPair.publicKey });
+        const senderKeyPair = await generateRsaKeys();
+        senderCertificate = await generateStubCert({
+          issuerPrivateKey: caKeyPair.privateKey,
+          subjectPublicKey: senderKeyPair.publicKey
+        });
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          senderCertificateChain: new Set([caCertificate, senderCertificate])
+        });
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
-          senderPrivateKey,
+          senderKeyPair.privateKey,
           recipientCertificate
         );
 
+        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
+          messageSerialized,
+          recipientPrivateKey
+        );
+        const attachedCertsByAddress: { readonly [key: string]: Certificate } = Array.from(
+          messageDeserialized.senderCertificateChain
+        ).reduce((obj, cert) => ({ ...obj, [cert.getAddress()]: cert }), {});
+
+        const attachedCaCertificate = attachedCertsByAddress[caCertificate.getAddress()];
+        expectPkijsValuesToBeEqual(
+          attachedCaCertificate.pkijsCertificate,
+          caCertificate.pkijsCertificate
+        );
+
+        const attachedSenderCertificate = attachedCertsByAddress[senderCertificate.getAddress()];
+        expectPkijsValuesToBeEqual(
+          attachedSenderCertificate.pkijsCertificate,
+          senderCertificate.pkijsCertificate
+        );
+      });
+
+      test('Length prefix should be less than 14 bits long', async () => {
+        const signatureLength = 2 ** 14;
+        const signatureBuffer = bufferToArray(Buffer.from('a'.repeat(signatureLength)));
+        const messageSerialized = await serializeWithoutValidation({}, signatureBuffer);
+
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
-          new RAMFError('Signature exceeds maximum length')
+          new RAMFError(`Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`)
         );
       });
     });
   });
 
-  function serializeWithoutValidation({
-    address = 'random address',
-    date = new Date(),
-    id = 'random id',
-    messageType = STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet,
-    messageVersion = STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet,
-    payloadBuffer = payload,
-    signature = Buffer.from('Looks alright'),
-    ttl = 1
-  }): ArrayBuffer {
+  async function serializeWithoutValidation(
+    {
+      address = 'random address',
+      date = new Date(),
+      id = 'random id',
+      messageType = STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet,
+      messageVersion = STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet,
+      payloadBuffer = payload,
+      ttl = 1
+    },
+    signature?: ArrayBuffer
+  ): Promise<ArrayBuffer> {
     const serialization = new SmartBuffer();
 
     serialization.writeString('Relaynet');
@@ -710,8 +766,16 @@ describe('MessageSerializer', () => {
     serialization.writeUInt32LE(payloadBuffer.byteLength);
     serialization.writeBuffer(Buffer.from(payloadBuffer));
 
-    serialization.writeUInt16LE(signature.byteLength);
-    serialization.writeBuffer(signature);
+    const finalSignature = Buffer.from(
+      signature ||
+        (await cms.sign(
+          bufferToArray(serialization.toBuffer()),
+          senderPrivateKey,
+          senderCertificate
+        ))
+    );
+    serialization.writeUInt16LE(finalSignature.byteLength);
+    serialization.writeBuffer(finalSignature);
 
     return bufferToArray(serialization.toBuffer());
   }

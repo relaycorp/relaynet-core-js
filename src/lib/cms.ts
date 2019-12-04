@@ -161,7 +161,7 @@ export async function verifySignature(
   signature: ArrayBuffer,
   plaintext: ArrayBuffer,
   signerCertificate?: Certificate // TODO: Is this expected to ever be passed?
-): Promise<ReadonlyArray<Certificate> | undefined> {
+): Promise<ReadonlySet<Certificate> | undefined> {
   const contentInfo = deserializeContentInfo(signature);
 
   const signedData = new pkijs.SignedData({ schema: contentInfo });
@@ -186,7 +186,7 @@ export async function verifySignature(
 
   if (!signerCertificate) {
     // @ts-ignore
-    return signedData.certificates.map(c => new Certificate(c));
+    return new Set(signedData.certificates.map(c => new Certificate(c)));
   }
   return;
 }

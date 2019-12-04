@@ -2,14 +2,7 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import {
-  decrypt,
-  encrypt,
-  EncryptionOptions,
-  sign,
-  SignatureOptions,
-  verifySignature
-} from '../cms';
+import * as cms from '../cms';
 import Certificate from '../pki/Certificate';
 import Message from './Message';
 import RAMFError from './RAMFError';
@@ -72,7 +65,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     message: MessageSpecialization,
     senderPrivateKey: CryptoKey,
     recipientCertificate: Certificate,
-    options?: Partial<EncryptionOptions | SignatureOptions>
+    options?: Partial<cms.EncryptionOptions | cms.SignatureOptions>
   ): Promise<ArrayBuffer> {
     //region Validation
     validateRecipientAddressLength(message.recipientAddress);
@@ -111,10 +104,10 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Payload
-    const cmsEnvelopedData = await encrypt(
+    const cmsEnvelopedData = await cms.encrypt(
       message.exportPayload(),
       recipientCertificate,
-      options as EncryptionOptions
+      options as cms.EncryptionOptions
     );
     serialization.writeUInt32LE(cmsEnvelopedData.byteLength);
     serialization.writeBuffer(Buffer.from(cmsEnvelopedData));
@@ -123,16 +116,14 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     const serializationBeforeSignature = serialization.toBuffer();
 
     //region Signature
-    const signature = await sign(
+    const signature = await cms.sign(
       bufferToArray(serializationBeforeSignature),
       senderPrivateKey,
       message.senderCertificate,
       new Set([message.senderCertificate, ...message.senderCertificateChain]),
-      options as SignatureOptions
+      options as cms.SignatureOptions
     );
-    if (MAX_SIGNATURE_LENGTH < signature.byteLength) {
-      throw new RAMFError('Resulting signature must be less than 16 KiB');
-    }
+    validateSignatureLength(signature);
     const signatureLengthPrefix = Buffer.allocUnsafe(2);
     signatureLengthPrefix.writeUInt16LE(signature.byteLength, 0);
     //endregion
@@ -149,17 +140,18 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     serialization: ArrayBuffer,
     recipientPrivateKey: CryptoKey
   ): Promise<MessageSpecialization> {
+    //region Input validation and parsing
     const messageParts = parseMessage(serialization);
 
     this.validateMessageFields(messageParts);
 
-    const signaturePlaintext = serialization.slice(
-      0,
-      serialization.byteLength - 2 - messageParts.signatureLength
+    const senderCertificateChain = await verifySignature(
+      serialization,
+      bufferToArray(messageParts.signature)
     );
-    await verifySignature(bufferToArray(messageParts.signature), signaturePlaintext);
+    //endregion
 
-    const payloadPlaintext = await decrypt(
+    const payloadPlaintext = await cms.decrypt(
       bufferToArray(messageParts.payload),
       recipientPrivateKey
     );
@@ -167,6 +159,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     return new this.messageClass(messageParts.recipientAddress, undefined, payloadPlaintext, {
       date: new Date(messageParts.dateTimestamp * 1_000),
       id: messageParts.id,
+      senderCertificateChain,
       ttl: messageParts.ttlBuffer.readUIntLE(0, 3)
     });
   }
@@ -193,6 +186,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     validateRecipientAddressLength(messageFields.recipientAddress);
+    validateSignatureLength(messageFields.signature);
   }
 }
 
@@ -206,6 +200,24 @@ function parseMessage(serialization: ArrayBuffer): MessageFields {
 
 function decimalToHex(numberDecimal: number): string {
   return '0x' + numberDecimal.toString(16);
+}
+
+async function verifySignature(
+  messageSerialized: ArrayBuffer,
+  signatureCiphertext: ArrayBuffer
+): Promise<ReadonlySet<Certificate>> {
+  const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
+  const signaturePlaintext = messageSerialized.slice(
+    0,
+    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix
+  );
+  try {
+    return (await cms.verifySignature(signatureCiphertext, signaturePlaintext)) as ReadonlySet<
+      Certificate
+    >;
+  } catch (error) {
+    throw new RAMFError(error, 'Invalid RAMF message signature');
+  }
 }
 
 //region Validation
@@ -237,6 +249,15 @@ function validateTtl(ttl: number): void {
   }
   if (MAX_TTL < ttl) {
     throw new RAMFError('TTL must be less than 2^24');
+  }
+}
+
+function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
+  const signatureLength = signatureBuffer.byteLength;
+  if (MAX_SIGNATURE_LENGTH < signatureLength) {
+    throw new RAMFError(
+      `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`
+    );
   }
 }
 

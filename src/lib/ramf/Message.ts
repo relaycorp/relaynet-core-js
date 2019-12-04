@@ -37,7 +37,8 @@ export default abstract class Message {
     //endregion
 
     //region Sender certificate (chain)
-    this.senderCertificateChain = options.senderCertificateChain || new Set();
+    const initialChain = options.senderCertificateChain || new Set([]);
+    this.senderCertificateChain = new Set([...initialChain, senderCertificate]);
     //endregion
   }
 

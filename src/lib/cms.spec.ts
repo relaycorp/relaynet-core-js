@@ -380,9 +380,10 @@ describe('verify', () => {
   test('Attached certificates should be returned if verification passes', async () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate, new Set([certificate]));
     const attachedCerts = await cms.verifySignature(signatureDer, plaintext);
-    expect(attachedCerts).toHaveLength(1);
-    // @ts-ignore
-    expect(await attachedCerts[0].pkijsCertificate.getPublicKey()).toEqual(
+    expect(attachedCerts).toBeInstanceOf(Set);
+    expect(attachedCerts).toHaveProperty('size', 1);
+    const attachedCert = Array.from(attachedCerts as Set<Certificate>)[0];
+    expect(await attachedCert.pkijsCertificate.getPublicKey()).toEqual(
       await certificate.pkijsCertificate.getPublicKey()
     );
   });
