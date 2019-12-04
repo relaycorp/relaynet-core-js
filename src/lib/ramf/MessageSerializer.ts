@@ -2,7 +2,14 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import { decrypt, encrypt, EncryptionOptions, sign, SignatureOptions } from '../cms';
+import {
+  decrypt,
+  encrypt,
+  EncryptionOptions,
+  sign,
+  SignatureOptions,
+  verifySignature
+} from '../cms';
 import Certificate from '../pki/Certificate';
 import Message from './Message';
 import RAMFError from './RAMFError';
@@ -37,6 +44,7 @@ interface MessageFields {
   readonly dateTimestamp: number;
   readonly ttlBuffer: Buffer;
   readonly payload: Buffer;
+  readonly signatureLength: number;
   readonly signature: Buffer;
 }
 
@@ -144,6 +152,12 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     const messageParts = parseMessage(serialization);
 
     this.validateMessageFields(messageParts);
+
+    const signaturePlaintext = serialization.slice(
+      0,
+      serialization.byteLength - 2 - messageParts.signatureLength
+    );
+    await verifySignature(bufferToArray(messageParts.signature), signaturePlaintext);
 
     const payloadPlaintext = await decrypt(
       bufferToArray(messageParts.payload),

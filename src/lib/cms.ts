@@ -160,7 +160,7 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
 export async function verifySignature(
   signature: ArrayBuffer,
   plaintext: ArrayBuffer,
-  signerCertificate?: Certificate
+  signerCertificate?: Certificate // TODO: Is this expected to ever be passed?
 ): Promise<ReadonlyArray<Certificate> | undefined> {
   const contentInfo = deserializeContentInfo(signature);
 

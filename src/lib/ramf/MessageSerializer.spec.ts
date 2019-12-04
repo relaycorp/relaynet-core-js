@@ -617,7 +617,7 @@ describe('MessageSerializer', () => {
     });
 
     describe('Signature', () => {
-      test('Signature should be serialized with length prefix', async () => {
+      test('Signature should be accepted if valid', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
         jest.spyOn(cms, 'sign');
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
@@ -627,17 +627,37 @@ describe('MessageSerializer', () => {
         );
 
         jest.spyOn(cms, 'verifySignature');
+        await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey);
+
+        // @ts-ignore
+        const signatureCiphertext = await cms.sign.mock.results[0].value;
+        const signaturePlaintext = messageSerialized.slice(
+          0,
+          messageSerialized.byteLength - signatureCiphertext.length - 2
+        );
+        expect(cms.verifySignature).toBeCalledTimes(1);
+        expect(cms.verifySignature).toBeCalledWith(signatureCiphertext, signaturePlaintext);
+      });
+
+      test.todo('Signature should not be accepted if invalid');
+
+      test('Sender certificate should be extracted from signature', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
         const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
           messageSerialized,
           recipientPrivateKey
         );
 
-        // @ts-ignore
-        const signatureCiphertext = cms.sign.results[0];
-        expect(cms.verifySignature).toBeCalledWith(signatureCiphertext, recipientPrivateKey);
-
         expect(messageDeserialized.senderCertificate).toBe(senderCertificate);
       });
+
+      test.todo('Sender certificate chain should be extracted from signature');
 
       test('Length prefix should not exceed 14 bits', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
@@ -656,8 +676,6 @@ describe('MessageSerializer', () => {
           new RAMFError('Signature exceeds maximum length')
         );
       });
-
-      test.todo('Sender certificate chain should be retrieved');
     });
   });
 
