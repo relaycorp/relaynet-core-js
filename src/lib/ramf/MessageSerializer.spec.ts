@@ -1,5 +1,7 @@
 /* tslint:disable:no-let max-classes-per-file */
+import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
+import * as jestDateMock from 'jest-date-mock';
 import { SmartBuffer } from 'smart-buffer';
 
 import {
@@ -11,14 +13,8 @@ import {
 import * as cms from '../cms';
 import { generateRsaKeys } from '../crypto';
 import Certificate from '../pki/Certificate';
-import {
-  MESSAGE_PARSER,
-  NON_ASCII_STRING,
-  STUB_MESSAGE_SERIALIZER,
-  StubMessage,
-  StubPayload
-} from './_test_utils';
-import { MessageSerializer } from './MessageSerializer';
+import { NON_ASCII_STRING, StubMessage, StubPayload } from './_test_utils';
+import { MessageFields, MessageSerializer } from './MessageSerializer';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 
@@ -34,7 +30,26 @@ const payload = bufferToArray(Buffer.from('Hi'));
 
 afterEach(() => {
   jest.restoreAllMocks();
+  jestDateMock.clear();
 });
+
+export const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(StubMessage, 0x44, 0x2);
+
+export const MESSAGE_PARSER = new Parser()
+  .endianess('little')
+  .string('magic', { length: 8, assert: 'Relaynet' })
+  .uint8('concreteMessageType')
+  .uint8('concreteMessageVersion')
+  .uint16('recipientAddressLength')
+  .string('recipientAddress', { length: 'recipientAddressLength' })
+  .uint8('idLength')
+  .string('id', { length: 'idLength', encoding: 'ascii' })
+  .uint32('dateTimestamp')
+  .buffer('ttlBuffer', { length: 3 })
+  .uint32('payloadLength')
+  .buffer('payload', { length: 'payloadLength' })
+  .uint16('signatureLength')
+  .buffer('signature', { length: 'signatureLength' });
 
 describe('MessageSerializer', () => {
   let recipientAddress: string;
@@ -70,7 +85,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('magic', 'Relaynet');
       });
 
@@ -80,9 +95,9 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty(
-          'concreteMessageSignature',
+          'concreteMessageType',
           STUB_MESSAGE_SERIALIZER.concreteMessageTypeOctet
         );
       });
@@ -93,7 +108,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty(
           'concreteMessageVersion',
           STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet
@@ -111,7 +126,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('recipientAddressLength', address.length);
         expect(messageParts).toHaveProperty('recipientAddress', address);
       });
@@ -125,7 +140,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('recipientAddress', address);
       });
 
@@ -147,7 +162,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('recipientAddress', NON_ASCII_STRING);
       });
 
@@ -173,9 +188,9 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty('messageIdLength', idLength);
-        expect(messageParts).toHaveProperty('messageId', stubMessage.id);
+        const messageParts = parseMessage(messageSerialized);
+        expect(messageParts).toHaveProperty('idLength', idLength);
+        expect(messageParts).toHaveProperty('id', stubMessage.id);
       });
 
       test('A custom id with a length greater than 8 bits should be refused', async () => {
@@ -198,9 +213,9 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         const expectedId = Buffer.from(NON_ASCII_STRING, 'ascii').toString('ascii');
-        expect(messageParts).toHaveProperty('messageId', expectedId);
+        expect(messageParts).toHaveProperty('id', expectedId);
       });
     });
 
@@ -213,9 +228,9 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
-        expect(messageParts).toHaveProperty('date', expectedTimestamp);
+        expect(messageParts).toHaveProperty('dateTimestamp', expectedTimestamp);
       });
 
       test('Date should not be before Unix epoch', async () => {
@@ -252,8 +267,8 @@ describe('MessageSerializer', () => {
           recipientCertificate
         );
 
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
-        expect(messageParts).toHaveProperty('date', date.getTime() / 1_000);
+        const messageParts = parseMessage(messageSerialized);
+        expect(messageParts).toHaveProperty('dateTimestamp', date.getTime() / 1_000);
       });
     });
 
@@ -266,7 +281,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
           recipientCertificate
         );
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(message.ttl);
       });
 
@@ -279,7 +294,7 @@ describe('MessageSerializer', () => {
           recipientCertificate
         );
 
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(0);
       });
 
@@ -318,7 +333,7 @@ describe('MessageSerializer', () => {
         expect(cms.encrypt).toBeCalledTimes(1);
         expect(cms.encrypt).toBeCalledWith(StubPayload.BUFFER, recipientCertificate, undefined);
 
-        const messageParts = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        const messageParts = parseMessage(messageSerialized);
         const payloadCiphertext = messageParts.payload;
         expect(await cms.decrypt(bufferToArray(payloadCiphertext), recipientPrivateKey)).toEqual(
           StubPayload.BUFFER
@@ -348,7 +363,7 @@ describe('MessageSerializer', () => {
 
     describe('Signature', () => {
       let senderCertificateChain: Set<Certificate>;
-      let serialization: Buffer;
+      let messageSerialized: ArrayBuffer;
       let cmsSignArgs: readonly any[];
       let signature: Buffer;
       beforeAll(async () => {
@@ -358,21 +373,23 @@ describe('MessageSerializer', () => {
         });
 
         jest.spyOn(cms, 'sign');
-        serialization = Buffer.from(
-          await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate)
+        messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
         );
         expect(cms.sign).toBeCalledTimes(1);
         // @ts-ignore
         cmsSignArgs = cms.sign.mock.calls[0];
 
-        const messageParts = MESSAGE_PARSER.parse(serialization);
+        const messageParts = parseMessage(messageSerialized);
         signature = messageParts.signature;
       });
 
       test('Plaintext should be preceding RAMF message octets', () => {
         const plaintext = Buffer.from(cmsSignArgs[0]);
-        const expectedPlaintextLength = serialization.length - 2 - signature.length;
-        const expectedPlaintext = serialization.slice(0, expectedPlaintextLength);
+        const expectedPlaintextLength = messageSerialized.byteLength - 2 - signature.length;
+        const expectedPlaintext = Buffer.from(messageSerialized, 0, expectedPlaintextLength);
 
         expect(plaintext.equals(expectedPlaintext)).toBeTrue();
       });
@@ -810,6 +827,10 @@ describe('MessageSerializer', () => {
     return bufferToArray(serialization.toBuffer());
   }
 });
+
+function parseMessage(messageSerialized: ArrayBuffer): MessageFields {
+  return MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+}
 
 function parse24BitNumber(buffer: Buffer): number {
   return buffer.readUIntLE(0, 3);
