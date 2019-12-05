@@ -140,33 +140,39 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     serialization: ArrayBuffer,
     recipientPrivateKey: CryptoKey
   ): Promise<MessageSpecialization> {
-    //region Input validation and parsing
-    const messageParts = parseMessage(serialization);
+    //region Parse and validate syntax
+    const messageFields = parseMessage(serialization);
 
-    this.validateMessageSyntax(messageParts);
+    this.validateFileFormatSignature(messageFields);
+    validateRecipientAddressLength(messageFields.recipientAddress);
+    validateSignatureLength(messageFields.signature);
+    //endregion
 
-    const signatureVerification = await verifySignature(serialization, messageParts);
+    //region Post-deserialization validation
+    const signatureVerification = await verifySignature(serialization, messageFields);
+
+    validateMessageTiming(messageFields, signatureVerification);
     //endregion
 
     const payloadPlaintext = await cms.decrypt(
-      bufferToArray(messageParts.payload),
+      bufferToArray(messageFields.payload),
       recipientPrivateKey
     );
 
     return new this.messageClass(
-      messageParts.recipientAddress,
+      messageFields.recipientAddress,
       signatureVerification.signerCertificate,
       payloadPlaintext,
       {
-        date: new Date(messageParts.dateTimestamp * 1_000),
-        id: messageParts.id,
+        date: new Date(messageFields.dateTimestamp * 1_000),
+        id: messageFields.id,
         senderCertificateChain: signatureVerification.signerCertificateChain,
-        ttl: messageParts.ttlBuffer.readUIntLE(0, 3)
+        ttl: messageFields.ttlBuffer.readUIntLE(0, 3)
       }
     );
   }
 
-  private validateMessageSyntax(messageFields: MessageFields): void {
+  private validateFileFormatSignature(messageFields: MessageFields): void {
     //region Message type validation
     if (messageFields.concreteMessageType !== this.concreteMessageTypeOctet) {
       const expectedMessageTypeHex = decimalToHex(this.concreteMessageTypeOctet);
@@ -186,17 +192,6 @@ export class MessageSerializer<MessageSpecialization extends Message> {
       );
     }
     //endregion
-
-    validateRecipientAddressLength(messageFields.recipientAddress);
-    validateSignatureLength(messageFields.signature);
-  }
-}
-
-function parseMessage(serialization: ArrayBuffer): MessageFields {
-  try {
-    return PARSER.parse(Buffer.from(serialization));
-  } catch (error) {
-    throw new RAMFSyntaxError(error, 'Serialization is not a valid RAMF message');
   }
 }
 
@@ -204,27 +199,11 @@ function decimalToHex(numberDecimal: number): string {
   return '0x' + numberDecimal.toString(16);
 }
 
-async function verifySignature(
-  messageSerialized: ArrayBuffer,
-  messageFields: MessageFields
-): Promise<cms.SignatureVerification> {
-  const signatureCiphertext = bufferToArray(messageFields.signature);
-  const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
-  const signaturePlaintext = messageSerialized.slice(
-    0,
-    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix
-  );
-  try {
-    return (await cms.verifySignature(
-      signatureCiphertext,
-      signaturePlaintext
-    )) as cms.SignatureVerification;
-  } catch (error) {
-    throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
-  }
+function dateToTimestamp(date: Date): number {
+  return Math.floor(date.getTime() / 1_000);
 }
 
-//region Validation
+//region Serialization and deserialization validation
 
 function validateRecipientAddressLength(recipientAddress: string): void {
   if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
@@ -261,6 +240,63 @@ function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
   if (MAX_SIGNATURE_LENGTH < signatureLength) {
     throw new RAMFSyntaxError(
       `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`
+    );
+  }
+}
+
+//endregion
+
+//region Deserialization validation
+
+function parseMessage(serialization: ArrayBuffer): MessageFields {
+  try {
+    return PARSER.parse(Buffer.from(serialization));
+  } catch (error) {
+    throw new RAMFSyntaxError(error, 'Serialization is not a valid RAMF message');
+  }
+}
+
+async function verifySignature(
+  messageSerialized: ArrayBuffer,
+  messageFields: MessageFields
+): Promise<cms.SignatureVerification> {
+  const signatureCiphertext = bufferToArray(messageFields.signature);
+  const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
+  const signaturePlaintext = messageSerialized.slice(
+    0,
+    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix
+  );
+  try {
+    return (await cms.verifySignature(
+      signatureCiphertext,
+      signaturePlaintext
+    )) as cms.SignatureVerification;
+  } catch (error) {
+    throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
+  }
+}
+
+function validateMessageTiming(
+  messageFields: MessageFields,
+  signatureVerification: cms.SignatureVerification
+): void {
+  const currentTimestamp = new Date().getTime() / 1_000;
+  if (currentTimestamp < messageFields.dateTimestamp) {
+    throw new RAMFValidationError('Message date is in the future', messageFields);
+  }
+
+  const pkijsCertificate = signatureVerification.signerCertificate.pkijsCertificate;
+  if (messageFields.dateTimestamp < dateToTimestamp(pkijsCertificate.notBefore.value)) {
+    throw new RAMFValidationError(
+      'Message was created before the sender certificate was valid',
+      messageFields
+    );
+  }
+
+  if (dateToTimestamp(pkijsCertificate.notAfter.value) < messageFields.dateTimestamp) {
+    throw new RAMFValidationError(
+      'Message was created after the sender certificate expired',
+      messageFields
     );
   }
 }

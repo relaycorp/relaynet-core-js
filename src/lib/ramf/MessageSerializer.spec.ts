@@ -583,21 +583,139 @@ describe('MessageSerializer', () => {
     });
 
     describe('Date', () => {
+      const currentDate = new Date(2019, 1, 1, 1, 1, 1, 0); // `ms` MUST be 0
+
       test('Date should be serialized as 32-bit unsigned integer', async () => {
-        const maxTimestampSec = 2 ** 32 - 1;
-        const maxTimestampMs = maxTimestampSec * 1000;
-        const date = new Date(maxTimestampMs);
-        const message = new StubMessage(recipientAddress, senderCertificate, payload, { date });
+        const maxTimestampSec = 2 ** 31;
+        const stubDate = new Date(maxTimestampSec * 1_000);
+        const stubSenderKeyPair = await generateRsaKeys();
+        const stubSenderCertificate = await generateStubCert({
+          attributes: {
+            validityEndDate: stubDate,
+            validityStartDate: new Date(stubDate.getDate() - 1_000)
+          },
+          subjectPublicKey: stubSenderKeyPair.publicKey
+        });
+        const message = new StubMessage(recipientAddress, stubSenderCertificate, payload, {
+          date: stubDate
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          stubSenderKeyPair.privateKey,
+          recipientCertificate
+        );
+
+        jestDateMock.advanceTo(stubDate);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
+
+        expect(deserialization.date).toEqual(stubDate);
+      });
+
+      test('Date equal to the current date should be accepted', async () => {
+        const stubDate = new Date(
+          senderCertificate.pkijsCertificate.notAfter.value.getTime() - 1_000
+        );
+        stubDate.setSeconds(0, 0);
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: stubDate
+        });
         const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
           recipientCertificate
         );
+
+        jestDateMock.advanceTo(stubDate);
         const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
           serialization,
           recipientPrivateKey
         );
-        expect(deserialization.date).toEqual(date);
+
+        expect(deserialization.date).toEqual(stubDate);
+      });
+
+      test('Date should not be in the future', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: new Date(currentDate.getTime() + 1_000)
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jestDateMock.advanceTo(currentDate);
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          new RAMFValidationError('Message date is in the future', parseMessage(serialization))
+        );
+      });
+
+      test('Date should not be before start date of sender certificate', async () => {
+        const certStartDate = senderCertificate.pkijsCertificate.notBefore.value;
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: new Date(certStartDate.getTime() - 1_000)
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jestDateMock.advanceTo(certStartDate);
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          new RAMFValidationError(
+            'Message was created before the sender certificate was valid',
+            parseMessage(serialization)
+          )
+        );
+      });
+
+      test('Date may be at the expiry date of sender certificate', async () => {
+        const certEndDate = senderCertificate.pkijsCertificate.notAfter.value;
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: certEndDate
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jestDateMock.advanceTo(message.date);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
+          serialization,
+          recipientPrivateKey
+        );
+
+        const expectedDate = new Date(certEndDate);
+        expectedDate.setMilliseconds(0);
+        expect(deserialization.date).toEqual(expectedDate);
+      });
+
+      test('Date should not be after expiry date of sender certificate', async () => {
+        const certEndDate = senderCertificate.pkijsCertificate.notAfter.value;
+        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
+          date: new Date(certEndDate.getTime() + 1_000)
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jestDateMock.advanceTo(message.date);
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          new RAMFValidationError(
+            'Message was created after the sender certificate expired',
+            parseMessage(serialization)
+          )
+        );
       });
     });
 
