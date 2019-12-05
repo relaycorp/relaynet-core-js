@@ -2,7 +2,7 @@ import uuid4 from 'uuid4';
 
 import Certificate from '../pki/Certificate';
 
-const DEFAULT_TTL = 5 * 60; // 5 minutes
+const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
 interface MessageOptions {
   readonly id: string;
@@ -28,7 +28,7 @@ export default abstract class Message {
   ) {
     this.id = options.id || uuid4();
     this.date = options.date ? new Date(options.date.getTime()) : new Date();
-    this.ttl = Object.keys(options).includes('ttl') ? (options.ttl as number) : DEFAULT_TTL;
+    this.ttl = Object.keys(options).includes('ttl') ? (options.ttl as number) : DEFAULT_TTL_SECONDS;
 
     //region Payload
     if (payloadPlaintext) {
