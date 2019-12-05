@@ -5,7 +5,8 @@ import { SmartBuffer } from 'smart-buffer';
 import {
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
-  generateStubCert
+  generateStubCert,
+  getPromiseRejection
 } from '../_test_utils';
 import * as cms from '../cms';
 import { generateRsaKeys } from '../crypto';
@@ -18,7 +19,8 @@ import {
   StubPayload
 } from './_test_utils';
 import { MessageSerializer } from './MessageSerializer';
-import RAMFError from './RAMFError';
+import RAMFSyntaxError from './RAMFSyntaxError';
+import RAMFValidationError from './RAMFValidationError';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
@@ -133,7 +135,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
-          new RAMFError('Recipient address exceeds maximum length')
+          new RAMFSyntaxError('Recipient address exceeds maximum length')
         );
       });
 
@@ -155,7 +157,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
-          new RAMFError('Recipient address exceeds maximum length')
+          new RAMFSyntaxError('Recipient address exceeds maximum length')
         );
       });
     });
@@ -182,7 +184,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
-          new RAMFError('Custom id exceeds maximum length')
+          new RAMFSyntaxError('Custom id exceeds maximum length')
         );
       });
 
@@ -224,7 +226,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
-          new RAMFError('Date cannot be before Unix epoch')
+          new RAMFSyntaxError('Date cannot be before Unix epoch')
         );
       });
 
@@ -236,7 +238,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
-          new RAMFError('Date timestamp cannot be represented with 32 bits')
+          new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits')
         );
       });
 
@@ -287,7 +289,7 @@ describe('MessageSerializer', () => {
         });
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
-          new RAMFError('TTL cannot be negative')
+          new RAMFSyntaxError('TTL cannot be negative')
         );
       });
 
@@ -297,7 +299,7 @@ describe('MessageSerializer', () => {
         });
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
-          new RAMFError('TTL must be less than 2^24')
+          new RAMFSyntaxError('TTL must be less than 2^24')
         );
       });
     });
@@ -410,7 +412,9 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
-          new RAMFError(`Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`)
+          new RAMFSyntaxError(
+            `Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`
+          )
         );
       });
 
@@ -444,7 +448,7 @@ describe('MessageSerializer', () => {
         const serialization = bufferToArray(Buffer.from('Relaycorp'));
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
-          new RAMFError('Serialization is not a valid RAMF message: Relaynet is not defined')
+          new RAMFSyntaxError('Serialization is not a valid RAMF message: Relaynet is not defined')
         );
       });
 
@@ -463,7 +467,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
-          new RAMFError('Expected concrete message type 0x44 but got 0x45')
+          new RAMFSyntaxError('Expected concrete message type 0x44 but got 0x45')
         );
       });
 
@@ -482,7 +486,7 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
-          new RAMFError('Expected concrete message version 0x2 but got 0x3')
+          new RAMFSyntaxError('Expected concrete message version 0x2 but got 0x3')
         );
       });
     });
@@ -508,7 +512,7 @@ describe('MessageSerializer', () => {
         const messageSerialized = await serializeWithoutValidation({ address });
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
-          new RAMFError('Recipient address exceeds maximum length')
+          new RAMFSyntaxError('Recipient address exceeds maximum length')
         );
       });
 
@@ -657,13 +661,34 @@ describe('MessageSerializer', () => {
 
         const messageSerialized = await serializeWithoutValidation({}, invalidSignature);
 
-        await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
-          new RAMFError(
-            'Invalid RAMF message signature: Invalid signature: ' +
-              '"Unable to find signer certificate" (PKI.js code: 3)'
-          )
+        const error = await getPromiseRejection<RAMFValidationError>(
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey)
         );
+        expect(error).toBeInstanceOf(RAMFValidationError);
+        expect(error.message).toEqual(
+          'Invalid RAMF message signature: Invalid signature: ' +
+            '"Unable to find signer certificate" (PKI.js code: 3)'
+        );
+      });
+
+      test('Parsed message should be included in validation exception', async () => {
+        const signerKeyPair = await generateRsaKeys();
+        const signerCertificate = await generateStubCert({
+          subjectPublicKey: signerKeyPair.publicKey
+        });
+        const invalidSignature = await cms.sign(
+          bufferToArray(Buffer.from('Hello world')),
+          signerKeyPair.privateKey,
+          signerCertificate
+        );
+
+        const id = 'This is the id. Yup.';
+        const messageSerialized = await serializeWithoutValidation({ id }, invalidSignature);
+
+        const error = await getPromiseRejection<RAMFValidationError>(
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey)
+        );
+        expect(error.invalidMessageFields).toHaveProperty('id', id);
       });
 
       test('Sender certificate should be extracted from signature', async () => {
@@ -730,7 +755,9 @@ describe('MessageSerializer', () => {
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
-          new RAMFError(`Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`)
+          new RAMFSyntaxError(
+            `Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`
+          )
         );
       });
     });

@@ -5,7 +5,8 @@ import { SmartBuffer } from 'smart-buffer';
 import * as cms from '../cms';
 import Certificate from '../pki/Certificate';
 import Message from './Message';
-import RAMFError from './RAMFError';
+import RAMFSyntaxError from './RAMFSyntaxError';
+import RAMFValidationError from './RAMFValidationError';
 
 const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
 const MAX_ID_LENGTH = 2 ** 8 - 1;
@@ -29,7 +30,7 @@ const PARSER = new Parser()
   .buffer('payload', { length: 'payloadLength' })
   .uint16('signatureLength')
   .buffer('signature', { length: 'signatureLength' });
-interface MessageFields {
+export interface MessageFields {
   readonly concreteMessageType: number;
   readonly concreteMessageVersion: number;
   readonly recipientAddress: string;
@@ -37,7 +38,6 @@ interface MessageFields {
   readonly dateTimestamp: number;
   readonly ttlBuffer: Buffer;
   readonly payload: Buffer;
-  readonly signatureLength: number;
   readonly signature: Buffer;
 }
 
@@ -143,12 +143,9 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //region Input validation and parsing
     const messageParts = parseMessage(serialization);
 
-    this.validateMessageFields(messageParts);
+    this.validateMessageSyntax(messageParts);
 
-    const signatureVerification = await verifySignature(
-      serialization,
-      bufferToArray(messageParts.signature)
-    );
+    const signatureVerification = await verifySignature(serialization, messageParts);
     //endregion
 
     const payloadPlaintext = await cms.decrypt(
@@ -169,12 +166,12 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     );
   }
 
-  private validateMessageFields(messageFields: MessageFields): void {
+  private validateMessageSyntax(messageFields: MessageFields): void {
     //region Message type validation
     if (messageFields.concreteMessageType !== this.concreteMessageTypeOctet) {
       const expectedMessageTypeHex = decimalToHex(this.concreteMessageTypeOctet);
       const actualMessageTypeHex = decimalToHex(messageFields.concreteMessageType);
-      throw new RAMFError(
+      throw new RAMFSyntaxError(
         `Expected concrete message type ${expectedMessageTypeHex} but got ${actualMessageTypeHex}`
       );
     }
@@ -184,7 +181,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     if (messageFields.concreteMessageVersion !== this.concreteMessageVersionOctet) {
       const expectedVersionHex = decimalToHex(this.concreteMessageVersionOctet);
       const actualVersionHex = decimalToHex(messageFields.concreteMessageVersion);
-      throw new RAMFError(
+      throw new RAMFSyntaxError(
         `Expected concrete message version ${expectedVersionHex} but got ${actualVersionHex}`
       );
     }
@@ -199,7 +196,7 @@ function parseMessage(serialization: ArrayBuffer): MessageFields {
   try {
     return PARSER.parse(Buffer.from(serialization));
   } catch (error) {
-    throw new RAMFError(error, 'Serialization is not a valid RAMF message');
+    throw new RAMFSyntaxError(error, 'Serialization is not a valid RAMF message');
   }
 }
 
@@ -209,8 +206,9 @@ function decimalToHex(numberDecimal: number): string {
 
 async function verifySignature(
   messageSerialized: ArrayBuffer,
-  signatureCiphertext: ArrayBuffer
+  messageFields: MessageFields
 ): Promise<cms.SignatureVerification> {
+  const signatureCiphertext = bufferToArray(messageFields.signature);
   const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
   const signaturePlaintext = messageSerialized.slice(
     0,
@@ -222,7 +220,7 @@ async function verifySignature(
       signaturePlaintext
     )) as cms.SignatureVerification;
   } catch (error) {
-    throw new RAMFError(error, 'Invalid RAMF message signature');
+    throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
   }
 }
 
@@ -230,38 +228,38 @@ async function verifySignature(
 
 function validateRecipientAddressLength(recipientAddress: string): void {
   if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
-    throw new RAMFError('Recipient address exceeds maximum length');
+    throw new RAMFSyntaxError('Recipient address exceeds maximum length');
   }
 }
 
 function validateMessageIdLength(messageId: string): void {
   if (MAX_ID_LENGTH < messageId.length) {
-    throw new RAMFError('Custom id exceeds maximum length');
+    throw new RAMFSyntaxError('Custom id exceeds maximum length');
   }
 }
 
 function validateDate(timestampMs: number): void {
   if (timestampMs < 0) {
-    throw new RAMFError('Date cannot be before Unix epoch');
+    throw new RAMFSyntaxError('Date cannot be before Unix epoch');
   }
   if (MAX_DATE_TIMESTAMP_MS < timestampMs) {
-    throw new RAMFError('Date timestamp cannot be represented with 32 bits');
+    throw new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits');
   }
 }
 
 function validateTtl(ttl: number): void {
   if (ttl < 0) {
-    throw new RAMFError('TTL cannot be negative');
+    throw new RAMFSyntaxError('TTL cannot be negative');
   }
   if (MAX_TTL < ttl) {
-    throw new RAMFError('TTL must be less than 2^24');
+    throw new RAMFSyntaxError('TTL must be less than 2^24');
   }
 }
 
 function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
   const signatureLength = signatureBuffer.byteLength;
   if (MAX_SIGNATURE_LENGTH < signatureLength) {
-    throw new RAMFError(
+    throw new RAMFSyntaxError(
       `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`
     );
   }
