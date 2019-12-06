@@ -854,7 +854,7 @@ describe('MessageSerializer', () => {
         expect(error).toBeInstanceOf(RAMFValidationError);
         expect(error.message).toEqual(
           'Invalid RAMF message signature: Invalid signature: ' +
-            '"Unable to find signer certificate" (PKI.js code: 3)'
+            'Unable to find signer certificate (PKI.js code: 3)'
         );
       });
 
@@ -898,41 +898,21 @@ describe('MessageSerializer', () => {
       });
 
       test('Sender certificate chain should be extracted from signature', async () => {
-        const caKeyPair = await generateRsaKeys();
-        const caCertificate = await generateStubCert({ subjectPublicKey: caKeyPair.publicKey });
-        const senderKeyPair = await generateRsaKeys();
-        senderCertificate = await generateStubCert({
-          issuerPrivateKey: caKeyPair.privateKey,
-          subjectPublicKey: senderKeyPair.publicKey
+        const caCertificate = await generateStubCert();
+        const messageSerialized = await serializeWithoutValidation({
+          payloadBuffer: await cms.encrypt(PAYLOAD, recipientCertificate)
         });
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          senderCertificateChain: new Set([caCertificate, senderCertificate])
-        });
-        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderKeyPair.privateKey,
-          recipientCertificate
-        );
 
-        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
+        jest.spyOn(cms, 'verifySignature').mockImplementationOnce(async () => ({
+          signerCertificate: senderCertificate,
+          signerCertificateChain: [senderCertificate, caCertificate]
+        }));
+        const { senderCertificateChain } = await STUB_MESSAGE_SERIALIZER.deserialize(
           messageSerialized,
           recipientPrivateKey
         );
-        const attachedCertsByAddress: { readonly [key: string]: Certificate } = Array.from(
-          messageDeserialized.senderCertificateChain
-        ).reduce((obj, cert) => ({ ...obj, [cert.getAddress()]: cert }), {});
 
-        const attachedCaCertificate = attachedCertsByAddress[caCertificate.getAddress()];
-        expectPkijsValuesToBeEqual(
-          attachedCaCertificate.pkijsCertificate,
-          caCertificate.pkijsCertificate
-        );
-
-        const attachedSenderCertificate = attachedCertsByAddress[senderCertificate.getAddress()];
-        expectPkijsValuesToBeEqual(
-          attachedSenderCertificate.pkijsCertificate,
-          senderCertificate.pkijsCertificate
-        );
+        expect(senderCertificateChain).toEqual(new Set([senderCertificate, caCertificate]));
       });
 
       test('Length prefix should be less than 14 bits long', async () => {

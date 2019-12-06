@@ -267,10 +267,7 @@ async function verifySignature(
     messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix
   );
   try {
-    return (await cms.verifySignature(
-      signatureCiphertext,
-      signaturePlaintext
-    )) as cms.SignatureVerification;
+    return await cms.verifySignature(signatureCiphertext, signaturePlaintext);
   } catch (error) {
     throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
   }
