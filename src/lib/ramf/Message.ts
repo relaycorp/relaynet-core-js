@@ -27,8 +27,8 @@ export default abstract class Message {
     options: Partial<MessageOptions> = {}
   ) {
     this.id = options.id || uuid4();
-    this.date = options.date ? new Date(options.date.getTime()) : new Date();
-    this.ttl = Object.keys(options).includes('ttl') ? (options.ttl as number) : DEFAULT_TTL_SECONDS;
+    this.date = options.date || new Date();
+    this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
     //region Payload
     if (payloadPlaintext) {

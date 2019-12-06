@@ -10,8 +10,7 @@ import RAMFValidationError from './RAMFValidationError';
 
 const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
 const MAX_ID_LENGTH = 2 ** 8 - 1;
-const MAX_DATE_TIMESTAMP_SEC = 2 ** 32;
-const MAX_DATE_TIMESTAMP_MS = MAX_DATE_TIMESTAMP_SEC * 1_000 - 1;
+const MAX_DATE_TIMESTAMP_SEC = 2 ** 32 - 1;
 const MAX_TTL = 2 ** 24 - 1;
 const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
 
@@ -70,7 +69,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //region Validation
     validateRecipientAddressLength(message.recipientAddress);
     validateMessageIdLength(message.id);
-    validateDate(message.date.getTime());
+    validateDate(message.date);
     validateTtl(message.ttl);
     //endregion
 
@@ -94,7 +93,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Date
-    serialization.writeUInt32LE(Math.floor(message.date.getTime() / 1_000));
+    serialization.writeUInt32LE(dateToTimestamp(message.date));
     //endregion
 
     //region TTL
@@ -217,11 +216,12 @@ function validateMessageIdLength(messageId: string): void {
   }
 }
 
-function validateDate(timestampMs: number): void {
-  if (timestampMs < 0) {
+function validateDate(date: Date): void {
+  const timestamp = dateToTimestamp(date);
+  if (timestamp < 0) {
     throw new RAMFSyntaxError('Date cannot be before Unix epoch');
   }
-  if (MAX_DATE_TIMESTAMP_MS < timestampMs) {
+  if (MAX_DATE_TIMESTAMP_SEC < timestamp) {
     throw new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits');
   }
 }
@@ -280,7 +280,7 @@ function validateMessageTiming(
   messageFields: MessageFields,
   signatureVerification: cms.SignatureVerification
 ): void {
-  const currentTimestamp = new Date().getTime() / 1_000;
+  const currentTimestamp = dateToTimestamp(new Date());
   if (currentTimestamp < messageFields.dateTimestamp) {
     throw new RAMFValidationError('Message date is in the future', messageFields);
   }
@@ -298,6 +298,12 @@ function validateMessageTiming(
       'Message was created after the sender certificate expired',
       messageFields
     );
+  }
+
+  const ttl = messageFields.ttlBuffer.readUIntLE(0, 3);
+  const expiryTimestamp = messageFields.dateTimestamp + ttl;
+  if (expiryTimestamp < currentTimestamp) {
+    throw new RAMFValidationError('Message already expired', messageFields);
   }
 }
 

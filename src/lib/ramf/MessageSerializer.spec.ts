@@ -20,6 +20,9 @@ import RAMFValidationError from './RAMFValidationError';
 
 const PAYLOAD = bufferToArray(Buffer.from('Hi'));
 
+const STUB_DATE = new Date(2014, 1, 19);
+STUB_DATE.setMilliseconds(0); // There should be tests covering rounding when there are milliseconds
+
 const STUB_MESSAGE_SERIALIZER = new MessageSerializer<StubMessage>(StubMessage, 0x44, 0x2);
 
 const MESSAGE_PARSER = new Parser()
@@ -58,8 +61,15 @@ describe('MessageSerializer', () => {
   let senderPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
   beforeAll(async () => {
+    const yesterday = new Date(STUB_DATE);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(STUB_DATE);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const certificateAttributes = { validityStartDate: yesterday, validityEndDate: tomorrow };
+
     const recipientKeyPair = await generateRsaKeys();
     recipientCertificate = await generateStubCert({
+      attributes: certificateAttributes,
       subjectPublicKey: recipientKeyPair.publicKey
     });
     recipientAddress = recipientCertificate.getAddress();
@@ -68,8 +78,13 @@ describe('MessageSerializer', () => {
     const senderKeyPair = await generateRsaKeys();
     senderPrivateKey = senderKeyPair.privateKey;
     senderCertificate = await generateStubCert({
+      attributes: certificateAttributes,
       subjectPublicKey: senderKeyPair.publicKey
     });
+  });
+
+  beforeEach(() => {
+    jestDateMock.advanceTo(STUB_DATE);
   });
 
   describe('serialize', () => {
@@ -583,8 +598,6 @@ describe('MessageSerializer', () => {
     });
 
     describe('Date', () => {
-      const currentDate = new Date(2019, 1, 1, 1, 1, 1, 0); // `ms` MUST be 0
-
       test('Date should be serialized as 32-bit unsigned integer', async () => {
         const maxTimestampSec = 2 ** 31;
         const stubDate = new Date(maxTimestampSec * 1_000);
@@ -639,7 +652,7 @@ describe('MessageSerializer', () => {
 
       test('Date should not be in the future', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          date: new Date(currentDate.getTime() + 1_000)
+          date: new Date(STUB_DATE.getTime() + 1_000)
         });
         const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
@@ -647,7 +660,7 @@ describe('MessageSerializer', () => {
           recipientCertificate
         );
 
-        jestDateMock.advanceTo(currentDate);
+        jestDateMock.advanceTo(STUB_DATE);
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
           new RAMFValidationError('Message date is in the future', parseMessage(serialization))
@@ -735,6 +748,43 @@ describe('MessageSerializer', () => {
         );
 
         expect(deserialization.ttl).toEqual(ttl);
+      });
+
+      test('TTL matching current time should be accepted', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+          date: senderCertificate.pkijsCertificate.notBefore.value,
+          ttl: 1
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        const currentDate = new Date(message.date);
+        currentDate.setSeconds(currentDate.getSeconds() + message.ttl);
+        currentDate.setMilliseconds(1); // Should be greater than zero so we can test rounding too
+        jestDateMock.advanceTo(currentDate);
+        await expect(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey)
+        ).toResolve();
+      });
+
+      test('TTL in the past should not be accepted', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+          ttl: 1
+        });
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
+          message,
+          senderPrivateKey,
+          recipientCertificate
+        );
+
+        jestDateMock.advanceTo(message.date.getTime() + (message.ttl + 1) * 1_000);
+        await expectPromiseToReject(
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          new RAMFValidationError('Message already expired', parseMessage(serialization))
+        );
       });
     });
 

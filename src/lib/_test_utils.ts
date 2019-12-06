@@ -34,12 +34,12 @@ export function expectAsn1ValuesToBeEqual(
 }
 
 interface StubCertConfig {
-  readonly attributes?: Partial<CertificateAttributes>;
-  readonly issuerPrivateKey?: CryptoKey;
-  readonly subjectPublicKey?: CryptoKey;
+  readonly attributes: Partial<CertificateAttributes>;
+  readonly issuerPrivateKey: CryptoKey;
+  readonly subjectPublicKey: CryptoKey;
 }
 
-export async function generateStubCert(config: StubCertConfig = {}): Promise<Certificate> {
+export async function generateStubCert(config: Partial<StubCertConfig> = {}): Promise<Certificate> {
   const keyPair = await generateRsaKeys();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
