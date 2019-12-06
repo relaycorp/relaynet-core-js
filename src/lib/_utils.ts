@@ -1,3 +1,4 @@
+import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 export function getPkijsCrypto(): SubtleCrypto {
@@ -6,4 +7,12 @@ export function getPkijsCrypto(): SubtleCrypto {
     throw new Error('PKI.js crypto engine is undefined');
   }
   return cryptoEngine;
+}
+
+export function deserializeDer(derValue: ArrayBuffer): asn1js.LocalBaseBlock {
+  const asn1Value = asn1js.fromBER(derValue);
+  if (asn1Value.offset === -1) {
+    throw new Error('Value is not DER-encoded');
+  }
+  return asn1Value.result;
 }

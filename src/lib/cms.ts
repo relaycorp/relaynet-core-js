@@ -1,6 +1,6 @@
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
-import { getPkijsCrypto } from './_utils';
+import { deserializeDer, getPkijsCrypto } from './_utils';
 import CMSError from './CMSError';
 import * as oids from './oids';
 import Certificate from './pki/Certificate';
@@ -203,10 +203,7 @@ export async function verifySignature(
 }
 
 function deserializeContentInfo(derValue: ArrayBuffer): asn1js.Sequence {
-  const asn1 = asn1js.fromBER(derValue);
-  if (asn1.offset === -1) {
-    throw new CMSError('Value is not encoded in DER');
-  }
-  const contentInfo = new pkijs.ContentInfo({ schema: asn1.result });
+  const asn1Value = deserializeDer(derValue);
+  const contentInfo = new pkijs.ContentInfo({ schema: asn1Value });
   return contentInfo.content;
 }

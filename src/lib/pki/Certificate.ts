@@ -1,10 +1,10 @@
 import * as asn1js from 'asn1js';
-import * as assert from 'assert';
 import * as pkijs from 'pkijs';
-import { getPkijsCrypto } from '../_utils';
+
+import { deserializeDer, getPkijsCrypto } from '../_utils';
 import * as oids from '../oids';
-import CertificateAttributes from './CertificateAttributes';
 import CertificateError from './CertificateError';
+import CertificateOptions from './CertificateOptions';
 
 const pkijsCrypto = getPkijsCrypto();
 
@@ -22,11 +22,8 @@ export default class Certificate {
    * @throws {CertificateError}
    */
   public static deserialize(certDer: ArrayBuffer): Certificate {
-    const asn1 = asn1js.fromBER(certDer);
-    if (asn1.offset === -1) {
-      throw new CertificateError('Certificate is not DER-encoded');
-    }
-    const pkijsCert = new pkijs.Certificate({ schema: asn1.result });
+    const asn1Value = deserializeDer(certDer);
+    const pkijsCert = new pkijs.Certificate({ schema: asn1Value });
     const certificate = new Certificate(pkijsCert);
     certificate.validate();
     return certificate;
@@ -36,37 +33,44 @@ export default class Certificate {
    * Issue a Relaynet PKI certificate.
    *
    * @param issuerPrivateKey
-   * @param attributes
+   * @param options
    * @param issuerCertificate Absent when the certificate is self-signed
    */
   public static async issue(
     issuerPrivateKey: CryptoKey,
-    attributes: CertificateAttributes,
+    options: CertificateOptions,
     issuerCertificate?: Certificate
   ): Promise<Certificate> {
-    const validityStartDate = attributes.validityStartDate || new Date();
-    if (attributes.validityEndDate < validityStartDate) {
+    //region Validation
+    const validityStartDate = options.validityStartDate || new Date();
+    if (options.validityEndDate < validityStartDate) {
       throw new CertificateError('The end date must be later than the start date');
     }
 
+    if (issuerCertificate) {
+      validateIssuerCertificate(issuerCertificate);
+    }
+    //endregion
+
     const issuerPublicKey = issuerCertificate
       ? await issuerCertificate.pkijsCertificate.getPublicKey()
-      : attributes.subjectPublicKey;
+      : options.subjectPublicKey;
     const pkijsCert = new pkijs.Certificate({
       extensions: [
+        makeBasicConstraintsExtension(options.isCA === true),
         await makeAuthorityKeyIdExtension(issuerPublicKey),
-        await makeSubjectKeyIdExtension(attributes.subjectPublicKey)
+        await makeSubjectKeyIdExtension(options.subjectPublicKey)
       ],
-      serialNumber: new asn1js.Integer({ value: attributes.serialNumber }),
-      version: 2
+      serialNumber: new asn1js.Integer({ value: options.serialNumber }),
+      version: 2 // 2 = v3
     });
 
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notBefore.value = validityStartDate;
     // tslint:disable-next-line:no-object-mutation
-    pkijsCert.notAfter.value = attributes.validityEndDate;
+    pkijsCert.notAfter.value = options.validityEndDate;
 
-    const address = await computePrivateNodeAddress(attributes.subjectPublicKey);
+    const address = await computePrivateNodeAddress(options.subjectPublicKey);
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: oids.COMMON_NAME,
@@ -86,7 +90,7 @@ export default class Certificate {
         })
     );
 
-    await pkijsCert.subjectPublicKeyInfo.importKey(attributes.subjectPublicKey);
+    await pkijsCert.subjectPublicKeyInfo.importKey(options.subjectPublicKey);
 
     const signatureHashAlgo = (issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
       .hash as Algorithm;
@@ -128,11 +132,21 @@ export default class Certificate {
   }
 }
 
+//region Extensions
+
+function makeBasicConstraintsExtension(isCA: boolean): pkijs.Extension {
+  return new pkijs.Extension({
+    critical: true,
+    extnID: oids.BASIC_CONSTRAINTS,
+    extnValue: new pkijs.BasicConstraints({ cA: isCA }).toSchema().toBER(false)
+  });
+}
+
 async function makeAuthorityKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Extension> {
   const keyDigest = await getPublicKeyDigest(publicKey);
   const keyIdEncoded = new asn1js.OctetString({ valueHex: keyDigest });
   return new pkijs.Extension({
-    extnID: oids.AUTHORITY_KEY_ID,
+    extnID: oids.AUTHORITY_KEY,
     extnValue: new pkijs.AuthorityKeyIdentifier({ keyIdentifier: keyIdEncoded })
       .toSchema()
       .toBER(false)
@@ -142,10 +156,30 @@ async function makeAuthorityKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.
 async function makeSubjectKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Extension> {
   const keyDigest = await getPublicKeyDigest(publicKey);
   return new pkijs.Extension({
-    extnID: oids.SUBJECT_KEY_ID,
+    extnID: oids.SUBJECT_KEY,
     extnValue: new asn1js.OctetString({ valueHex: keyDigest }).toBER(false)
   });
 }
+
+//endregion
+
+//region Validation
+
+function validateIssuerCertificate(issuerCertificate: Certificate): void {
+  const extensions = issuerCertificate.pkijsCertificate.extensions || [];
+  const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
+  if (matchingExtensions.length === 0) {
+    throw new CertificateError('Basic constraints extension is missing from issuer certificate');
+  }
+  const extension = matchingExtensions[0];
+  const basicConstraintsAsn1 = deserializeDer(extension.extnValue.valueBlock.valueHex);
+  const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
+  if (!basicConstraints.cA) {
+    throw new CertificateError('Issuer is not a CA');
+  }
+}
+
+//endregion
 
 async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
   const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
@@ -163,7 +197,5 @@ interface Asn1jsSerializable {
 
 function cloneAsn1jsValue(value: Asn1jsSerializable): asn1js.LocalBaseBlock {
   const valueSerialized = value.toBER(false);
-  const asn1jsValue = asn1js.fromBER(valueSerialized);
-  assert.notStrictEqual(asn1jsValue.offset, -1);
-  return asn1jsValue.result;
+  return deserializeDer(valueSerialized);
 }

@@ -1,15 +1,8 @@
-import * as asn1js from 'asn1js';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 import { generateRsaKeys } from './crypto';
 import Certificate from './pki/Certificate';
-import CertificateAttributes from './pki/CertificateAttributes';
-
-export function asn1DerDecode(asn1Value: ArrayBuffer): asn1js.LocalBaseBlock {
-  const asn1 = asn1js.fromBER(asn1Value);
-  expect(asn1.offset).not.toEqual(-1);
-  return asn1.result;
-}
+import CertificateOptions from './pki/CertificateOptions';
 
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
@@ -34,7 +27,8 @@ export function expectAsn1ValuesToBeEqual(
 }
 
 interface StubCertConfig {
-  readonly attributes: Partial<CertificateAttributes>;
+  readonly attributes: Partial<CertificateOptions>;
+  readonly issuerCertificate: Certificate;
   readonly issuerPrivateKey: CryptoKey;
   readonly subjectPublicKey: CryptoKey;
 }
@@ -43,12 +37,16 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   const keyPair = await generateRsaKeys();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
-  return Certificate.issue(config.issuerPrivateKey || keyPair.privateKey, {
-    serialNumber: 1,
-    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
-    validityEndDate: futureDate,
-    ...config.attributes
-  });
+  return Certificate.issue(
+    config.issuerPrivateKey || keyPair.privateKey,
+    {
+      serialNumber: 1,
+      subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+      validityEndDate: futureDate,
+      ...config.attributes
+    },
+    config.issuerCertificate
+  );
 }
 
 export function sha256Hex(plaintext: ArrayBuffer): string {

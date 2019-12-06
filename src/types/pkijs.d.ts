@@ -9,6 +9,7 @@ declare module 'pkijs' {
   import Attribute from 'pkijs/src/Attribute';
   import AttributeTypeAndValue from 'pkijs/src/AttributeTypeAndValue';
   import AuthorityKeyIdentifier from 'pkijs/src/AuthorityKeyIdentifier';
+  import BasicConstraints from 'pkijs/src/BasicConstraints';
   import Certificate from 'pkijs/src/Certificate';
   import ContentInfo from 'pkijs/src/ContentInfo';
   import CryptoEngine from 'pkijs/src/CryptoEngine';
@@ -29,6 +30,7 @@ declare module 'pkijs' {
     Attribute,
     AttributeTypeAndValue,
     AuthorityKeyIdentifier,
+    BasicConstraints,
     Certificate,
     ContentInfo,
     CryptoEngine,

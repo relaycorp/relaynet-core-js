@@ -4,13 +4,13 @@ import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
 import {
-  asn1DerDecode,
   expectAsn1ValuesToBeEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
   sha256Hex
 } from './_test_utils';
+import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
 import { generateRsaKeys } from './crypto';
@@ -139,7 +139,7 @@ describe('decrypt', () => {
     const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.decrypt(invalidDer, privateKey),
-      new CMSError('Value is not encoded in DER')
+      new Error('Value is not DER-encoded')
     );
   });
 
@@ -339,11 +339,11 @@ describe('sign', () => {
 });
 
 describe('verifySignature', () => {
-  test('An error should be thrown if the signature is not DER encoded', async () => {
+  test('A non-DER-encoded value should be refused', async () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.verifySignature(invalidSignature, plaintext),
-      new CMSError('Value is not encoded in DER')
+      new Error('Value is not DER-encoded')
     );
   });
 
@@ -371,7 +371,7 @@ describe('verifySignature', () => {
     await expect(cms.verifySignature(signatureDer, plaintext)).resolves.toEqual(expect.anything());
   });
 
-  test('Signature should be verified against any passed certificate', async () => {
+  test('Signature should be verified against any expected signer certificate', async () => {
     const signatureDer = await cms.sign(plaintext, privateKey, certificate);
     await expect(cms.verifySignature(signatureDer, plaintext, certificate)).resolves.toEqual(
       undefined
@@ -415,7 +415,7 @@ describe('verifySignature', () => {
 });
 
 function deserializeContentInfo(contentInfoDer: ArrayBuffer): pkijs.ContentInfo {
-  return new pkijs.ContentInfo({ schema: asn1DerDecode(contentInfoDer) });
+  return new pkijs.ContentInfo({ schema: deserializeDer(contentInfoDer) });
 }
 
 function deserializeSignedData(signedDataDer: ArrayBuffer): pkijs.SignedData {
