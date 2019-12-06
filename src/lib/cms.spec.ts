@@ -2,14 +2,15 @@ import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
+
 import {
-  asn1DerDecode,
   expectAsn1ValuesToBeEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
   sha256Hex
 } from './_test_utils';
+import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
 import { generateRsaKeys } from './crypto';
@@ -138,7 +139,7 @@ describe('decrypt', () => {
     const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.decrypt(invalidDer, privateKey),
-      new CMSError('Value is not encoded in DER')
+      new Error('Value is not DER-encoded')
     );
   });
 
@@ -337,12 +338,12 @@ describe('sign', () => {
   });
 });
 
-describe('verify', () => {
-  test('An error should be thrown if the signature is not DER encoded', async () => {
+describe('verifySignature', () => {
+  test('A non-DER-encoded value should be refused', async () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.verifySignature(invalidSignature, plaintext),
-      new CMSError('Value is not encoded in DER')
+      new Error('Value is not DER-encoded')
     );
   });
 
@@ -356,7 +357,7 @@ describe('verify', () => {
     );
     await expectPromiseToReject(
       cms.verifySignature(signatureDer, plaintext),
-      new CMSError('Invalid signature: "" (PKI.js code: 14)')
+      new CMSError('Invalid signature:  (PKI.js code: 14)')
     );
   });
 
@@ -370,26 +371,187 @@ describe('verify', () => {
     await expect(cms.verifySignature(signatureDer, plaintext)).resolves.toEqual(expect.anything());
   });
 
-  test('Signature should be verified against any passed certificate', async () => {
-    const signatureDer = await cms.sign(plaintext, privateKey, certificate);
-    await expect(cms.verifySignature(signatureDer, plaintext, certificate)).resolves.toEqual(
-      undefined
+  describe('Attached certificates', () => {
+    test('Attached certificates field should be optional', async () => {
+      const signatureWithCerts = await cms.sign(plaintext, privateKey, certificate);
+
+      const signedData = deserializeSignedData(signatureWithCerts);
+      // tslint:disable-next-line:no-delete no-object-mutation
+      delete signedData.certificates;
+      const contentInfo = new pkijs.ContentInfo({
+        content: signedData.toSchema(true),
+        contentType: oids.CMS_SIGNED_DATA
+      });
+      const signatureWithoutCerts = contentInfo.toSchema().toBER(false);
+
+      await cms.verifySignature(signatureWithoutCerts, plaintext, certificate);
+    });
+
+    test('Signer certificate should be passed explicitly if detached', async () => {
+      const signatureDer = await cms.sign(plaintext, privateKey, certificate);
+      await expect(cms.verifySignature(signatureDer, plaintext, certificate)).toResolve();
+    });
+
+    test('Valid embedded certificates should be trusted by default', async () => {
+      const signatureDer = await cms.sign(
+        plaintext,
+        privateKey,
+        certificate,
+        new Set([certificate])
+      );
+      await expect(cms.verifySignature(signatureDer, plaintext)).toResolve();
+    });
+  });
+
+  test('Signature should be verified against any set of trusted certificates', async () => {
+    const caKeyPair = await generateRsaKeys();
+    const caCertificate = await generateStubCert({
+      attributes: { isCA: true, serialNumber: 1 },
+      subjectPublicKey: caKeyPair.publicKey
+    });
+    const signerKeyPair = await generateRsaKeys();
+    const signerCertificate = await generateStubCert({
+      attributes: { serialNumber: 2 },
+      issuerCertificate: caCertificate,
+      issuerPrivateKey: caKeyPair.privateKey,
+      subjectPublicKey: signerKeyPair.publicKey
+    });
+    const signatureDer = await cms.sign(
+      plaintext,
+      signerKeyPair.privateKey,
+      signerCertificate,
+      new Set([caCertificate, signerCertificate]) // Trusted certificate is attached
+    );
+
+    await cms.verifySignature(signatureDer, plaintext, [reSerializeCertificate(caCertificate)]);
+  });
+
+  test('CA certificates should not have to be attached to SignedData', async () => {
+    const caKeyPair = await generateRsaKeys();
+    const caCertificate = await generateStubCert({
+      attributes: { isCA: true, serialNumber: 1 },
+      subjectPublicKey: caKeyPair.publicKey
+    });
+    const signerKeyPair = await generateRsaKeys();
+    const signerCertificate = await generateStubCert({
+      attributes: { serialNumber: 2 },
+      issuerCertificate: caCertificate,
+      issuerPrivateKey: caKeyPair.privateKey,
+      subjectPublicKey: signerKeyPair.publicKey
+    });
+    const signatureDer = await cms.sign(
+      plaintext,
+      signerKeyPair.privateKey,
+      signerCertificate,
+      new Set([signerCertificate]) // Trusted certificate is detached
+    );
+
+    await cms.verifySignature(signatureDer, plaintext, [reSerializeCertificate(caCertificate)]);
+  });
+
+  test('Signature should fail if not done with a trusted certificate', async () => {
+    const caKeyPair = await generateRsaKeys();
+    const caCertificate = await generateStubCert({
+      attributes: { isCA: true, serialNumber: 2 },
+      subjectPublicKey: caKeyPair.publicKey
+    });
+    const signatureDer = await cms.sign(plaintext, privateKey, certificate, new Set([certificate]));
+
+    await expectPromiseToReject(
+      cms.verifySignature(signatureDer, plaintext, [reSerializeCertificate(caCertificate)]),
+      new CMSError(
+        'Invalid signature: ' +
+          "Validation of signer's certificate failed: No valid certificate paths found " +
+          '(PKI.js code: 5)'
+      )
     );
   });
 
-  test('Attached certificates should be returned if verification passes', async () => {
-    const signatureDer = await cms.sign(plaintext, privateKey, certificate, new Set([certificate]));
-    const attachedCerts = await cms.verifySignature(signatureDer, plaintext);
-    expect(attachedCerts).toHaveLength(1);
-    // @ts-ignore
-    expect(await attachedCerts[0].pkijsCertificate.getPublicKey()).toEqual(
-      await certificate.pkijsCertificate.getPublicKey()
+  test('Sender certificate should be returned if verification passes', async () => {
+    const superfluousCertificate = await generateStubCert({
+      subjectPublicKey: (await generateRsaKeys()).publicKey
+    });
+    const signatureDer = await cms.sign(
+      plaintext,
+      privateKey,
+      certificate,
+      new Set([superfluousCertificate, certificate])
     );
+
+    const { signerCertificate } = await cms.verifySignature(signatureDer, plaintext);
+
+    expectPkijsValuesToBeEqual(signerCertificate.pkijsCertificate, certificate.pkijsCertificate);
+  });
+
+  describe('Signer certificate chain', () => {
+    test('Chain should only contain the signer cert if no trusted certs are passed', async () => {
+      const signatureDer = await cms.sign(
+        plaintext,
+        privateKey,
+        certificate,
+        new Set([certificate])
+      );
+
+      const { signerCertificateChain } = await cms.verifySignature(signatureDer, plaintext);
+
+      expect(signerCertificateChain).toHaveLength(1);
+      expectPkijsValuesToBeEqual(
+        signerCertificateChain[0].pkijsCertificate,
+        certificate.pkijsCertificate
+      );
+    });
+
+    test('Chain should be populated when trusted certs are passed', async () => {
+      const rootCaKeyPair = await generateRsaKeys();
+      const rootCaCertificate = await generateStubCert({
+        attributes: { isCA: true, serialNumber: 1 },
+        subjectPublicKey: rootCaKeyPair.publicKey
+      });
+      const caKeyPair = await generateRsaKeys();
+      const caCertificate = await generateStubCert({
+        attributes: { isCA: true, serialNumber: 2 },
+        issuerCertificate: rootCaCertificate,
+        issuerPrivateKey: rootCaKeyPair.privateKey,
+        subjectPublicKey: caKeyPair.publicKey
+      });
+      const signerKeyPair = await generateRsaKeys();
+      const signerCertificate = await generateStubCert({
+        attributes: { serialNumber: 3 },
+        issuerCertificate: caCertificate,
+        issuerPrivateKey: caKeyPair.privateKey,
+        subjectPublicKey: signerKeyPair.publicKey
+      });
+      const signatureDer = await cms.sign(
+        plaintext,
+        signerKeyPair.privateKey,
+        signerCertificate,
+        new Set([signerCertificate])
+      );
+
+      const { signerCertificateChain } = await cms.verifySignature(signatureDer, plaintext, [
+        reSerializeCertificate(rootCaCertificate),
+        reSerializeCertificate(caCertificate)
+      ]);
+
+      expect(signerCertificateChain).toHaveLength(3);
+      expectPkijsValuesToBeEqual(
+        signerCertificateChain[2].pkijsCertificate,
+        rootCaCertificate.pkijsCertificate
+      );
+      expectPkijsValuesToBeEqual(
+        signerCertificateChain[1].pkijsCertificate,
+        caCertificate.pkijsCertificate
+      );
+      expectPkijsValuesToBeEqual(
+        signerCertificateChain[0].pkijsCertificate,
+        signerCertificate.pkijsCertificate
+      );
+    });
   });
 });
 
 function deserializeContentInfo(contentInfoDer: ArrayBuffer): pkijs.ContentInfo {
-  return new pkijs.ContentInfo({ schema: asn1DerDecode(contentInfoDer) });
+  return new pkijs.ContentInfo({ schema: deserializeDer(contentInfoDer) });
 }
 
 function deserializeSignedData(signedDataDer: ArrayBuffer): pkijs.SignedData {
@@ -416,4 +578,12 @@ function deserializeSignerInfoAttribute(
 function deserializeEnvelopedData(contentInfoDer: ArrayBuffer): pkijs.EnvelopedData {
   const contentInfo = deserializeContentInfo(contentInfoDer);
   return new pkijs.EnvelopedData({ schema: contentInfo.content });
+}
+
+function reSerializeCertificate(cert: Certificate): Certificate {
+  // TODO: Raise bug in PKI.js project
+  // PKI.js Certificate instances may not always have all the necessary fields when initialized,
+  // which will lead to unhandled exceptions. They'll have the right fields when they're
+  // deserialized, though.
+  return Certificate.deserialize(cert.serialize());
 }

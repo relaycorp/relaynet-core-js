@@ -1,17 +1,10 @@
-import * as asn1js from 'asn1js';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 import { generateRsaKeys } from './crypto';
 import Certificate from './pki/Certificate';
-import CertificateAttributes from './pki/CertificateAttributes';
+import CertificateOptions from './pki/CertificateOptions';
 
-export function asn1DerDecode(asn1Value: ArrayBuffer): asn1js.LocalBaseBlock {
-  const asn1 = asn1js.fromBER(asn1Value);
-  expect(asn1.offset).not.toEqual(-1);
-  return asn1.result;
-}
-
-type PkijsValueType = pkijs.RelativeDistinguishedNames;
+type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
 export function expectPkijsValuesToBeEqual(
   expectedValue: PkijsValueType,
@@ -34,21 +27,26 @@ export function expectAsn1ValuesToBeEqual(
 }
 
 interface StubCertConfig {
-  readonly attributes?: Partial<CertificateAttributes>;
-  readonly issuerPrivateKey?: CryptoKey;
-  readonly subjectPublicKey?: CryptoKey;
+  readonly attributes: Partial<CertificateOptions>;
+  readonly issuerCertificate: Certificate;
+  readonly issuerPrivateKey: CryptoKey;
+  readonly subjectPublicKey: CryptoKey;
 }
 
-export async function generateStubCert(config: StubCertConfig = {}): Promise<Certificate> {
+export async function generateStubCert(config: Partial<StubCertConfig> = {}): Promise<Certificate> {
   const keyPair = await generateRsaKeys();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
-  return Certificate.issue(config.issuerPrivateKey || keyPair.privateKey, {
-    serialNumber: 1,
-    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
-    validityEndDate: futureDate,
-    ...config.attributes
-  });
+  return Certificate.issue(
+    config.issuerPrivateKey || keyPair.privateKey,
+    {
+      serialNumber: 1,
+      subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+      validityEndDate: futureDate,
+      ...config.attributes
+    },
+    config.issuerCertificate
+  );
 }
 
 export function sha256Hex(plaintext: ArrayBuffer): string {
@@ -69,4 +67,15 @@ export async function expectPromiseToReject(
     return;
   }
   throw new Error(`Expected promise to throw error ${expectedError}`);
+}
+
+export async function getPromiseRejection<ErrorType extends Error>(
+  promise: Promise<any>
+): Promise<ErrorType> {
+  try {
+    await promise;
+  } catch (error) {
+    return error;
+  }
+  throw new Error('Expected promise to throw');
 }

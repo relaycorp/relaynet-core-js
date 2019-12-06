@@ -1,10 +1,8 @@
 import uuid4 from 'uuid4';
 
 import Certificate from '../pki/Certificate';
-import * as field_validators from './_field_validators';
-import Payload from './Payload';
 
-const DEFAULT_TTL = 5 * 60; // 5 minutes
+const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
 interface MessageOptions {
   readonly id: string;
@@ -16,7 +14,7 @@ interface MessageOptions {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class Message<PayloadSpecialization extends Payload> {
+export default abstract class Message {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
@@ -25,37 +23,25 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
   constructor(
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
-    readonly payload: PayloadSpecialization,
+    payloadPlaintext?: ArrayBuffer,
     options: Partial<MessageOptions> = {}
   ) {
-    //region Recipient address
-    field_validators.validateRecipientAddressLength(recipientAddress);
-    //endregion
-
-    //region Message id
-    if (options.id) {
-      field_validators.validateMessageIdLength(options.id);
-    }
     this.id = options.id || uuid4();
-    //endregion
+    this.date = options.date || new Date();
+    this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
-    //region Date
-    const customTimestampMs = options.date && options.date.getTime();
-    if (customTimestampMs) {
-      field_validators.validateDate(customTimestampMs);
+    //region Payload
+    if (payloadPlaintext) {
+      this.importPayload(payloadPlaintext);
     }
-    this.date = customTimestampMs ? new Date(customTimestampMs) : new Date();
-    //endregion
-
-    //region TTL
-    if (options.ttl) {
-      field_validators.validateTtl(options.ttl);
-    }
-    this.ttl = Object.keys(options).includes('ttl') ? (options.ttl as number) : DEFAULT_TTL;
     //endregion
 
     //region Sender certificate (chain)
-    this.senderCertificateChain = options.senderCertificateChain || new Set();
+    const initialChain = options.senderCertificateChain || new Set([]);
+    this.senderCertificateChain = new Set([...initialChain, senderCertificate]);
     //endregion
   }
+
+  public abstract exportPayload(): ArrayBuffer;
+  protected abstract importPayload(payloadPlaintext: ArrayBuffer): void;
 }
