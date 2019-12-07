@@ -11,7 +11,7 @@ const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => mockStubUuid4)
+    default: jest.fn().mockImplementation(() => mockStubUuid4),
   };
 });
 
@@ -29,13 +29,13 @@ describe('Message', () => {
   beforeAll(async () => {
     const recipientKeyPair = await generateRsaKeys();
     recipientCertificate = await generateStubCert({
-      subjectPublicKey: recipientKeyPair.publicKey
+      subjectPublicKey: recipientKeyPair.publicKey,
     });
     recipientAddress = recipientCertificate.getAddress();
 
     const senderKeyPair = await generateRsaKeys();
     senderCertificate = await generateStubCert({
-      subjectPublicKey: senderKeyPair.publicKey
+      subjectPublicKey: senderKeyPair.publicKey,
     });
   });
 
@@ -107,7 +107,7 @@ describe('Message', () => {
       test('A custom sender certificate chain should be accepted', async () => {
         const chain = new Set([await generateStubCert(), senderCertificate]);
         const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCertificateChain: chain
+          senderCertificateChain: chain,
         });
 
         expect(message.senderCertificateChain).toEqual(chain);
@@ -116,11 +116,11 @@ describe('Message', () => {
       test('Sender certificate should be added to custom chain if missing', async () => {
         const additionalCertificate = await generateStubCert();
         const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCertificateChain: new Set([additionalCertificate])
+          senderCertificateChain: new Set([additionalCertificate]),
         });
 
         expect(message.senderCertificateChain).toEqual(
-          new Set([senderCertificate, additionalCertificate])
+          new Set([senderCertificate, additionalCertificate]),
         );
       });
     });

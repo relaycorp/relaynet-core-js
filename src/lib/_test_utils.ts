@@ -8,7 +8,7 @@ type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
 export function expectPkijsValuesToBeEqual(
   expectedValue: PkijsValueType,
-  actualValue: PkijsValueType
+  actualValue: PkijsValueType,
 ): void {
   expectAsn1ValuesToBeEqual(expectedValue.toSchema(), actualValue.toSchema());
 }
@@ -21,7 +21,7 @@ interface Asn1jsSerializable {
 
 export function expectAsn1ValuesToBeEqual(
   expectedValue: Asn1jsSerializable,
-  actualValue: Asn1jsSerializable
+  actualValue: Asn1jsSerializable,
 ): void {
   expect(sha256Hex(expectedValue.toBER(false))).toEqual(sha256Hex(actualValue.toBER(false)));
 }
@@ -43,9 +43,9 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
       serialNumber: 1,
       subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
       validityEndDate: futureDate,
-      ...config.attributes
+      ...config.attributes,
     },
-    config.issuerCertificate
+    config.issuerCertificate,
   );
 }
 
@@ -57,7 +57,7 @@ export function sha256Hex(plaintext: ArrayBuffer): string {
 
 export async function expectPromiseToReject(
   promise: Promise<any>,
-  expectedError: Error
+  expectedError: Error,
 ): Promise<void> {
   try {
     await promise;
@@ -70,7 +70,7 @@ export async function expectPromiseToReject(
 }
 
 export async function getPromiseRejection<ErrorType extends Error>(
-  promise: Promise<any>
+  promise: Promise<any>,
 ): Promise<ErrorType> {
   try {
     await promise;

@@ -24,7 +24,7 @@ export default abstract class Message {
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
     payloadPlaintext?: ArrayBuffer,
-    options: Partial<MessageOptions> = {}
+    options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
     this.date = options.date || new Date();

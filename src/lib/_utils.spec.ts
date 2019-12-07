@@ -39,7 +39,7 @@ describe('deserializeDer', () => {
   test('should fail when passed a non-DER encoded value', () => {
     const invalidDerValue = bufferToArray(Buffer.from('hi'));
     expect(() => deserializeDer(invalidDerValue)).toThrowError(
-      new Error('Value is not DER-encoded')
+      new Error('Value is not DER-encoded'),
     );
   });
 });

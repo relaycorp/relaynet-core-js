@@ -28,10 +28,10 @@ describe('deserialize()', () => {
     const cert = Certificate.deserialize(certDer);
 
     expect(cert.pkijsCertificate.subject.typesAndValues[0].type).toBe(
-      pkijsCert.subject.typesAndValues[0].type
+      pkijsCert.subject.typesAndValues[0].type,
     );
     expect(cert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value).toBe(
-      pkijsCert.subject.typesAndValues[0].value.valueBlock.value
+      pkijsCert.subject.typesAndValues[0].value.valueBlock.value,
     );
   });
 
@@ -39,7 +39,7 @@ describe('deserialize()', () => {
     const invalidDer = bufferToArrayBuffer(Buffer.from('nope'));
     expect(() => Certificate.deserialize(invalidDer)).toThrowWithMessage(
       Error,
-      'Value is not DER-encoded'
+      'Value is not DER-encoded',
     );
   });
 
@@ -66,7 +66,7 @@ describe('issue()', () => {
     const cert = await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     // v3 is serialized as integer 2
@@ -78,7 +78,7 @@ describe('issue()', () => {
     await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledTimes(1);
@@ -90,13 +90,13 @@ describe('issue()', () => {
     await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     expect(pkijs.Certificate.prototype.sign).toBeCalledTimes(1);
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
       keyPair.privateKey,
-      ((keyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name
+      ((keyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name,
     );
   });
 
@@ -105,7 +105,7 @@ describe('issue()', () => {
     const cert = await Certificate.issue(keyPair.privateKey, {
       serialNumber,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(serialNumber);
@@ -117,7 +117,7 @@ describe('issue()', () => {
     const cert = await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     expect(cert.pkijsCertificate.notBefore.value).toEqual(now);
@@ -129,7 +129,7 @@ describe('issue()', () => {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
-      validityStartDate: startDate
+      validityStartDate: startDate,
     });
 
     expect(cert.pkijsCertificate.notBefore.value).toBe(startDate);
@@ -139,7 +139,7 @@ describe('issue()', () => {
     const cert = await Certificate.issue(keyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     expect(cert.pkijsCertificate.notAfter.value).toBe(futureDate);
@@ -149,10 +149,10 @@ describe('issue()', () => {
     const attributes = {
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
-      validityEndDate: new Date(2000, 1, 1)
+      validityEndDate: new Date(2000, 1, 1),
     };
     await expect(Certificate.issue(keyPair.privateKey, attributes)).rejects.toThrow(
-      'The end date must be later than the start date'
+      'The end date must be later than the start date',
     );
   });
 
@@ -161,7 +161,7 @@ describe('issue()', () => {
     const cert = await Certificate.issue(privateKey, {
       serialNumber: 1,
       subjectPublicKey: publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     const subjectDnAttributes = cert.pkijsCertificate.subject.typesAndValues;
@@ -177,7 +177,7 @@ describe('issue()', () => {
     const cert = await Certificate.issue(subjectKeyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: subjectKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     const subjectDn = cert.pkijsCertificate.subject.typesAndValues;
@@ -193,7 +193,7 @@ describe('issue()', () => {
       isCA: true,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     await expect(
@@ -202,10 +202,10 @@ describe('issue()', () => {
         {
           serialNumber: 1,
           subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate
+          validityEndDate: futureDate,
         },
-        issuerCert
-      )
+        issuerCert,
+      ),
     ).toResolve();
   });
 
@@ -215,7 +215,7 @@ describe('issue()', () => {
       isCA: false,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
     // tslint:disable-next-line:no-object-mutation
     issuerCert.pkijsCertificate.extensions = undefined;
@@ -226,11 +226,11 @@ describe('issue()', () => {
         {
           serialNumber: 1,
           subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate
+          validityEndDate: futureDate,
         },
-        issuerCert
+        issuerCert,
       ),
-      new CertificateError('Basic constraints extension is missing from issuer certificate')
+      new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
 
@@ -240,7 +240,7 @@ describe('issue()', () => {
       isCA: false,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
     // tslint:disable-next-line:no-object-mutation
     issuerCert.pkijsCertificate.extensions = [];
@@ -251,11 +251,11 @@ describe('issue()', () => {
         {
           serialNumber: 1,
           subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate
+          validityEndDate: futureDate,
         },
-        issuerCert
+        issuerCert,
       ),
-      new CertificateError('Basic constraints extension is missing from issuer certificate')
+      new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
 
@@ -265,12 +265,12 @@ describe('issue()', () => {
       isCA: false,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
     // tslint:disable-next-line:no-object-mutation
     issuerCert.pkijsCertificate.extensions = (issuerCert.pkijsCertificate
       .extensions as ReadonlyArray<pkijs.Extension>).filter(
-      e => e.extnID !== oids.BASIC_CONSTRAINTS
+      e => e.extnID !== oids.BASIC_CONSTRAINTS,
     );
 
     await expectPromiseToReject(
@@ -279,11 +279,11 @@ describe('issue()', () => {
         {
           serialNumber: 1,
           subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate
+          validityEndDate: futureDate,
         },
-        issuerCert
+        issuerCert,
       ),
-      new CertificateError('Basic constraints extension is missing from issuer certificate')
+      new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
 
@@ -293,7 +293,7 @@ describe('issue()', () => {
       isCA: false,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     await expectPromiseToReject(
@@ -302,11 +302,11 @@ describe('issue()', () => {
         {
           serialNumber: 1,
           subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate
+          validityEndDate: futureDate,
         },
-        issuerCert
+        issuerCert,
       ),
-      new CertificateError('Issuer is not a CA')
+      new CertificateError('Issuer is not a CA'),
     );
   });
 
@@ -316,7 +316,7 @@ describe('issue()', () => {
       isCA: true,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     const subjectKeyPair = await generateRsaKeys();
@@ -325,9 +325,9 @@ describe('issue()', () => {
       {
         serialNumber: 1,
         subjectPublicKey: subjectKeyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       },
-      issuerCert
+      issuerCert,
     );
 
     const subjectCertIssuerDn = subjectCert.pkijsCertificate.issuer.typesAndValues;
@@ -342,7 +342,7 @@ describe('issue()', () => {
       const cert = await Certificate.issue(keyPair.privateKey, {
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
@@ -354,7 +354,7 @@ describe('issue()', () => {
       const cert = await Certificate.issue(keyPair.privateKey, {
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
@@ -365,7 +365,7 @@ describe('issue()', () => {
       const cert = await Certificate.issue(keyPair.privateKey, {
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
@@ -379,7 +379,7 @@ describe('issue()', () => {
         isCA: true,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
@@ -394,7 +394,7 @@ describe('issue()', () => {
       const cert = await Certificate.issue(keyPair.privateKey, {
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
@@ -409,7 +409,7 @@ describe('issue()', () => {
       const cert = await Certificate.issue(keyPair.privateKey, {
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const extensions = cert.pkijsCertificate.extensions || [];
@@ -419,7 +419,7 @@ describe('issue()', () => {
       expect(akiExtension.critical).toBe(false);
       const akiExtensionAsn1 = deserializeDer(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
-        schema: akiExtensionAsn1
+        schema: akiExtensionAsn1,
       });
       const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
       expect(keyIdBuffer.toString('hex')).toEqual(await getPublicKeyDigest(keyPair.publicKey));
@@ -431,7 +431,7 @@ describe('issue()', () => {
         isCA: true,
         serialNumber: 1,
         subjectPublicKey: issuerKeyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       });
 
       const subjectKeyPair = await generateRsaKeys();
@@ -440,9 +440,9 @@ describe('issue()', () => {
         {
           serialNumber: 1,
           subjectPublicKey: subjectKeyPair.publicKey,
-          validityEndDate: futureDate
+          validityEndDate: futureDate,
         },
-        issuerCert
+        issuerCert,
       );
 
       const extensions = subjectCert.pkijsCertificate.extensions || [];
@@ -452,11 +452,11 @@ describe('issue()', () => {
       expect(akiExtension.critical).toBe(false);
       const akiExtensionAsn1 = deserializeDer(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
-        schema: akiExtensionAsn1
+        schema: akiExtensionAsn1,
       });
       const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
       expect(keyIdBuffer.toString('hex')).toEqual(
-        await getPublicKeyDigest(issuerKeyPair.publicKey)
+        await getPublicKeyDigest(issuerKeyPair.publicKey),
       );
     });
   });
@@ -467,7 +467,7 @@ describe('issue()', () => {
       isCA: true,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: futureDate
+      validityEndDate: futureDate,
     });
 
     const subjectKeyPair = await generateRsaKeys();
@@ -476,9 +476,9 @@ describe('issue()', () => {
       {
         serialNumber: 1,
         subjectPublicKey: subjectKeyPair.publicKey,
-        validityEndDate: futureDate
+        validityEndDate: futureDate,
       },
-      issuerCert
+      issuerCert,
     );
 
     const extensions = subjectCert.pkijsCertificate.extensions || [];
@@ -530,7 +530,7 @@ describe('getAddress()', () => {
 
     expect(() => cert.getAddress()).toThrowWithMessage(
       CertificateError,
-      'Could not find subject node address in certificate'
+      'Could not find subject node address in certificate',
     );
   });
 });
@@ -552,7 +552,7 @@ describe('validate()', () => {
 
       expect(() => cert.validate()).toThrowWithMessage(
         CertificateError,
-        'Only X.509 v3 certificates are supported (got v2)'
+        'Only X.509 v3 certificates are supported (got v2)',
       );
     });
   });

@@ -8,7 +8,7 @@ import {
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
-  sha256Hex
+  sha256Hex,
 } from './_test_utils';
 import { deserializeDer } from './_utils';
 import * as cms from './cms';
@@ -34,7 +34,7 @@ beforeAll(async () => {
   privateKey = keyPair.privateKey;
   certificate = await generateStubCert({
     issuerPrivateKey: privateKey,
-    subjectPublicKey: keyPair.publicKey
+    subjectPublicKey: keyPair.publicKey,
   });
 });
 
@@ -72,11 +72,11 @@ describe('encrypt', () => {
       expect(keyTransRecipientInfo.rid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
       expectPkijsValuesToBeEqual(
         keyTransRecipientInfo.rid.issuer,
-        certificate.pkijsCertificate.issuer
+        certificate.pkijsCertificate.issuer,
       );
       expectAsn1ValuesToBeEqual(
         keyTransRecipientInfo.rid.serialNumber,
-        certificate.pkijsCertificate.serialNumber
+        certificate.pkijsCertificate.serialNumber,
       );
     });
 
@@ -94,7 +94,7 @@ describe('encrypt', () => {
       const envelopedData = deserializeEnvelopedData(contentInfoDer);
       const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
       const algorithmParams = new pkijs.RSAESOAEPParams({
-        schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams
+        schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
       });
       expect(algorithmParams.hashAlgorithm.algorithmId).toEqual(OID_SHA256);
     });
@@ -106,7 +106,7 @@ describe('encrypt', () => {
 
       const envelopedData = deserializeEnvelopedData(contentInfoDer);
       expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-        OID_AES_GCM_128
+        OID_AES_GCM_128,
       );
     });
 
@@ -115,20 +115,20 @@ describe('encrypt', () => {
       async (aesKeySize, expectedOid) => {
         // @ts-ignore
         const contentInfoDer = await cms.encrypt(plaintext, certificate, {
-          aesKeySize
+          aesKeySize,
         });
 
         const envelopedData = deserializeEnvelopedData(contentInfoDer);
         expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-          expectedOid
+          expectedOid,
         );
-      }
+      },
     );
 
     test('Key sizes other than 128, 192 and 256 should be refused', async () => {
       await expectPromiseToReject(
         cms.encrypt(plaintext, certificate, { aesKeySize: 512 }),
-        new CMSError('Invalid AES key size (512)')
+        new CMSError('Invalid AES key size (512)'),
       );
     });
   });
@@ -139,7 +139,7 @@ describe('decrypt', () => {
     const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.decrypt(invalidDer, privateKey),
-      new Error('Value is not DER-encoded')
+      new Error('Value is not DER-encoded'),
     );
   });
 
@@ -203,7 +203,7 @@ describe('sign', () => {
       expectPkijsValuesToBeEqual(signerInfo.sid.issuer, certificate.pkijsCertificate.issuer);
       expectAsn1ValuesToBeEqual(
         signerInfo.sid.serialNumber,
-        certificate.pkijsCertificate.serialNumber
+        certificate.pkijsCertificate.serialNumber,
       );
     });
 
@@ -231,13 +231,13 @@ describe('sign', () => {
 
         const contentTypeAttribute = deserializeSignerInfoAttribute(
           contentInfoDer,
-          oids.CMS_ATTR_CONTENT_TYPE
+          oids.CMS_ATTR_CONTENT_TYPE,
         );
         // @ts-ignore
         expect(contentTypeAttribute.values).toHaveLength(1);
         expect(
           // @ts-ignore
-          contentTypeAttribute.values[0].valueBlock.toString()
+          contentTypeAttribute.values[0].valueBlock.toString(),
         ).toEqual(oids.CMS_DATA);
       });
 
@@ -246,13 +246,13 @@ describe('sign', () => {
 
         const digestAttribute = deserializeSignerInfoAttribute(
           contentInfoDer,
-          oids.CMS_ATTR_DIGEST
+          oids.CMS_ATTR_DIGEST,
         );
         // @ts-ignore
         expect(digestAttribute.values).toHaveLength(1);
         expect(
           // @ts-ignore
-          digestAttribute.values[0].valueBlock.valueHex
+          digestAttribute.values[0].valueBlock.valueHex,
         ).toBeTruthy();
       });
     });
@@ -272,7 +272,7 @@ describe('sign', () => {
         plaintext,
         privateKey,
         certificate,
-        new Set([certificate, certificate2])
+        new Set([certificate, certificate2]),
       );
 
       const signedData = deserializeSignedData(contentInfoDer);
@@ -281,12 +281,12 @@ describe('sign', () => {
       expectPkijsValuesToBeEqual(
         // @ts-ignore
         signedData.certificates[0],
-        certificate.pkijsCertificate
+        certificate.pkijsCertificate,
       );
       expectPkijsValuesToBeEqual(
         // @ts-ignore
         signedData.certificates[1],
-        certificate2.pkijsCertificate
+        certificate2.pkijsCertificate,
       );
     });
   });
@@ -298,14 +298,14 @@ describe('sign', () => {
       const digestAttribute = deserializeSignerInfoAttribute(contentInfoDer, oids.CMS_ATTR_DIGEST);
       expect(
         // @ts-ignore
-        Buffer.from(digestAttribute.values[0].valueBlock.valueHex).toString('hex')
+        Buffer.from(digestAttribute.values[0].valueBlock.valueHex).toString('hex'),
       ).toEqual(sha256Hex(plaintext));
     });
 
     test.each([['SHA-384', 'SHA-512']])('%s should be supported', async hashingAlgorithmName => {
       jest.spyOn(pkijs.SignedData.prototype, 'sign');
       const contentInfoDer = await cms.sign(plaintext, privateKey, certificate, new Set(), {
-        hashingAlgorithmName
+        hashingAlgorithmName,
       });
 
       // @ts-ignore
@@ -315,11 +315,11 @@ describe('sign', () => {
       const digestAttribute = deserializeSignerInfoAttribute(contentInfoDer, oids.CMS_ATTR_DIGEST);
       expect(
         // @ts-ignore
-        Buffer.from(digestAttribute.values[0].valueBlock.valueHex).toString('hex')
+        Buffer.from(digestAttribute.values[0].valueBlock.valueHex).toString('hex'),
       ).toEqual(
         createHash(hashingAlgorithmName.toLowerCase().replace('-', ''))
           .update(Buffer.from(plaintext))
-          .digest('hex')
+          .digest('hex'),
       );
     });
 
@@ -328,7 +328,7 @@ describe('sign', () => {
 
       try {
         await cms.sign(plaintext, privateKey, certificate, new Set(), {
-          hashingAlgorithmName: 'SHA-1'
+          hashingAlgorithmName: 'SHA-1',
         });
       } catch (error) {
         expect(error).toBeInstanceOf(CMSError);
@@ -343,7 +343,7 @@ describe('verifySignature', () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       cms.verifySignature(invalidSignature, plaintext),
-      new Error('Value is not DER-encoded')
+      new Error('Value is not DER-encoded'),
     );
   });
 
@@ -353,11 +353,11 @@ describe('verifySignature', () => {
       differentPlaintext,
       privateKey,
       certificate,
-      new Set([certificate])
+      new Set([certificate]),
     );
     await expectPromiseToReject(
       cms.verifySignature(signatureDer, plaintext),
-      new CMSError('Invalid signature:  (PKI.js code: 14)')
+      new CMSError('Invalid signature:  (PKI.js code: 14)'),
     );
   });
 
@@ -380,7 +380,7 @@ describe('verifySignature', () => {
       delete signedData.certificates;
       const contentInfo = new pkijs.ContentInfo({
         content: signedData.toSchema(true),
-        contentType: oids.CMS_SIGNED_DATA
+        contentType: oids.CMS_SIGNED_DATA,
       });
       const signatureWithoutCerts = contentInfo.toSchema().toBER(false);
 
@@ -397,7 +397,7 @@ describe('verifySignature', () => {
         plaintext,
         privateKey,
         certificate,
-        new Set([certificate])
+        new Set([certificate]),
       );
       await expect(cms.verifySignature(signatureDer, plaintext)).toResolve();
     });
@@ -407,20 +407,20 @@ describe('verifySignature', () => {
     const caKeyPair = await generateRsaKeys();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 1 },
-      subjectPublicKey: caKeyPair.publicKey
+      subjectPublicKey: caKeyPair.publicKey,
     });
     const signerKeyPair = await generateRsaKeys();
     const signerCertificate = await generateStubCert({
       attributes: { serialNumber: 2 },
       issuerCertificate: caCertificate,
       issuerPrivateKey: caKeyPair.privateKey,
-      subjectPublicKey: signerKeyPair.publicKey
+      subjectPublicKey: signerKeyPair.publicKey,
     });
     const signatureDer = await cms.sign(
       plaintext,
       signerKeyPair.privateKey,
       signerCertificate,
-      new Set([caCertificate, signerCertificate]) // Trusted certificate is attached
+      new Set([caCertificate, signerCertificate]), // Trusted certificate is attached
     );
 
     await cms.verifySignature(signatureDer, plaintext, [reSerializeCertificate(caCertificate)]);
@@ -430,20 +430,20 @@ describe('verifySignature', () => {
     const caKeyPair = await generateRsaKeys();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 1 },
-      subjectPublicKey: caKeyPair.publicKey
+      subjectPublicKey: caKeyPair.publicKey,
     });
     const signerKeyPair = await generateRsaKeys();
     const signerCertificate = await generateStubCert({
       attributes: { serialNumber: 2 },
       issuerCertificate: caCertificate,
       issuerPrivateKey: caKeyPair.privateKey,
-      subjectPublicKey: signerKeyPair.publicKey
+      subjectPublicKey: signerKeyPair.publicKey,
     });
     const signatureDer = await cms.sign(
       plaintext,
       signerKeyPair.privateKey,
       signerCertificate,
-      new Set([signerCertificate]) // Trusted certificate is detached
+      new Set([signerCertificate]), // Trusted certificate is detached
     );
 
     await cms.verifySignature(signatureDer, plaintext, [reSerializeCertificate(caCertificate)]);
@@ -453,7 +453,7 @@ describe('verifySignature', () => {
     const caKeyPair = await generateRsaKeys();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 2 },
-      subjectPublicKey: caKeyPair.publicKey
+      subjectPublicKey: caKeyPair.publicKey,
     });
     const signatureDer = await cms.sign(plaintext, privateKey, certificate, new Set([certificate]));
 
@@ -462,20 +462,20 @@ describe('verifySignature', () => {
       new CMSError(
         'Invalid signature: ' +
           "Validation of signer's certificate failed: No valid certificate paths found " +
-          '(PKI.js code: 5)'
-      )
+          '(PKI.js code: 5)',
+      ),
     );
   });
 
   test('Sender certificate should be returned if verification passes', async () => {
     const superfluousCertificate = await generateStubCert({
-      subjectPublicKey: (await generateRsaKeys()).publicKey
+      subjectPublicKey: (await generateRsaKeys()).publicKey,
     });
     const signatureDer = await cms.sign(
       plaintext,
       privateKey,
       certificate,
-      new Set([superfluousCertificate, certificate])
+      new Set([superfluousCertificate, certificate]),
     );
 
     const { signerCertificate } = await cms.verifySignature(signatureDer, plaintext);
@@ -489,7 +489,7 @@ describe('verifySignature', () => {
         plaintext,
         privateKey,
         certificate,
-        new Set([certificate])
+        new Set([certificate]),
       );
 
       const { signerCertificateChain } = await cms.verifySignature(signatureDer, plaintext);
@@ -497,7 +497,7 @@ describe('verifySignature', () => {
       expect(signerCertificateChain).toHaveLength(1);
       expectPkijsValuesToBeEqual(
         signerCertificateChain[0].pkijsCertificate,
-        certificate.pkijsCertificate
+        certificate.pkijsCertificate,
       );
     });
 
@@ -505,46 +505,46 @@ describe('verifySignature', () => {
       const rootCaKeyPair = await generateRsaKeys();
       const rootCaCertificate = await generateStubCert({
         attributes: { isCA: true, serialNumber: 1 },
-        subjectPublicKey: rootCaKeyPair.publicKey
+        subjectPublicKey: rootCaKeyPair.publicKey,
       });
       const caKeyPair = await generateRsaKeys();
       const caCertificate = await generateStubCert({
         attributes: { isCA: true, serialNumber: 2 },
         issuerCertificate: rootCaCertificate,
         issuerPrivateKey: rootCaKeyPair.privateKey,
-        subjectPublicKey: caKeyPair.publicKey
+        subjectPublicKey: caKeyPair.publicKey,
       });
       const signerKeyPair = await generateRsaKeys();
       const signerCertificate = await generateStubCert({
         attributes: { serialNumber: 3 },
         issuerCertificate: caCertificate,
         issuerPrivateKey: caKeyPair.privateKey,
-        subjectPublicKey: signerKeyPair.publicKey
+        subjectPublicKey: signerKeyPair.publicKey,
       });
       const signatureDer = await cms.sign(
         plaintext,
         signerKeyPair.privateKey,
         signerCertificate,
-        new Set([signerCertificate])
+        new Set([signerCertificate]),
       );
 
       const { signerCertificateChain } = await cms.verifySignature(signatureDer, plaintext, [
         reSerializeCertificate(rootCaCertificate),
-        reSerializeCertificate(caCertificate)
+        reSerializeCertificate(caCertificate),
       ]);
 
       expect(signerCertificateChain).toHaveLength(3);
       expectPkijsValuesToBeEqual(
         signerCertificateChain[2].pkijsCertificate,
-        rootCaCertificate.pkijsCertificate
+        rootCaCertificate.pkijsCertificate,
       );
       expectPkijsValuesToBeEqual(
         signerCertificateChain[1].pkijsCertificate,
-        caCertificate.pkijsCertificate
+        caCertificate.pkijsCertificate,
       );
       expectPkijsValuesToBeEqual(
         signerCertificateChain[0].pkijsCertificate,
-        signerCertificate.pkijsCertificate
+        signerCertificate.pkijsCertificate,
       );
     });
   });
@@ -566,7 +566,7 @@ function deserializeSignerInfo(contentInfoDer: ArrayBuffer): pkijs.SignerInfo {
 
 function deserializeSignerInfoAttribute(
   contentInfoDer: ArrayBuffer,
-  attributeOid: string
+  attributeOid: string,
 ): pkijs.Attribute {
   const signerInfo = deserializeSignerInfo(contentInfoDer);
   const attributes = (signerInfo.signedAttrs as pkijs.SignedAndUnsignedAttributes).attributes;

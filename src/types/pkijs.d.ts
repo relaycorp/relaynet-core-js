@@ -45,7 +45,7 @@ declare module 'pkijs' {
     RSAESOAEPParams,
     SignedAndUnsignedAttributes,
     SignedData,
-    SignerInfo
+    SignerInfo,
   };
 
   // Export all the stuff that "@types/pkijs" doesn't export but we use here
@@ -55,6 +55,6 @@ declare module 'pkijs' {
 
   export function getAlgorithmParameters(
     algorithmName: string,
-    operation: string
+    operation: string,
   ): { algorithm: RsaHashedKeyGenParams; usages: string[] };
 }

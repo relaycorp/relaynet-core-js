@@ -29,14 +29,14 @@ export interface SignatureVerification {
 export async function encrypt(
   plaintext: ArrayBuffer,
   certificate: Certificate,
-  options: Partial<EncryptionOptions> = {}
+  options: Partial<EncryptionOptions> = {},
 ): Promise<ArrayBuffer> {
   const envelopedData = new pkijs.EnvelopedData();
 
   envelopedData.addRecipientByCertificate(
     certificate.pkijsCertificate,
     { oaepHashAlgorithm: 'SHA-256' },
-    1
+    1,
   );
 
   if (options.aesKeySize && !AES_KEY_SIZES.includes(options.aesKeySize)) {
@@ -47,12 +47,12 @@ export async function encrypt(
   await envelopedData.encrypt(
     // @ts-ignore
     { name: 'AES-GCM', length: aesKeySize },
-    plaintext
+    plaintext,
   );
 
   const contentInfo = new pkijs.ContentInfo({
     content: envelopedData.toSchema(),
-    contentType: oids.CMS_ENVELOPED_DATA
+    contentType: oids.CMS_ENVELOPED_DATA,
   });
   return contentInfo.toSchema().toBER(false);
 }
@@ -67,7 +67,7 @@ export async function encrypt(
  */
 export async function decrypt(
   ciphertext: ArrayBuffer,
-  privateKey: CryptoKey
+  privateKey: CryptoKey,
 ): Promise<ArrayBuffer> {
   const cmsContentInfo = deserializeContentInfo(ciphertext);
   const cmsEnvelopedSimp = new pkijs.EnvelopedData({ schema: cmsContentInfo });
@@ -77,7 +77,7 @@ export async function decrypt(
     return await cmsEnvelopedSimp.decrypt(
       0,
       // @ts-ignore
-      { recipientPrivateKey: privateKeyBuffer }
+      { recipientPrivateKey: privateKeyBuffer },
     );
   } catch (error) {
     throw new CMSError(`Decryption failed: ${error}`);
@@ -103,7 +103,7 @@ export async function sign(
   privateKey: CryptoKey,
   signerCertificate: Certificate,
   attachedCertificates: ReadonlySet<Certificate> = new Set(),
-  options: Partial<SignatureOptions> = {}
+  options: Partial<SignatureOptions> = {},
 ): Promise<ArrayBuffer> {
   // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
   if (options.hashingAlgorithmName === 'SHA-1') {
@@ -116,16 +116,16 @@ export async function sign(
   const signedData = new pkijs.SignedData({
     certificates: Array.from(attachedCertificates).map(c => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
-      eContentType: oids.CMS_DATA
+      eContentType: oids.CMS_DATA,
     }),
     signerInfos: [signerInfo],
-    version: 1
+    version: 1,
   });
   await signedData.sign(privateKey, 0, hashingAlgorithmName);
 
   const contentInfo = new pkijs.ContentInfo({
     content: signedData.toSchema(true),
-    contentType: oids.CMS_SIGNED_DATA
+    contentType: oids.CMS_SIGNED_DATA,
   });
   return contentInfo.toSchema().toBER(false);
 }
@@ -133,23 +133,23 @@ export async function sign(
 function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pkijs.SignerInfo {
   const signerIdentifier = new pkijs.IssuerAndSerialNumber({
     issuer: signerCertificate.pkijsCertificate.issuer,
-    serialNumber: signerCertificate.pkijsCertificate.serialNumber
+    serialNumber: signerCertificate.pkijsCertificate.serialNumber,
   });
   const contentTypeAttribute = new pkijs.Attribute({
     type: oids.CMS_ATTR_CONTENT_TYPE,
-    values: [new asn1js.ObjectIdentifier({ value: oids.CMS_DATA })]
+    values: [new asn1js.ObjectIdentifier({ value: oids.CMS_DATA })],
   });
   const digestAttribute = new pkijs.Attribute({
     type: oids.CMS_ATTR_DIGEST,
-    values: [new asn1js.OctetString({ valueHex: digest })]
+    values: [new asn1js.OctetString({ valueHex: digest })],
   });
   return new pkijs.SignerInfo({
     sid: signerIdentifier,
     signedAttrs: new pkijs.SignedAndUnsignedAttributes({
       attributes: [contentTypeAttribute, digestAttribute],
-      type: 0
+      type: 0,
     }),
-    version: 1
+    version: 1,
   });
 }
 
@@ -165,7 +165,7 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
 export async function verifySignature(
   signature: ArrayBuffer,
   plaintext: ArrayBuffer,
-  detachedSignerCertificateOrTrustedCertificates?: Certificate | ReadonlyArray<Certificate>
+  detachedSignerCertificateOrTrustedCertificates?: Certificate | ReadonlyArray<Certificate>,
 ): Promise<SignatureVerification> {
   const detachedSignerCertificate =
     detachedSignerCertificateOrTrustedCertificates instanceof Certificate
@@ -187,7 +187,7 @@ export async function verifySignature(
     // tslint:disable-next-line:no-object-mutation
     signedData.certificates = [
       ...originalCertificates,
-      ...trustedCertificates.map(c => c.pkijsCertificate)
+      ...trustedCertificates.map(c => c.pkijsCertificate),
     ];
   }
 
@@ -201,7 +201,7 @@ export async function verifySignature(
       signer: 0,
       trustedCerts: trustedCertificates
         ? trustedCertificates.map(c => c.pkijsCertificate)
-        : undefined
+        : undefined,
     });
 
     if (!verificationResult.signatureVerified) {
@@ -216,7 +216,7 @@ export async function verifySignature(
     : [((verificationResult as unknown) as MissingSignedDataVerifyResult).signerCertificate];
   return {
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
-    signerCertificateChain: pkijsCertificateChain.map(c => new Certificate(c))
+    signerCertificateChain: pkijsCertificateChain.map(c => new Certificate(c)),
   };
 }
 

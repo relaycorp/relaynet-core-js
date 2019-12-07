@@ -5,7 +5,7 @@ const webcrypto = new WebCrypto();
 const cryptoEngine = new CryptoEngine({
   crypto: webcrypto,
   name: 'nodeEngine',
-  subtle: webcrypto.subtle
+  subtle: webcrypto.subtle,
 });
 setEngine('nodeEngine', webcrypto, cryptoEngine);
 
@@ -18,7 +18,7 @@ setEngine('nodeEngine', webcrypto, cryptoEngine);
  */
 export async function generateRsaKeys({
   modulus = 2048,
-  hashingAlgorithm = 'SHA-256'
+  hashingAlgorithm = 'SHA-256',
 } = {}): Promise<CryptoKeyPair> {
   if (modulus < 2048) {
     throw new Error(`RSA modulus must be => 2048 per RS-018 (got ${modulus})`);

@@ -39,7 +39,7 @@ export default class Certificate {
   public static async issue(
     issuerPrivateKey: CryptoKey,
     options: CertificateOptions,
-    issuerCertificate?: Certificate
+    issuerCertificate?: Certificate,
   ): Promise<Certificate> {
     //region Validation
     const validityStartDate = options.validityStartDate || new Date();
@@ -59,10 +59,10 @@ export default class Certificate {
       extensions: [
         makeBasicConstraintsExtension(options.isCA === true),
         await makeAuthorityKeyIdExtension(issuerPublicKey),
-        await makeSubjectKeyIdExtension(options.subjectPublicKey)
+        await makeSubjectKeyIdExtension(options.subjectPublicKey),
       ],
       serialNumber: new asn1js.Integer({ value: options.serialNumber }),
-      version: 2 // 2 = v3
+      version: 2, // 2 = v3
     });
 
     // tslint:disable-next-line:no-object-mutation
@@ -74,8 +74,8 @@ export default class Certificate {
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: oids.COMMON_NAME,
-        value: new asn1js.BmpString({ value: address })
-      })
+        value: new asn1js.BmpString({ value: address }),
+      }),
     );
 
     const issuerDn = issuerCertificate
@@ -86,8 +86,8 @@ export default class Certificate {
       attribute =>
         new pkijs.AttributeTypeAndValue({
           type: attribute.type,
-          value: cloneAsn1jsValue(attribute.value)
-        })
+          value: cloneAsn1jsValue(attribute.value),
+        }),
     );
 
     await pkijsCert.subjectPublicKeyInfo.importKey(options.subjectPublicKey);
@@ -113,7 +113,7 @@ export default class Certificate {
    */
   public getAddress(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
-      a => ((a.type as unknown) as string) === oids.COMMON_NAME
+      a => ((a.type as unknown) as string) === oids.COMMON_NAME,
     );
     if (matchingDnAttr.length === 0) {
       throw new CertificateError('Could not find subject node address in certificate');
@@ -126,7 +126,7 @@ export default class Certificate {
     const x509CertVersion = this.pkijsCertificate.version + 1;
     if (x509CertVersion !== 3) {
       throw new CertificateError(
-        `Only X.509 v3 certificates are supported (got v${x509CertVersion})`
+        `Only X.509 v3 certificates are supported (got v${x509CertVersion})`,
       );
     }
   }
@@ -138,7 +138,7 @@ function makeBasicConstraintsExtension(isCA: boolean): pkijs.Extension {
   return new pkijs.Extension({
     critical: true,
     extnID: oids.BASIC_CONSTRAINTS,
-    extnValue: new pkijs.BasicConstraints({ cA: isCA }).toSchema().toBER(false)
+    extnValue: new pkijs.BasicConstraints({ cA: isCA }).toSchema().toBER(false),
   });
 }
 
@@ -149,7 +149,7 @@ async function makeAuthorityKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.
     extnID: oids.AUTHORITY_KEY,
     extnValue: new pkijs.AuthorityKeyIdentifier({ keyIdentifier: keyIdEncoded })
       .toSchema()
-      .toBER(false)
+      .toBER(false),
   });
 }
 
@@ -157,7 +157,7 @@ async function makeSubjectKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Ex
   const keyDigest = await getPublicKeyDigest(publicKey);
   return new pkijs.Extension({
     extnID: oids.SUBJECT_KEY,
-    extnValue: new asn1js.OctetString({ valueHex: keyDigest }).toBER(false)
+    extnValue: new asn1js.OctetString({ valueHex: keyDigest }).toBER(false),
   });
 }
 

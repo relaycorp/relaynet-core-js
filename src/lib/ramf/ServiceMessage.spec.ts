@@ -17,7 +17,7 @@ describe('ServiceMessage', () => {
 
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
-        'Service message type exceeds maximum length'
+        'Service message type exceeds maximum length',
       );
     });
 
@@ -29,7 +29,7 @@ describe('ServiceMessage', () => {
 
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
-        'Service message value exceeds maximum length'
+        'Service message value exceeds maximum length',
       );
     });
 
@@ -70,7 +70,7 @@ describe('ServiceMessage', () => {
       const invalidBuffer = Buffer.from('nope.jpeg');
       expect(() => ServiceMessage.deserialize(invalidBuffer)).toThrowWithMessage(
         RAMFError,
-        'Invalid service message serialization'
+        'Invalid service message serialization',
       );
     });
 
@@ -87,7 +87,7 @@ describe('ServiceMessage', () => {
       const valueLength = 0x0100; // Two *different* octets, so endianness matters
       const originalMessage = new ServiceMessage(
         'text/plain',
-        Buffer.from('A'.repeat(valueLength))
+        Buffer.from('A'.repeat(valueLength)),
       );
       const serialization = Buffer.from(originalMessage.serialize());
 

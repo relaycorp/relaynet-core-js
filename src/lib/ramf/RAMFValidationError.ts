@@ -5,7 +5,7 @@ export default class RAMFValidationError extends RAMFError {
   constructor(
     message: string,
     readonly invalidMessageFields: MessageFields,
-    cause: Error | null = null
+    cause: Error | null = null,
   ) {
     super({ cause }, message);
   }

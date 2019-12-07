@@ -48,7 +48,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
   constructor(
     protected readonly messageClass: new (...args: readonly any[]) => MessageSpecialization,
     readonly concreteMessageTypeOctet: number,
-    readonly concreteMessageVersionOctet: number
+    readonly concreteMessageVersionOctet: number,
   ) {}
 
   /**
@@ -64,7 +64,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     message: MessageSpecialization,
     senderPrivateKey: CryptoKey,
     recipientCertificate: Certificate,
-    options?: Partial<cms.EncryptionOptions | cms.SignatureOptions>
+    options?: Partial<cms.EncryptionOptions | cms.SignatureOptions>,
   ): Promise<ArrayBuffer> {
     //region Validation
     validateRecipientAddressLength(message.recipientAddress);
@@ -106,7 +106,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     const cmsEnvelopedData = await cms.encrypt(
       message.exportPayload(),
       recipientCertificate,
-      options as cms.EncryptionOptions
+      options as cms.EncryptionOptions,
     );
     serialization.writeUInt32LE(cmsEnvelopedData.byteLength);
     serialization.writeBuffer(Buffer.from(cmsEnvelopedData));
@@ -120,7 +120,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
       senderPrivateKey,
       message.senderCertificate,
       new Set([message.senderCertificate, ...message.senderCertificateChain]),
-      options as cms.SignatureOptions
+      options as cms.SignatureOptions,
     );
     validateSignatureLength(signature);
     const signatureLengthPrefix = Buffer.allocUnsafe(2);
@@ -130,14 +130,14 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     const finalSerialization = Buffer.concat([
       serializationBeforeSignature,
       signatureLengthPrefix,
-      Buffer.from(signature)
+      Buffer.from(signature),
     ]);
     return bufferToArray(finalSerialization);
   }
 
   public async deserialize(
     serialization: ArrayBuffer,
-    recipientPrivateKey: CryptoKey
+    recipientPrivateKey: CryptoKey,
   ): Promise<MessageSpecialization> {
     //region Parse and validate syntax
     const messageFields = parseMessage(serialization);
@@ -155,7 +155,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
 
     const payloadPlaintext = await cms.decrypt(
       bufferToArray(messageFields.payload),
-      recipientPrivateKey
+      recipientPrivateKey,
     );
 
     return new this.messageClass(
@@ -166,8 +166,8 @@ export class MessageSerializer<MessageSpecialization extends Message> {
         date: new Date(messageFields.dateTimestamp * 1_000),
         id: messageFields.id,
         senderCertificateChain: signatureVerification.signerCertificateChain,
-        ttl: messageFields.ttlBuffer.readUIntLE(0, 3)
-      }
+        ttl: messageFields.ttlBuffer.readUIntLE(0, 3),
+      },
     );
   }
 
@@ -177,7 +177,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
       const expectedMessageTypeHex = decimalToHex(this.concreteMessageTypeOctet);
       const actualMessageTypeHex = decimalToHex(messageFields.concreteMessageType);
       throw new RAMFSyntaxError(
-        `Expected concrete message type ${expectedMessageTypeHex} but got ${actualMessageTypeHex}`
+        `Expected concrete message type ${expectedMessageTypeHex} but got ${actualMessageTypeHex}`,
       );
     }
     //endregion
@@ -187,7 +187,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
       const expectedVersionHex = decimalToHex(this.concreteMessageVersionOctet);
       const actualVersionHex = decimalToHex(messageFields.concreteMessageVersion);
       throw new RAMFSyntaxError(
-        `Expected concrete message version ${expectedVersionHex} but got ${actualVersionHex}`
+        `Expected concrete message version ${expectedVersionHex} but got ${actualVersionHex}`,
       );
     }
     //endregion
@@ -239,7 +239,7 @@ function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
   const signatureLength = signatureBuffer.byteLength;
   if (MAX_SIGNATURE_LENGTH < signatureLength) {
     throw new RAMFSyntaxError(
-      `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`
+      `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`,
     );
   }
 }
@@ -258,13 +258,13 @@ function parseMessage(serialization: ArrayBuffer): MessageFields {
 
 async function verifySignature(
   messageSerialized: ArrayBuffer,
-  messageFields: MessageFields
+  messageFields: MessageFields,
 ): Promise<cms.SignatureVerification> {
   const signatureCiphertext = bufferToArray(messageFields.signature);
   const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
   const signaturePlaintext = messageSerialized.slice(
     0,
-    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix
+    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix,
   );
   try {
     return await cms.verifySignature(signatureCiphertext, signaturePlaintext);
@@ -275,7 +275,7 @@ async function verifySignature(
 
 function validateMessageTiming(
   messageFields: MessageFields,
-  signatureVerification: cms.SignatureVerification
+  signatureVerification: cms.SignatureVerification,
 ): void {
   const currentTimestamp = dateToTimestamp(new Date());
   if (currentTimestamp < messageFields.dateTimestamp) {
@@ -286,14 +286,14 @@ function validateMessageTiming(
   if (messageFields.dateTimestamp < dateToTimestamp(pkijsCertificate.notBefore.value)) {
     throw new RAMFValidationError(
       'Message was created before the sender certificate was valid',
-      messageFields
+      messageFields,
     );
   }
 
   if (dateToTimestamp(pkijsCertificate.notAfter.value) < messageFields.dateTimestamp) {
     throw new RAMFValidationError(
       'Message was created after the sender certificate expired',
-      messageFields
+      messageFields,
     );
   }
 
