@@ -71,7 +71,7 @@
     "gh-pages": "^2.0.1",
     "jest": "^24.8.0",
     "jest-date-mock": "^1.0.7",
-    "jest-extended": "^0.11.1",
+    "jest-extended": "^0.11.2",
     "npm-run-all": "^4.1.5",
     "opn-cli": "^4.0.0",
     "prettier": "^1.15.2",
@@ -81,7 +81,7 @@
     "tslint": "^5.18.0",
     "tslint-config-prettier": "^1.17.0",
     "tslint-immutable": "^5.0.0",
-    "typedoc": "^0.14.2",
+    "typedoc": "^0.15.3",
     "typescript": "^3.1.6"
   },
   "config": {
