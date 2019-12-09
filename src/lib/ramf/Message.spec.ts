@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert } from '../_test_utils';
-import { generateRsaKeys } from '../crypto';
+import { generateRsaKeyPair } from '../crypto';
 import Certificate from '../pki/Certificate';
 import { StubMessage } from './_test_utils';
 
@@ -27,13 +27,13 @@ describe('Message', () => {
   let recipientCertificate: Certificate;
   let senderCertificate: Certificate;
   beforeAll(async () => {
-    const recipientKeyPair = await generateRsaKeys();
+    const recipientKeyPair = await generateRsaKeyPair();
     recipientCertificate = await generateStubCert({
       subjectPublicKey: recipientKeyPair.publicKey,
     });
     recipientAddress = recipientCertificate.getAddress();
 
-    const senderKeyPair = await generateRsaKeys();
+    const senderKeyPair = await generateRsaKeyPair();
     senderCertificate = await generateStubCert({
       subjectPublicKey: senderKeyPair.publicKey,
     });

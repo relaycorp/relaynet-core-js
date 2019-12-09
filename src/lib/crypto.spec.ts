@@ -1,15 +1,15 @@
-import { generateRsaKeys } from './crypto';
+import { generateRsaKeyPair } from './crypto';
 
-describe('generateRsaKeys', () => {
+describe('generateRsaKeyPair', () => {
   test('Keys should be RSA', async () => {
-    const keyPair = await generateRsaKeys();
+    const keyPair = await generateRsaKeyPair();
 
     expect(keyPair.publicKey.algorithm.name).toMatch(/^RSA-/);
     expect(keyPair.privateKey.algorithm.name).toMatch(/^RSA-/);
   });
 
   test('Keys should be extractable', async () => {
-    const keyPair = await generateRsaKeys();
+    const keyPair = await generateRsaKeyPair();
 
     expect(keyPair.publicKey.extractable).toBe(true);
     expect(keyPair.privateKey.extractable).toBe(true);
@@ -17,7 +17,7 @@ describe('generateRsaKeys', () => {
 
   describe('Modulus', () => {
     test('Default modulus should be 2048', async () => {
-      const keyPair = await generateRsaKeys();
+      const keyPair = await generateRsaKeyPair();
       // @ts-ignore
       expect(keyPair.publicKey.algorithm.modulusLength).toBe(2048);
       // @ts-ignore
@@ -26,7 +26,7 @@ describe('generateRsaKeys', () => {
 
     test('Modulus > 2048 should be supported', async () => {
       const modulus = 3072;
-      const keyPair = await generateRsaKeys({ modulus });
+      const keyPair = await generateRsaKeyPair({ modulus });
       // @ts-ignore
       expect(keyPair.publicKey.algorithm.modulusLength).toBe(modulus);
       // @ts-ignore
@@ -34,7 +34,7 @@ describe('generateRsaKeys', () => {
     });
 
     test('Modulus < 2048 should not supported', async () => {
-      await expect(generateRsaKeys({ modulus: 1024 })).rejects.toThrow(
+      await expect(generateRsaKeyPair({ modulus: 1024 })).rejects.toThrow(
         'RSA modulus must be => 2048 per RS-018 (got 1024)',
       );
     });
@@ -42,7 +42,7 @@ describe('generateRsaKeys', () => {
 
   describe('Hashing algorithm', () => {
     test('SHA-256 should be used by default', async () => {
-      const keyPair = await generateRsaKeys();
+      const keyPair = await generateRsaKeyPair();
       // @ts-ignore
       expect(keyPair.publicKey.algorithm.hash.name).toBe('SHA-256');
       // @ts-ignore
@@ -51,7 +51,7 @@ describe('generateRsaKeys', () => {
 
     ['SHA-384', 'SHA-512'].forEach(hashingAlgorithm => {
       test(`${hashingAlgorithm} should be supported`, async () => {
-        const keyPair = await generateRsaKeys({ hashingAlgorithm });
+        const keyPair = await generateRsaKeyPair({ hashingAlgorithm });
         // @ts-ignore
         expect(keyPair.publicKey.algorithm.hash.name).toBe(hashingAlgorithm);
         // @ts-ignore
@@ -60,7 +60,7 @@ describe('generateRsaKeys', () => {
     });
 
     test('SHA-1 should not be supported', async () => {
-      await expect(generateRsaKeys({ hashingAlgorithm: 'SHA-1' })).rejects.toThrow(
+      await expect(generateRsaKeyPair({ hashingAlgorithm: 'SHA-1' })).rejects.toThrow(
         'SHA-1 is disallowed by RS-018',
       );
     });

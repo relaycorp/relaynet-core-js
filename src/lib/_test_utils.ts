@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
-import { generateRsaKeys } from './crypto';
+import { generateRsaKeyPair } from './crypto';
 import Certificate from './pki/Certificate';
 import CertificateOptions from './pki/CertificateOptions';
 
@@ -34,7 +34,7 @@ interface StubCertConfig {
 }
 
 export async function generateStubCert(config: Partial<StubCertConfig> = {}): Promise<Certificate> {
-  const keyPair = await generateRsaKeys();
+  const keyPair = await generateRsaKeyPair();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
   return Certificate.issue(

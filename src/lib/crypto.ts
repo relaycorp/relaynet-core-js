@@ -16,7 +16,7 @@ setEngine('nodeEngine', webcrypto, cryptoEngine);
  * @param hashingAlgorithm The hashing algorithm (e.g., SHA-256, SHA-384, SHA-512).
  * @throws Error If the modulus or the hashing algorithm is disallowed by RS-018.
  */
-export async function generateRsaKeys({
+export async function generateRsaKeyPair({
   modulus = 2048,
   hashingAlgorithm = 'SHA-256',
 } = {}): Promise<CryptoKeyPair> {

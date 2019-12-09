@@ -4,7 +4,7 @@ import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 import { expectPromiseToReject, generateStubCert, sha256Hex } from '../_test_utils';
 import { deserializeDer, getPkijsCrypto } from '../_utils';
-import { generateRsaKeys } from '../crypto';
+import { generateRsaKeyPair } from '../crypto';
 import * as oids from '../oids';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
@@ -59,7 +59,7 @@ describe('issue()', () => {
   // tslint:disable-next-line:no-let
   let keyPair: CryptoKeyPair;
   beforeAll(async () => {
-    keyPair = await generateRsaKeys();
+    keyPair = await generateRsaKeyPair();
   });
 
   test('should create an X.509 v3 certificate', async () => {
@@ -157,7 +157,7 @@ describe('issue()', () => {
   });
 
   test('should set the subject CN to the private node address', async () => {
-    const { privateKey, publicKey } = await generateRsaKeys();
+    const { privateKey, publicKey } = await generateRsaKeyPair();
     const cert = await Certificate.issue(privateKey, {
       serialNumber: 1,
       subjectPublicKey: publicKey,
@@ -173,7 +173,7 @@ describe('issue()', () => {
   });
 
   test('should set issuer DN to that of subject when self-issuing certificates', async () => {
-    const subjectKeyPair = await generateRsaKeys();
+    const subjectKeyPair = await generateRsaKeyPair();
     const cert = await Certificate.issue(subjectKeyPair.privateKey, {
       serialNumber: 1,
       subjectPublicKey: subjectKeyPair.publicKey,
@@ -188,7 +188,7 @@ describe('issue()', () => {
   });
 
   test('should accept an issuer marked as CA', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: true,
       serialNumber: 1,
@@ -210,7 +210,7 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer certificate without extensions', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: false,
       serialNumber: 1,
@@ -235,7 +235,7 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer certificate with an empty set of extensions', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: false,
       serialNumber: 1,
@@ -260,7 +260,7 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer certificate without basic constraints extension', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: false,
       serialNumber: 1,
@@ -288,7 +288,7 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer not marked as CA', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: false,
       serialNumber: 1,
@@ -311,7 +311,7 @@ describe('issue()', () => {
   });
 
   test('should set issuer DN to that of CA', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: true,
       serialNumber: 1,
@@ -319,7 +319,7 @@ describe('issue()', () => {
       validityEndDate: futureDate,
     });
 
-    const subjectKeyPair = await generateRsaKeys();
+    const subjectKeyPair = await generateRsaKeyPair();
     const subjectCert = await Certificate.issue(
       subjectKeyPair.privateKey,
       {
@@ -426,7 +426,7 @@ describe('issue()', () => {
     });
 
     test('should correspond to issuer key when different from subject', async () => {
-      const issuerKeyPair = await generateRsaKeys();
+      const issuerKeyPair = await generateRsaKeyPair();
       const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
         isCA: true,
         serialNumber: 1,
@@ -434,7 +434,7 @@ describe('issue()', () => {
         validityEndDate: futureDate,
       });
 
-      const subjectKeyPair = await generateRsaKeys();
+      const subjectKeyPair = await generateRsaKeyPair();
       const subjectCert = await Certificate.issue(
         subjectKeyPair.privateKey,
         {
@@ -462,7 +462,7 @@ describe('issue()', () => {
   });
 
   test('Subject Key Identifier extension should correspond to subject key', async () => {
-    const issuerKeyPair = await generateRsaKeys();
+    const issuerKeyPair = await generateRsaKeyPair();
     const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
       isCA: true,
       serialNumber: 1,
@@ -470,7 +470,7 @@ describe('issue()', () => {
       validityEndDate: futureDate,
     });
 
-    const subjectKeyPair = await generateRsaKeys();
+    const subjectKeyPair = await generateRsaKeyPair();
     const subjectCert = await Certificate.issue(
       subjectKeyPair.privateKey,
       {
