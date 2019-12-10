@@ -3,8 +3,8 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert } from '../_test_utils';
-import { generateRSAKeyPair } from '../keyGenerators';
-import Certificate from '../pki/Certificate';
+import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
+import Certificate from '../crypto_wrappers/x509/Certificate';
 import { StubMessage } from './_test_utils';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';

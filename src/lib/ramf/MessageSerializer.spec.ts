@@ -10,9 +10,9 @@ import {
   generateStubCert,
   getPromiseRejection,
 } from '../_test_utils';
-import * as cms from '../cms';
-import { generateRSAKeyPair } from '../keyGenerators';
-import Certificate from '../pki/Certificate';
+import * as cms from '../crypto_wrappers/cms';
+import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
+import Certificate from '../crypto_wrappers/x509/Certificate';
 import { NON_ASCII_STRING, StubMessage, StubPayload } from './_test_utils';
 import { MessageFields, MessageSerializer } from './MessageSerializer';
 import RAMFSyntaxError from './RAMFSyntaxError';

@@ -1,9 +1,9 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
-import { generateRSAKeyPair } from './keyGenerators';
-import Certificate from './pki/Certificate';
-import CertificateOptions from './pki/CertificateOptions';
+import { generateRSAKeyPair } from './crypto_wrappers/keyGenerators';
+import Certificate from './crypto_wrappers/x509/Certificate';
+import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 

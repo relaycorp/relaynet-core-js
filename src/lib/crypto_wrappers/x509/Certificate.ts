@@ -1,18 +1,18 @@
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
-import { deserializeDer, getPkijsCrypto } from '../_utils';
-import * as oids from '../oids';
+import { deserializeDer, getPkijsCrypto } from '../../_utils';
+import * as oids from '../../oids';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 
 const pkijsCrypto = getPkijsCrypto();
 
 /**
- * Relaynet PKI Certificate.
+ * X.509 Certificate.
  *
- * This is a high-level class on top of PKI.js Certificate, to make the use
- * of Relaynet certificates easy and safe.
+ * This is a high-level class on top of PKI.js Certificate, to make the use of Relaynet
+ * certificates easy and safe.
  */
 export default class Certificate {
   /**

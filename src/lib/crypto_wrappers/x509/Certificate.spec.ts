@@ -2,10 +2,11 @@ import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
-import { expectPromiseToReject, generateStubCert, sha256Hex } from '../_test_utils';
-import { deserializeDer, getPkijsCrypto } from '../_utils';
+
+import { expectPromiseToReject, generateStubCert, sha256Hex } from '../../_test_utils';
+import { deserializeDer, getPkijsCrypto } from '../../_utils';
+import * as oids from '../../oids';
 import { generateRSAKeyPair } from '../keyGenerators';
-import * as oids from '../oids';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
 

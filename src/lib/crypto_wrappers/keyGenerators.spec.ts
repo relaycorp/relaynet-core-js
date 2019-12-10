@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
 import { CryptoEngine } from 'pkijs';
 
-import { expectBuffersToEqual } from './_test_utils';
-import * as modp from './crypto_wrappers/modp';
+import { expectBuffersToEqual } from '../_test_utils';
 import { generateDHKeyPair, generateRSAKeyPair } from './keyGenerators';
+import * as modp from './modp';
 
 import MockInstance = jest.MockInstance;
 

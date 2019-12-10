@@ -9,13 +9,13 @@ import {
   expectPromiseToReject,
   generateStubCert,
   sha256Hex,
-} from './_test_utils';
-import { deserializeDer } from './_utils';
+} from '../_test_utils';
+import { deserializeDer } from '../_utils';
+import * as oids from '../oids';
 import * as cms from './cms';
 import CMSError from './CMSError';
 import { generateRSAKeyPair } from './keyGenerators';
-import * as oids from './oids';
-import Certificate from './pki/Certificate';
+import Certificate from './x509/Certificate';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';

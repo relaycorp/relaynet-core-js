@@ -1,6 +1,6 @@
 import WebCrypto from 'node-webcrypto-ossl';
 import { CryptoEngine, getAlgorithmParameters, setEngine } from 'pkijs';
-import { getModpGroupData, MODPGroupName } from './crypto_wrappers/modp';
+import { getModpGroupData, MODPGroupName } from './modp';
 
 const webcrypto = new WebCrypto();
 const cryptoEngine = new CryptoEngine({
