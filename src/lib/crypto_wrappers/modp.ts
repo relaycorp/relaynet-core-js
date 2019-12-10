@@ -31,6 +31,8 @@
 import RelaynetError from '../RelaynetError';
 import modpGroupsData from './modp-groups.json';
 
+export type MODPGroupName = 'modp14' | 'modp15' | 'modp16' | 'modp17' | 'modp18';
+
 export interface MODPGroup {
   readonly generator: Buffer;
   readonly prime: Buffer;
@@ -47,9 +49,9 @@ const MODP_GROUP_BY_NAME: { readonly [key: string]: MODPGroup } = modpGroupsData
   {},
 );
 
-export function getGroupData(groupName: string): MODPGroup {
+export function getModpGroupData(groupName: MODPGroupName): MODPGroup {
   if (!(groupName in MODP_GROUP_BY_NAME)) {
-    throw new MODPError(`Unsupported MODP group (${groupName})`)
+    throw new MODPError(`Unsupported MODP group (${groupName})`);
   }
   return MODP_GROUP_BY_NAME[groupName];
 }

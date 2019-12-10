@@ -1,5 +1,6 @@
 import WebCrypto from 'node-webcrypto-ossl';
 import { CryptoEngine, getAlgorithmParameters, setEngine } from 'pkijs';
+import { getModpGroupData, MODPGroupName } from './crypto_wrappers/modp';
 
 const webcrypto = new WebCrypto();
 const cryptoEngine = new CryptoEngine({
@@ -36,4 +37,13 @@ export async function generateRsaKeyPair({
   algorithm.algorithm.modulusLength = modulus;
 
   return cryptoEngine.generateKey(algorithm.algorithm, true, algorithm.usages);
+}
+
+export async function generateDHKeyPair(groupName?: MODPGroupName): Promise<CryptoKeyPair> {
+  const modpGroup = getModpGroupData(groupName || 'modp14');
+  return cryptoEngine.generateKey(
+    { name: 'DH', prime: modpGroup.prime, generator: modpGroup.generator },
+    true,
+    ['deriveBits', 'deriveKey'],
+  );
 }

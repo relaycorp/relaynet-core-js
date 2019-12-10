@@ -11,7 +11,7 @@ import {
   getPromiseRejection,
 } from '../_test_utils';
 import * as cms from '../cms';
-import { generateRsaKeyPair } from '../crypto';
+import { generateRsaKeyPair } from '../keyGenerators';
 import Certificate from '../pki/Certificate';
 import { NON_ASCII_STRING, StubMessage, StubPayload } from './_test_utils';
 import { MessageFields, MessageSerializer } from './MessageSerializer';

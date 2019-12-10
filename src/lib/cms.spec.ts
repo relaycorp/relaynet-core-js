@@ -13,7 +13,7 @@ import {
 import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
-import { generateRsaKeyPair } from './crypto';
+import { generateRsaKeyPair } from './keyGenerators';
 import * as oids from './oids';
 import Certificate from './pki/Certificate';
 

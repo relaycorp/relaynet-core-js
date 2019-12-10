@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
-import { generateRsaKeyPair } from './crypto';
+
+import { generateRsaKeyPair } from './keyGenerators';
 import Certificate from './pki/Certificate';
 import CertificateOptions from './pki/CertificateOptions';
 
