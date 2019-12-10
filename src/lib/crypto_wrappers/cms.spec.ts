@@ -10,8 +10,8 @@ import {
   generateStubCert,
   sha256Hex,
 } from '../_test_utils';
-import { deserializeDer } from '../_utils';
 import * as oids from '../oids';
+import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
 import { generateRSAKeyPair } from './keyGenerators';

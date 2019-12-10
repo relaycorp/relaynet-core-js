@@ -1,8 +1,8 @@
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
-import { deserializeDer, getPkijsCrypto } from '../../_utils';
 import * as oids from '../../oids';
+import { deserializeDer, getPkijsCrypto } from '../_utils';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 

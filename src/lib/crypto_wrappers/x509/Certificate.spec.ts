@@ -4,8 +4,8 @@ import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
 import { expectPromiseToReject, generateStubCert, sha256Hex } from '../../_test_utils';
-import { deserializeDer, getPkijsCrypto } from '../../_utils';
 import * as oids from '../../oids';
+import { deserializeDer, getPkijsCrypto } from '../_utils';
 import { generateRSAKeyPair } from '../keyGenerators';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
