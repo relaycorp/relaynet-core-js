@@ -469,6 +469,7 @@ describe('verifySignature', () => {
 
   test('Sender certificate should be returned if verification passes', async () => {
     const superfluousCertificate = await generateStubCert({
+      attributes: { serialNumber: 2 },
       subjectPublicKey: (await generateRSAKeyPair()).publicKey,
     });
     const signatureDer = await cms.sign(

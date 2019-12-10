@@ -64,11 +64,10 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notAfter.value = options.validityEndDate;
 
-    const address = await computePrivateNodeAddress(options.subjectPublicKey);
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: oids.COMMON_NAME,
-        value: new asn1js.BmpString({ value: address }),
+        value: new asn1js.BmpString({ value: options.commonName }),
       }),
     );
 
@@ -174,11 +173,6 @@ function validateIssuerCertificate(issuerCertificate: Certificate): void {
 }
 
 //endregion
-
-async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
-  const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
-  return `0${publicKeyDigest.toString('hex')}`;
-}
 
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
   const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);

@@ -1,11 +1,5 @@
-import Certificate from './Certificate';
+import BaseCertificateOptions from './BaseCertificateOptions';
 
-export default interface CertificateOptions {
-  readonly isCA?: boolean;
-  readonly issuerCertificate?: Certificate; // Absent when self-signed
-  readonly issuerPrivateKey: CryptoKey;
-  readonly subjectPublicKey: CryptoKey;
-  readonly serialNumber: number;
-  readonly validityStartDate?: Date;
-  readonly validityEndDate: Date;
+export default interface CertificateOptions extends BaseCertificateOptions {
+  readonly commonName: string;
 }

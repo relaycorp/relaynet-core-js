@@ -39,6 +39,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
   return Certificate.issue({
+    commonName: 'commonName',
     issuerCertificate: config.issuerCertificate,
     issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
     serialNumber: 1,
