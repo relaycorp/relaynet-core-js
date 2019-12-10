@@ -11,7 +11,7 @@ import {
   getPromiseRejection,
 } from '../_test_utils';
 import * as cms from '../cms';
-import { generateRsaKeyPair } from '../keyGenerators';
+import { generateRSAKeyPair } from '../keyGenerators';
 import Certificate from '../pki/Certificate';
 import { NON_ASCII_STRING, StubMessage, StubPayload } from './_test_utils';
 import { MessageFields, MessageSerializer } from './MessageSerializer';
@@ -67,7 +67,7 @@ describe('MessageSerializer', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const certificateAttributes = { validityStartDate: yesterday, validityEndDate: tomorrow };
 
-    const recipientKeyPair = await generateRsaKeyPair();
+    const recipientKeyPair = await generateRSAKeyPair();
     recipientCertificate = await generateStubCert({
       attributes: certificateAttributes,
       subjectPublicKey: recipientKeyPair.publicKey,
@@ -75,7 +75,7 @@ describe('MessageSerializer', () => {
     recipientAddress = recipientCertificate.getAddress();
     recipientPrivateKey = recipientKeyPair.privateKey;
 
-    const senderKeyPair = await generateRsaKeyPair();
+    const senderKeyPair = await generateRSAKeyPair();
     senderPrivateKey = senderKeyPair.privateKey;
     senderCertificate = await generateStubCert({
       attributes: certificateAttributes,
@@ -601,7 +601,7 @@ describe('MessageSerializer', () => {
       test('Date should be serialized as 32-bit unsigned integer', async () => {
         const maxTimestampSec = 2 ** 31;
         const stubDate = new Date(maxTimestampSec * 1_000);
-        const stubSenderKeyPair = await generateRsaKeyPair();
+        const stubSenderKeyPair = await generateRSAKeyPair();
         const stubSenderCertificate = await generateStubCert({
           attributes: {
             validityEndDate: stubDate,
@@ -836,7 +836,7 @@ describe('MessageSerializer', () => {
       });
 
       test('Signature should not be accepted if invalid', async () => {
-        const signerKeyPair = await generateRsaKeyPair();
+        const signerKeyPair = await generateRSAKeyPair();
         const signerCertificate = await generateStubCert({
           subjectPublicKey: signerKeyPair.publicKey,
         });
@@ -859,7 +859,7 @@ describe('MessageSerializer', () => {
       });
 
       test('Parsed message should be included in validation exception', async () => {
-        const signerKeyPair = await generateRsaKeyPair();
+        const signerKeyPair = await generateRSAKeyPair();
         const signerCertificate = await generateStubCert({
           subjectPublicKey: signerKeyPair.publicKey,
         });

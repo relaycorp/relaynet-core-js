@@ -13,7 +13,7 @@ import {
 import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
-import { generateRsaKeyPair } from './keyGenerators';
+import { generateRSAKeyPair } from './keyGenerators';
 import * as oids from './oids';
 import Certificate from './pki/Certificate';
 
@@ -30,7 +30,7 @@ let privateKey: CryptoKey;
 // tslint:disable-next-line:no-let
 let certificate: Certificate;
 beforeAll(async () => {
-  const keyPair = await generateRsaKeyPair();
+  const keyPair = await generateRSAKeyPair();
   privateKey = keyPair.privateKey;
   certificate = await generateStubCert({
     issuerPrivateKey: privateKey,
@@ -404,12 +404,12 @@ describe('verifySignature', () => {
   });
 
   test('Signature should be verified against any set of trusted certificates', async () => {
-    const caKeyPair = await generateRsaKeyPair();
+    const caKeyPair = await generateRSAKeyPair();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 1 },
       subjectPublicKey: caKeyPair.publicKey,
     });
-    const signerKeyPair = await generateRsaKeyPair();
+    const signerKeyPair = await generateRSAKeyPair();
     const signerCertificate = await generateStubCert({
       attributes: { serialNumber: 2 },
       issuerCertificate: caCertificate,
@@ -427,12 +427,12 @@ describe('verifySignature', () => {
   });
 
   test('CA certificates should not have to be attached to SignedData', async () => {
-    const caKeyPair = await generateRsaKeyPair();
+    const caKeyPair = await generateRSAKeyPair();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 1 },
       subjectPublicKey: caKeyPair.publicKey,
     });
-    const signerKeyPair = await generateRsaKeyPair();
+    const signerKeyPair = await generateRSAKeyPair();
     const signerCertificate = await generateStubCert({
       attributes: { serialNumber: 2 },
       issuerCertificate: caCertificate,
@@ -450,7 +450,7 @@ describe('verifySignature', () => {
   });
 
   test('Signature should fail if not done with a trusted certificate', async () => {
-    const caKeyPair = await generateRsaKeyPair();
+    const caKeyPair = await generateRSAKeyPair();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 2 },
       subjectPublicKey: caKeyPair.publicKey,
@@ -469,7 +469,7 @@ describe('verifySignature', () => {
 
   test('Sender certificate should be returned if verification passes', async () => {
     const superfluousCertificate = await generateStubCert({
-      subjectPublicKey: (await generateRsaKeyPair()).publicKey,
+      subjectPublicKey: (await generateRSAKeyPair()).publicKey,
     });
     const signatureDer = await cms.sign(
       plaintext,
@@ -502,19 +502,19 @@ describe('verifySignature', () => {
     });
 
     test('Chain should be populated when trusted certs are passed', async () => {
-      const rootCaKeyPair = await generateRsaKeyPair();
+      const rootCaKeyPair = await generateRSAKeyPair();
       const rootCaCertificate = await generateStubCert({
         attributes: { isCA: true, serialNumber: 1 },
         subjectPublicKey: rootCaKeyPair.publicKey,
       });
-      const caKeyPair = await generateRsaKeyPair();
+      const caKeyPair = await generateRSAKeyPair();
       const caCertificate = await generateStubCert({
         attributes: { isCA: true, serialNumber: 2 },
         issuerCertificate: rootCaCertificate,
         issuerPrivateKey: rootCaKeyPair.privateKey,
         subjectPublicKey: caKeyPair.publicKey,
       });
-      const signerKeyPair = await generateRsaKeyPair();
+      const signerKeyPair = await generateRSAKeyPair();
       const signerCertificate = await generateStubCert({
         attributes: { serialNumber: 3 },
         issuerCertificate: caCertificate,
