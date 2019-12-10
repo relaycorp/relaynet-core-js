@@ -1,11 +1,9 @@
 import * as crypto from 'crypto';
 import { CryptoEngine } from 'pkijs';
 
-import { expectBuffersToEqual } from '../_test_utils';
+import { expectBuffersToEqual, getMockContext } from '../_test_utils';
 import { generateDHKeyPair, generateRSAKeyPair } from './keyGenerators';
 import * as modp from './modp';
-
-import MockInstance = jest.MockInstance;
 
 describe('generateRsaKeyPair', () => {
   test('Keys should be RSA', async () => {
@@ -109,10 +107,7 @@ describe('generateDHKeyPair', () => {
   test('MODP Group 14 should be used by default', async () => {
     await generateDHKeyPair();
 
-    const generateKeyCallArgs = ((CryptoEngine.prototype.generateKey as unknown) as MockInstance<
-      any,
-      any
-    >).mock.calls[0];
+    const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
 
     const modp14Group = modp.getModpGroupData('modp14');
 
@@ -134,10 +129,7 @@ describe('generateDHKeyPair', () => {
   test('The key pair should be extractable', async () => {
     await generateDHKeyPair();
 
-    const generateKeyCallArgs = ((CryptoEngine.prototype.generateKey as unknown) as MockInstance<
-      any,
-      any
-    >).mock.calls[0];
+    const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
 
     const extractableFlag = generateKeyCallArgs[1];
     expect(extractableFlag).toBeTrue();
@@ -146,10 +138,7 @@ describe('generateDHKeyPair', () => {
   test('deriveKey and deriveBits should be the only uses of the keys', async () => {
     await generateDHKeyPair();
 
-    const generateKeyCallArgs = ((CryptoEngine.prototype.generateKey as unknown) as MockInstance<
-      any,
-      any
-    >).mock.calls[0];
+    const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
 
     const keyUses = generateKeyCallArgs[2];
     expect(keyUses).toHaveLength(2);

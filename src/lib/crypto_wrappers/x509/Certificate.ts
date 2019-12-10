@@ -32,28 +32,22 @@ export default class Certificate {
   /**
    * Issue a Relaynet PKI certificate.
    *
-   * @param issuerPrivateKey
    * @param options
-   * @param issuerCertificate Absent when the certificate is self-signed
    */
-  public static async issue(
-    issuerPrivateKey: CryptoKey,
-    options: CertificateOptions,
-    issuerCertificate?: Certificate,
-  ): Promise<Certificate> {
+  public static async issue(options: CertificateOptions): Promise<Certificate> {
     //region Validation
     const validityStartDate = options.validityStartDate || new Date();
     if (options.validityEndDate < validityStartDate) {
       throw new CertificateError('The end date must be later than the start date');
     }
 
-    if (issuerCertificate) {
-      validateIssuerCertificate(issuerCertificate);
+    if (options.issuerCertificate) {
+      validateIssuerCertificate(options.issuerCertificate);
     }
     //endregion
 
-    const issuerPublicKey = issuerCertificate
-      ? await issuerCertificate.pkijsCertificate.getPublicKey()
+    const issuerPublicKey = options.issuerCertificate
+      ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
     const pkijsCert = new pkijs.Certificate({
       extensions: [
@@ -78,8 +72,8 @@ export default class Certificate {
       }),
     );
 
-    const issuerDn = issuerCertificate
-      ? issuerCertificate.pkijsCertificate.subject.typesAndValues
+    const issuerDn = options.issuerCertificate
+      ? options.issuerCertificate.pkijsCertificate.subject.typesAndValues
       : pkijsCert.subject.typesAndValues;
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.issuer.typesAndValues = issuerDn.map(
@@ -92,9 +86,9 @@ export default class Certificate {
 
     await pkijsCert.subjectPublicKeyInfo.importKey(options.subjectPublicKey);
 
-    const signatureHashAlgo = (issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
+    const signatureHashAlgo = (options.issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
       .hash as Algorithm;
-    await pkijsCert.sign(issuerPrivateKey, signatureHashAlgo.name);
+    await pkijsCert.sign(options.issuerPrivateKey, signatureHashAlgo.name);
     return new Certificate(pkijsCert);
   }
 

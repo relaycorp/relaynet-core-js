@@ -38,16 +38,14 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   const keyPair = await generateRSAKeyPair();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
-  return Certificate.issue(
-    config.issuerPrivateKey || keyPair.privateKey,
-    {
-      serialNumber: 1,
-      subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
-      validityEndDate: futureDate,
-      ...config.attributes,
-    },
-    config.issuerCertificate,
-  );
+  return Certificate.issue({
+    issuerCertificate: config.issuerCertificate,
+    issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
+    serialNumber: 1,
+    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+    validityEndDate: futureDate,
+    ...config.attributes,
+  });
 }
 
 export function sha256Hex(plaintext: ArrayBuffer): string {
@@ -96,4 +94,9 @@ export function expectBuffersToEqual(
     const actualBuffer2 = Buffer.from(buffer2);
     expect(actualBuffer1.equals(actualBuffer2)).toBeTrue();
   }
+}
+
+export function getMockContext(mockedObject: any): jest.MockContext<any, any> {
+  const mockInstance = (mockedObject as unknown) as jest.MockInstance<any, any>;
+  return mockInstance.mock;
 }

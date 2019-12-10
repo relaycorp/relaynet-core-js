@@ -64,7 +64,8 @@ describe('issue()', () => {
   });
 
   test('should create an X.509 v3 certificate', async () => {
-    const cert = await Certificate.issue(keyPair.privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -76,7 +77,8 @@ describe('issue()', () => {
 
   test('should import the public key into the certificate', async () => {
     spyOn(pkijs.PublicKeyInfo.prototype, 'importKey');
-    await Certificate.issue(keyPair.privateKey, {
+    await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -88,7 +90,8 @@ describe('issue()', () => {
 
   test('should be signed with the specified private key', async () => {
     spyOn(pkijs.Certificate.prototype, 'sign');
-    await Certificate.issue(keyPair.privateKey, {
+    await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -103,7 +106,8 @@ describe('issue()', () => {
 
   test('should store the specified serial number', async () => {
     const serialNumber = 2019;
-    const cert = await Certificate.issue(keyPair.privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -115,7 +119,8 @@ describe('issue()', () => {
   test('should create a certificate valid from now by default', async () => {
     const now = new Date();
     jestDateMock.advanceTo(now);
-    const cert = await Certificate.issue(keyPair.privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -126,7 +131,8 @@ describe('issue()', () => {
 
   test('should honor a custom start validity date', async () => {
     const startDate = new Date(2019, 1, 1);
-    const cert = await Certificate.issue(keyPair.privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -137,7 +143,8 @@ describe('issue()', () => {
   });
 
   test('should honor a custom end validity date', async () => {
-    const cert = await Certificate.issue(keyPair.privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: futureDate,
@@ -147,19 +154,20 @@ describe('issue()', () => {
   });
 
   test('should not accept an end date before the start date', async () => {
-    const attributes = {
-      serialNumber: 1,
-      subjectPublicKey: keyPair.publicKey,
-      validityEndDate: new Date(2000, 1, 1),
-    };
-    await expect(Certificate.issue(keyPair.privateKey, attributes)).rejects.toThrow(
-      'The end date must be later than the start date',
-    );
+    await expect(
+      Certificate.issue({
+        issuerPrivateKey: keyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: keyPair.publicKey,
+        validityEndDate: new Date(2000, 1, 1),
+      }),
+    ).rejects.toThrow('The end date must be later than the start date');
   });
 
   test('should set the subject CN to the private node address', async () => {
     const { privateKey, publicKey } = await generateRSAKeyPair();
-    const cert = await Certificate.issue(privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: privateKey,
       serialNumber: 1,
       subjectPublicKey: publicKey,
       validityEndDate: futureDate,
@@ -175,7 +183,8 @@ describe('issue()', () => {
 
   test('should set issuer DN to that of subject when self-issuing certificates', async () => {
     const subjectKeyPair = await generateRSAKeyPair();
-    const cert = await Certificate.issue(subjectKeyPair.privateKey, {
+    const cert = await Certificate.issue({
+      issuerPrivateKey: subjectKeyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: subjectKeyPair.publicKey,
       validityEndDate: futureDate,
@@ -190,30 +199,30 @@ describe('issue()', () => {
 
   test('should accept an issuer marked as CA', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: true,
+      issuerPrivateKey: issuerKeyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
     });
 
     await expect(
-      Certificate.issue(
-        keyPair.privateKey,
-        {
-          serialNumber: 1,
-          subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate,
-        },
-        issuerCert,
-      ),
+      Certificate.issue({
+        issuerCertificate: issuerCert,
+        issuerPrivateKey: issuerKeyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: keyPair.publicKey,
+        validityEndDate: futureDate,
+      }),
     ).toResolve();
   });
 
   test('should refuse an issuer certificate without extensions', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: false,
+      issuerPrivateKey: issuerKeyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
@@ -222,23 +231,22 @@ describe('issue()', () => {
     issuerCert.pkijsCertificate.extensions = undefined;
 
     await expectPromiseToReject(
-      Certificate.issue(
-        keyPair.privateKey,
-        {
-          serialNumber: 1,
-          subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate,
-        },
-        issuerCert,
-      ),
+      Certificate.issue({
+        issuerCertificate: issuerCert,
+        issuerPrivateKey: issuerKeyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: keyPair.publicKey,
+        validityEndDate: futureDate,
+      }),
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
 
   test('should refuse an issuer certificate with an empty set of extensions', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: false,
+      issuerPrivateKey: issuerKeyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
@@ -247,23 +255,22 @@ describe('issue()', () => {
     issuerCert.pkijsCertificate.extensions = [];
 
     await expectPromiseToReject(
-      Certificate.issue(
-        keyPair.privateKey,
-        {
-          serialNumber: 1,
-          subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate,
-        },
-        issuerCert,
-      ),
+      Certificate.issue({
+        issuerCertificate: issuerCert,
+        issuerPrivateKey: keyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: keyPair.publicKey,
+        validityEndDate: futureDate,
+      }),
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
 
   test('should refuse an issuer certificate without basic constraints extension', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: false,
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
@@ -275,61 +282,57 @@ describe('issue()', () => {
     );
 
     await expectPromiseToReject(
-      Certificate.issue(
-        keyPair.privateKey,
-        {
-          serialNumber: 1,
-          subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate,
-        },
-        issuerCert,
-      ),
+      Certificate.issue({
+        issuerCertificate: issuerCert,
+        issuerPrivateKey: keyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: keyPair.publicKey,
+        validityEndDate: futureDate,
+      }),
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
 
   test('should refuse an issuer not marked as CA', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: false,
+      issuerPrivateKey: issuerKeyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
     });
 
     await expectPromiseToReject(
-      Certificate.issue(
-        keyPair.privateKey,
-        {
-          serialNumber: 1,
-          subjectPublicKey: keyPair.publicKey,
-          validityEndDate: futureDate,
-        },
-        issuerCert,
-      ),
+      Certificate.issue({
+        issuerCertificate: issuerCert,
+        issuerPrivateKey: keyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: keyPair.publicKey,
+        validityEndDate: futureDate,
+      }),
       new CertificateError('Issuer is not a CA'),
     );
   });
 
   test('should set issuer DN to that of CA', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: true,
+      issuerPrivateKey: keyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
     });
 
     const subjectKeyPair = await generateRSAKeyPair();
-    const subjectCert = await Certificate.issue(
-      subjectKeyPair.privateKey,
-      {
-        serialNumber: 1,
-        subjectPublicKey: subjectKeyPair.publicKey,
-        validityEndDate: futureDate,
-      },
-      issuerCert,
-    );
+    const subjectCert = await Certificate.issue({
+      issuerCertificate: issuerCert,
+      issuerPrivateKey: keyPair.privateKey,
+      serialNumber: 1,
+      subjectPublicKey: subjectKeyPair.publicKey,
+      validityEndDate: futureDate,
+    });
 
     const subjectCertIssuerDn = subjectCert.pkijsCertificate.issuer.typesAndValues;
     expect(subjectCertIssuerDn.length).toBe(1);
@@ -340,7 +343,8 @@ describe('issue()', () => {
 
   describe('Basic Constraints extension', () => {
     test('Extension should be included', async () => {
-      const cert = await Certificate.issue(keyPair.privateKey, {
+      const cert = await Certificate.issue({
+        issuerPrivateKey: keyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
         validityEndDate: futureDate,
@@ -352,7 +356,8 @@ describe('issue()', () => {
     });
 
     test('Extension should be critical', async () => {
-      const cert = await Certificate.issue(keyPair.privateKey, {
+      const cert = await Certificate.issue({
+        issuerPrivateKey: keyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
         validityEndDate: futureDate,
@@ -363,7 +368,8 @@ describe('issue()', () => {
     });
 
     test('CA flag should be false by default', async () => {
-      const cert = await Certificate.issue(keyPair.privateKey, {
+      const cert = await Certificate.issue({
+        issuerPrivateKey: keyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
         validityEndDate: futureDate,
@@ -376,8 +382,9 @@ describe('issue()', () => {
     });
 
     test('CA flag should be enabled if requested', async () => {
-      const cert = await Certificate.issue(keyPair.privateKey, {
+      const cert = await Certificate.issue({
         isCA: true,
+        issuerPrivateKey: keyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
         validityEndDate: futureDate,
@@ -392,7 +399,8 @@ describe('issue()', () => {
     });
 
     test('Path length should be unspecified', async () => {
-      const cert = await Certificate.issue(keyPair.privateKey, {
+      const cert = await Certificate.issue({
+        issuerPrivateKey: keyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
         validityEndDate: futureDate,
@@ -407,7 +415,8 @@ describe('issue()', () => {
 
   describe('Authority Key Identifier extension', () => {
     test('should correspond to subject when self-issued', async () => {
-      const cert = await Certificate.issue(keyPair.privateKey, {
+      const cert = await Certificate.issue({
+        issuerPrivateKey: keyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: keyPair.publicKey,
         validityEndDate: futureDate,
@@ -428,23 +437,22 @@ describe('issue()', () => {
 
     test('should correspond to issuer key when different from subject', async () => {
       const issuerKeyPair = await generateRSAKeyPair();
-      const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+      const issuerCert = await Certificate.issue({
         isCA: true,
+        issuerPrivateKey: issuerKeyPair.privateKey,
         serialNumber: 1,
         subjectPublicKey: issuerKeyPair.publicKey,
         validityEndDate: futureDate,
       });
 
       const subjectKeyPair = await generateRSAKeyPair();
-      const subjectCert = await Certificate.issue(
-        subjectKeyPair.privateKey,
-        {
-          serialNumber: 1,
-          subjectPublicKey: subjectKeyPair.publicKey,
-          validityEndDate: futureDate,
-        },
-        issuerCert,
-      );
+      const subjectCert = await Certificate.issue({
+        issuerCertificate: issuerCert,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        serialNumber: 1,
+        subjectPublicKey: subjectKeyPair.publicKey,
+        validityEndDate: futureDate,
+      });
 
       const extensions = subjectCert.pkijsCertificate.extensions || [];
       const matchingExtensions = extensions.filter(e => e.extnID === oids.AUTHORITY_KEY);
@@ -464,23 +472,22 @@ describe('issue()', () => {
 
   test('Subject Key Identifier extension should correspond to subject key', async () => {
     const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue(issuerKeyPair.privateKey, {
+    const issuerCert = await Certificate.issue({
       isCA: true,
+      issuerPrivateKey: issuerKeyPair.privateKey,
       serialNumber: 1,
       subjectPublicKey: issuerKeyPair.publicKey,
       validityEndDate: futureDate,
     });
 
     const subjectKeyPair = await generateRSAKeyPair();
-    const subjectCert = await Certificate.issue(
-      subjectKeyPair.privateKey,
-      {
-        serialNumber: 1,
-        subjectPublicKey: subjectKeyPair.publicKey,
-        validityEndDate: futureDate,
-      },
-      issuerCert,
-    );
+    const subjectCert = await Certificate.issue({
+      issuerCertificate: issuerCert,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      serialNumber: 1,
+      subjectPublicKey: subjectKeyPair.publicKey,
+      validityEndDate: futureDate,
+    });
 
     const extensions = subjectCert.pkijsCertificate.extensions || [];
     const matchingExtensions = extensions.filter(e => e.extnID === oids.SUBJECT_KEY);
