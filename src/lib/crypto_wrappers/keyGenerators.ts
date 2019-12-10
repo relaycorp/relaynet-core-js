@@ -1,14 +1,9 @@
-import WebCrypto from 'node-webcrypto-ossl';
-import { CryptoEngine, getAlgorithmParameters, setEngine } from 'pkijs';
+import { getAlgorithmParameters } from 'pkijs';
+
+import { getPkijsCrypto } from './_utils';
 import { getModpGroupData, MODPGroupName } from './modp';
 
-const webcrypto = new WebCrypto();
-const cryptoEngine = new CryptoEngine({
-  crypto: webcrypto,
-  name: 'nodeEngine',
-  subtle: webcrypto.subtle,
-});
-setEngine('nodeEngine', webcrypto, cryptoEngine);
+const cryptoEngine = getPkijsCrypto();
 
 /**
  * Generate an RSA key pair
