@@ -3,8 +3,8 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert } from '../_test_utils';
-import { generateRsaKeys } from '../crypto';
-import Certificate from '../pki/Certificate';
+import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
+import Certificate from '../crypto_wrappers/x509/Certificate';
 import { StubMessage } from './_test_utils';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
@@ -27,13 +27,13 @@ describe('Message', () => {
   let recipientCertificate: Certificate;
   let senderCertificate: Certificate;
   beforeAll(async () => {
-    const recipientKeyPair = await generateRsaKeys();
+    const recipientKeyPair = await generateRSAKeyPair();
     recipientCertificate = await generateStubCert({
       subjectPublicKey: recipientKeyPair.publicKey,
     });
-    recipientAddress = recipientCertificate.getAddress();
+    recipientAddress = recipientCertificate.getCommonName();
 
-    const senderKeyPair = await generateRsaKeys();
+    const senderKeyPair = await generateRSAKeyPair();
     senderCertificate = await generateStubCert({
       subjectPublicKey: senderKeyPair.publicKey,
     });

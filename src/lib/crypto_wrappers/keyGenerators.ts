@@ -1,13 +1,10 @@
-import WebCrypto from 'node-webcrypto-ossl';
-import { CryptoEngine, getAlgorithmParameters, setEngine } from 'pkijs';
+import { getAlgorithmParameters } from 'pkijs';
 
-const webcrypto = new WebCrypto();
-const cryptoEngine = new CryptoEngine({
-  crypto: webcrypto,
-  name: 'nodeEngine',
-  subtle: webcrypto.subtle,
-});
-setEngine('nodeEngine', webcrypto, cryptoEngine);
+import { getPkijsCrypto } from './_utils';
+
+const cryptoEngine = getPkijsCrypto();
+
+export type ECDHCurveName = 'P-256' | 'P-384' | 'P-521';
 
 /**
  * Generate an RSA key pair
@@ -16,7 +13,7 @@ setEngine('nodeEngine', webcrypto, cryptoEngine);
  * @param hashingAlgorithm The hashing algorithm (e.g., SHA-256, SHA-384, SHA-512).
  * @throws Error If the modulus or the hashing algorithm is disallowed by RS-018.
  */
-export async function generateRsaKeys({
+export async function generateRSAKeyPair({
   modulus = 2048,
   hashingAlgorithm = 'SHA-256',
 } = {}): Promise<CryptoKeyPair> {
@@ -36,4 +33,13 @@ export async function generateRsaKeys({
   algorithm.algorithm.modulusLength = modulus;
 
   return cryptoEngine.generateKey(algorithm.algorithm, true, algorithm.usages);
+}
+
+export async function generateECDHKeyPair(
+  curveName: ECDHCurveName = 'P-256',
+): Promise<CryptoKeyPair> {
+  return cryptoEngine.generateKey({ name: 'ECDH', namedCurve: curveName }, true, [
+    'deriveBits',
+    'deriveKey',
+  ]);
 }

@@ -1,6 +1,6 @@
 import uuid4 from 'uuid4';
 
-import Certificate from '../pki/Certificate';
+import Certificate from '../crypto_wrappers/x509/Certificate';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 

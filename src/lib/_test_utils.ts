@@ -1,8 +1,9 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
-import { generateRsaKeys } from './crypto';
-import Certificate from './pki/Certificate';
-import CertificateOptions from './pki/CertificateOptions';
+
+import { generateRSAKeyPair } from './crypto_wrappers/keyGenerators';
+import Certificate from './crypto_wrappers/x509/Certificate';
+import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
@@ -34,19 +35,18 @@ interface StubCertConfig {
 }
 
 export async function generateStubCert(config: Partial<StubCertConfig> = {}): Promise<Certificate> {
-  const keyPair = await generateRsaKeys();
+  const keyPair = await generateRSAKeyPair();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
-  return Certificate.issue(
-    config.issuerPrivateKey || keyPair.privateKey,
-    {
-      serialNumber: 1,
-      subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
-      validityEndDate: futureDate,
-      ...config.attributes,
-    },
-    config.issuerCertificate,
-  );
+  return Certificate.issue({
+    commonName: 'commonName',
+    issuerCertificate: config.issuerCertificate,
+    issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
+    serialNumber: 1,
+    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+    validityEndDate: futureDate,
+    ...config.attributes,
+  });
 }
 
 export function sha256Hex(plaintext: ArrayBuffer): string {
@@ -78,4 +78,26 @@ export async function getPromiseRejection<ErrorType extends Error>(
     return error;
   }
   throw new Error('Expected promise to throw');
+}
+
+export function expectBuffersToEqual(
+  buffer1: Buffer | ArrayBuffer,
+  buffer2: Buffer | ArrayBuffer,
+): void {
+  if (buffer1 instanceof Buffer) {
+    expect(buffer2).toBeInstanceOf(Buffer);
+    expect(buffer1.equals(buffer2 as Buffer)).toBeTrue();
+  } else {
+    expect(buffer1).toBeInstanceOf(ArrayBuffer);
+    expect(buffer2).toBeInstanceOf(ArrayBuffer);
+
+    const actualBuffer1 = Buffer.from(buffer1);
+    const actualBuffer2 = Buffer.from(buffer2);
+    expect(actualBuffer1.equals(actualBuffer2)).toBeTrue();
+  }
+}
+
+export function getMockContext(mockedObject: any): jest.MockContext<any, any> {
+  const mockInstance = (mockedObject as unknown) as jest.MockInstance<any, any>;
+  return mockInstance.mock;
 }

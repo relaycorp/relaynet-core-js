@@ -1,18 +1,18 @@
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
+import * as oids from '../../oids';
 import { deserializeDer, getPkijsCrypto } from '../_utils';
-import * as oids from '../oids';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 
 const pkijsCrypto = getPkijsCrypto();
 
 /**
- * Relaynet PKI Certificate.
+ * X.509 Certificate.
  *
- * This is a high-level class on top of PKI.js Certificate, to make the use
- * of Relaynet certificates easy and safe.
+ * This is a high-level class on top of PKI.js Certificate, to make the use of Relaynet
+ * certificates easy and safe.
  */
 export default class Certificate {
   /**
@@ -32,28 +32,22 @@ export default class Certificate {
   /**
    * Issue a Relaynet PKI certificate.
    *
-   * @param issuerPrivateKey
    * @param options
-   * @param issuerCertificate Absent when the certificate is self-signed
    */
-  public static async issue(
-    issuerPrivateKey: CryptoKey,
-    options: CertificateOptions,
-    issuerCertificate?: Certificate,
-  ): Promise<Certificate> {
+  public static async issue(options: CertificateOptions): Promise<Certificate> {
     //region Validation
     const validityStartDate = options.validityStartDate || new Date();
     if (options.validityEndDate < validityStartDate) {
       throw new CertificateError('The end date must be later than the start date');
     }
 
-    if (issuerCertificate) {
-      validateIssuerCertificate(issuerCertificate);
+    if (options.issuerCertificate) {
+      validateIssuerCertificate(options.issuerCertificate);
     }
     //endregion
 
-    const issuerPublicKey = issuerCertificate
-      ? await issuerCertificate.pkijsCertificate.getPublicKey()
+    const issuerPublicKey = options.issuerCertificate
+      ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
     const pkijsCert = new pkijs.Certificate({
       extensions: [
@@ -70,16 +64,15 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notAfter.value = options.validityEndDate;
 
-    const address = await computePrivateNodeAddress(options.subjectPublicKey);
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: oids.COMMON_NAME,
-        value: new asn1js.BmpString({ value: address }),
+        value: new asn1js.BmpString({ value: options.commonName }),
       }),
     );
 
-    const issuerDn = issuerCertificate
-      ? issuerCertificate.pkijsCertificate.subject.typesAndValues
+    const issuerDn = options.issuerCertificate
+      ? options.issuerCertificate.pkijsCertificate.subject.typesAndValues
       : pkijsCert.subject.typesAndValues;
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.issuer.typesAndValues = issuerDn.map(
@@ -92,9 +85,9 @@ export default class Certificate {
 
     await pkijsCert.subjectPublicKeyInfo.importKey(options.subjectPublicKey);
 
-    const signatureHashAlgo = (issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
+    const signatureHashAlgo = (options.issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
       .hash as Algorithm;
-    await pkijsCert.sign(issuerPrivateKey, signatureHashAlgo.name);
+    await pkijsCert.sign(options.issuerPrivateKey, signatureHashAlgo.name);
     return new Certificate(pkijsCert);
   }
 
@@ -108,15 +101,12 @@ export default class Certificate {
     return certAsn1js.toBER(false);
   }
 
-  /**
-   * Get the Relaynet node address from the subject Common Name (CN).
-   */
-  public getAddress(): string {
+  public getCommonName(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
       a => ((a.type as unknown) as string) === oids.COMMON_NAME,
     );
     if (matchingDnAttr.length === 0) {
-      throw new CertificateError('Could not find subject node address in certificate');
+      throw new CertificateError('Distinguished Name does not contain Common Name');
     }
     return matchingDnAttr[0].value.valueBlock.value;
   }
@@ -180,11 +170,6 @@ function validateIssuerCertificate(issuerCertificate: Certificate): void {
 }
 
 //endregion
-
-async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
-  const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
-  return `0${publicKeyDigest.toString('hex')}`;
-}
 
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
   const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);

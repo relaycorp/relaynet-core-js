@@ -9,13 +9,13 @@ import {
   expectPromiseToReject,
   generateStubCert,
   sha256Hex,
-} from './_test_utils';
+} from '../_test_utils';
+import * as oids from '../oids';
 import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
-import { generateRsaKeys } from './crypto';
-import * as oids from './oids';
-import Certificate from './pki/Certificate';
+import { generateRSAKeyPair } from './keyGenerators';
+import Certificate from './x509/Certificate';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';
@@ -30,7 +30,7 @@ let privateKey: CryptoKey;
 // tslint:disable-next-line:no-let
 let certificate: Certificate;
 beforeAll(async () => {
-  const keyPair = await generateRsaKeys();
+  const keyPair = await generateRSAKeyPair();
   privateKey = keyPair.privateKey;
   certificate = await generateStubCert({
     issuerPrivateKey: privateKey,
@@ -404,12 +404,12 @@ describe('verifySignature', () => {
   });
 
   test('Signature should be verified against any set of trusted certificates', async () => {
-    const caKeyPair = await generateRsaKeys();
+    const caKeyPair = await generateRSAKeyPair();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 1 },
       subjectPublicKey: caKeyPair.publicKey,
     });
-    const signerKeyPair = await generateRsaKeys();
+    const signerKeyPair = await generateRSAKeyPair();
     const signerCertificate = await generateStubCert({
       attributes: { serialNumber: 2 },
       issuerCertificate: caCertificate,
@@ -427,12 +427,12 @@ describe('verifySignature', () => {
   });
 
   test('CA certificates should not have to be attached to SignedData', async () => {
-    const caKeyPair = await generateRsaKeys();
+    const caKeyPair = await generateRSAKeyPair();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 1 },
       subjectPublicKey: caKeyPair.publicKey,
     });
-    const signerKeyPair = await generateRsaKeys();
+    const signerKeyPair = await generateRSAKeyPair();
     const signerCertificate = await generateStubCert({
       attributes: { serialNumber: 2 },
       issuerCertificate: caCertificate,
@@ -450,7 +450,7 @@ describe('verifySignature', () => {
   });
 
   test('Signature should fail if not done with a trusted certificate', async () => {
-    const caKeyPair = await generateRsaKeys();
+    const caKeyPair = await generateRSAKeyPair();
     const caCertificate = await generateStubCert({
       attributes: { isCA: true, serialNumber: 2 },
       subjectPublicKey: caKeyPair.publicKey,
@@ -469,7 +469,8 @@ describe('verifySignature', () => {
 
   test('Sender certificate should be returned if verification passes', async () => {
     const superfluousCertificate = await generateStubCert({
-      subjectPublicKey: (await generateRsaKeys()).publicKey,
+      attributes: { serialNumber: 2 },
+      subjectPublicKey: (await generateRSAKeyPair()).publicKey,
     });
     const signatureDer = await cms.sign(
       plaintext,
@@ -502,19 +503,19 @@ describe('verifySignature', () => {
     });
 
     test('Chain should be populated when trusted certs are passed', async () => {
-      const rootCaKeyPair = await generateRsaKeys();
+      const rootCaKeyPair = await generateRSAKeyPair();
       const rootCaCertificate = await generateStubCert({
         attributes: { isCA: true, serialNumber: 1 },
         subjectPublicKey: rootCaKeyPair.publicKey,
       });
-      const caKeyPair = await generateRsaKeys();
+      const caKeyPair = await generateRSAKeyPair();
       const caCertificate = await generateStubCert({
         attributes: { isCA: true, serialNumber: 2 },
         issuerCertificate: rootCaCertificate,
         issuerPrivateKey: rootCaKeyPair.privateKey,
         subjectPublicKey: caKeyPair.publicKey,
       });
-      const signerKeyPair = await generateRsaKeys();
+      const signerKeyPair = await generateRSAKeyPair();
       const signerCertificate = await generateStubCert({
         attributes: { serialNumber: 3 },
         issuerCertificate: caCertificate,

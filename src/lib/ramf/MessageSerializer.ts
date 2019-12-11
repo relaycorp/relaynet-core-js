@@ -2,8 +2,8 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import * as cms from '../cms';
-import Certificate from '../pki/Certificate';
+import * as cms from '../crypto_wrappers/cms';
+import Certificate from '../crypto_wrappers/x509/Certificate';
 import Message from './Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';

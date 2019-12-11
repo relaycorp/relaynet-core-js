@@ -1,10 +1,10 @@
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
+import * as oids from '../oids';
 import { deserializeDer, getPkijsCrypto } from './_utils';
 import CMSError from './CMSError';
-import * as oids from './oids';
-import Certificate from './pki/Certificate';
+import Certificate from './x509/Certificate';
 
 const pkijsCrypto = getPkijsCrypto();
 
