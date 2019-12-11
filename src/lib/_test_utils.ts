@@ -24,7 +24,7 @@ export function expectAsn1ValuesToBeEqual(
   expectedValue: Asn1jsSerializable,
   actualValue: Asn1jsSerializable,
 ): void {
-  expect(sha256Hex(expectedValue.toBER(false))).toEqual(sha256Hex(actualValue.toBER(false)));
+  expectBuffersToEqual(expectedValue.toBER(false), actualValue.toBER(false));
 }
 
 interface StubCertConfig {
