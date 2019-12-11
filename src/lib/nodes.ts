@@ -23,16 +23,21 @@ async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> 
 
 export class DHCertificateError extends CertificateError {}
 
+interface DHKeyCertificateOptions {
+  readonly dhPublicKey: CryptoKey;
+  readonly nodePrivateKey: CryptoKey;
+  readonly nodeCertificate: Certificate;
+  readonly serialNumber: number;
+  readonly validityEndDate?: Date;
+  readonly validityStartDate?: Date;
+}
+
 export async function issueInitialDHKeyCertificate(
-  dhPublicKey: CryptoKey,
-  nodePrivateKey: CryptoKey,
-  nodeCertificate: Certificate,
-  serialNumber: number,
-  validityEndDate?: Date,
-  validityStartDate?: Date,
+  options: DHKeyCertificateOptions,
 ): Promise<Certificate> {
-  const startDate = validityStartDate || new Date();
-  const endDate = validityEndDate || getDateAfterDays(startDate, DEFAULT_DH_CERT_LENGTH_DAYS);
+  const startDate = options.validityStartDate || new Date();
+  const endDate =
+    options.validityEndDate || getDateAfterDays(startDate, DEFAULT_DH_CERT_LENGTH_DAYS);
 
   const certValidityLengthMs = endDate.getTime() - startDate.getTime();
   if (MAX_DH_CERT_LENGTH_MS < certValidityLengthMs) {
@@ -42,12 +47,12 @@ export async function issueInitialDHKeyCertificate(
   }
 
   return Certificate.issue({
-    commonName: nodeCertificate.getCommonName(),
+    commonName: options.nodeCertificate.getCommonName(),
     isCA: false,
-    issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodePrivateKey,
-    serialNumber,
-    subjectPublicKey: dhPublicKey,
+    issuerCertificate: options.nodeCertificate,
+    issuerPrivateKey: options.nodePrivateKey,
+    serialNumber: options.serialNumber,
+    subjectPublicKey: options.dhPublicKey,
     validityEndDate: endDate,
     validityStartDate: startDate,
   });

@@ -16,13 +16,13 @@ test('DH certificate can be issued, serialized and deserialized', async () => {
   });
 
   const dhKeyPair = await generateECDHKeyPair();
-  const dhCertificate = await issueInitialDHKeyCertificate(
-    dhKeyPair.publicKey,
-    nodeKeyPair.privateKey,
+  const dhCertificate = await issueInitialDHKeyCertificate({
+    dhPublicKey: dhKeyPair.publicKey,
     nodeCertificate,
-    2,
-    TOMORROW,
-  );
+    nodePrivateKey: nodeKeyPair.privateKey,
+    serialNumber: 2,
+    validityEndDate: TOMORROW,
+  });
 
   expect(dhCertificate.getCommonName()).toEqual(nodeCertificate.getCommonName());
 

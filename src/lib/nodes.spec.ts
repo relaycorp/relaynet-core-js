@@ -90,64 +90,59 @@ describe('issueInitialDHKeyCertificate', () => {
   });
 
   test('Certificate should be a valid X.509 certificate', async () => {
-    const dhCertificate = await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    const dhCertificate = await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+      serialNumber: 1,
+    });
 
     expect(dhCertificate).toBe(stubCertificate);
   });
 
   test('Subject name should be that of the node', async () => {
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+      serialNumber: 1,
+    });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.commonName).toEqual(stubNodeCertificate.getCommonName());
   });
 
   test('Subject key should be the one specified', async () => {
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+      serialNumber: 1,
+    });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.subjectPublicKey).toBe(stubSubjectKeyPair.publicKey);
   });
 
   test('Issuer certificate should be that of the node', async () => {
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+      serialNumber: 1,
+    });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.issuerCertificate).toBe(stubNodeCertificate);
   });
 
   test('Issuer private key should be that of the node', async () => {
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+      serialNumber: 1,
+    });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.issuerPrivateKey).toBe(stubNodeKeyPair.privateKey);
@@ -155,13 +150,12 @@ describe('issueInitialDHKeyCertificate', () => {
 
   test('Serial number should be the one specified', async () => {
     const serialNumber = 42;
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
       serialNumber,
-      stubFutureDate,
-    );
+    });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.serialNumber).toEqual(serialNumber);
@@ -172,13 +166,12 @@ describe('issueInitialDHKeyCertificate', () => {
       const stubCurrentDate = new Date(2019, 1, 1);
 
       jestDateMock.advanceTo(stubCurrentDate);
-      await issueInitialDHKeyCertificate(
-        stubSubjectKeyPair.publicKey,
-        stubNodeKeyPair.privateKey,
-        stubNodeCertificate,
-        1,
-        stubFutureDate,
-      );
+      await issueInitialDHKeyCertificate({
+        dhPublicKey: stubSubjectKeyPair.publicKey,
+        nodeCertificate: stubNodeCertificate,
+        nodePrivateKey: stubNodeKeyPair.privateKey,
+        serialNumber: 1,
+      });
 
       const certificateOptions = getCertificateIssueCallOptions();
       expect(certificateOptions.validityStartDate).toEqual(stubCurrentDate);
@@ -189,14 +182,14 @@ describe('issueInitialDHKeyCertificate', () => {
       customStartDate.setDate(customStartDate.getDate() - 1);
 
       jestDateMock.advanceTo(customStartDate.getTime() - 3_600_000);
-      await issueInitialDHKeyCertificate(
-        stubSubjectKeyPair.publicKey,
-        stubNodeKeyPair.privateKey,
-        stubNodeCertificate,
-        1,
-        stubFutureDate,
-        customStartDate,
-      );
+      await issueInitialDHKeyCertificate({
+        dhPublicKey: stubSubjectKeyPair.publicKey,
+        nodeCertificate: stubNodeCertificate,
+        nodePrivateKey: stubNodeKeyPair.privateKey,
+        serialNumber: 1,
+        validityEndDate: stubFutureDate,
+        validityStartDate: customStartDate,
+      });
 
       const certificateOptions = getCertificateIssueCallOptions();
       expect(certificateOptions.validityStartDate).toEqual(customStartDate);
@@ -206,12 +199,12 @@ describe('issueInitialDHKeyCertificate', () => {
       const stubCurrentDate = new Date(2019, 1, 1);
 
       jestDateMock.advanceTo(stubCurrentDate);
-      await issueInitialDHKeyCertificate(
-        stubSubjectKeyPair.publicKey,
-        stubNodeKeyPair.privateKey,
-        stubNodeCertificate,
-        1,
-      );
+      await issueInitialDHKeyCertificate({
+        dhPublicKey: stubSubjectKeyPair.publicKey,
+        nodeCertificate: stubNodeCertificate,
+        nodePrivateKey: stubNodeKeyPair.privateKey,
+        serialNumber: 1,
+      });
 
       const expectedEndDate = new Date(stubCurrentDate);
       expectedEndDate.setDate(expectedEndDate.getDate() + 30);
@@ -221,13 +214,13 @@ describe('issueInitialDHKeyCertificate', () => {
     });
 
     test('Custom end date should be honored', async () => {
-      await issueInitialDHKeyCertificate(
-        stubSubjectKeyPair.publicKey,
-        stubNodeKeyPair.privateKey,
-        stubNodeCertificate,
-        1,
-        stubFutureDate,
-      );
+      await issueInitialDHKeyCertificate({
+        dhPublicKey: stubSubjectKeyPair.publicKey,
+        nodeCertificate: stubNodeCertificate,
+        nodePrivateKey: stubNodeKeyPair.privateKey,
+        serialNumber: 1,
+        validityEndDate: stubFutureDate,
+      });
 
       const certificateOptions = getCertificateIssueCallOptions();
       expect(certificateOptions.validityEndDate).toEqual(stubFutureDate);
@@ -239,27 +232,26 @@ describe('issueInitialDHKeyCertificate', () => {
       startDate.setMilliseconds(stubFutureDate.getMilliseconds() - 1);
 
       await expectPromiseToReject(
-        issueInitialDHKeyCertificate(
-          stubSubjectKeyPair.publicKey,
-          stubNodeKeyPair.privateKey,
-          stubNodeCertificate,
-          1,
-          stubFutureDate,
-          startDate,
-        ),
+        issueInitialDHKeyCertificate({
+          dhPublicKey: stubSubjectKeyPair.publicKey,
+          nodeCertificate: stubNodeCertificate,
+          nodePrivateKey: stubNodeKeyPair.privateKey,
+          serialNumber: 1,
+          validityEndDate: stubFutureDate,
+          validityStartDate: startDate,
+        }),
         new DHCertificateError(`DH key may not be valid for more than ${MAX_VALIDITY_DAYS} days`),
       );
     });
   });
 
   test('Subject should not be marked as CA in Basic Constraints extension', async () => {
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+      serialNumber: 1,
+    });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.isCA).toBeFalse();
