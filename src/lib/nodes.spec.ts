@@ -1,12 +1,13 @@
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
-import { generateStubCert, getMockContext, sha256Hex } from './_test_utils';
+import { expectPromiseToReject, generateStubCert, getMockContext, sha256Hex } from './_test_utils';
 import { getPkijsCrypto } from './crypto_wrappers/_utils';
 import { generateRSAKeyPair } from './crypto_wrappers/keyGenerators';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 import {
+  DHCertificateError,
   issueInitialDHKeyCertificate,
   issueNodeCertificate,
   NodeCertificateOptions,
@@ -66,7 +67,9 @@ describe('issueNodeCertificate', () => {
 });
 
 describe('issueInitialDHKeyCertificate', () => {
-  const stubFutureDate = new Date();
+  const MAX_VALIDITY_DAYS = 60;
+
+  const stubFutureDate = new Date(2019, 1, 1);
   stubFutureDate.setDate(stubFutureDate.getDate() + 1);
 
   // tslint:disable-next-line:no-let
@@ -164,50 +167,89 @@ describe('issueInitialDHKeyCertificate', () => {
     expect(certificateOptions.serialNumber).toEqual(serialNumber);
   });
 
-  test('Start date should default to current date', async () => {
-    const stubCurrentDate = new Date(2019, 1, 1);
+  describe('Validity dates', () => {
+    test('Start date should default to current date', async () => {
+      const stubCurrentDate = new Date(2019, 1, 1);
 
-    jestDateMock.advanceTo(stubCurrentDate);
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+      jestDateMock.advanceTo(stubCurrentDate);
+      await issueInitialDHKeyCertificate(
+        stubSubjectKeyPair.publicKey,
+        stubNodeKeyPair.privateKey,
+        stubNodeCertificate,
+        1,
+        stubFutureDate,
+      );
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.validityStartDate).toEqual(stubCurrentDate);
-  });
+      const certificateOptions = getCertificateIssueCallOptions();
+      expect(certificateOptions.validityStartDate).toEqual(stubCurrentDate);
+    });
 
-  test('Custom start date should be honored', async () => {
-    const customStartDate = new Date(2019, 1, 1);
+    test('Custom start date should be honored', async () => {
+      const customStartDate = new Date(stubFutureDate);
+      customStartDate.setDate(customStartDate.getDate() - 1);
 
-    jestDateMock.advanceTo(customStartDate.getTime() - 3_600_000);
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-      customStartDate,
-    );
+      jestDateMock.advanceTo(customStartDate.getTime() - 3_600_000);
+      await issueInitialDHKeyCertificate(
+        stubSubjectKeyPair.publicKey,
+        stubNodeKeyPair.privateKey,
+        stubNodeCertificate,
+        1,
+        stubFutureDate,
+        customStartDate,
+      );
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.validityStartDate).toEqual(customStartDate);
-  });
+      const certificateOptions = getCertificateIssueCallOptions();
+      expect(certificateOptions.validityStartDate).toEqual(customStartDate);
+    });
 
-  test('End date should be the one specified', async () => {
-    await issueInitialDHKeyCertificate(
-      stubSubjectKeyPair.publicKey,
-      stubNodeKeyPair.privateKey,
-      stubNodeCertificate,
-      1,
-      stubFutureDate,
-    );
+    test(`End date should default to 30 days from start date`, async () => {
+      const stubCurrentDate = new Date(2019, 1, 1);
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.validityEndDate).toEqual(stubFutureDate);
+      jestDateMock.advanceTo(stubCurrentDate);
+      await issueInitialDHKeyCertificate(
+        stubSubjectKeyPair.publicKey,
+        stubNodeKeyPair.privateKey,
+        stubNodeCertificate,
+        1,
+      );
+
+      const expectedEndDate = new Date(stubCurrentDate);
+      expectedEndDate.setDate(expectedEndDate.getDate() + 30);
+
+      const certificateOptions = getCertificateIssueCallOptions();
+      expect(certificateOptions.validityEndDate).toEqual(expectedEndDate);
+    });
+
+    test('Custom end date should be honored', async () => {
+      await issueInitialDHKeyCertificate(
+        stubSubjectKeyPair.publicKey,
+        stubNodeKeyPair.privateKey,
+        stubNodeCertificate,
+        1,
+        stubFutureDate,
+      );
+
+      const certificateOptions = getCertificateIssueCallOptions();
+      expect(certificateOptions.validityEndDate).toEqual(stubFutureDate);
+    });
+
+    test(`Certificate should not be valid for over ${MAX_VALIDITY_DAYS} days`, async () => {
+      const startDate = new Date(stubFutureDate);
+      startDate.setDate(stubFutureDate.getDate() - MAX_VALIDITY_DAYS);
+      startDate.setMilliseconds(stubFutureDate.getMilliseconds() - 1);
+
+      await expectPromiseToReject(
+        issueInitialDHKeyCertificate(
+          stubSubjectKeyPair.publicKey,
+          stubNodeKeyPair.privateKey,
+          stubNodeCertificate,
+          1,
+          stubFutureDate,
+          startDate,
+        ),
+        new DHCertificateError(`DH key may not be valid for more than ${MAX_VALIDITY_DAYS} days`),
+      );
+    });
   });
 
   test('Subject should not be marked as CA in Basic Constraints extension', async () => {
