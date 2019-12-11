@@ -13,3 +13,23 @@ async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> 
   const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
   return `0${publicKeyDigest.toString('hex')}`;
 }
+
+export async function issueInitialDHKeyCertificate(
+  dhPublicKey: CryptoKey,
+  nodePrivateKey: CryptoKey,
+  nodeCertificate: Certificate,
+  serialNumber: number,
+  validityEndDate: Date,
+  validityStartDate?: Date,
+): Promise<Certificate> {
+  return Certificate.issue({
+    commonName: nodeCertificate.getCommonName(),
+    isCA: false,
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodePrivateKey,
+    serialNumber,
+    subjectPublicKey: dhPublicKey,
+    validityEndDate,
+    validityStartDate: validityStartDate || new Date(),
+  });
+}

@@ -72,7 +72,7 @@ describe('MessageSerializer', () => {
       attributes: certificateAttributes,
       subjectPublicKey: recipientKeyPair.publicKey,
     });
-    recipientAddress = recipientCertificate.getAddress();
+    recipientAddress = recipientCertificate.getCommonName();
     recipientPrivateKey = recipientKeyPair.privateKey;
 
     const senderKeyPair = await generateRSAKeyPair();
@@ -133,7 +133,7 @@ describe('MessageSerializer', () => {
 
     describe('Recipient address', () => {
       test('Address should be serialized with length prefix', async () => {
-        const address = recipientCertificate.getAddress();
+        const address = recipientCertificate.getCommonName();
         const stubMessage = new StubMessage(address, senderCertificate, PAYLOAD);
 
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(

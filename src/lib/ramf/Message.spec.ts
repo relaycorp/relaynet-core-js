@@ -31,7 +31,7 @@ describe('Message', () => {
     recipientCertificate = await generateStubCert({
       subjectPublicKey: recipientKeyPair.publicKey,
     });
-    recipientAddress = recipientCertificate.getAddress();
+    recipientAddress = recipientCertificate.getCommonName();
 
     const senderKeyPair = await generateRSAKeyPair();
     senderCertificate = await generateStubCert({

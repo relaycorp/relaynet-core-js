@@ -101,15 +101,12 @@ export default class Certificate {
     return certAsn1js.toBER(false);
   }
 
-  /**
-   * Get the Relaynet node address from the subject Common Name (CN).
-   */
-  public getAddress(): string {
+  public getCommonName(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
       a => ((a.type as unknown) as string) === oids.COMMON_NAME,
     );
     if (matchingDnAttr.length === 0) {
-      throw new CertificateError('Could not find subject node address in certificate');
+      throw new CertificateError('Distinguished Name does not contain Common Name');
     }
     return matchingDnAttr[0].value.valueBlock.value;
   }

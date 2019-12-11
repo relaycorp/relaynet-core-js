@@ -498,12 +498,12 @@ test('serialize() should return a DER-encoded buffer', async () => {
   const subjectDnAttributes = pkijsCert.subject.typesAndValues;
   expect(subjectDnAttributes.length).toBe(1);
   expect(subjectDnAttributes[0].type).toBe(oids.COMMON_NAME);
-  expect(subjectDnAttributes[0].value.valueBlock.value).toBe(cert.getAddress());
+  expect(subjectDnAttributes[0].value.valueBlock.value).toBe(cert.getCommonName());
 
   const issuerDnAttributes = pkijsCert.issuer.typesAndValues;
   expect(issuerDnAttributes.length).toBe(1);
   expect(issuerDnAttributes[0].type).toBe(oids.COMMON_NAME);
-  expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getAddress());
+  expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getCommonName());
 });
 
 describe('getAddress()', () => {
@@ -512,7 +512,7 @@ describe('getAddress()', () => {
 
     const subjectDn = cert.pkijsCertificate.subject.typesAndValues;
 
-    expect(cert.getAddress()).toEqual(subjectDn[0].value.valueBlock.value);
+    expect(cert.getCommonName()).toEqual(subjectDn[0].value.valueBlock.value);
   });
 
   test('should error out when the address is not found', async () => {
@@ -521,9 +521,9 @@ describe('getAddress()', () => {
     // tslint:disable-next-line:no-object-mutation
     cert.pkijsCertificate.subject.typesAndValues = [];
 
-    expect(() => cert.getAddress()).toThrowWithMessage(
+    expect(() => cert.getCommonName()).toThrowWithMessage(
       CertificateError,
-      'Could not find subject node address in certificate',
+      'Distinguished Name does not contain Common Name',
     );
   });
 });
