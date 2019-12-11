@@ -1,9 +1,7 @@
-import * as crypto from 'crypto';
 import { CryptoEngine } from 'pkijs';
 
-import { expectBuffersToEqual, getMockContext } from '../_test_utils';
-import { generateDHKeyPair, generateRSAKeyPair } from './keyGenerators';
-import * as modp from './modp';
+import { getMockContext } from '../_test_utils';
+import { ECDHCurveName, generateECDHKeyPair, generateRSAKeyPair } from './keyGenerators';
 
 describe('generateRsaKeyPair', () => {
   test('Keys should be RSA', async () => {
@@ -74,12 +72,12 @@ describe('generateRsaKeyPair', () => {
 
 describe('generateDHKeyPair', () => {
   const stubKey: CryptoKey = {
-    algorithm: { name: 'DH' },
+    algorithm: { name: 'ECDH' },
     extractable: true,
     type: 'private',
     usages: [],
   };
-  const stubDHKeyPair: CryptoKeyPair = {
+  const stubECDHKeyPair: CryptoKeyPair = {
     privateKey: stubKey,
     publicKey: stubKey,
   };
@@ -88,10 +86,7 @@ describe('generateDHKeyPair', () => {
     jest
       .spyOn(CryptoEngine.prototype, 'generateKey')
       // @ts-ignore
-      .mockImplementationOnce(() => Promise.resolve(stubDHKeyPair));
-
-    jest.spyOn(crypto, 'getDiffieHellman');
-    jest.spyOn(modp, 'getModpGroupData');
+      .mockImplementationOnce(() => Promise.resolve(stubECDHKeyPair));
   });
 
   afterEach(() => {
@@ -99,35 +94,34 @@ describe('generateDHKeyPair', () => {
   });
 
   test('The result should be a DH key pair', async () => {
-    const dhKeyPair = await generateDHKeyPair();
+    const keyPair = await generateECDHKeyPair();
 
-    expect(dhKeyPair).toBe(stubDHKeyPair);
+    expect(keyPair).toBe(stubECDHKeyPair);
+
+    expect(CryptoEngine.prototype.generateKey).toBeCalledTimes(1);
+    const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
+    const algorithm = generateKeyCallArgs[0];
+    expect(algorithm).toHaveProperty('name', 'ECDH');
   });
 
-  test('MODP Group 14 should be used by default', async () => {
-    await generateDHKeyPair();
+  test('NIST P-256 curve should be used by default', async () => {
+    await generateECDHKeyPair();
 
     const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
-
-    const modp14Group = modp.getModpGroupData('modp14');
-
     const algorithm = generateKeyCallArgs[0];
-    expect(algorithm).toHaveProperty('name', 'DH');
-    expectBuffersToEqual(algorithm.prime, modp14Group.prime);
-    expectBuffersToEqual(algorithm.generator, modp14Group.generator);
+    expect(algorithm).toHaveProperty('namedCurve', 'P-256');
   });
 
-  test.each([['modp15', 'modp16', 'modp17', 'modp18']])(
-    '%s should also be supported',
-    async groupName => {
-      await generateDHKeyPair(groupName as modp.MODPGroupName);
+  test.each([['P-384', 'P-521']])('%s should also be supported', async curveName => {
+    await generateECDHKeyPair(curveName as ECDHCurveName);
 
-      expect(modp.getModpGroupData).toBeCalledWith(groupName);
-    },
-  );
+    const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
+    const algorithm = generateKeyCallArgs[0];
+    expect(algorithm).toHaveProperty('namedCurve', curveName);
+  });
 
   test('The key pair should be extractable', async () => {
-    await generateDHKeyPair();
+    await generateECDHKeyPair();
 
     const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
 
@@ -136,7 +130,7 @@ describe('generateDHKeyPair', () => {
   });
 
   test('deriveKey and deriveBits should be the only uses of the keys', async () => {
-    await generateDHKeyPair();
+    await generateECDHKeyPair();
 
     const generateKeyCallArgs = getMockContext(CryptoEngine.prototype.generateKey).calls[0];
 

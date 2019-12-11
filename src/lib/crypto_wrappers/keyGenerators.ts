@@ -1,9 +1,10 @@
 import { getAlgorithmParameters } from 'pkijs';
 
 import { getPkijsCrypto } from './_utils';
-import { getModpGroupData, MODPGroupName } from './modp';
 
 const cryptoEngine = getPkijsCrypto();
+
+export type ECDHCurveName = 'P-256' | 'P-384' | 'P-521';
 
 /**
  * Generate an RSA key pair
@@ -34,11 +35,11 @@ export async function generateRSAKeyPair({
   return cryptoEngine.generateKey(algorithm.algorithm, true, algorithm.usages);
 }
 
-export async function generateDHKeyPair(groupName?: MODPGroupName): Promise<CryptoKeyPair> {
-  const modpGroup = getModpGroupData(groupName || 'modp14');
-  return cryptoEngine.generateKey(
-    { name: 'DH', prime: modpGroup.prime, generator: modpGroup.generator },
-    true,
-    ['deriveBits', 'deriveKey'],
-  );
+export async function generateECDHKeyPair(
+  curveName: ECDHCurveName = 'P-256',
+): Promise<CryptoKeyPair> {
+  return cryptoEngine.generateKey({ name: 'ECDH', namedCurve: curveName }, true, [
+    'deriveBits',
+    'deriveKey',
+  ]);
 }
