@@ -249,7 +249,9 @@ describe('MessageSerializer', () => {
       });
 
       test('Date should not be before Unix epoch', async () => {
-        const invalidDate = new Date(1969, 11, 31, 23, 59, 59);
+        // Don't pass the number of seconds since epoch directly because the local timezone would
+        // be used
+        const invalidDate = new Date('1969-12-31T23:59:59.000Z');
         const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: invalidDate,
         });
@@ -261,7 +263,9 @@ describe('MessageSerializer', () => {
       });
 
       test('Timestamp should be less than 2 ^ 32', async () => {
-        const invalidDate = new Date(2 ** 32 * 1000);
+        // Don't pass the number of seconds since epoch directly because the local timezone would
+        // be used
+        const invalidDate = new Date('2106-02-07T06:28:16.000Z'); // 2 ^ 32 seconds since epoch
         const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: invalidDate,
         });

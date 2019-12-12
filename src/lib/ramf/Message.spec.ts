@@ -56,7 +56,6 @@ describe('Message', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
         expect(message.date).toEqual(now);
-        expect(message.date.getTimezoneOffset()).toEqual(0);
       });
 
       test('A custom date should be accepted', () => {
