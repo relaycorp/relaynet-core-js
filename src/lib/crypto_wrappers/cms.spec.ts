@@ -152,7 +152,7 @@ describe('decrypt', () => {
       await cms.decrypt(ciphertext, privateKey);
     } catch (error) {
       expect(error).toBeInstanceOf(CMSError);
-      expect(error.message).toStartWith('Decryption failed: ');
+      expect(error.message).toStartWith(`Decryption failed: ${error.cause().message}`);
     }
   });
 

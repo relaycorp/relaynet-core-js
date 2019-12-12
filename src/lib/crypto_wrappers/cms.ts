@@ -80,7 +80,7 @@ export async function decrypt(
       { recipientPrivateKey: privateKeyBuffer },
     );
   } catch (error) {
-    throw new CMSError(`Decryption failed: ${error}`);
+    throw new CMSError(error, `Decryption failed`);
   }
 }
 
