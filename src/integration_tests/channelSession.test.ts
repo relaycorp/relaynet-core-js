@@ -1,6 +1,6 @@
-import { generateECDHKeyPair, generateRSAKeyPair } from '../src/lib/crypto_wrappers/keyGenerators';
-import Certificate from '../src/lib/crypto_wrappers/x509/Certificate';
-import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../src/lib/nodes';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keyGenerators';
+import Certificate from '../lib/crypto_wrappers/x509/Certificate';
+import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/nodes';
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
