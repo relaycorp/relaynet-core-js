@@ -13,6 +13,15 @@ const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
 export interface EncryptionOptions {
   readonly aesKeySize: number;
 }
+export interface EncryptionResult {
+  readonly dhPrivateKey?: CryptoKey; // DH or ECDH key
+  readonly envelopedDataSerialized: ArrayBuffer;
+}
+
+export interface DecryptionResult {
+  readonly dhPublicKey?: CryptoKey; // DH or ECDH key
+  readonly plaintext: ArrayBuffer;
+}
 
 export interface SignatureVerification {
   readonly signerCertificate: Certificate;
@@ -30,7 +39,7 @@ export async function encrypt(
   plaintext: ArrayBuffer,
   certificate: Certificate,
   options: Partial<EncryptionOptions> = {},
-): Promise<ArrayBuffer> {
+): Promise<EncryptionResult> {
   const envelopedData = new pkijs.EnvelopedData();
 
   envelopedData.addRecipientByCertificate(
@@ -44,7 +53,7 @@ export async function encrypt(
   }
 
   const aesKeySize = options.aesKeySize || 128;
-  await envelopedData.encrypt(
+  const [pkijsEncryptionResult] = await envelopedData.encrypt(
     // @ts-ignore
     { name: 'AES-GCM', length: aesKeySize },
     plaintext,
@@ -54,7 +63,11 @@ export async function encrypt(
     content: envelopedData.toSchema(),
     contentType: oids.CMS_ENVELOPED_DATA,
   });
-  return contentInfo.toSchema().toBER(false);
+  const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
+  return {
+    dhPrivateKey: pkijsEncryptionResult && pkijsEncryptionResult.ecdhPrivateKey,
+    envelopedDataSerialized,
+  };
 }
 
 /**
@@ -62,23 +75,35 @@ export async function encrypt(
  *
  * @param ciphertext DER-encoded CMS EnvelopedData
  * @param privateKey
+ * @param dhRecipientCertificate
  * @throws CMSError if `ciphertext` is malformed or could not be decrypted
  *   with `privateKey`
  */
 export async function decrypt(
   ciphertext: ArrayBuffer,
   privateKey: CryptoKey,
-): Promise<ArrayBuffer> {
+  dhRecipientCertificate?: Certificate,
+): Promise<DecryptionResult> {
   const cmsContentInfo = deserializeContentInfo(ciphertext);
   const cmsEnvelopedSimp = new pkijs.EnvelopedData({ schema: cmsContentInfo });
 
+  const plaintext = await pkijsDecrypt(cmsEnvelopedSimp, privateKey, dhRecipientCertificate);
+  return { plaintext };
+}
+
+async function pkijsDecrypt(
+  envelopedData: pkijs.EnvelopedData,
+  privateKey: CryptoKey,
+  dhCertificate?: Certificate,
+): Promise<ArrayBuffer> {
   const privateKeyBuffer = await pkijsCrypto.exportKey('pkcs8', privateKey);
+  const encryptArgs = {
+    recipientCertificate: dhCertificate ? dhCertificate.pkijsCertificate : undefined,
+    recipientPrivateKey: privateKeyBuffer,
+  };
   try {
-    return await cmsEnvelopedSimp.decrypt(
-      0,
-      // @ts-ignore
-      { recipientPrivateKey: privateKeyBuffer },
-    );
+    // @ts-ignore
+    return await envelopedData.decrypt(0, encryptArgs);
   } catch (error) {
     throw new CMSError(error, `Decryption failed`);
   }

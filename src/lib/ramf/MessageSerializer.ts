@@ -103,13 +103,13 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Payload
-    const cmsEnvelopedData = await cms.encrypt(
+    const { envelopedDataSerialized } = await cms.encrypt(
       message.exportPayload(),
       recipientCertificate,
       options as cms.EncryptionOptions,
     );
-    serialization.writeUInt32LE(cmsEnvelopedData.byteLength);
-    serialization.writeBuffer(Buffer.from(cmsEnvelopedData));
+    serialization.writeUInt32LE(envelopedDataSerialized.byteLength);
+    serialization.writeBuffer(Buffer.from(envelopedDataSerialized));
     //endregion
 
     const serializationBeforeSignature = serialization.toBuffer();
@@ -153,7 +153,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     validateMessageTiming(messageFields, signatureVerification);
     //endregion
 
-    const payloadPlaintext = await cms.decrypt(
+    const decryptionResult = await cms.decrypt(
       bufferToArray(messageFields.payload),
       recipientPrivateKey,
     );
@@ -161,7 +161,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     return new this.messageClass(
       messageFields.recipientAddress,
       signatureVerification.signerCertificate,
-      payloadPlaintext,
+      decryptionResult.plaintext,
       {
         date: new Date(messageFields.dateTimestamp * 1_000),
         id: messageFields.id,

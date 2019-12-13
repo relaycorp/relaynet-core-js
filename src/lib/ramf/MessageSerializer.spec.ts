@@ -8,6 +8,7 @@ import {
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
+  getMockContext,
   getPromiseRejection,
 } from '../_test_utils';
 import * as cms from '../crypto_wrappers/cms';
@@ -808,9 +809,11 @@ describe('MessageSerializer', () => {
           recipientPrivateKey,
         );
 
-        // @ts-ignore
-        const payloadCiphertext = await cms.encrypt.mock.results[0].value;
-        expect(cms.decrypt).toBeCalledWith(payloadCiphertext, recipientPrivateKey);
+        const encryptionResult = await getMockContext(cms.encrypt).results[0].value;
+        expect(cms.decrypt).toBeCalledWith(
+          encryptionResult.envelopedDataSerialized,
+          recipientPrivateKey,
+        );
 
         expect(messageDeserialized.exportPayload()).toEqual(PAYLOAD);
       });
@@ -829,8 +832,7 @@ describe('MessageSerializer', () => {
         jest.spyOn(cms, 'verifySignature');
         await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey);
 
-        // @ts-ignore
-        const signatureCiphertext = await cms.sign.mock.results[0].value;
+        const signatureCiphertext = await getMockContext(cms.sign).results[0].value;
         const signaturePlaintext = messageSerialized.slice(
           0,
           messageSerialized.byteLength - signatureCiphertext.length - 2,
@@ -903,8 +905,9 @@ describe('MessageSerializer', () => {
 
       test('Sender certificate chain should be extracted from signature', async () => {
         const caCertificate = await generateStubCert();
+        const encryptionResult = await cms.encrypt(PAYLOAD, recipientCertificate);
         const messageSerialized = await serializeWithoutValidation({
-          payloadBuffer: await cms.encrypt(PAYLOAD, recipientCertificate),
+          payloadBuffer: encryptionResult.envelopedDataSerialized,
         });
 
         jest.spyOn(cms, 'verifySignature').mockImplementationOnce(async () => ({

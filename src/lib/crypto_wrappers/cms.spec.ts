@@ -5,16 +5,19 @@ import * as pkijs from 'pkijs';
 
 import {
   expectAsn1ValuesToBeEqual,
+  expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
+  getMockContext,
   sha256Hex,
 } from '../_test_utils';
+import { issueInitialDHKeyCertificate } from '../nodes';
 import * as oids from '../oids';
-import { deserializeDer } from './_utils';
+import { deserializeDer, getPublicKeyDigest } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
-import { generateRSAKeyPair } from './keyGenerators';
+import { generateECDHKeyPair, generateRSAKeyPair } from './keyGenerators';
 import Certificate from './x509/Certificate';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
@@ -40,33 +43,33 @@ beforeAll(async () => {
 
 describe('encrypt', () => {
   test('EnvelopedData value should be wrapped in ContentInfo', async () => {
-    const contentInfoDer = await cms.encrypt(plaintext, certificate);
+    const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-    const contentInfo = deserializeContentInfo(contentInfoDer);
+    const contentInfo = deserializeContentInfo(envelopedDataSerialized);
     expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
     expect(contentInfo.content).toBeInstanceOf(asn1js.Sequence);
   });
 
   describe('RecipientInfo', () => {
     test('There should only be one RecipientInfo', async () => {
-      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       expect(envelopedData.recipientInfos).toHaveLength(1);
       expect(envelopedData.recipientInfos[0]).toBeInstanceOf(pkijs.RecipientInfo);
     });
 
     test('RecipientInfo should be of type KeyTransRecipientInfo', async () => {
-      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       expect(envelopedData.recipientInfos[0].value).toBeInstanceOf(pkijs.KeyTransRecipientInfo);
     });
 
     test('KeyTransRecipientInfo should use issuerAndSerialNumber choice', async () => {
-      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
       expect(keyTransRecipientInfo.version).toEqual(0);
       expect(keyTransRecipientInfo.rid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
@@ -81,17 +84,17 @@ describe('encrypt', () => {
     });
 
     test('KeyTransRecipientInfo should use RSA-OAEP', async () => {
-      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
       expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(OID_RSA_OAEP);
     });
 
     test('RSA-OAEP should be used with SHA-256', async () => {
-      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
       const algorithmParams = new pkijs.RSAESOAEPParams({
         schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
@@ -102,9 +105,9 @@ describe('encrypt', () => {
 
   describe('EncryptedContentInfo', () => {
     test('AES-GCM-128 should be used by default', async () => {
-      const contentInfoDer = await cms.encrypt(plaintext, certificate);
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(contentInfoDer);
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
         OID_AES_GCM_128,
       );
@@ -114,11 +117,11 @@ describe('encrypt', () => {
       'AES-GCM-%s should also be supported',
       async (aesKeySize, expectedOid) => {
         // @ts-ignore
-        const contentInfoDer = await cms.encrypt(plaintext, certificate, {
+        const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate, {
           aesKeySize,
         });
 
-        const envelopedData = deserializeEnvelopedData(contentInfoDer);
+        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
         expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
           expectedOid,
         );
@@ -131,6 +134,31 @@ describe('encrypt', () => {
         new CMSError('Invalid AES key size (512)'),
       );
     });
+  });
+
+  test('Result should include generated (EC)DH private key when doing key agreement', async () => {
+    const nodeKeyPair = await generateRSAKeyPair();
+    const nodeCertificate = await generateStubCert({
+      attributes: { isCA: true, serialNumber: 1 },
+      issuerPrivateKey: nodeKeyPair.privateKey,
+      subjectPublicKey: nodeKeyPair.publicKey,
+    });
+
+    const bobDhKeyPair = await generateECDHKeyPair();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const bobDhCertificate = await issueInitialDHKeyCertificate({
+      dhPublicKey: bobDhKeyPair.publicKey,
+      nodeCertificate,
+      nodePrivateKey: nodeKeyPair.privateKey,
+      serialNumber: 2,
+      validityEndDate: tomorrow,
+    });
+
+    jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
+    const { dhPrivateKey } = await cms.encrypt(plaintext, bobDhCertificate);
+    const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
+    expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
   });
 });
 
@@ -145,11 +173,11 @@ describe('decrypt', () => {
 
   test('A well-formed but invalid ciphertext should be refused', async () => {
     const differentCertificate = await generateStubCert();
-    const ciphertext = await cms.encrypt(plaintext, differentCertificate);
+    const { envelopedDataSerialized } = await cms.encrypt(plaintext, differentCertificate);
 
     expect.hasAssertions();
     try {
-      await cms.decrypt(ciphertext, privateKey);
+      await cms.decrypt(envelopedDataSerialized, privateKey);
     } catch (error) {
       expect(error).toBeInstanceOf(CMSError);
       expect(error.message).toStartWith(`Decryption failed: ${error.cause().message}`);
@@ -157,9 +185,70 @@ describe('decrypt', () => {
   });
 
   test('Decryption should succeed with the right private key', async () => {
-    const ciphertext = await cms.encrypt(plaintext, certificate);
-    const actualPlaintext = await cms.decrypt(ciphertext, privateKey);
-    expect(Buffer.from(actualPlaintext).equals(Buffer.from(plaintext))).toBeTrue();
+    const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate);
+    const decryptionResult = await cms.decrypt(envelopedDataSerialized, privateKey);
+    expectBuffersToEqual(decryptionResult.plaintext, plaintext);
+  });
+
+  describe('Key agreement', () => {
+    // tslint:disable-next-line:no-let
+    let encryptionResult: cms.EncryptionResult;
+    // tslint:disable-next-line:no-let
+    let bobDhPrivateKey: CryptoKey;
+    // tslint:disable-next-line:no-let
+    let bobDhCertificate: Certificate;
+    beforeAll(async () => {
+      const nodeKeyPair = await generateRSAKeyPair();
+      const nodeCertificate = await generateStubCert({
+        attributes: { isCA: true, serialNumber: 1 },
+        issuerPrivateKey: nodeKeyPair.privateKey,
+        subjectPublicKey: nodeKeyPair.publicKey,
+      });
+
+      const bobDhKeyPair = await generateECDHKeyPair();
+      bobDhPrivateKey = bobDhKeyPair.privateKey;
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      bobDhCertificate = await issueInitialDHKeyCertificate({
+        dhPublicKey: bobDhKeyPair.publicKey,
+        nodeCertificate,
+        nodePrivateKey: nodeKeyPair.privateKey,
+        serialNumber: 2,
+        validityEndDate: tomorrow,
+      });
+
+      encryptionResult = await cms.encrypt(plaintext, bobDhCertificate);
+    });
+
+    test('Recipient DH certificate should be used to calculate shared secret', async () => {
+      jest.spyOn(pkijs.EnvelopedData.prototype, 'decrypt');
+
+      await cms.decrypt(
+        encryptionResult.envelopedDataSerialized,
+        bobDhPrivateKey,
+        bobDhCertificate,
+      );
+
+      const pkijsDecryptCall = getMockContext(pkijs.EnvelopedData.prototype.decrypt).calls[0];
+      const pkijsDecryptCallArgs = pkijsDecryptCall[1];
+      expect(pkijsDecryptCallArgs).toHaveProperty(
+        'recipientCertificate',
+        bobDhCertificate.pkijsCertificate,
+      );
+    });
+
+    test('Originator DH certificate should be output', async () => {
+      const { dhPublicKey } = await cms.decrypt(
+        encryptionResult.envelopedDataSerialized,
+        bobDhPrivateKey,
+        bobDhCertificate,
+      );
+
+      const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedDataSerialized);
+      expect(await getPublicKeyDigest(dhPublicKey as CryptoKey)).toEqual(
+        await getPublicKeyDigest(envelopedData.recipientInfos[0].value.originator.value.publicKey),
+      );
+    });
   });
 });
 
