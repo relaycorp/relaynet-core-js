@@ -355,9 +355,11 @@ describe('MessageSerializer', () => {
 
         const messageParts = parseMessage(messageSerialized);
         const payloadCiphertext = messageParts.payload;
-        expect(await cms.decrypt(bufferToArray(payloadCiphertext), recipientPrivateKey)).toEqual(
-          StubPayload.BUFFER,
+        const { plaintext } = await cms.decrypt(
+          bufferToArray(payloadCiphertext),
+          recipientPrivateKey,
         );
+        expect(plaintext).toEqual(StubPayload.BUFFER);
       });
 
       test('Encryption options should be honoured', async () => {
