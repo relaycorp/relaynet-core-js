@@ -113,20 +113,20 @@ describe('encrypt', () => {
       );
     });
 
-    test.each([[192, OID_AES_GCM_192], [256, OID_AES_GCM_256]])(
-      'AES-GCM-%s should also be supported',
-      async (aesKeySize, expectedOid) => {
-        // @ts-ignore
-        const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate, {
-          aesKeySize,
-        });
+    test.each([
+      [192, OID_AES_GCM_192],
+      [256, OID_AES_GCM_256],
+    ])('AES-GCM-%s should also be supported', async (aesKeySize, expectedOid) => {
+      // @ts-ignore
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, certificate, {
+        aesKeySize,
+      });
 
-        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-        expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-          expectedOid,
-        );
-      },
-    );
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+      expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
+        expectedOid,
+      );
+    });
 
     test('Key sizes other than 128, 192 and 256 should be refused', async () => {
       await expectPromiseToReject(
@@ -159,6 +159,12 @@ describe('encrypt', () => {
     const { dhPrivateKey } = await cms.encrypt(plaintext, bobDhCertificate);
     const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
     expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
+  });
+
+  test('Result should not include (EC)DH key when not doing key agreement', async () => {
+    const encryptionResult = await cms.encrypt(plaintext, certificate);
+
+    expect(encryptionResult).toHaveProperty('dhPrivateKey', undefined);
   });
 });
 
