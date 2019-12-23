@@ -19,7 +19,7 @@ export interface EncryptionResult {
 }
 
 export interface DecryptionResult {
-  readonly dhPublicKey?: CryptoKey; // DH or ECDH key
+  readonly dhPublicKeyDer?: ArrayBuffer; // DH or ECDH key
   readonly plaintext: ArrayBuffer;
 }
 
@@ -84,11 +84,15 @@ export async function decrypt(
   privateKey: CryptoKey,
   dhRecipientCertificate?: Certificate,
 ): Promise<DecryptionResult> {
-  const cmsContentInfo = deserializeContentInfo(ciphertext);
-  const cmsEnvelopedSimp = new pkijs.EnvelopedData({ schema: cmsContentInfo });
+  const contentInfo = deserializeContentInfo(ciphertext);
+  const envelopedData = new pkijs.EnvelopedData({ schema: contentInfo });
 
-  const plaintext = await pkijsDecrypt(cmsEnvelopedSimp, privateKey, dhRecipientCertificate);
-  return { plaintext };
+  // Extract the (EC)DH public key before it's altered by PKI.js's decryption
+  const recipientInfo = envelopedData.recipientInfos[0];
+  const dhPublicKeyDer = recipientInfo.value.originator?.value.toSchema().toBER(false);
+
+  const plaintext = await pkijsDecrypt(envelopedData, privateKey, dhRecipientCertificate);
+  return { plaintext, dhPublicKeyDer };
 }
 
 async function pkijsDecrypt(

@@ -14,7 +14,7 @@ import {
 } from '../_test_utils';
 import { issueInitialDHKeyCertificate } from '../nodes';
 import * as oids from '../oids';
-import { deserializeDer, getPublicKeyDigest } from './_utils';
+import { deserializeDer } from './_utils';
 import * as cms from './cms';
 import CMSError from './CMSError';
 import { generateECDHKeyPair, generateRSAKeyPair } from './keyGenerators';
@@ -238,16 +238,17 @@ describe('decrypt', () => {
     });
 
     test('Originator DH certificate should be output', async () => {
-      const { dhPublicKey } = await cms.decrypt(
+      const { dhPublicKeyDer } = await cms.decrypt(
         encryptionResult.envelopedDataSerialized,
         bobDhPrivateKey,
         bobDhCertificate,
       );
 
       const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedDataSerialized);
-      expect(await getPublicKeyDigest(dhPublicKey as CryptoKey)).toEqual(
-        await getPublicKeyDigest(envelopedData.recipientInfos[0].value.originator.value.publicKey),
-      );
+      const expectedPublicKey = envelopedData.recipientInfos[0].value.originator.value
+        .toSchema()
+        .toBER(false);
+      expectBuffersToEqual(expectedPublicKey, dhPublicKeyDer as ArrayBuffer);
     });
   });
 });
