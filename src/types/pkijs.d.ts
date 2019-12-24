@@ -6,6 +6,7 @@ declare module 'pkijs' {
   // following expression to export things in bulk didn't have any effect:
   //   export * from "pkijs/src/_x509";
 
+  import AlgorithmIdentifier from 'pkijs/src/AlgorithmIdentifier';
   import Attribute from 'pkijs/src/Attribute';
   import AttributeTypeAndValue from 'pkijs/src/AttributeTypeAndValue';
   import AuthorityKeyIdentifier from 'pkijs/src/AuthorityKeyIdentifier';
@@ -27,6 +28,7 @@ declare module 'pkijs' {
   import SignerInfo from 'pkijs/src/SignerInfo';
 
   export {
+    AlgorithmIdentifier,
     Attribute,
     AttributeTypeAndValue,
     AuthorityKeyIdentifier,

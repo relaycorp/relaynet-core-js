@@ -1,8 +1,10 @@
 // @ts-ignore
 import bufferToArray from 'buffer-to-arraybuffer';
+// @ts-ignore
+import * as pkijs from 'pkijs';
 
 import { expectBuffersToEqual } from '../lib/_test_utils';
-import { getPkijsCrypto } from '../lib/crypto_wrappers/_utils';
+import { deserializeDer, getPkijsCrypto } from '../lib/crypto_wrappers/_utils';
 import * as cms from '../lib/crypto_wrappers/cms';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keyGenerators';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
@@ -46,9 +48,9 @@ test('DH certificate can be issued, serialized and deserialized', async () => {
 });
 
 test('Encryption and decryption with subsequent DH keys', async () => {
-  const bobDhKeyPair = await generateECDHKeyPair();
+  const bobKeyPair1 = await generateECDHKeyPair();
   const bobDhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: bobDhKeyPair.publicKey,
+    dhPublicKey: bobKeyPair1.publicKey,
     nodeCertificate,
     nodePrivateKey: nodeKeyPair.privateKey,
     serialNumber: 2,
@@ -60,15 +62,23 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   const encryptionResult1 = await cms.encrypt(plaintext1, bobDhCertificate);
   const decryptionResult1 = await cms.decrypt(
     encryptionResult1.envelopedDataSerialized,
-    bobDhKeyPair.privateKey,
+    bobKeyPair1.privateKey,
     bobDhCertificate,
   );
   expectBuffersToEqual(decryptionResult1.plaintext, plaintext1);
+  checkRecipientInfo(
+    encryptionResult1.envelopedDataSerialized,
+    decryptionResult1.dhPublicKeyDer as ArrayBuffer,
+    bobDhCertificate,
+  );
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
   const plaintext2 = bufferToArray(Buffer.from('Hi, Alice. My name is Bob.'));
+  const alicePublicKey1 = await deserializeDhPublicKey(
+    decryptionResult1.dhPublicKeyDer as ArrayBuffer,
+  );
   const aliceDhCert1 = await issueInitialDHKeyCertificate({
-    dhPublicKey: await getDhPublicKey(decryptionResult1.dhPublicKeyDer as ArrayBuffer),
+    dhPublicKey: alicePublicKey1,
     nodeCertificate,
     nodePrivateKey: nodeKeyPair.privateKey,
     serialNumber: 3,
@@ -81,31 +91,93 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     aliceDhCert1,
   );
   expectBuffersToEqual(decryptionResult2.plaintext, plaintext2);
+  checkRecipientInfo(
+    encryptionResult2.envelopedDataSerialized,
+    decryptionResult2.dhPublicKeyDer as ArrayBuffer,
+    aliceDhCert1,
+  );
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
   const plaintext3 = bufferToArray(Buffer.from('Nice to meet you, Bob.'));
+  const bobPublicKey2 = await deserializeDhPublicKey(
+    decryptionResult2.dhPublicKeyDer as ArrayBuffer,
+  );
   const bobDhCert2 = await issueInitialDHKeyCertificate({
-    dhPublicKey: await getDhPublicKey(decryptionResult2.dhPublicKeyDer as ArrayBuffer),
+    dhPublicKey: bobPublicKey2,
     nodeCertificate,
     nodePrivateKey: nodeKeyPair.privateKey,
     serialNumber: 4,
     validityEndDate: TOMORROW,
   });
-  const encryptResult3 = await cms.encrypt(plaintext3, bobDhCert2);
+  const encryptionResult3 = await cms.encrypt(plaintext3, bobDhCert2);
   const decryptionResult3 = await cms.decrypt(
-    encryptResult3.envelopedDataSerialized,
+    encryptionResult3.envelopedDataSerialized,
     encryptionResult2.dhPrivateKey as CryptoKey,
     bobDhCert2,
   );
   expectBuffersToEqual(decryptionResult3.plaintext, plaintext3);
+  checkRecipientInfo(
+    encryptionResult3.envelopedDataSerialized,
+    decryptionResult3.dhPublicKeyDer as ArrayBuffer,
+    bobDhCert2,
+  );
 });
 
-async function getDhPublicKey(dhPublicKeyDer: ArrayBuffer): Promise<CryptoKey> {
+async function deserializeDhPublicKey(publicKeyDer: ArrayBuffer): Promise<CryptoKey> {
   return cryptoEngine.importKey(
     'spki',
-    dhPublicKeyDer,
+    publicKeyDer,
     { name: 'ECDH', namedCurve: 'P-256' },
     true,
     [],
   );
+}
+
+function checkRecipientInfo(
+  envelopedDataSerialized: ArrayBuffer,
+  expectedPublicKeyDer: ArrayBuffer,
+  expectedRecipientCertificate: Certificate,
+): void {
+  const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+  expect(envelopedData.recipientInfos).toHaveLength(1);
+  const recipientInfo = envelopedData.recipientInfos[0];
+
+  // RecipientInfo MUST use the KeyAgreeRecipientInfo choice
+  expect(recipientInfo).toHaveProperty('variant', 2);
+
+  // KeyAgreeRecipientInfo MUST use the OriginatorPublicKey choice
+  expect(recipientInfo).toHaveProperty('value.originator.variant', 3);
+  const actualPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
+  expectBuffersToEqual(actualPublicKeyDer, expectedPublicKeyDer);
+
+  // Validate keyEncryptionAlgorithm
+  expect(recipientInfo.value.keyEncryptionAlgorithm).toHaveProperty(
+    'algorithmId',
+    '1.3.132.1.11.3', // dhSinglePass-stdDH-sha512kdf-scheme
+  );
+  const keyEncryptionAlgorithmParams = new pkijs.AlgorithmIdentifier({
+    schema: recipientInfo.value.keyEncryptionAlgorithm.algorithmParams,
+  });
+  expect(keyEncryptionAlgorithmParams).toHaveProperty(
+    'algorithmId',
+    '2.16.840.1.101.3.4.1.45', // id-aes256-wrap
+  );
+
+  // Validate recipientEncryptedKeys
+  expect(recipientInfo.value.recipientEncryptedKeys.encryptedKeys).toHaveLength(1);
+  const keyAgreeRecipientIdentifier =
+    recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0].rid;
+  expect(keyAgreeRecipientIdentifier.variant).toEqual(1);
+  expectBuffersToEqual(
+    keyAgreeRecipientIdentifier.value.issuer.toSchema().toBER(false),
+    expectedRecipientCertificate.pkijsCertificate.subject.toSchema().toBER(false),
+  );
+  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.valueDec).toEqual(
+    expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.valueDec,
+  );
+}
+
+function deserializeEnvelopedData(contentInfoDer: ArrayBuffer): pkijs.EnvelopedData {
+  const contentInfo = new pkijs.ContentInfo({ schema: deserializeDer(contentInfoDer) });
+  return new pkijs.EnvelopedData({ schema: contentInfo.content });
 }
