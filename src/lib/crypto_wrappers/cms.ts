@@ -58,16 +58,22 @@ export async function encrypt(
     { name: 'AES-GCM', length: aesKeySize },
     plaintext,
   );
+  const dhPrivateKey = pkijsEncryptionResult?.ecdhPrivateKey;
+
+  if (dhPrivateKey) {
+    // When doing key agreement, PKI.js EnvelopedData.encrypt() would've deleted the algorithm
+    // parameters in the originator's public key, so we should reinstate them:
+    // tslint:disable-next-line:no-object-mutation
+    envelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
+      certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
+  }
 
   const contentInfo = new pkijs.ContentInfo({
     content: envelopedData.toSchema(),
     contentType: oids.CMS_ENVELOPED_DATA,
   });
   const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
-  return {
-    dhPrivateKey: pkijsEncryptionResult && pkijsEncryptionResult.ecdhPrivateKey,
-    envelopedDataSerialized,
-  };
+  return { dhPrivateKey, envelopedDataSerialized };
 }
 
 /**
@@ -87,11 +93,17 @@ export async function decrypt(
   const contentInfo = deserializeContentInfo(ciphertext);
   const envelopedData = new pkijs.EnvelopedData({ schema: contentInfo });
 
-  // Extract the (EC)DH public key before it's altered by PKI.js's decryption
-  const recipientInfo = envelopedData.recipientInfos[0];
-  const dhPublicKeyDer = recipientInfo.value.originator?.value.toSchema().toBER(false);
-
   const plaintext = await pkijsDecrypt(envelopedData, privateKey, dhRecipientCertificate);
+
+  // When doing key agreement, extract the originator's (EC)DH public key after it's altered by
+  // EnvelopedData.decrypt() to unconditionally replace the algorithm parameters (e.g., the curve
+  // name):
+  const isKeyAgreement = !!dhRecipientCertificate;
+  const recipientInfo = envelopedData.recipientInfos[0];
+  const dhPublicKeyDer = isKeyAgreement
+    ? recipientInfo.value.originator.value.toSchema().toBER(false)
+    : undefined;
+
   return { plaintext, dhPublicKeyDer };
 }
 

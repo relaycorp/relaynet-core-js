@@ -25,8 +25,12 @@ const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';
 const OID_AES_GCM_192 = '2.16.840.1.101.3.4.1.26';
 const OID_AES_GCM_256 = '2.16.840.1.101.3.4.1.46';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
+const OID_ECDH_P256 = '1.2.840.10045.3.1.7';
 
 const plaintext = bufferToArray(Buffer.from('Winter is coming'));
+
+const TOMORROW = new Date();
+TOMORROW.setDate(TOMORROW.getDate() + 1);
 
 // tslint:disable-next-line:no-let
 let privateKey: CryptoKey;
@@ -136,35 +140,49 @@ describe('encrypt', () => {
     });
   });
 
-  test('Result should include generated (EC)DH private key when doing key agreement', async () => {
-    const nodeKeyPair = await generateRSAKeyPair();
-    const nodeCertificate = await generateStubCert({
-      attributes: { isCA: true, serialNumber: 1 },
-      issuerPrivateKey: nodeKeyPair.privateKey,
-      subjectPublicKey: nodeKeyPair.publicKey,
+  describe('Key agreement', () => {
+    // tslint:disable-next-line:no-let
+    let bobDhCertificate: Certificate;
+    beforeAll(async () => {
+      const nodeKeyPair = await generateRSAKeyPair();
+      const nodeCertificate = await generateStubCert({
+        attributes: { isCA: true, serialNumber: 1 },
+        issuerPrivateKey: nodeKeyPair.privateKey,
+        subjectPublicKey: nodeKeyPair.publicKey,
+      });
+
+      const bobDhKeyPair = await generateECDHKeyPair();
+      bobDhCertificate = await issueInitialDHKeyCertificate({
+        dhPublicKey: bobDhKeyPair.publicKey,
+        nodeCertificate,
+        nodePrivateKey: nodeKeyPair.privateKey,
+        serialNumber: 2,
+        validityEndDate: TOMORROW,
+      });
     });
 
-    const bobDhKeyPair = await generateECDHKeyPair();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const bobDhCertificate = await issueInitialDHKeyCertificate({
-      dhPublicKey: bobDhKeyPair.publicKey,
-      nodeCertificate,
-      nodePrivateKey: nodeKeyPair.privateKey,
-      serialNumber: 2,
-      validityEndDate: tomorrow,
+    test('Result should include generated (EC)DH private key', async () => {
+      jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
+      const { dhPrivateKey } = await cms.encrypt(plaintext, bobDhCertificate);
+
+      const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
+      expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
     });
 
-    jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
-    const { dhPrivateKey } = await cms.encrypt(plaintext, bobDhCertificate);
-    const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
-    expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
-  });
+    test('Originator should include curve name in the algorithm parameters', async () => {
+      const { envelopedDataSerialized } = await cms.encrypt(plaintext, bobDhCertificate);
 
-  test('Result should not include (EC)DH key when not doing key agreement', async () => {
-    const encryptionResult = await cms.encrypt(plaintext, certificate);
+      const envelopedData = await deserializeEnvelopedData(envelopedDataSerialized);
+      const algorithm = envelopedData.recipientInfos[0].value.originator.value.algorithm;
+      expect(algorithm).toHaveProperty('algorithmParams');
+      expect(algorithm.algorithmParams.valueBlock.toString()).toEqual(OID_ECDH_P256);
+    });
 
-    expect(encryptionResult).toHaveProperty('dhPrivateKey', undefined);
+    test('Result should not include (EC)DH key when not doing key agreement', async () => {
+      const encryptionResult = await cms.encrypt(plaintext, certificate);
+
+      expect(encryptionResult).toHaveProperty('dhPrivateKey', undefined);
+    });
   });
 });
 
@@ -226,7 +244,7 @@ describe('decrypt', () => {
       encryptionResult = await cms.encrypt(plaintext, bobDhCertificate);
     });
 
-    test('Recipient DH certificate should be used to calculate shared secret', async () => {
+    test('Recipient DH public key should be used to calculate shared secret', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'decrypt');
 
       await cms.decrypt(
@@ -243,7 +261,7 @@ describe('decrypt', () => {
       );
     });
 
-    test('Originator DH certificate should be output', async () => {
+    test('Originator DH public key should be output', async () => {
       const { dhPublicKeyDer } = await cms.decrypt(
         encryptionResult.envelopedDataSerialized,
         bobDhPrivateKey,
