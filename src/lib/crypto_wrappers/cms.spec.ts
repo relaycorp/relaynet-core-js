@@ -178,6 +178,24 @@ describe('encrypt', () => {
       expect(algorithm.algorithmParams.valueBlock.toString()).toEqual(OID_ECDH_P256);
     });
 
+    test('Generated (EC)DH key id should be output and included in unprotectedAttrs', async () => {
+      const { envelopedDataSerialized, dhKeyId } = await cms.encrypt(plaintext, bobDhCertificate);
+
+      // Serial number would be 0 if the input to getRandomValues() was initialized but the
+      // function was not called. This is somewhat brittle but we can't use spyOn() because that
+      // wouldn't call the spied function, which is also used by EnvelopedData.encrypt().
+      expect(dhKeyId).not.toEqual(0);
+
+      const envelopedData = await deserializeEnvelopedData(envelopedDataSerialized);
+      expect(envelopedData.unprotectedAttrs).toHaveLength(1);
+      const dhKeyIdAttribute = (envelopedData.unprotectedAttrs as readonly pkijs.Attribute[])[0];
+      expect(dhKeyIdAttribute).toHaveProperty('type', '0.4.0.127.0.17.0.1.0');
+      expect(
+        // @ts-ignore
+        dhKeyIdAttribute.values[0].valueBlock.toString(),
+      ).toEqual((dhKeyId as number).toString());
+    });
+
     test('Result should not include (EC)DH key when not doing key agreement', async () => {
       const encryptionResult = await cms.encrypt(plaintext, certificate);
 

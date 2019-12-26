@@ -81,7 +81,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     dhPublicKey: alicePublicKey1,
     nodeCertificate,
     nodePrivateKey: nodeKeyPair.privateKey,
-    serialNumber: 3,
+    serialNumber: encryptionResult1.dhKeyId as number,
     validityEndDate: TOMORROW,
   });
   const encryptionResult2 = await cms.encrypt(plaintext2, aliceDhCert1);
@@ -106,7 +106,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     dhPublicKey: bobPublicKey2,
     nodeCertificate,
     nodePrivateKey: nodeKeyPair.privateKey,
-    serialNumber: 4,
+    serialNumber: encryptionResult2.dhKeyId as number,
     validityEndDate: TOMORROW,
   });
   const encryptionResult3 = await cms.encrypt(plaintext3, bobDhCert2);
@@ -172,8 +172,8 @@ function checkRecipientInfo(
     keyAgreeRecipientIdentifier.value.issuer.toSchema().toBER(false),
     expectedRecipientCertificate.pkijsCertificate.subject.toSchema().toBER(false),
   );
-  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.valueDec).toEqual(
-    expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.valueDec,
+  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.toString()).toEqual(
+    expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.toString(),
   );
 }
 

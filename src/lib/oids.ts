@@ -17,3 +17,8 @@ export const CMS_ENVELOPED_DATA = '1.2.840.113549.1.7.3';
 export const CMS_ATTR_CONTENT_TYPE = '1.2.840.113549.1.9.3';
 export const CMS_ATTR_DIGEST = '1.2.840.113549.1.9.4';
 //endregion
+
+//region Relaynet
+// Relaycorp's OID is 0.4.0.127.0.17 and Relaynet's is 0.4.0.127.0.17.0
+export const RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
+//endregion

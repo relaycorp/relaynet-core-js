@@ -15,6 +15,7 @@ export interface EncryptionOptions {
 }
 export interface EncryptionResult {
   readonly dhPrivateKey?: CryptoKey; // DH or ECDH key
+  readonly dhKeyId?: number;
   readonly envelopedDataSerialized: ArrayBuffer;
 }
 
@@ -60,9 +61,21 @@ export async function encrypt(
   );
   const dhPrivateKey = pkijsEncryptionResult?.ecdhPrivateKey;
 
+  // tslint:disable-next-line:prefer-const no-let
+  let dhPrivateKeySerialNumber;
   if (dhPrivateKey) {
-    // When doing key agreement, PKI.js EnvelopedData.encrypt() would've deleted the algorithm
-    // parameters in the originator's public key, so we should reinstate them:
+    // `certificate` contains an (EC)DH public key, so EnvelopedData.encrypt() did a DH exchange.
+
+    // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
+    dhPrivateKeySerialNumber = generateRandom32BitUnsignedNumber();
+    const serialNumberAttribute = new pkijs.Attribute({
+      type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+      values: [new asn1js.Integer({ value: dhPrivateKeySerialNumber })],
+    });
+    // tslint:disable-next-line:no-object-mutation
+    envelopedData.unprotectedAttrs = [serialNumberAttribute];
+
+    // EnvelopedData.encrypt() would've deleted the algorithm params so we should reinstate them:
     // tslint:disable-next-line:no-object-mutation
     envelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
       certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
@@ -73,7 +86,7 @@ export async function encrypt(
     contentType: oids.CMS_ENVELOPED_DATA,
   });
   const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
-  return { dhPrivateKey, envelopedDataSerialized };
+  return { dhPrivateKey, dhKeyId: dhPrivateKeySerialNumber, envelopedDataSerialized };
 }
 
 /**
@@ -259,6 +272,14 @@ export async function verifySignature(
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
     signerCertificateChain: pkijsCertificateChain.map(c => new Certificate(c)),
   };
+}
+
+function generateRandom32BitUnsignedNumber(): number {
+  const numberArray = new Uint32Array(4);
+  // @ts-ignore
+  pkijsCrypto.getRandomValues(numberArray);
+  const numberBuffer = Buffer.from(numberArray);
+  return numberBuffer.readUInt32LE(0);
 }
 
 function deserializeContentInfo(derValue: ArrayBuffer): asn1js.Sequence {
