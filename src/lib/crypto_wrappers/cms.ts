@@ -62,15 +62,15 @@ export async function encrypt(
   const dhPrivateKey = pkijsEncryptionResult?.ecdhPrivateKey;
 
   // tslint:disable-next-line:prefer-const no-let
-  let dhPrivateKeySerialNumber;
+  let dhKeyId;
   if (dhPrivateKey) {
     // `certificate` contains an (EC)DH public key, so EnvelopedData.encrypt() did a DH exchange.
 
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
-    dhPrivateKeySerialNumber = generateRandom32BitUnsignedNumber();
+    dhKeyId = generateRandom32BitUnsignedNumber();
     const serialNumberAttribute = new pkijs.Attribute({
       type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-      values: [new asn1js.Integer({ value: dhPrivateKeySerialNumber })],
+      values: [new asn1js.Integer({ value: dhKeyId })],
     });
     // tslint:disable-next-line:no-object-mutation
     envelopedData.unprotectedAttrs = [serialNumberAttribute];
@@ -86,7 +86,7 @@ export async function encrypt(
     contentType: oids.CMS_ENVELOPED_DATA,
   });
   const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
-  return { dhPrivateKey, dhKeyId: dhPrivateKeySerialNumber, envelopedDataSerialized };
+  return { dhPrivateKey, dhKeyId, envelopedDataSerialized };
 }
 
 /**
