@@ -19,7 +19,6 @@ import { deserializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
 import {
   decrypt,
-  encrypt,
   EncryptionOptions,
   SessionEncryptionResult,
   SessionEnvelopedData,
@@ -182,10 +181,14 @@ describe('SessionEnvelopedData', () => {
       ).toEqual((dhKeyId as number).toString());
     });
 
-    describeEncryptedContentInfoEncryption(
-      async (options?: EncryptionOptions) =>
-        (await encrypt(plaintext, bobDhCertificate, options)).envelopedDataSerialized,
-    );
+    describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
+      const { envelopedData } = await SessionEnvelopedData.encrypt(
+        plaintext,
+        bobDhCertificate,
+        options,
+      );
+      return envelopedData.serialize();
+    });
   });
 });
 
@@ -246,8 +249,8 @@ describe('decrypt', () => {
   });
 
   test('Decryption should succeed with the right private key', async () => {
-    const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
-    const decryptionResult = await decrypt(envelopedDataSerialized, privateKey);
+    const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
+    const decryptionResult = await decrypt(envelopedData.serialize(), privateKey);
     expectBuffersToEqual(decryptionResult.plaintext, plaintext);
   });
 

@@ -142,42 +142,19 @@ export async function encrypt(
     1,
   );
 
-  if (options.aesKeySize && !AES_KEY_SIZES.includes(options.aesKeySize)) {
-    throw new CMSError(`Invalid AES key size (${options.aesKeySize})`);
-  }
-
   const aesKeySize = options.aesKeySize || 128;
-  const [pkijsEncryptionResult] = await envelopedData.encrypt(
+  await envelopedData.encrypt(
     // @ts-ignore
     { name: 'AES-GCM', length: aesKeySize },
     plaintext,
   );
-  const dhPrivateKey = pkijsEncryptionResult?.ecdhPrivateKey;
-
-  // tslint:disable-next-line:no-let
-  let dhKeyId: number | undefined;
-  if (dhPrivateKey) {
-    // `certificate` contains an (EC)DH public key, so EnvelopedData.encrypt() did a DH exchange.
-
-    // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
-    dhKeyId = generateRandom32BitUnsignedNumber();
-    const serialNumberAttribute = new pkijs.Attribute({
-      type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-      values: [new asn1js.Integer({ value: dhKeyId })],
-    });
-    envelopedData.unprotectedAttrs = [serialNumberAttribute];
-
-    // EnvelopedData.encrypt() would've deleted the algorithm params so we should reinstate them:
-    envelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
-      certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
-  }
 
   const contentInfo = new pkijs.ContentInfo({
     content: envelopedData.toSchema(),
     contentType: oids.CMS_ENVELOPED_DATA,
   });
   const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
-  return { dhPrivateKey, dhKeyId, envelopedDataSerialized };
+  return { dhPrivateKey: undefined, dhKeyId: undefined, envelopedDataSerialized };
 }
 
 /**
