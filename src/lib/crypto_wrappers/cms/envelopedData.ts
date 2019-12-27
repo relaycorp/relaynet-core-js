@@ -1,0 +1,171 @@
+// tslint:disable:no-object-mutation
+import * as asn1js from 'asn1js';
+import * as pkijs from 'pkijs';
+
+import * as oids from '../../oids';
+import { getPkijsCrypto } from '../_utils';
+import Certificate from '../x509/Certificate';
+import { deserializeContentInfo } from './_utils';
+import CMSError from './CMSError';
+
+const pkijsCrypto = getPkijsCrypto();
+
+const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
+
+export interface EncryptionOptions {
+  readonly aesKeySize: number;
+}
+
+export interface EncryptionResult {
+  readonly dhKeyId?: number;
+  readonly dhPrivateKey?: CryptoKey; // DH or ECDH key
+  readonly envelopedDataSerialized: ArrayBuffer;
+}
+
+export interface DecryptionResult {
+  readonly dhKeyId?: number;
+  readonly dhPublicKeyDer?: ArrayBuffer; // DH or ECDH key
+  readonly plaintext: ArrayBuffer;
+}
+
+/**
+ * Encrypt `plaintext` and return DER-encoded CMS EnvelopedData representation.
+ *
+ * @param plaintext
+ * @param certificate
+ * @param options
+ */
+export async function encrypt(
+  plaintext: ArrayBuffer,
+  certificate: Certificate,
+  options: Partial<EncryptionOptions> = {},
+): Promise<EncryptionResult> {
+  const envelopedData = new pkijs.EnvelopedData();
+
+  envelopedData.addRecipientByCertificate(
+    certificate.pkijsCertificate,
+    { oaepHashAlgorithm: 'SHA-256' },
+    1,
+  );
+
+  if (options.aesKeySize && !AES_KEY_SIZES.includes(options.aesKeySize)) {
+    throw new CMSError(`Invalid AES key size (${options.aesKeySize})`);
+  }
+
+  const aesKeySize = options.aesKeySize || 128;
+  const [pkijsEncryptionResult] = await envelopedData.encrypt(
+    // @ts-ignore
+    { name: 'AES-GCM', length: aesKeySize },
+    plaintext,
+  );
+  const dhPrivateKey = pkijsEncryptionResult?.ecdhPrivateKey;
+
+  // tslint:disable-next-line:no-let
+  let dhKeyId: number | undefined;
+  if (dhPrivateKey) {
+    // `certificate` contains an (EC)DH public key, so EnvelopedData.encrypt() did a DH exchange.
+
+    // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
+    dhKeyId = generateRandom32BitUnsignedNumber();
+    const serialNumberAttribute = new pkijs.Attribute({
+      type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+      values: [new asn1js.Integer({ value: dhKeyId })],
+    });
+    envelopedData.unprotectedAttrs = [serialNumberAttribute];
+
+    // EnvelopedData.encrypt() would've deleted the algorithm params so we should reinstate them:
+    envelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
+      certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
+  }
+
+  const contentInfo = new pkijs.ContentInfo({
+    content: envelopedData.toSchema(),
+    contentType: oids.CMS_ENVELOPED_DATA,
+  });
+  const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
+  return { dhPrivateKey, dhKeyId, envelopedDataSerialized };
+}
+
+/**
+ * Decrypt `ciphertext` and return plaintext.
+ *
+ * @param ciphertext DER-encoded CMS EnvelopedData
+ * @param privateKey
+ * @param dhRecipientCertificate
+ * @throws CMSError if `ciphertext` is malformed or could not be decrypted
+ *   with `privateKey`
+ */
+export async function decrypt(
+  ciphertext: ArrayBuffer,
+  privateKey: CryptoKey,
+  dhRecipientCertificate?: Certificate,
+): Promise<DecryptionResult> {
+  const contentInfo = deserializeContentInfo(ciphertext);
+  const envelopedData = new pkijs.EnvelopedData({ schema: contentInfo });
+
+  const plaintext = await pkijsDecrypt(envelopedData, privateKey, dhRecipientCertificate);
+
+  // When doing key agreement, extract the originator's (EC)DH public key after it's altered by
+  // EnvelopedData.decrypt() to unconditionally replace the algorithm parameters (e.g., the curve
+  // name):
+  const isKeyAgreement = !!dhRecipientCertificate;
+  const recipientInfo = envelopedData.recipientInfos[0];
+  const dhPublicKeyDer = isKeyAgreement
+    ? recipientInfo.value.originator.value.toSchema().toBER(false)
+    : undefined;
+  const dhKeyId = isKeyAgreement ? extractOriginatorKeyId(envelopedData) : undefined;
+
+  return { plaintext, dhPublicKeyDer, dhKeyId };
+}
+
+async function pkijsDecrypt(
+  envelopedData: pkijs.EnvelopedData,
+  privateKey: CryptoKey,
+  dhCertificate?: Certificate,
+): Promise<ArrayBuffer> {
+  const privateKeyBuffer = await pkijsCrypto.exportKey('pkcs8', privateKey);
+  const encryptArgs = {
+    recipientCertificate: dhCertificate ? dhCertificate.pkijsCertificate : undefined,
+    recipientPrivateKey: privateKeyBuffer,
+  };
+  try {
+    // @ts-ignore
+    return await envelopedData.decrypt(0, encryptArgs);
+  } catch (error) {
+    throw new CMSError(error, `Decryption failed`);
+  }
+}
+
+function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {
+  const unprotectedAttrs = envelopedData.unprotectedAttrs || [];
+  if (unprotectedAttrs.length === 0) {
+    throw new CMSError('unprotectedAttrs must be present when using channel session');
+  }
+
+  const matchingAttrs = unprotectedAttrs.filter(
+    a => a.type === oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+  );
+  if (matchingAttrs.length === 0) {
+    throw new CMSError('unprotectedAttrs does not contain originator key id');
+  }
+
+  const originatorKeyIdAttr = matchingAttrs[0];
+  // @ts-ignore
+  const originatorKeyIds = originatorKeyIdAttr.values;
+  if (originatorKeyIds.length !== 1) {
+    throw new CMSError(
+      `Originator key id attribute must have exactly one value (got ${originatorKeyIds.length})`,
+    );
+  }
+
+  const keyIdString = originatorKeyIds[0].valueBlock.toString();
+  return parseInt(keyIdString, 10);
+}
+
+function generateRandom32BitUnsignedNumber(): number {
+  const numberArray = new Uint32Array(4);
+  // @ts-ignore
+  pkijsCrypto.getRandomValues(numberArray);
+  const numberBuffer = Buffer.from(numberArray);
+  return numberBuffer.readUInt32LE(0);
+}

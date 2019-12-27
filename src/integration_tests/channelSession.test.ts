@@ -5,7 +5,7 @@ import * as pkijs from 'pkijs';
 
 import { expectBuffersToEqual } from '../lib/_test_utils';
 import { deserializeDer, getPkijsCrypto } from '../lib/crypto_wrappers/_utils';
-import * as cms from '../lib/crypto_wrappers/cms';
+import { decrypt, encrypt } from '../lib/crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keyGenerators';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
 import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/nodes';
@@ -59,8 +59,8 @@ test('Encryption and decryption with subsequent DH keys', async () => {
 
   // Run 1: Alice initiates contact with Bob. Bob decrypts message.
   const plaintext1 = bufferToArray(Buffer.from('Hi. My name is Alice.'));
-  const encryptionResult1 = await cms.encrypt(plaintext1, bobDhCertificate);
-  const decryptionResult1 = await cms.decrypt(
+  const encryptionResult1 = await encrypt(plaintext1, bobDhCertificate);
+  const decryptionResult1 = await decrypt(
     encryptionResult1.envelopedDataSerialized,
     bobKeyPair1.privateKey,
     bobDhCertificate,
@@ -84,8 +84,8 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     serialNumber: encryptionResult1.dhKeyId as number,
     validityEndDate: TOMORROW,
   });
-  const encryptionResult2 = await cms.encrypt(plaintext2, aliceDhCert1);
-  const decryptionResult2 = await cms.decrypt(
+  const encryptionResult2 = await encrypt(plaintext2, aliceDhCert1);
+  const decryptionResult2 = await decrypt(
     encryptionResult2.envelopedDataSerialized,
     encryptionResult1.dhPrivateKey as CryptoKey,
     aliceDhCert1,
@@ -109,8 +109,8 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     serialNumber: encryptionResult2.dhKeyId as number,
     validityEndDate: TOMORROW,
   });
-  const encryptionResult3 = await cms.encrypt(plaintext3, bobDhCert2);
-  const decryptionResult3 = await cms.decrypt(
+  const encryptionResult3 = await encrypt(plaintext3, bobDhCert2);
+  const decryptionResult3 = await decrypt(
     encryptionResult3.envelopedDataSerialized,
     encryptionResult2.dhPrivateKey as CryptoKey,
     bobDhCert2,
