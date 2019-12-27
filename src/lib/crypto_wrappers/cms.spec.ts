@@ -26,6 +26,7 @@ const OID_AES_GCM_192 = '2.16.840.1.101.3.4.1.26';
 const OID_AES_GCM_256 = '2.16.840.1.101.3.4.1.46';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
 const OID_ECDH_P256 = '1.2.840.10045.3.1.7';
+const OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
 
 const plaintext = bufferToArray(Buffer.from('Winter is coming'));
 
@@ -43,6 +44,10 @@ beforeAll(async () => {
     issuerPrivateKey: privateKey,
     subjectPublicKey: keyPair.publicKey,
   });
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 describe('encrypt', () => {
@@ -189,7 +194,10 @@ describe('encrypt', () => {
       const envelopedData = await deserializeEnvelopedData(envelopedDataSerialized);
       expect(envelopedData.unprotectedAttrs).toHaveLength(1);
       const dhKeyIdAttribute = (envelopedData.unprotectedAttrs as readonly pkijs.Attribute[])[0];
-      expect(dhKeyIdAttribute).toHaveProperty('type', '0.4.0.127.0.17.0.1.0');
+      expect(dhKeyIdAttribute).toHaveProperty(
+        'type',
+        OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+      );
       expect(
         // @ts-ignore
         dhKeyIdAttribute.values[0].valueBlock.toString(),
@@ -276,6 +284,108 @@ describe('decrypt', () => {
       expect(pkijsDecryptCallArgs).toHaveProperty(
         'recipientCertificate',
         bobDhCertificate.pkijsCertificate,
+      );
+    });
+
+    test('Originator DH public key id should be output', async () => {
+      const { dhKeyId } = await cms.decrypt(
+        encryptionResult.envelopedDataSerialized,
+        bobDhPrivateKey,
+        bobDhCertificate,
+      );
+
+      const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedDataSerialized);
+      const dhKeyIdAttribute = (envelopedData.unprotectedAttrs as readonly pkijs.Attribute[])[0];
+      expect(dhKeyId).toEqual(
+        // @ts-ignore
+        parseInt(dhKeyIdAttribute.values[0].valueBlock.toString(), 10),
+      );
+    });
+
+    test('Decryption should fail if unprotectedAttrs is missing', async () => {
+      jest
+        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
+        .mockImplementationOnce(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
+          // tslint:disable-next-line:no-object-mutation
+          this.unprotectedAttrs = undefined;
+          return plaintext;
+        });
+
+      await expectPromiseToReject(
+        cms.decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        new CMSError('unprotectedAttrs must be present when using channel session'),
+      );
+    });
+
+    test('Decryption should fail if unprotectedAttrs is present but empty', async () => {
+      jest
+        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
+        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
+          // tslint:disable-next-line:no-object-mutation
+          this.unprotectedAttrs = [];
+          return plaintext;
+        });
+
+      await expectPromiseToReject(
+        cms.decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        new CMSError('unprotectedAttrs must be present when using channel session'),
+      );
+    });
+
+    test('Decryption should fail if originator key id is missing', async () => {
+      const invalidAttribute = new pkijs.Attribute({
+        type: '1.2.3.4',
+        values: [new asn1js.Integer({ value: 2 })],
+      });
+      jest
+        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
+        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
+          // tslint:disable-next-line:no-object-mutation
+          this.unprotectedAttrs = [invalidAttribute];
+          return plaintext;
+        });
+
+      await expectPromiseToReject(
+        cms.decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        new CMSError('unprotectedAttrs does not contain originator key id'),
+      );
+    });
+
+    test('Decryption should fail if attribute for originator key id is empty', async () => {
+      const invalidAttribute = new pkijs.Attribute({
+        type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+        values: [],
+      });
+      jest
+        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
+        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
+          // tslint:disable-next-line:no-object-mutation
+          this.unprotectedAttrs = [invalidAttribute];
+          return plaintext;
+        });
+
+      await expectPromiseToReject(
+        cms.decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        new CMSError('Originator key id attribute must have exactly one value (got 0)'),
+      );
+    });
+
+    test('Decryption should fail if attribute for originator key id is multi-valued', async () => {
+      const invalidAttribute = new pkijs.Attribute({
+        type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+        values: [new asn1js.Integer({ value: 1 }), new asn1js.Integer({ value: 2 })],
+      });
+      jest
+        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
+        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
+          // tslint:disable-next-line:no-object-mutation
+          this.unprotectedAttrs = [invalidAttribute];
+          return plaintext;
+        });
+
+      await expectPromiseToReject(
+        cms.decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        new CMSError('Originator key id attribute must have exactly one value (got 2)'),
       );
     });
 

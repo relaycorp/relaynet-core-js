@@ -14,12 +14,13 @@ export interface EncryptionOptions {
   readonly aesKeySize: number;
 }
 export interface EncryptionResult {
-  readonly dhPrivateKey?: CryptoKey; // DH or ECDH key
   readonly dhKeyId?: number;
+  readonly dhPrivateKey?: CryptoKey; // DH or ECDH key
   readonly envelopedDataSerialized: ArrayBuffer;
 }
 
 export interface DecryptionResult {
+  readonly dhKeyId?: number;
   readonly dhPublicKeyDer?: ArrayBuffer; // DH or ECDH key
   readonly plaintext: ArrayBuffer;
 }
@@ -116,8 +117,9 @@ export async function decrypt(
   const dhPublicKeyDer = isKeyAgreement
     ? recipientInfo.value.originator.value.toSchema().toBER(false)
     : undefined;
+  const dhKeyId = isKeyAgreement ? extractOriginatorKeyId(envelopedData) : undefined;
 
-  return { plaintext, dhPublicKeyDer };
+  return { plaintext, dhPublicKeyDer, dhKeyId };
 }
 
 async function pkijsDecrypt(
@@ -136,6 +138,32 @@ async function pkijsDecrypt(
   } catch (error) {
     throw new CMSError(error, `Decryption failed`);
   }
+}
+
+function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {
+  const unprotectedAttrs = envelopedData.unprotectedAttrs || [];
+  if (unprotectedAttrs.length === 0) {
+    throw new CMSError('unprotectedAttrs must be present when using channel session');
+  }
+
+  const matchingAttrs = unprotectedAttrs.filter(
+    a => a.type === oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+  );
+  if (matchingAttrs.length === 0) {
+    throw new CMSError('unprotectedAttrs does not contain originator key id');
+  }
+
+  const originatorKeyIdAttr = matchingAttrs[0];
+  // @ts-ignore
+  const originatorKeyIds = originatorKeyIdAttr.values;
+  if (originatorKeyIds.length !== 1) {
+    throw new CMSError(
+      `Originator key id attribute must have exactly one value (got ${originatorKeyIds.length})`,
+    );
+  }
+
+  const keyIdString = originatorKeyIds[0].valueBlock.toString();
+  return parseInt(keyIdString, 10);
 }
 
 export interface SignatureOptions {
