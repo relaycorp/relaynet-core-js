@@ -1,3 +1,4 @@
+// tslint:disable:no-object-mutation
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
@@ -73,11 +74,9 @@ export async function encrypt(
       type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
       values: [new asn1js.Integer({ value: dhKeyId })],
     });
-    // tslint:disable-next-line:no-object-mutation
     envelopedData.unprotectedAttrs = [serialNumberAttribute];
 
     // EnvelopedData.encrypt() would've deleted the algorithm params so we should reinstate them:
-    // tslint:disable-next-line:no-object-mutation
     envelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
       certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
   }
@@ -262,11 +261,9 @@ export async function verifySignature(
 
   const signedData = new pkijs.SignedData({ schema: contentInfo });
   if (detachedSignerCertificate) {
-    // tslint:disable-next-line:no-object-mutation
     signedData.certificates = [detachedSignerCertificate.pkijsCertificate];
   } else if (trustedCertificates) {
     const originalCertificates = signedData.certificates as ReadonlyArray<pkijs.Certificate>;
-    // tslint:disable-next-line:no-object-mutation
     signedData.certificates = [
       ...originalCertificates,
       ...trustedCertificates.map(c => c.pkijsCertificate),

@@ -1,3 +1,4 @@
+// tslint:disable:no-let no-object-mutation
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
@@ -33,9 +34,7 @@ const plaintext = bufferToArray(Buffer.from('Winter is coming'));
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
 
-// tslint:disable-next-line:no-let
 let privateKey: CryptoKey;
-// tslint:disable-next-line:no-let
 let certificate: Certificate;
 beforeAll(async () => {
   const keyPair = await generateRSAKeyPair();
@@ -146,7 +145,6 @@ describe('encrypt', () => {
   });
 
   describe('Key agreement', () => {
-    // tslint:disable-next-line:no-let
     let bobDhCertificate: Certificate;
     beforeAll(async () => {
       const nodeKeyPair = await generateRSAKeyPair();
@@ -241,11 +239,8 @@ describe('decrypt', () => {
   });
 
   describe('Key agreement', () => {
-    // tslint:disable-next-line:no-let
     let encryptionResult: cms.EncryptionResult;
-    // tslint:disable-next-line:no-let
     let bobDhPrivateKey: CryptoKey;
-    // tslint:disable-next-line:no-let
     let bobDhCertificate: Certificate;
     beforeAll(async () => {
       const nodeKeyPair = await generateRSAKeyPair();
@@ -306,7 +301,6 @@ describe('decrypt', () => {
       jest
         .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
         .mockImplementationOnce(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          // tslint:disable-next-line:no-object-mutation
           this.unprotectedAttrs = undefined;
           return plaintext;
         });
@@ -321,7 +315,6 @@ describe('decrypt', () => {
       jest
         .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
         .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          // tslint:disable-next-line:no-object-mutation
           this.unprotectedAttrs = [];
           return plaintext;
         });
@@ -340,7 +333,6 @@ describe('decrypt', () => {
       jest
         .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
         .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          // tslint:disable-next-line:no-object-mutation
           this.unprotectedAttrs = [invalidAttribute];
           return plaintext;
         });
@@ -359,7 +351,6 @@ describe('decrypt', () => {
       jest
         .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
         .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          // tslint:disable-next-line:no-object-mutation
           this.unprotectedAttrs = [invalidAttribute];
           return plaintext;
         });
@@ -378,7 +369,6 @@ describe('decrypt', () => {
       jest
         .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
         .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          // tslint:disable-next-line:no-object-mutation
           this.unprotectedAttrs = [invalidAttribute];
           return plaintext;
         });
@@ -618,7 +608,7 @@ describe('verifySignature', () => {
       const signatureWithCerts = await cms.sign(plaintext, privateKey, certificate);
 
       const signedData = deserializeSignedData(signatureWithCerts);
-      // tslint:disable-next-line:no-delete no-object-mutation
+      // tslint:disable-next-line:no-delete
       delete signedData.certificates;
       const contentInfo = new pkijs.ContentInfo({
         content: signedData.toSchema(true),
