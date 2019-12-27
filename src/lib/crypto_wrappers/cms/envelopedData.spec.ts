@@ -17,7 +17,14 @@ import { generateECDHKeyPair, generateRSAKeyPair } from '../keyGenerators';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
-import { decrypt, encrypt, EncryptionOptions, EncryptionResult } from './envelopedData';
+import {
+  decrypt,
+  encrypt,
+  EncryptionOptions,
+  SessionEncryptionResult,
+  SessionEnvelopedData,
+  SessionlessEnvelopedData,
+} from './envelopedData';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';
@@ -50,7 +57,9 @@ afterEach(() => {
 describe('EnvelopedData', () => {
   describe('serialize', () => {
     test('EnvelopedData value should be wrapped in ContentInfo', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+      const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
+
+      const envelopedDataSerialized = envelopedData.serialize();
 
       const contentInfo = deserializeContentInfo(envelopedDataSerialized);
       expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
@@ -63,17 +72,17 @@ describe('SessionlessEnvelopedData', () => {
   describe('encrypt', () => {
     describe('RecipientInfo', () => {
       test('RecipientInfo should be of type KeyTransRecipientInfo', async () => {
-        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+        const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
 
-        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-        expect(envelopedData.recipientInfos[0].value).toBeInstanceOf(pkijs.KeyTransRecipientInfo);
+        expect(envelopedData.pkijsEnvelopedData.recipientInfos[0].value).toBeInstanceOf(
+          pkijs.KeyTransRecipientInfo,
+        );
       });
 
       test('KeyTransRecipientInfo should use issuerAndSerialNumber choice', async () => {
-        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+        const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
 
-        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-        const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+        const keyTransRecipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
         expect(keyTransRecipientInfo.version).toEqual(0);
         expect(keyTransRecipientInfo.rid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
         expectPkijsValuesToBeEqual(
@@ -87,18 +96,16 @@ describe('SessionlessEnvelopedData', () => {
       });
 
       test('KeyTransRecipientInfo should use RSA-OAEP', async () => {
-        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+        const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
 
-        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-        const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+        const keyTransRecipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
         expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(OID_RSA_OAEP);
       });
 
       test('RSA-OAEP should be used with SHA-256', async () => {
-        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+        const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
 
-        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-        const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+        const keyTransRecipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
         const algorithmParams = new pkijs.RSAESOAEPParams({
           schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
         });
@@ -106,10 +113,10 @@ describe('SessionlessEnvelopedData', () => {
       });
     });
 
-    describeEncryptedContentInfoEncryption(
-      async (options?: EncryptionOptions) =>
-        (await encrypt(plaintext, certificate, options)).envelopedDataSerialized,
-    );
+    describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate, options);
+      return envelopedData.serialize();
+    });
   });
 });
 
@@ -136,32 +143,35 @@ describe('SessionEnvelopedData', () => {
   describe('encrypt', () => {
     test('Result should include generated (EC)DH private key', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
-      const { dhPrivateKey } = await encrypt(plaintext, bobDhCertificate);
+      const { dhPrivateKey } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
       const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
       expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
     });
 
     test('Originator should include curve name in the algorithm parameters', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, bobDhCertificate);
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
-      const envelopedData = await deserializeEnvelopedData(envelopedDataSerialized);
-      const algorithm = envelopedData.recipientInfos[0].value.originator.value.algorithm;
+      const algorithm =
+        envelopedData.pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm;
       expect(algorithm).toHaveProperty('algorithmParams');
       expect(algorithm.algorithmParams.valueBlock.toString()).toEqual(OID_ECDH_P256);
     });
 
     test('Generated (EC)DH key id should be output and included in unprotectedAttrs', async () => {
-      const { envelopedDataSerialized, dhKeyId } = await encrypt(plaintext, bobDhCertificate);
+      const { envelopedData, dhKeyId } = await SessionEnvelopedData.encrypt(
+        plaintext,
+        bobDhCertificate,
+      );
 
       // Serial number would be 0 if the input to getRandomValues() was initialized but the
       // function was not called. This is somewhat brittle but we can't use spyOn() because that
       // wouldn't call the spied function, which is also used by EnvelopedData.encrypt().
       expect(dhKeyId).not.toEqual(0);
 
-      const envelopedData = await deserializeEnvelopedData(envelopedDataSerialized);
-      expect(envelopedData.unprotectedAttrs).toHaveLength(1);
-      const dhKeyIdAttribute = (envelopedData.unprotectedAttrs as readonly pkijs.Attribute[])[0];
+      expect(envelopedData.pkijsEnvelopedData.unprotectedAttrs).toHaveLength(1);
+      const dhKeyIdAttribute = (envelopedData.pkijsEnvelopedData
+        .unprotectedAttrs as readonly pkijs.Attribute[])[0];
       expect(dhKeyIdAttribute).toHaveProperty(
         'type',
         OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
@@ -206,7 +216,7 @@ function describeEncryptedContentInfoEncryption(
 
     test('Key sizes other than 128, 192 and 256 should be refused', async () => {
       await expectPromiseToReject(
-        encrypt(plaintext, certificate, { aesKeySize: 512 }),
+        encryptFunc({ aesKeySize: 512 }),
         new CMSError('Invalid AES key size (512)'),
       );
     });
@@ -224,11 +234,11 @@ describe('decrypt', () => {
 
   test('A well-formed but invalid ciphertext should be refused', async () => {
     const differentCertificate = await generateStubCert();
-    const { envelopedDataSerialized } = await encrypt(plaintext, differentCertificate);
+    const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, differentCertificate);
 
     expect.hasAssertions();
     try {
-      await decrypt(envelopedDataSerialized, privateKey);
+      await decrypt(envelopedData.serialize(), privateKey);
     } catch (error) {
       expect(error).toBeInstanceOf(CMSError);
       expect(error.message).toStartWith(`Decryption failed: ${error.cause().message}`);
@@ -242,7 +252,7 @@ describe('decrypt', () => {
   });
 
   describe('Key agreement', () => {
-    let encryptionResult: EncryptionResult;
+    let encryptionResult: SessionEncryptionResult;
     let bobDhPrivateKey: CryptoKey;
     let bobDhCertificate: Certificate;
     beforeAll(async () => {
@@ -265,13 +275,13 @@ describe('decrypt', () => {
         validityEndDate: tomorrow,
       });
 
-      encryptionResult = await encrypt(plaintext, bobDhCertificate);
+      encryptionResult = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
     });
 
     test('Recipient DH public key should be used to calculate shared secret', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'decrypt');
 
-      await decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate);
+      await decrypt(encryptionResult.envelopedData.serialize(), bobDhPrivateKey, bobDhCertificate);
 
       const pkijsDecryptCall = getMockContext(pkijs.EnvelopedData.prototype.decrypt).calls[0];
       const pkijsDecryptCallArgs = pkijsDecryptCall[1];
@@ -283,12 +293,12 @@ describe('decrypt', () => {
 
     test('Originator DH public key id should be output', async () => {
       const { dhKeyId } = await decrypt(
-        encryptionResult.envelopedDataSerialized,
+        encryptionResult.envelopedData.serialize(),
         bobDhPrivateKey,
         bobDhCertificate,
       );
 
-      const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedDataSerialized);
+      const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedData.serialize());
       const dhKeyIdAttribute = (envelopedData.unprotectedAttrs as readonly pkijs.Attribute[])[0];
       expect(dhKeyId).toEqual(
         // @ts-ignore
@@ -305,7 +315,7 @@ describe('decrypt', () => {
         });
 
       await expectPromiseToReject(
-        decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        decrypt(encryptionResult.envelopedData.serialize(), bobDhPrivateKey, bobDhCertificate),
         new CMSError('unprotectedAttrs must be present when using channel session'),
       );
     });
@@ -319,7 +329,7 @@ describe('decrypt', () => {
         });
 
       await expectPromiseToReject(
-        decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        decrypt(encryptionResult.envelopedData.serialize(), bobDhPrivateKey, bobDhCertificate),
         new CMSError('unprotectedAttrs must be present when using channel session'),
       );
     });
@@ -337,7 +347,7 @@ describe('decrypt', () => {
         });
 
       await expectPromiseToReject(
-        decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        decrypt(encryptionResult.envelopedData.serialize(), bobDhPrivateKey, bobDhCertificate),
         new CMSError('unprotectedAttrs does not contain originator key id'),
       );
     });
@@ -355,7 +365,7 @@ describe('decrypt', () => {
         });
 
       await expectPromiseToReject(
-        decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        decrypt(encryptionResult.envelopedData.serialize(), bobDhPrivateKey, bobDhCertificate),
         new CMSError('Originator key id attribute must have exactly one value (got 0)'),
       );
     });
@@ -373,19 +383,19 @@ describe('decrypt', () => {
         });
 
       await expectPromiseToReject(
-        decrypt(encryptionResult.envelopedDataSerialized, bobDhPrivateKey, bobDhCertificate),
+        decrypt(encryptionResult.envelopedData.serialize(), bobDhPrivateKey, bobDhCertificate),
         new CMSError('Originator key id attribute must have exactly one value (got 2)'),
       );
     });
 
     test('Originator DH public key should be output', async () => {
       const { dhPublicKeyDer } = await decrypt(
-        encryptionResult.envelopedDataSerialized,
+        encryptionResult.envelopedData.serialize(),
         bobDhPrivateKey,
         bobDhCertificate,
       );
 
-      const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedDataSerialized);
+      const envelopedData = deserializeEnvelopedData(encryptionResult.envelopedData.serialize());
       const expectedPublicKey = envelopedData.recipientInfos[0].value.originator.value
         .toSchema()
         .toBER(false);

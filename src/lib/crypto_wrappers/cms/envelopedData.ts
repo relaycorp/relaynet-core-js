@@ -1,4 +1,4 @@
-// tslint:disable:no-object-mutation
+// tslint:disable:no-object-mutation max-classes-per-file
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
@@ -22,10 +22,104 @@ export interface EncryptionResult {
   readonly envelopedDataSerialized: ArrayBuffer;
 }
 
+export interface SessionEncryptionResult {
+  readonly dhKeyId: number;
+  readonly dhPrivateKey: CryptoKey; // DH or ECDH key
+  readonly envelopedData: SessionEnvelopedData;
+}
+
 export interface DecryptionResult {
   readonly dhKeyId?: number;
   readonly dhPublicKeyDer?: ArrayBuffer; // DH or ECDH key
   readonly plaintext: ArrayBuffer;
+}
+
+abstract class EnvelopedData {
+  protected constructor(readonly pkijsEnvelopedData: pkijs.EnvelopedData) {}
+
+  public serialize(): ArrayBuffer {
+    const contentInfo = new pkijs.ContentInfo({
+      content: this.pkijsEnvelopedData.toSchema(),
+      contentType: oids.CMS_ENVELOPED_DATA,
+    });
+    return contentInfo.toSchema().toBER(false);
+  }
+}
+
+/**
+ * CMS EnvelopedData representation using key transport (KeyTransRecipientInfo).
+ */
+export class SessionlessEnvelopedData extends EnvelopedData {
+  public static async encrypt(
+    plaintext: ArrayBuffer,
+    certificate: Certificate,
+    options: Partial<EncryptionOptions> = {},
+  ): Promise<SessionlessEnvelopedData> {
+    const pkijsEnvelopedData = new pkijs.EnvelopedData();
+
+    pkijsEnvelopedData.addRecipientByCertificate(
+      certificate.pkijsCertificate,
+      { oaepHashAlgorithm: 'SHA-256' },
+      1,
+    );
+
+    const aesKeySize = getAesKeySize(options.aesKeySize);
+    await pkijsEnvelopedData.encrypt(
+      // @ts-ignore
+      { name: 'AES-GCM', length: aesKeySize },
+      plaintext,
+    );
+
+    return new SessionlessEnvelopedData(pkijsEnvelopedData);
+  }
+}
+
+function getAesKeySize(aesKeySize: number | undefined): number {
+  if (aesKeySize && !AES_KEY_SIZES.includes(aesKeySize)) {
+    throw new CMSError(`Invalid AES key size (${aesKeySize})`);
+  }
+  return aesKeySize || 128;
+}
+
+/**
+ * CMS EnvelopedData representation using key agreement (KeyAgreeRecipientInfo).
+ *
+ * Or more specifically, using Relaynet's channel session protocol.
+ */
+export class SessionEnvelopedData extends EnvelopedData {
+  public static async encrypt(
+    plaintext: ArrayBuffer,
+    certificate: Certificate,
+    options: Partial<EncryptionOptions> = {},
+  ): Promise<SessionEncryptionResult> {
+    // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
+    const dhKeyId = generateRandom32BitUnsignedNumber();
+    const serialNumberAttribute = new pkijs.Attribute({
+      type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+      values: [new asn1js.Integer({ value: dhKeyId })],
+    });
+
+    const pkijsEnvelopedData = new pkijs.EnvelopedData({
+      unprotectedAttrs: [serialNumberAttribute],
+    });
+
+    pkijsEnvelopedData.addRecipientByCertificate(certificate.pkijsCertificate, {}, 2);
+
+    const aesKeySize = getAesKeySize(options.aesKeySize);
+    const [pkijsEncryptionResult] = await pkijsEnvelopedData.encrypt(
+      // @ts-ignore
+      { name: 'AES-GCM', length: aesKeySize },
+      plaintext,
+    );
+    const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
+
+    // pkijs.EnvelopedData.encrypt() deleted the algorithm params so we should reinstate them:
+    pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
+      certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
+
+    const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
+    return { dhPrivateKey, dhKeyId, envelopedData };
+  }
 }
 
 /**
