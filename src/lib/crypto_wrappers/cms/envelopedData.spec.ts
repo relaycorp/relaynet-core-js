@@ -17,7 +17,7 @@ import { generateECDHKeyPair, generateRSAKeyPair } from '../keyGenerators';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
-import { decrypt, encrypt, EncryptionResult } from './envelopedData';
+import { decrypt, encrypt, EncryptionOptions, EncryptionResult } from './envelopedData';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_AES_GCM_128 = '2.16.840.1.101.3.4.1.6';
@@ -47,121 +47,93 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe('encrypt', () => {
-  test('EnvelopedData value should be wrapped in ContentInfo', async () => {
-    const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
-
-    const contentInfo = deserializeContentInfo(envelopedDataSerialized);
-    expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
-    expect(contentInfo.content).toBeInstanceOf(asn1js.Sequence);
-  });
-
-  describe('RecipientInfo', () => {
-    test('There should only be one RecipientInfo', async () => {
+describe('EnvelopedData', () => {
+  describe('serialize', () => {
+    test('EnvelopedData value should be wrapped in ContentInfo', async () => {
       const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      expect(envelopedData.recipientInfos).toHaveLength(1);
-      expect(envelopedData.recipientInfos[0]).toBeInstanceOf(pkijs.RecipientInfo);
-    });
-
-    test('RecipientInfo should be of type KeyTransRecipientInfo', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
-
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      expect(envelopedData.recipientInfos[0].value).toBeInstanceOf(pkijs.KeyTransRecipientInfo);
-    });
-
-    test('KeyTransRecipientInfo should use issuerAndSerialNumber choice', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
-
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
-      expect(keyTransRecipientInfo.version).toEqual(0);
-      expect(keyTransRecipientInfo.rid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
-      expectPkijsValuesToBeEqual(
-        keyTransRecipientInfo.rid.issuer,
-        certificate.pkijsCertificate.issuer,
-      );
-      expectAsn1ValuesToBeEqual(
-        keyTransRecipientInfo.rid.serialNumber,
-        certificate.pkijsCertificate.serialNumber,
-      );
-    });
-
-    test('KeyTransRecipientInfo should use RSA-OAEP', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
-
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
-      expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(OID_RSA_OAEP);
-    });
-
-    test('RSA-OAEP should be used with SHA-256', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
-
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
-      const algorithmParams = new pkijs.RSAESOAEPParams({
-        schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
-      });
-      expect(algorithmParams.hashAlgorithm.algorithmId).toEqual(OID_SHA256);
+      const contentInfo = deserializeContentInfo(envelopedDataSerialized);
+      expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
+      expect(contentInfo.content).toBeInstanceOf(asn1js.Sequence);
     });
   });
+});
 
-  describe('EncryptedContentInfo', () => {
-    test('AES-GCM-128 should be used by default', async () => {
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+describe('SessionlessEnvelopedData', () => {
+  describe('encrypt', () => {
+    describe('RecipientInfo', () => {
+      test('RecipientInfo should be of type KeyTransRecipientInfo', async () => {
+        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
 
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-        OID_AES_GCM_128,
-      );
-    });
-
-    test.each([
-      [192, OID_AES_GCM_192],
-      [256, OID_AES_GCM_256],
-    ])('AES-GCM-%s should also be supported', async (aesKeySize, expectedOid) => {
-      // @ts-ignore
-      const { envelopedDataSerialized } = await encrypt(plaintext, certificate, {
-        aesKeySize,
+        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+        expect(envelopedData.recipientInfos[0].value).toBeInstanceOf(pkijs.KeyTransRecipientInfo);
       });
 
-      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
-      expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-        expectedOid,
-      );
+      test('KeyTransRecipientInfo should use issuerAndSerialNumber choice', async () => {
+        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+
+        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+        const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+        expect(keyTransRecipientInfo.version).toEqual(0);
+        expect(keyTransRecipientInfo.rid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
+        expectPkijsValuesToBeEqual(
+          keyTransRecipientInfo.rid.issuer,
+          certificate.pkijsCertificate.issuer,
+        );
+        expectAsn1ValuesToBeEqual(
+          keyTransRecipientInfo.rid.serialNumber,
+          certificate.pkijsCertificate.serialNumber,
+        );
+      });
+
+      test('KeyTransRecipientInfo should use RSA-OAEP', async () => {
+        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+
+        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+        const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+        expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(OID_RSA_OAEP);
+      });
+
+      test('RSA-OAEP should be used with SHA-256', async () => {
+        const { envelopedDataSerialized } = await encrypt(plaintext, certificate);
+
+        const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+        const keyTransRecipientInfo = envelopedData.recipientInfos[0].value;
+        const algorithmParams = new pkijs.RSAESOAEPParams({
+          schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
+        });
+        expect(algorithmParams.hashAlgorithm.algorithmId).toEqual(OID_SHA256);
+      });
     });
 
-    test('Key sizes other than 128, 192 and 256 should be refused', async () => {
-      await expectPromiseToReject(
-        encrypt(plaintext, certificate, { aesKeySize: 512 }),
-        new CMSError('Invalid AES key size (512)'),
-      );
+    describeEncryptedContentInfoEncryption(
+      async (options?: EncryptionOptions) =>
+        (await encrypt(plaintext, certificate, options)).envelopedDataSerialized,
+    );
+  });
+});
+
+describe('SessionEnvelopedData', () => {
+  let bobDhCertificate: Certificate;
+  beforeAll(async () => {
+    const nodeKeyPair = await generateRSAKeyPair();
+    const nodeCertificate = await generateStubCert({
+      attributes: { isCA: true, serialNumber: 1 },
+      issuerPrivateKey: nodeKeyPair.privateKey,
+      subjectPublicKey: nodeKeyPair.publicKey,
+    });
+
+    const bobDhKeyPair = await generateECDHKeyPair();
+    bobDhCertificate = await issueInitialDHKeyCertificate({
+      dhPublicKey: bobDhKeyPair.publicKey,
+      nodeCertificate,
+      nodePrivateKey: nodeKeyPair.privateKey,
+      serialNumber: 2,
+      validityEndDate: TOMORROW,
     });
   });
 
-  describe('Key agreement', () => {
-    let bobDhCertificate: Certificate;
-    beforeAll(async () => {
-      const nodeKeyPair = await generateRSAKeyPair();
-      const nodeCertificate = await generateStubCert({
-        attributes: { isCA: true, serialNumber: 1 },
-        issuerPrivateKey: nodeKeyPair.privateKey,
-        subjectPublicKey: nodeKeyPair.publicKey,
-      });
-
-      const bobDhKeyPair = await generateECDHKeyPair();
-      bobDhCertificate = await issueInitialDHKeyCertificate({
-        dhPublicKey: bobDhKeyPair.publicKey,
-        nodeCertificate,
-        nodePrivateKey: nodeKeyPair.privateKey,
-        serialNumber: 2,
-        validityEndDate: TOMORROW,
-      });
-    });
-
+  describe('encrypt', () => {
     test('Result should include generated (EC)DH private key', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
       const { dhPrivateKey } = await encrypt(plaintext, bobDhCertificate);
@@ -200,13 +172,46 @@ describe('encrypt', () => {
       ).toEqual((dhKeyId as number).toString());
     });
 
-    test('Result should not include (EC)DH key when not doing key agreement', async () => {
-      const encryptionResult = await encrypt(plaintext, certificate);
-
-      expect(encryptionResult).toHaveProperty('dhPrivateKey', undefined);
-    });
+    describeEncryptedContentInfoEncryption(
+      async (options?: EncryptionOptions) =>
+        (await encrypt(plaintext, bobDhCertificate, options)).envelopedDataSerialized,
+    );
   });
 });
+
+function describeEncryptedContentInfoEncryption(
+  encryptFunc: (opts?: EncryptionOptions) => Promise<ArrayBuffer>,
+): void {
+  describe('EncryptedContentInfo', () => {
+    test('AES-GCM-128 should be used by default', async () => {
+      const envelopedDataSerialized = await encryptFunc();
+
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+      expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
+        OID_AES_GCM_128,
+      );
+    });
+
+    test.each([
+      [192, OID_AES_GCM_192],
+      [256, OID_AES_GCM_256],
+    ])('AES-GCM-%s should also be supported', async (aesKeySize, expectedOid) => {
+      const envelopedDataSerialized = await encryptFunc({ aesKeySize: aesKeySize as number });
+
+      const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
+      expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
+        expectedOid,
+      );
+    });
+
+    test('Key sizes other than 128, 192 and 256 should be refused', async () => {
+      await expectPromiseToReject(
+        encrypt(plaintext, certificate, { aesKeySize: 512 }),
+        new CMSError('Invalid AES key size (512)'),
+      );
+    });
+  });
+}
 
 describe('decrypt', () => {
   test('An error should be thrown if input is not DER encoded', async () => {
