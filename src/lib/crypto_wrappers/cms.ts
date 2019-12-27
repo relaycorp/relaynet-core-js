@@ -63,8 +63,8 @@ export async function encrypt(
   );
   const dhPrivateKey = pkijsEncryptionResult?.ecdhPrivateKey;
 
-  // tslint:disable-next-line:prefer-const no-let
-  let dhKeyId;
+  // tslint:disable-next-line:no-let
+  let dhKeyId : number | undefined;
   if (dhPrivateKey) {
     // `certificate` contains an (EC)DH public key, so EnvelopedData.encrypt() did a DH exchange.
 
