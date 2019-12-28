@@ -11,7 +11,7 @@ import {
   getMockContext,
   getPromiseRejection,
 } from '../_test_utils';
-import * as cmsEnvelopedData from '../crypto_wrappers/cms/envelopedData';
+import { EnvelopedData, SessionlessEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -343,7 +343,7 @@ describe('MessageSerializer', () => {
     describe('Payload', () => {
       test('Payload should be encrypted', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cmsEnvelopedData, 'encrypt');
+        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
 
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
@@ -351,8 +351,8 @@ describe('MessageSerializer', () => {
           recipientCertificate,
         );
 
-        expect(cmsEnvelopedData.encrypt).toBeCalledTimes(1);
-        expect(cmsEnvelopedData.encrypt).toBeCalledWith(
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledTimes(1);
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledWith(
           StubPayload.BUFFER,
           recipientCertificate,
           undefined,
@@ -360,16 +360,16 @@ describe('MessageSerializer', () => {
 
         const messageParts = parseMessage(messageSerialized);
         const payloadCiphertext = messageParts.payload;
-        const { plaintext } = await cmsEnvelopedData.decrypt(
+        const cmsEnvelopedData = (await EnvelopedData.deserialize(
           bufferToArray(payloadCiphertext),
-          recipientPrivateKey,
-        );
+        )) as SessionlessEnvelopedData;
+        const plaintext = await cmsEnvelopedData.decrypt(recipientPrivateKey);
         expect(plaintext).toEqual(StubPayload.BUFFER);
       });
 
       test('Encryption options should be honoured', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cmsEnvelopedData, 'encrypt');
+        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
 
         const encryptionOptions = { aesKeySize: 256 };
         await STUB_MESSAGE_SERIALIZER.serialize(
@@ -379,8 +379,8 @@ describe('MessageSerializer', () => {
           encryptionOptions,
         );
 
-        expect(cmsEnvelopedData.encrypt).toBeCalledTimes(1);
-        expect(cmsEnvelopedData.encrypt).toBeCalledWith(
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledTimes(1);
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledWith(
           StubPayload.BUFFER,
           recipientCertificate,
           encryptionOptions,
@@ -803,24 +803,20 @@ describe('MessageSerializer', () => {
     describe('Payload', () => {
       test('Payload should be decrypted', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cmsEnvelopedData, 'encrypt');
+        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
           recipientCertificate,
         );
 
-        jest.spyOn(cmsEnvelopedData, 'decrypt');
+        jest.spyOn(SessionlessEnvelopedData.prototype, 'decrypt');
         const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
           messageSerialized,
           recipientPrivateKey,
         );
 
-        const encryptionResult = await getMockContext(cmsEnvelopedData.encrypt).results[0].value;
-        expect(cmsEnvelopedData.decrypt).toBeCalledWith(
-          encryptionResult.envelopedDataSerialized,
-          recipientPrivateKey,
-        );
+        expect(SessionlessEnvelopedData.prototype.decrypt).toBeCalledWith(recipientPrivateKey);
 
         expect(messageDeserialized.exportPayload()).toEqual(PAYLOAD);
       });
@@ -915,9 +911,9 @@ describe('MessageSerializer', () => {
 
       test('Sender certificate chain should be extracted from signature', async () => {
         const caCertificate = await generateStubCert();
-        const encryptionResult = await cmsEnvelopedData.encrypt(PAYLOAD, recipientCertificate);
+        const envelopedData = await SessionlessEnvelopedData.encrypt(PAYLOAD, recipientCertificate);
         const messageSerialized = await serializeWithoutValidation({
-          payloadBuffer: encryptionResult.envelopedDataSerialized,
+          payloadBuffer: envelopedData.serialize(),
         });
 
         jest.spyOn(cmsSignedData, 'verifySignature').mockImplementationOnce(async () => ({

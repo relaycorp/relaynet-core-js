@@ -2,7 +2,11 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import * as cmsEnvelopedData from '../crypto_wrappers/cms/envelopedData';
+import {
+  EncryptionOptions,
+  EnvelopedData,
+  SessionlessEnvelopedData,
+} from '../crypto_wrappers/cms/envelopedData';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import Message from './Message';
@@ -65,7 +69,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     message: MessageSpecialization,
     senderPrivateKey: CryptoKey,
     recipientCertificate: Certificate,
-    options?: Partial<cmsEnvelopedData.EncryptionOptions | cmsSignedData.SignatureOptions>,
+    options?: Partial<EncryptionOptions | cmsSignedData.SignatureOptions>,
   ): Promise<ArrayBuffer> {
     //region Validation
     validateRecipientAddressLength(message.recipientAddress);
@@ -104,11 +108,12 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Payload
-    const { envelopedDataSerialized } = await cmsEnvelopedData.encrypt(
+    const envelopedData = await SessionlessEnvelopedData.encrypt(
       message.exportPayload(),
       recipientCertificate,
-      options as cmsEnvelopedData.EncryptionOptions,
+      options as EncryptionOptions,
     );
+    const envelopedDataSerialized = await envelopedData.serialize();
     serialization.writeUInt32LE(envelopedDataSerialized.byteLength);
     serialization.writeBuffer(Buffer.from(envelopedDataSerialized));
     //endregion
@@ -154,15 +159,15 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     validateMessageTiming(messageFields, signatureVerification);
     //endregion
 
-    const decryptionResult = await cmsEnvelopedData.decrypt(
+    const cmsEnvelopedData = EnvelopedData.deserialize(
       bufferToArray(messageFields.payload),
-      recipientPrivateKey,
-    );
+    ) as SessionlessEnvelopedData;
+    const plaintext = await cmsEnvelopedData.decrypt(recipientPrivateKey);
 
     return new this.messageClass(
       messageFields.recipientAddress,
       signatureVerification.signerCertificate,
-      decryptionResult.plaintext,
+      plaintext,
       {
         date: new Date(messageFields.dateTimestamp * 1_000),
         id: messageFields.id,

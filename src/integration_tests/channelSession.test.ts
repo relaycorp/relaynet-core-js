@@ -5,7 +5,7 @@ import * as pkijs from 'pkijs';
 
 import { expectBuffersToEqual } from '../lib/_test_utils';
 import { getPkijsCrypto } from '../lib/crypto_wrappers/_utils';
-import { decrypt, SessionEnvelopedData } from '../lib/crypto_wrappers/cms/envelopedData';
+import { SessionEnvelopedData } from '../lib/crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keyGenerators';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
 import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/nodes';
@@ -60,8 +60,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   // Run 1: Alice initiates contact with Bob. Bob decrypts message.
   const plaintext1 = bufferToArray(Buffer.from('Hi. My name is Alice.'));
   const encryptionResult1 = await SessionEnvelopedData.encrypt(plaintext1, bobDhCertificate);
-  const decryptionResult1 = await decrypt(
-    encryptionResult1.envelopedData.serialize(),
+  const decryptionResult1 = await encryptionResult1.envelopedData.decrypt(
     bobKeyPair1.privateKey,
     bobDhCertificate,
   );
@@ -85,8 +84,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     validityEndDate: TOMORROW,
   });
   const encryptionResult2 = await SessionEnvelopedData.encrypt(plaintext2, aliceDhCert1);
-  const decryptionResult2 = await decrypt(
-    encryptionResult2.envelopedData.serialize(),
+  const decryptionResult2 = await encryptionResult2.envelopedData.decrypt(
     encryptionResult1.dhPrivateKey as CryptoKey,
     aliceDhCert1,
   );
@@ -110,8 +108,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     validityEndDate: TOMORROW,
   });
   const encryptionResult3 = await SessionEnvelopedData.encrypt(plaintext3, bobDhCert2);
-  const decryptionResult3 = await decrypt(
-    encryptionResult3.envelopedData.serialize(),
+  const decryptionResult3 = await encryptionResult3.envelopedData.decrypt(
     encryptionResult2.dhPrivateKey as CryptoKey,
     bobDhCert2,
   );

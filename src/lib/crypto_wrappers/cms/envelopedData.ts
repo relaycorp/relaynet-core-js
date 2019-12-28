@@ -16,12 +16,6 @@ export interface EncryptionOptions {
   readonly aesKeySize: number;
 }
 
-export interface EncryptionResult {
-  readonly dhKeyId?: number;
-  readonly dhPrivateKey?: CryptoKey; // DH or ECDH key
-  readonly envelopedDataSerialized: ArrayBuffer;
-}
-
 export interface SessionEncryptionResult {
   readonly dhKeyId: number;
   readonly dhPrivateKey: CryptoKey; // DH or ECDH key
@@ -29,8 +23,8 @@ export interface SessionEncryptionResult {
 }
 
 export interface DecryptionResult {
-  readonly dhKeyId?: number;
-  readonly dhPublicKeyDer?: ArrayBuffer; // DH or ECDH key
+  readonly dhKeyId: number;
+  readonly dhPublicKeyDer: ArrayBuffer; // DH or ECDH key
   readonly plaintext: ArrayBuffer;
 }
 
@@ -110,6 +104,10 @@ export class SessionlessEnvelopedData extends EnvelopedData {
 
     return new SessionlessEnvelopedData(pkijsEnvelopedData);
   }
+
+  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
+    return pkijsDecrypt(this.pkijsEnvelopedData, privateKey);
+  }
 }
 
 function getAesKeySize(aesKeySize: number | undefined): number {
@@ -158,83 +156,35 @@ export class SessionEnvelopedData extends EnvelopedData {
     const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
     return { dhPrivateKey, dhKeyId, envelopedData };
   }
-}
 
-/**
- * Encrypt `plaintext` and return DER-encoded CMS EnvelopedData representation.
- *
- * @param plaintext
- * @param certificate
- * @param options
- */
-export async function encrypt(
-  plaintext: ArrayBuffer,
-  certificate: Certificate,
-  options: Partial<EncryptionOptions> = {},
-): Promise<EncryptionResult> {
-  const envelopedData = new pkijs.EnvelopedData();
+  public async decrypt(
+    privateKey: CryptoKey,
+    dhRecipientCertificate: Certificate,
+  ): Promise<DecryptionResult> {
+    const plaintext = await pkijsDecrypt(
+      this.pkijsEnvelopedData,
+      privateKey,
+      dhRecipientCertificate.pkijsCertificate,
+    );
 
-  envelopedData.addRecipientByCertificate(
-    certificate.pkijsCertificate,
-    { oaepHashAlgorithm: 'SHA-256' },
-    1,
-  );
+    // Extract the originator's (EC)DH public key after it's altered by EnvelopedData.decrypt()
+    // to unconditionally replace the algorithm parameters (e.g., the curve name):
+    const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
+    const dhPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
+    const dhKeyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
-  const aesKeySize = options.aesKeySize || 128;
-  await envelopedData.encrypt(
-    // @ts-ignore
-    { name: 'AES-GCM', length: aesKeySize },
-    plaintext,
-  );
-
-  const contentInfo = new pkijs.ContentInfo({
-    content: envelopedData.toSchema(),
-    contentType: oids.CMS_ENVELOPED_DATA,
-  });
-  const envelopedDataSerialized = contentInfo.toSchema().toBER(false);
-  return { dhPrivateKey: undefined, dhKeyId: undefined, envelopedDataSerialized };
-}
-
-/**
- * Decrypt `ciphertext` and return plaintext.
- *
- * @param ciphertext DER-encoded CMS EnvelopedData
- * @param privateKey
- * @param dhRecipientCertificate
- * @throws CMSError if `ciphertext` is malformed or could not be decrypted
- *   with `privateKey`
- */
-export async function decrypt(
-  ciphertext: ArrayBuffer,
-  privateKey: CryptoKey,
-  dhRecipientCertificate?: Certificate,
-): Promise<DecryptionResult> {
-  const contentInfo = deserializeContentInfo(ciphertext);
-  const envelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
-
-  const plaintext = await pkijsDecrypt(envelopedData, privateKey, dhRecipientCertificate);
-
-  // When doing key agreement, extract the originator's (EC)DH public key after it's altered by
-  // EnvelopedData.decrypt() to unconditionally replace the algorithm parameters (e.g., the curve
-  // name):
-  const isKeyAgreement = !!dhRecipientCertificate;
-  const recipientInfo = envelopedData.recipientInfos[0];
-  const dhPublicKeyDer = isKeyAgreement
-    ? recipientInfo.value.originator.value.toSchema().toBER(false)
-    : undefined;
-  const dhKeyId = isKeyAgreement ? extractOriginatorKeyId(envelopedData) : undefined;
-
-  return { plaintext, dhPublicKeyDer, dhKeyId };
+    return { plaintext, dhPublicKeyDer, dhKeyId };
+  }
 }
 
 async function pkijsDecrypt(
   envelopedData: pkijs.EnvelopedData,
   privateKey: CryptoKey,
-  dhCertificate?: Certificate,
+  dhCertificate?: pkijs.Certificate,
 ): Promise<ArrayBuffer> {
   const privateKeyBuffer = await pkijsCrypto.exportKey('pkcs8', privateKey);
   const encryptArgs = {
-    recipientCertificate: dhCertificate ? dhCertificate.pkijsCertificate : undefined,
+    recipientCertificate: dhCertificate,
     recipientPrivateKey: privateKeyBuffer,
   };
   try {
