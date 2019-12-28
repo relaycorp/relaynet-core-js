@@ -109,7 +109,7 @@ export async function verifySignature(
 
   const contentInfo = deserializeContentInfo(signature);
 
-  const signedData = new pkijs.SignedData({ schema: contentInfo });
+  const signedData = new pkijs.SignedData({ schema: contentInfo.content });
   if (detachedSignerCertificate) {
     signedData.certificates = [detachedSignerCertificate.pkijsCertificate];
   } else if (trustedCertificates) {

@@ -215,7 +215,7 @@ describe('verifySignature', () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
       verifySignature(invalidSignature, plaintext),
-      new Error('Value is not DER-encoded'),
+      new CMSError('Could not deserialize CMS ContentInfo: Value is not DER-encoded'),
     );
   });
 

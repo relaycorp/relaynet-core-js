@@ -20,6 +20,7 @@ import CMSError from './CMSError';
 import {
   decrypt,
   EncryptionOptions,
+  EnvelopedData,
   SessionEncryptionResult,
   SessionEnvelopedData,
   SessionlessEnvelopedData,
@@ -38,6 +39,7 @@ const plaintext = bufferToArray(Buffer.from('Winter is coming'));
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
 
+// For sessionless tests:
 let privateKey: CryptoKey;
 let certificate: Certificate;
 beforeAll(async () => {
@@ -46,6 +48,28 @@ beforeAll(async () => {
   certificate = await generateStubCert({
     issuerPrivateKey: privateKey,
     subjectPublicKey: keyPair.publicKey,
+  });
+});
+
+// For channel session tests:
+let bobDhPrivateKey: CryptoKey;
+let bobDhCertificate: Certificate;
+beforeAll(async () => {
+  const nodeKeyPair = await generateRSAKeyPair();
+  const nodeCertificate = await generateStubCert({
+    attributes: { isCA: true, serialNumber: 1 },
+    issuerPrivateKey: nodeKeyPair.privateKey,
+    subjectPublicKey: nodeKeyPair.publicKey,
+  });
+
+  const bobDhKeyPair = await generateECDHKeyPair();
+  bobDhPrivateKey = bobDhKeyPair.privateKey;
+  bobDhCertificate = await issueInitialDHKeyCertificate({
+    dhPublicKey: bobDhKeyPair.publicKey,
+    nodeCertificate,
+    nodePrivateKey: nodeKeyPair.privateKey,
+    serialNumber: 2,
+    validityEndDate: TOMORROW,
   });
 });
 
@@ -63,6 +87,137 @@ describe('EnvelopedData', () => {
       const contentInfo = deserializeContentInfo(envelopedDataSerialized);
       expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
       expect(contentInfo.content).toBeInstanceOf(asn1js.Sequence);
+    });
+  });
+
+  describe('deserialize', () => {
+    test('Non-DER-encoded values should be refused', () => {
+      const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
+      expect(() => EnvelopedData.deserialize(invalidDer)).toThrowWithMessage(
+        CMSError,
+        'Could not deserialize CMS ContentInfo: Value is not DER-encoded',
+      );
+    });
+
+    test('Outer value should be a CMS ContentInfo', () => {
+      const asn1Value = new asn1js.Integer({ value: 3 });
+      const derValue = asn1Value.toBER(false);
+
+      expect(() => EnvelopedData.deserialize(derValue)).toThrowWithMessage(
+        CMSError,
+        /^Could not deserialize CMS ContentInfo: /,
+      );
+    });
+
+    test('OID of inner value should be that of EnvelopedData', async () => {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
+      const contentInfo = new pkijs.ContentInfo({
+        content: envelopedData.pkijsEnvelopedData.toSchema(),
+        contentType: '1.2',
+      });
+      const contentInfoSerialized = contentInfo.toSchema().toBER(false);
+
+      expect(() => EnvelopedData.deserialize(contentInfoSerialized)).toThrowWithMessage(
+        CMSError,
+        'ContentInfo does not wrap an EnvelopedData value (got OID 1.2)',
+      );
+    });
+
+    test('Inner value should be a valid EnvelopedData', async () => {
+      const contentInfo = new pkijs.ContentInfo({
+        content: new asn1js.Integer({ value: 3 }),
+        contentType: oids.CMS_ENVELOPED_DATA,
+      });
+      const contentInfoSerialized = contentInfo.toSchema().toBER(false);
+
+      expect(() => EnvelopedData.deserialize(contentInfoSerialized)).toThrowWithMessage(
+        CMSError,
+        /^Invalid EnvelopedData value: /,
+      );
+    });
+
+    test('An EnvelopedData with zero recipientInfos should be refused', () => {
+      const pkijsEnvelopedData = new pkijs.EnvelopedData();
+      pkijsEnvelopedData.recipientInfos = [];
+      const contentInfo = new pkijs.ContentInfo({
+        content: pkijsEnvelopedData.toSchema(),
+        contentType: oids.CMS_ENVELOPED_DATA,
+      });
+      const contentInfoSerialized = contentInfo.toSchema().toBER(false);
+
+      expect(() => EnvelopedData.deserialize(contentInfoSerialized)).toThrowWithMessage(
+        CMSError,
+        /^Invalid EnvelopedData value:/,
+      );
+    });
+
+    test('An EnvelopedData with multiple recipientInfos should be refused', async () => {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
+      envelopedData.pkijsEnvelopedData.addRecipientByCertificate(
+        certificate.pkijsCertificate,
+        {},
+        1,
+      );
+      const contentInfo = new pkijs.ContentInfo({
+        content: envelopedData.pkijsEnvelopedData.toSchema(),
+        contentType: oids.CMS_ENVELOPED_DATA,
+      });
+      const contentInfoSerialized = contentInfo.toSchema().toBER(false);
+
+      expect(() => EnvelopedData.deserialize(contentInfoSerialized)).toThrowWithMessage(
+        CMSError,
+        'EnvelopedData must have exactly one RecipientInfo (got 2)',
+      );
+    });
+
+    test('KeyTransRecipientInfo should result in SessionlessEnvelopedData instance', async () => {
+      const originalEnvelopedData = await SessionlessEnvelopedData.encrypt(plaintext, certificate);
+      const envelopedDataSerialized = originalEnvelopedData.serialize();
+
+      const envelopedData = EnvelopedData.deserialize(envelopedDataSerialized);
+      expect(envelopedData).toBeInstanceOf(SessionlessEnvelopedData);
+      expectAsn1ValuesToBeEqual(
+        originalEnvelopedData.pkijsEnvelopedData.toSchema(),
+        envelopedData.pkijsEnvelopedData.toSchema(),
+      );
+    });
+
+    test('A KeyAgreeRecipientInfo should result in a SessionEnvelopedData instance', async () => {
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const envelopedDataSerialized = envelopedData.serialize();
+
+      const envelopedDataDeserialized = EnvelopedData.deserialize(envelopedDataSerialized);
+      expect(envelopedDataDeserialized).toBeInstanceOf(SessionEnvelopedData);
+      expectAsn1ValuesToBeEqual(
+        envelopedDataDeserialized.pkijsEnvelopedData.toSchema(),
+        envelopedData.pkijsEnvelopedData.toSchema(),
+      );
+    });
+
+    test.skip('An unsupported RecipientInfo should be refused', async () => {
+      const unsupportedEnvelopedData = await SessionlessEnvelopedData.encrypt(
+        plaintext,
+        certificate,
+      );
+      const unsupportedEnvelopedDataSerialized = unsupportedEnvelopedData.serialize();
+
+      jest
+        // @ts-ignore
+        .spyOn(pkijs, 'EnvelopedData')
+        .mockImplementationOnce(() => {
+          return {
+            recipientInfos: [
+              // @ts-ignore
+              new pkijs.OtherRecipientInfo({
+                oriType: '1.2',
+                oriValue: new asn1js.Null(),
+              }),
+            ],
+          };
+        });
+      expect(() =>
+        EnvelopedData.deserialize(unsupportedEnvelopedDataSerialized),
+      ).toThrowWithMessage(CMSError, 'Unsupported RecipientInfo (OtherRecipientInfo)');
     });
   });
 });
@@ -120,25 +275,6 @@ describe('SessionlessEnvelopedData', () => {
 });
 
 describe('SessionEnvelopedData', () => {
-  let bobDhCertificate: Certificate;
-  beforeAll(async () => {
-    const nodeKeyPair = await generateRSAKeyPair();
-    const nodeCertificate = await generateStubCert({
-      attributes: { isCA: true, serialNumber: 1 },
-      issuerPrivateKey: nodeKeyPair.privateKey,
-      subjectPublicKey: nodeKeyPair.publicKey,
-    });
-
-    const bobDhKeyPair = await generateECDHKeyPair();
-    bobDhCertificate = await issueInitialDHKeyCertificate({
-      dhPublicKey: bobDhKeyPair.publicKey,
-      nodeCertificate,
-      nodePrivateKey: nodeKeyPair.privateKey,
-      serialNumber: 2,
-      validityEndDate: TOMORROW,
-    });
-  });
-
   describe('encrypt', () => {
     test('Result should include generated (EC)DH private key', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
@@ -227,15 +363,7 @@ function describeEncryptedContentInfoEncryption(
 }
 
 describe('decrypt', () => {
-  test('An error should be thrown if input is not DER encoded', async () => {
-    const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
-    await expectPromiseToReject(
-      decrypt(invalidDer, privateKey),
-      new Error('Value is not DER-encoded'),
-    );
-  });
-
-  test('A well-formed but invalid ciphertext should be refused', async () => {
+  test('Decryption with the wrong private key should fail', async () => {
     const differentCertificate = await generateStubCert();
     const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, differentCertificate);
 
@@ -256,28 +384,7 @@ describe('decrypt', () => {
 
   describe('Key agreement', () => {
     let encryptionResult: SessionEncryptionResult;
-    let bobDhPrivateKey: CryptoKey;
-    let bobDhCertificate: Certificate;
     beforeAll(async () => {
-      const nodeKeyPair = await generateRSAKeyPair();
-      const nodeCertificate = await generateStubCert({
-        attributes: { isCA: true, serialNumber: 1 },
-        issuerPrivateKey: nodeKeyPair.privateKey,
-        subjectPublicKey: nodeKeyPair.publicKey,
-      });
-
-      const bobDhKeyPair = await generateECDHKeyPair();
-      bobDhPrivateKey = bobDhKeyPair.privateKey;
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      bobDhCertificate = await issueInitialDHKeyCertificate({
-        dhPublicKey: bobDhKeyPair.publicKey,
-        nodeCertificate,
-        nodePrivateKey: nodeKeyPair.privateKey,
-        serialNumber: 2,
-        validityEndDate: tomorrow,
-      });
-
       encryptionResult = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
     });
 

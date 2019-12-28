@@ -19,6 +19,7 @@ declare module 'pkijs' {
   import Extension from 'pkijs/src/Extension';
   import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
   import KeyTransRecipientInfo from 'pkijs/src/KeyTransRecipientInfo';
+  import OtherRecipientInfo from 'pkijs/src/OtherRecipientInfo';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
   import RecipientInfo from 'pkijs/src/RecipientInfo';
   import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
@@ -41,6 +42,7 @@ declare module 'pkijs' {
     Extension,
     IssuerAndSerialNumber,
     KeyTransRecipientInfo,
+    OtherRecipientInfo,
     PublicKeyInfo,
     RecipientInfo,
     RelativeDistinguishedNames,

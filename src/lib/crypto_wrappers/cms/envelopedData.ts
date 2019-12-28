@@ -34,7 +34,43 @@ export interface DecryptionResult {
   readonly plaintext: ArrayBuffer;
 }
 
-abstract class EnvelopedData {
+export abstract class EnvelopedData {
+  /**
+   * Deserialize an EnvelopedData value into a `SessionlessEnvelopedData` or `SessionEnvelopedData`
+   * instance.
+   *
+   * Depending on the type of RecipientInfo.
+   *
+   * @param envelopedDataSerialized
+   */
+  public static deserialize(envelopedDataSerialized: ArrayBuffer): EnvelopedData {
+    const contentInfo = deserializeContentInfo(envelopedDataSerialized);
+    if (contentInfo.contentType !== oids.CMS_ENVELOPED_DATA) {
+      throw new CMSError(
+        `ContentInfo does not wrap an EnvelopedData value (got OID ${contentInfo.contentType})`,
+      );
+    }
+    // tslint:disable-next-line:no-let
+    let pkijsEnvelopedData;
+    try {
+      pkijsEnvelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
+    } catch (error) {
+      throw new CMSError(error, 'Invalid EnvelopedData value');
+    }
+    const recipientInfosLength = pkijsEnvelopedData.recipientInfos.length;
+    if (recipientInfosLength !== 1) {
+      throw new CMSError(
+        `EnvelopedData must have exactly one RecipientInfo (got ${recipientInfosLength})`,
+      );
+    }
+
+    const envelopedDataClass =
+      pkijsEnvelopedData.recipientInfos[0].variant === 1
+        ? SessionlessEnvelopedData
+        : SessionEnvelopedData;
+    return new envelopedDataClass(pkijsEnvelopedData);
+  }
+
   protected constructor(readonly pkijsEnvelopedData: pkijs.EnvelopedData) {}
 
   public serialize(): ArrayBuffer {
@@ -172,7 +208,7 @@ export async function decrypt(
   dhRecipientCertificate?: Certificate,
 ): Promise<DecryptionResult> {
   const contentInfo = deserializeContentInfo(ciphertext);
-  const envelopedData = new pkijs.EnvelopedData({ schema: contentInfo });
+  const envelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
 
   const plaintext = await pkijsDecrypt(envelopedData, privateKey, dhRecipientCertificate);
 
