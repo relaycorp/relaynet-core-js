@@ -194,7 +194,7 @@ describe('EnvelopedData', () => {
       );
     });
 
-    test.skip('An unsupported RecipientInfo should be refused', async () => {
+    test('An unsupported RecipientInfo should be refused', async () => {
       const unsupportedEnvelopedData = await SessionlessEnvelopedData.encrypt(
         plaintext,
         certificate,
@@ -202,22 +202,13 @@ describe('EnvelopedData', () => {
       const unsupportedEnvelopedDataSerialized = unsupportedEnvelopedData.serialize();
 
       jest
-        // @ts-ignore
-        .spyOn(pkijs, 'EnvelopedData')
-        .mockImplementationOnce(() => {
-          return {
-            recipientInfos: [
-              // @ts-ignore
-              new pkijs.OtherRecipientInfo({
-                oriType: '1.2',
-                oriValue: new asn1js.Null(),
-              }),
-            ],
-          };
+        .spyOn(pkijs.RecipientInfo.prototype, 'fromSchema')
+        .mockImplementationOnce(function(this: pkijs.RecipientInfo): void {
+          this.variant = 3;
         });
       expect(() =>
         EnvelopedData.deserialize(unsupportedEnvelopedDataSerialized),
-      ).toThrowWithMessage(CMSError, 'Unsupported RecipientInfo (OtherRecipientInfo)');
+      ).toThrowWithMessage(CMSError, 'Unsupported RecipientInfo (variant: 3)');
     });
   });
 });

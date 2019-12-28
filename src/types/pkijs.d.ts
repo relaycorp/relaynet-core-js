@@ -18,6 +18,7 @@ declare module 'pkijs' {
   import EnvelopedData from 'pkijs/src/EnvelopedData';
   import Extension from 'pkijs/src/Extension';
   import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
+  import KeyAgreeRecipientInfo from 'pkijs/src/KeyAgreeRecipientInfo';
   import KeyTransRecipientInfo from 'pkijs/src/KeyTransRecipientInfo';
   import OtherRecipientInfo from 'pkijs/src/OtherRecipientInfo';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
@@ -41,6 +42,7 @@ declare module 'pkijs' {
     EnvelopedData,
     Extension,
     IssuerAndSerialNumber,
+    KeyAgreeRecipientInfo,
     KeyTransRecipientInfo,
     OtherRecipientInfo,
     PublicKeyInfo,

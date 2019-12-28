@@ -64,10 +64,12 @@ export abstract class EnvelopedData {
       );
     }
 
+    const recipientInfo = pkijsEnvelopedData.recipientInfos[0];
+    if (![1, 2].includes(recipientInfo.variant)) {
+      throw new CMSError(`Unsupported RecipientInfo (variant: ${recipientInfo.variant})`);
+    }
     const envelopedDataClass =
-      pkijsEnvelopedData.recipientInfos[0].variant === 1
-        ? SessionlessEnvelopedData
-        : SessionEnvelopedData;
+      recipientInfo.variant === 1 ? SessionlessEnvelopedData : SessionEnvelopedData;
     return new envelopedDataClass(pkijsEnvelopedData);
   }
 
