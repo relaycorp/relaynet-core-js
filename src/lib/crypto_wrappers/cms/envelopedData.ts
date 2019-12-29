@@ -28,6 +28,11 @@ export interface DecryptionResult {
   readonly plaintext: ArrayBuffer;
 }
 
+export interface SessionOriginatorKey {
+  readonly keyId: number;
+  // readonly publicKeyDer: ArrayBuffer; // DH or ECDH key
+}
+
 export abstract class EnvelopedData {
   /**
    * Deserialize an EnvelopedData value into a `SessionlessEnvelopedData` or `SessionEnvelopedData`
@@ -157,6 +162,11 @@ export class SessionEnvelopedData extends EnvelopedData {
     return { dhPrivateKey, dhKeyId, envelopedData };
   }
 
+  public getOriginatorKey(): SessionOriginatorKey {
+    const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
+    return { keyId };
+  }
+
   public async decrypt(
     privateKey: CryptoKey,
     dhRecipientCertificate: Certificate,
@@ -191,7 +201,7 @@ async function pkijsDecrypt(
     // @ts-ignore
     return await envelopedData.decrypt(0, encryptArgs);
   } catch (error) {
-    throw new CMSError(error, `Decryption failed`);
+    throw new CMSError(error, 'Decryption failed');
   }
 }
 

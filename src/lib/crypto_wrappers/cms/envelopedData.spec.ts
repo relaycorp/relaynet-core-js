@@ -338,6 +338,104 @@ describe('SessionEnvelopedData', () => {
     });
   });
 
+  describe('getOriginatorKey', () => {
+    describe('keyId', () => {
+      test('Originator DH public key id should be returned', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+        const { keyId } = await envelopedData.getOriginatorKey();
+
+        const unprotectedAttrs = envelopedData.pkijsEnvelopedData
+          .unprotectedAttrs as readonly pkijs.Attribute[];
+        const dhKeyIdAttribute = unprotectedAttrs[0];
+        expect(keyId).toEqual(
+          // @ts-ignore
+          parseInt(dhKeyIdAttribute.values[0].valueBlock.toString(), 10),
+        );
+      });
+
+      test('Call should fail if unprotectedAttrs is missing', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+        envelopedData.pkijsEnvelopedData.unprotectedAttrs = undefined;
+
+        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
+          CMSError,
+          'unprotectedAttrs must be present when using channel session',
+        );
+      });
+
+      test('Call should fail if unprotectedAttrs is present but empty', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+        envelopedData.pkijsEnvelopedData.unprotectedAttrs = [];
+
+        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
+          CMSError,
+          'unprotectedAttrs must be present when using channel session',
+        );
+      });
+
+      test('Call should fail if originator key id is missing', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+        const otherAttribute = new pkijs.Attribute({
+          type: '1.2.3.4',
+          values: [new asn1js.Integer({ value: 2 })],
+        });
+        envelopedData.pkijsEnvelopedData.unprotectedAttrs = [otherAttribute];
+
+        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
+          CMSError,
+          'unprotectedAttrs does not contain originator key id',
+        );
+      });
+
+      test('Call should fail if attribute for originator key id is empty', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+        const invalidAttribute = new pkijs.Attribute({
+          type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+          values: [],
+        });
+        envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
+
+        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
+          CMSError,
+          'Originator key id attribute must have exactly one value (got 0)',
+        );
+      });
+
+      test('Call should fail if attribute for originator key id is multi-valued', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+        const invalidAttribute = new pkijs.Attribute({
+          type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+          values: [new asn1js.Integer({ value: 1 }), new asn1js.Integer({ value: 2 })],
+        });
+        envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
+
+        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
+          CMSError,
+          'Originator key id attribute must have exactly one value (got 2)',
+        );
+      });
+    });
+
+    describe('publicKey', () => {
+      test('Originator DH public key should be returned if it is valid', async () => {
+        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+        const { dhPublicKeyDer } = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
+
+        const envelopedDataDeserialized = deserializeEnvelopedData(envelopedData.serialize());
+        const expectedPublicKey = envelopedDataDeserialized.recipientInfos[0].value.originator.value
+          .toSchema()
+          .toBER(false);
+        expectBuffersToEqual(expectedPublicKey, dhPublicKeyDer as ArrayBuffer);
+      });
+
+      test.todo('Missing recipientInfos');
+      test.todo('Empty recipientInfos');
+      test.todo('Wrong type of RecipientInfo');
+    });
+  });
+
   describe('decrypt', () => {
     test('Decryption with the wrong private key should fail', async () => {
       const differentDhKeyPair = await generateECDHKeyPair();
@@ -378,119 +476,6 @@ describe('SessionEnvelopedData', () => {
         'recipientCertificate',
         bobDhCertificate.pkijsCertificate,
       );
-    });
-
-    test('Originator DH public key id should be output', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      const { dhKeyId } = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
-
-      const unprotectedAttrs = envelopedData.pkijsEnvelopedData
-        .unprotectedAttrs as readonly pkijs.Attribute[];
-      const dhKeyIdAttribute = unprotectedAttrs[0];
-      expect(dhKeyId).toEqual(
-        // @ts-ignore
-        parseInt(dhKeyIdAttribute.values[0].valueBlock.toString(), 10),
-      );
-    });
-
-    test('Decryption should fail if unprotectedAttrs is missing', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      jest
-        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
-        .mockImplementationOnce(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          this.unprotectedAttrs = undefined;
-          return plaintext;
-        });
-      await expectPromiseToReject(
-        envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate),
-        new CMSError('unprotectedAttrs must be present when using channel session'),
-      );
-    });
-
-    test('Decryption should fail if unprotectedAttrs is present but empty', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      jest
-        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
-        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          this.unprotectedAttrs = [];
-          return plaintext;
-        });
-      await expectPromiseToReject(
-        envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate),
-        new CMSError('unprotectedAttrs must be present when using channel session'),
-      );
-    });
-
-    test('Decryption should fail if originator key id is missing', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-      const invalidAttribute = new pkijs.Attribute({
-        type: '1.2.3.4',
-        values: [new asn1js.Integer({ value: 2 })],
-      });
-      jest
-        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
-        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          this.unprotectedAttrs = [invalidAttribute];
-          return plaintext;
-        });
-
-      await expectPromiseToReject(
-        envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate),
-        new CMSError('unprotectedAttrs does not contain originator key id'),
-      );
-    });
-
-    test('Decryption should fail if attribute for originator key id is empty', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      const invalidAttribute = new pkijs.Attribute({
-        type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-        values: [],
-      });
-      jest
-        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
-        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          this.unprotectedAttrs = [invalidAttribute];
-          return plaintext;
-        });
-
-      await expectPromiseToReject(
-        envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate),
-        new CMSError('Originator key id attribute must have exactly one value (got 0)'),
-      );
-    });
-
-    test('Decryption should fail if attribute for originator key id is multi-valued', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-      const invalidAttribute = new pkijs.Attribute({
-        type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-        values: [new asn1js.Integer({ value: 1 }), new asn1js.Integer({ value: 2 })],
-      });
-      jest
-        .spyOn(pkijs.EnvelopedData.prototype, 'decrypt')
-        .mockImplementation(async function(this: pkijs.EnvelopedData): Promise<ArrayBuffer> {
-          this.unprotectedAttrs = [invalidAttribute];
-          return plaintext;
-        });
-
-      await expectPromiseToReject(
-        envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate),
-        new CMSError('Originator key id attribute must have exactly one value (got 2)'),
-      );
-    });
-
-    test('Originator DH public key should be output', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-      const { dhPublicKeyDer } = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
-
-      const envelopedDataDeserialized = deserializeEnvelopedData(envelopedData.serialize());
-      const expectedPublicKey = envelopedDataDeserialized.recipientInfos[0].value.originator.value
-        .toSchema()
-        .toBER(false);
-      expectBuffersToEqual(expectedPublicKey, dhPublicKeyDer as ArrayBuffer);
     });
   });
 });
