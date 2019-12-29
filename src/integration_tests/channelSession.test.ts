@@ -60,21 +60,17 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   // Run 1: Alice initiates contact with Bob. Bob decrypts message.
   const plaintext1 = bufferToArray(Buffer.from('Hi. My name is Alice.'));
   const encryptionResult1 = await SessionEnvelopedData.encrypt(plaintext1, bobDhCertificate);
-  const decryptionResult1 = await encryptionResult1.envelopedData.decrypt(
+  const decryptedPlaintext1 = await encryptionResult1.envelopedData.decrypt(
     bobKeyPair1.privateKey,
     bobDhCertificate,
   );
-  expectBuffersToEqual(decryptionResult1.plaintext, plaintext1);
-  checkRecipientInfo(
-    encryptionResult1.envelopedData,
-    decryptionResult1.dhPublicKeyDer as ArrayBuffer,
-    bobDhCertificate,
-  );
+  expectBuffersToEqual(decryptedPlaintext1, plaintext1);
+  checkRecipientInfo(encryptionResult1.envelopedData, bobDhCertificate);
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
   const plaintext2 = bufferToArray(Buffer.from('Hi, Alice. My name is Bob.'));
   const alicePublicKey1 = await deserializeDhPublicKey(
-    decryptionResult1.dhPublicKeyDer as ArrayBuffer,
+    encryptionResult1.envelopedData.getOriginatorKey().publicKeyDer,
   );
   const aliceDhCert1 = await issueInitialDHKeyCertificate({
     dhPublicKey: alicePublicKey1,
@@ -84,21 +80,17 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     validityEndDate: TOMORROW,
   });
   const encryptionResult2 = await SessionEnvelopedData.encrypt(plaintext2, aliceDhCert1);
-  const decryptionResult2 = await encryptionResult2.envelopedData.decrypt(
+  const decryptedPlaintext2 = await encryptionResult2.envelopedData.decrypt(
     encryptionResult1.dhPrivateKey as CryptoKey,
     aliceDhCert1,
   );
-  expectBuffersToEqual(decryptionResult2.plaintext, plaintext2);
-  checkRecipientInfo(
-    encryptionResult2.envelopedData,
-    decryptionResult2.dhPublicKeyDer as ArrayBuffer,
-    aliceDhCert1,
-  );
+  expectBuffersToEqual(decryptedPlaintext2, plaintext2);
+  checkRecipientInfo(encryptionResult2.envelopedData, aliceDhCert1);
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
   const plaintext3 = bufferToArray(Buffer.from('Nice to meet you, Bob.'));
   const bobPublicKey2 = await deserializeDhPublicKey(
-    decryptionResult2.dhPublicKeyDer as ArrayBuffer,
+    encryptionResult2.envelopedData.getOriginatorKey().publicKeyDer,
   );
   const bobDhCert2 = await issueInitialDHKeyCertificate({
     dhPublicKey: bobPublicKey2,
@@ -108,16 +100,12 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     validityEndDate: TOMORROW,
   });
   const encryptionResult3 = await SessionEnvelopedData.encrypt(plaintext3, bobDhCert2);
-  const decryptionResult3 = await encryptionResult3.envelopedData.decrypt(
+  const decryptedPlaintext3 = await encryptionResult3.envelopedData.decrypt(
     encryptionResult2.dhPrivateKey as CryptoKey,
     bobDhCert2,
   );
-  expectBuffersToEqual(decryptionResult3.plaintext, plaintext3);
-  checkRecipientInfo(
-    encryptionResult3.envelopedData,
-    decryptionResult3.dhPublicKeyDer as ArrayBuffer,
-    bobDhCert2,
-  );
+  expectBuffersToEqual(decryptedPlaintext3, plaintext3);
+  checkRecipientInfo(encryptionResult3.envelopedData, bobDhCert2);
 });
 
 async function deserializeDhPublicKey(publicKeyDer: ArrayBuffer): Promise<CryptoKey> {
@@ -132,7 +120,6 @@ async function deserializeDhPublicKey(publicKeyDer: ArrayBuffer): Promise<Crypto
 
 function checkRecipientInfo(
   envelopedData: SessionEnvelopedData,
-  expectedPublicKeyDer: ArrayBuffer,
   expectedRecipientCertificate: Certificate,
 ): void {
   expect(envelopedData.pkijsEnvelopedData.recipientInfos).toHaveLength(1);
@@ -143,8 +130,6 @@ function checkRecipientInfo(
 
   // KeyAgreeRecipientInfo MUST use the OriginatorPublicKey choice
   expect(recipientInfo).toHaveProperty('value.originator.variant', 3);
-  const actualPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
-  expectBuffersToEqual(actualPublicKeyDer, expectedPublicKeyDer);
 
   // Validate keyEncryptionAlgorithm
   expect(recipientInfo.value.keyEncryptionAlgorithm).toHaveProperty(
