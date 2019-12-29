@@ -339,10 +339,14 @@ describe('SessionEnvelopedData', () => {
   });
 
   describe('getOriginatorKey', () => {
+    let envelopedData: SessionEnvelopedData;
+    beforeEach(async () => {
+      const encryptionResult = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      envelopedData = encryptionResult.envelopedData;
+    });
+
     describe('keyId', () => {
       test('Originator DH public key id should be returned', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
         const { keyId } = await envelopedData.getOriginatorKey();
 
         const unprotectedAttrs = envelopedData.pkijsEnvelopedData
@@ -355,7 +359,6 @@ describe('SessionEnvelopedData', () => {
       });
 
       test('Call should fail if unprotectedAttrs is missing', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = undefined;
 
         expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
@@ -365,7 +368,6 @@ describe('SessionEnvelopedData', () => {
       });
 
       test('Call should fail if unprotectedAttrs is present but empty', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [];
 
         expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
@@ -375,7 +377,6 @@ describe('SessionEnvelopedData', () => {
       });
 
       test('Call should fail if originator key id is missing', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
         const otherAttribute = new pkijs.Attribute({
           type: '1.2.3.4',
           values: [new asn1js.Integer({ value: 2 })],
@@ -389,8 +390,6 @@ describe('SessionEnvelopedData', () => {
       });
 
       test('Call should fail if attribute for originator key id is empty', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
         const invalidAttribute = new pkijs.Attribute({
           type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
           values: [],
@@ -404,7 +403,6 @@ describe('SessionEnvelopedData', () => {
       });
 
       test('Call should fail if attribute for originator key id is multi-valued', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
         const invalidAttribute = new pkijs.Attribute({
           type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
           values: [new asn1js.Integer({ value: 1 }), new asn1js.Integer({ value: 2 })],
@@ -419,20 +417,22 @@ describe('SessionEnvelopedData', () => {
     });
 
     describe('publicKey', () => {
-      test('Originator DH public key should be returned if it is valid', async () => {
-        const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-        const { dhPublicKeyDer } = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
+      test('Originator DH public key should be returned if it is valid', () => {
+        const { publicKeyDer } = envelopedData.getOriginatorKey();
 
-        const envelopedDataDeserialized = deserializeEnvelopedData(envelopedData.serialize());
-        const expectedPublicKey = envelopedDataDeserialized.recipientInfos[0].value.originator.value
-          .toSchema()
-          .toBER(false);
-        expectBuffersToEqual(expectedPublicKey, dhPublicKeyDer as ArrayBuffer);
+        const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
+        const expectedPublicKey = recipientInfo.value.originator.value.toSchema().toBER(false);
+        expectBuffersToEqual(expectedPublicKey, publicKeyDer as ArrayBuffer);
       });
 
-      test.todo('Missing recipientInfos');
-      test.todo('Empty recipientInfos');
-      test.todo('Wrong type of RecipientInfo');
+      test('Call should fail if RecipientInfo is not KeyAgreeRecipientInfo', () => {
+        envelopedData.pkijsEnvelopedData.recipientInfos[0].variant = 3;
+
+        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
+          CMSError,
+          'Expected KeyAgreeRecipientInfo (got variant: 3)',
+        );
+      });
     });
   });
 
@@ -460,8 +460,8 @@ describe('SessionEnvelopedData', () => {
     test('Decryption should succeed with the right private key', async () => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
-      const decryptionResult = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
-      expectBuffersToEqual(decryptionResult.plaintext, plaintext);
+      const decryptedPlaintext = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
+      expectBuffersToEqual(decryptedPlaintext, plaintext);
     });
 
     test('Recipient DH public key should be used to calculate shared secret', async () => {

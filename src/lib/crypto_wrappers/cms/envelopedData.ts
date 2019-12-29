@@ -22,15 +22,9 @@ export interface SessionEncryptionResult {
   readonly envelopedData: SessionEnvelopedData;
 }
 
-export interface DecryptionResult {
-  readonly dhKeyId: number;
-  readonly dhPublicKeyDer: ArrayBuffer; // DH or ECDH key
-  readonly plaintext: ArrayBuffer;
-}
-
 export interface SessionOriginatorKey {
   readonly keyId: number;
-  // readonly publicKeyDer: ArrayBuffer; // DH or ECDH key
+  readonly publicKeyDer: ArrayBuffer; // DH or ECDH key
 }
 
 export abstract class EnvelopedData {
@@ -164,26 +158,25 @@ export class SessionEnvelopedData extends EnvelopedData {
 
   public getOriginatorKey(): SessionOriginatorKey {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
-    return { keyId };
+
+    const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
+    if (recipientInfo.variant !== 2) {
+      throw new CMSError(`Expected KeyAgreeRecipientInfo (got variant: ${recipientInfo.variant})`);
+    }
+    const publicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
+
+    return { keyId, publicKeyDer };
   }
 
   public async decrypt(
     privateKey: CryptoKey,
     dhRecipientCertificate: Certificate,
-  ): Promise<DecryptionResult> {
-    const plaintext = await pkijsDecrypt(
+  ): Promise<ArrayBuffer> {
+    return pkijsDecrypt(
       this.pkijsEnvelopedData,
       privateKey,
       dhRecipientCertificate.pkijsCertificate,
     );
-
-    // Extract the originator's (EC)DH public key after it's altered by EnvelopedData.decrypt()
-    // to unconditionally replace the algorithm parameters (e.g., the curve name):
-    const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
-    const dhPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
-    const dhKeyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
-
-    return { plaintext, dhPublicKeyDer, dhKeyId };
   }
 }
 
