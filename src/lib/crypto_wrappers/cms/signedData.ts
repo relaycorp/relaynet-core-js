@@ -1,87 +1,18 @@
+// tslint:disable:no-object-mutation
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
-import * as oids from '../oids';
-import { deserializeDer, getPkijsCrypto } from './_utils';
+import * as oids from '../../oids';
+import { getPkijsCrypto } from '../_utils';
+import Certificate from '../x509/Certificate';
+import { deserializeContentInfo } from './_utils';
 import CMSError from './CMSError';
-import Certificate from './x509/Certificate';
 
 const pkijsCrypto = getPkijsCrypto();
-
-const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
-
-export interface EncryptionOptions {
-  readonly aesKeySize: number;
-}
 
 export interface SignatureVerification {
   readonly signerCertificate: Certificate;
   readonly signerCertificateChain: ReadonlyArray<Certificate>;
-}
-
-/**
- * Encrypt `plaintext` and return DER-encoded CMS EnvelopedData representation.
- *
- * @param plaintext
- * @param certificate
- * @param options
- */
-export async function encrypt(
-  plaintext: ArrayBuffer,
-  certificate: Certificate,
-  options: Partial<EncryptionOptions> = {},
-): Promise<ArrayBuffer> {
-  const envelopedData = new pkijs.EnvelopedData();
-
-  envelopedData.addRecipientByCertificate(
-    certificate.pkijsCertificate,
-    { oaepHashAlgorithm: 'SHA-256' },
-    1,
-  );
-
-  if (options.aesKeySize && !AES_KEY_SIZES.includes(options.aesKeySize)) {
-    throw new CMSError(`Invalid AES key size (${options.aesKeySize})`);
-  }
-
-  const aesKeySize = options.aesKeySize || 128;
-  await envelopedData.encrypt(
-    // @ts-ignore
-    { name: 'AES-GCM', length: aesKeySize },
-    plaintext,
-  );
-
-  const contentInfo = new pkijs.ContentInfo({
-    content: envelopedData.toSchema(),
-    contentType: oids.CMS_ENVELOPED_DATA,
-  });
-  return contentInfo.toSchema().toBER(false);
-}
-
-/**
- * Decrypt `ciphertext` and return plaintext.
- *
- * @param ciphertext DER-encoded CMS EnvelopedData
- * @param privateKey
- * @throws CMSError if `ciphertext` is malformed or could not be decrypted
- *   with `privateKey`
- */
-export async function decrypt(
-  ciphertext: ArrayBuffer,
-  privateKey: CryptoKey,
-): Promise<ArrayBuffer> {
-  const cmsContentInfo = deserializeContentInfo(ciphertext);
-  const cmsEnvelopedSimp = new pkijs.EnvelopedData({ schema: cmsContentInfo });
-
-  const privateKeyBuffer = await pkijsCrypto.exportKey('pkcs8', privateKey);
-  try {
-    return await cmsEnvelopedSimp.decrypt(
-      0,
-      // @ts-ignore
-      { recipientPrivateKey: privateKeyBuffer },
-    );
-  } catch (error) {
-    throw new CMSError(`Decryption failed: ${error}`);
-  }
 }
 
 export interface SignatureOptions {
@@ -178,13 +109,11 @@ export async function verifySignature(
 
   const contentInfo = deserializeContentInfo(signature);
 
-  const signedData = new pkijs.SignedData({ schema: contentInfo });
+  const signedData = new pkijs.SignedData({ schema: contentInfo.content });
   if (detachedSignerCertificate) {
-    // tslint:disable-next-line:no-object-mutation
     signedData.certificates = [detachedSignerCertificate.pkijsCertificate];
   } else if (trustedCertificates) {
     const originalCertificates = signedData.certificates as ReadonlyArray<pkijs.Certificate>;
-    // tslint:disable-next-line:no-object-mutation
     signedData.certificates = [
       ...originalCertificates,
       ...trustedCertificates.map(c => c.pkijsCertificate),
@@ -218,12 +147,6 @@ export async function verifySignature(
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
     signerCertificateChain: pkijsCertificateChain.map(c => new Certificate(c)),
   };
-}
-
-function deserializeContentInfo(derValue: ArrayBuffer): asn1js.Sequence {
-  const asn1Value = deserializeDer(derValue);
-  const contentInfo = new pkijs.ContentInfo({ schema: asn1Value });
-  return contentInfo.content;
 }
 
 /**

@@ -8,9 +8,11 @@ import {
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
+  getMockContext,
   getPromiseRejection,
 } from '../_test_utils';
-import * as cms from '../crypto_wrappers/cms';
+import { EnvelopedData, SessionlessEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
+import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { NON_ASCII_STRING, StubMessage, StubPayload } from './_test_utils';
@@ -341,7 +343,7 @@ describe('MessageSerializer', () => {
     describe('Payload', () => {
       test('Payload should be encrypted', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cms, 'encrypt');
+        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
 
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
@@ -349,19 +351,25 @@ describe('MessageSerializer', () => {
           recipientCertificate,
         );
 
-        expect(cms.encrypt).toBeCalledTimes(1);
-        expect(cms.encrypt).toBeCalledWith(StubPayload.BUFFER, recipientCertificate, undefined);
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledTimes(1);
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledWith(
+          StubPayload.BUFFER,
+          recipientCertificate,
+          undefined,
+        );
 
         const messageParts = parseMessage(messageSerialized);
         const payloadCiphertext = messageParts.payload;
-        expect(await cms.decrypt(bufferToArray(payloadCiphertext), recipientPrivateKey)).toEqual(
-          StubPayload.BUFFER,
-        );
+        const cmsEnvelopedData = (await EnvelopedData.deserialize(
+          bufferToArray(payloadCiphertext),
+        )) as SessionlessEnvelopedData;
+        const plaintext = await cmsEnvelopedData.decrypt(recipientPrivateKey);
+        expect(plaintext).toEqual(StubPayload.BUFFER);
       });
 
       test('Encryption options should be honoured', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cms, 'encrypt');
+        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
 
         const encryptionOptions = { aesKeySize: 256 };
         await STUB_MESSAGE_SERIALIZER.serialize(
@@ -371,8 +379,8 @@ describe('MessageSerializer', () => {
           encryptionOptions,
         );
 
-        expect(cms.encrypt).toBeCalledTimes(1);
-        expect(cms.encrypt).toBeCalledWith(
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledTimes(1);
+        expect(SessionlessEnvelopedData.encrypt).toBeCalledWith(
           StubPayload.BUFFER,
           recipientCertificate,
           encryptionOptions,
@@ -391,15 +399,15 @@ describe('MessageSerializer', () => {
           senderCertificateChain,
         });
 
-        jest.spyOn(cms, 'sign');
+        jest.spyOn(cmsSignedData, 'sign');
         messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
           recipientCertificate,
         );
-        expect(cms.sign).toBeCalledTimes(1);
+        expect(cmsSignedData.sign).toBeCalledTimes(1);
         // @ts-ignore
-        cmsSignArgs = cms.sign.mock.calls[0];
+        cmsSignArgs = cmsSignedData.sign.mock.calls[0];
 
         const messageParts = parseMessage(messageSerialized);
         signature = messageParts.signature;
@@ -444,7 +452,7 @@ describe('MessageSerializer', () => {
         const mockSignature = new ArrayBuffer(0);
         const signatureLength = 2 ** 14;
         jest.spyOn(mockSignature, 'byteLength', 'get').mockReturnValue(signatureLength);
-        jest.spyOn(cms, 'sign').mockReturnValue(Promise.resolve(mockSignature));
+        jest.spyOn(cmsSignedData, 'sign').mockReturnValue(Promise.resolve(mockSignature));
 
         await expectPromiseToReject(
           STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
@@ -465,13 +473,13 @@ describe('MessageSerializer', () => {
         async hashingAlgorithmName => {
           const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
 
-          jest.spyOn(cms, 'sign');
+          jest.spyOn(cmsSignedData, 'sign');
           await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate, {
             hashingAlgorithmName,
           });
-          expect(cms.sign).toBeCalledTimes(1);
+          expect(cmsSignedData.sign).toBeCalledTimes(1);
           // @ts-ignore
-          const signatureArgs = cms.sign.mock.calls[0];
+          const signatureArgs = cmsSignedData.sign.mock.calls[0];
           expect(signatureArgs[4]).toEqual({ hashingAlgorithmName });
         },
       );
@@ -795,22 +803,20 @@ describe('MessageSerializer', () => {
     describe('Payload', () => {
       test('Payload should be decrypted', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cms, 'encrypt');
+        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
           recipientCertificate,
         );
 
-        jest.spyOn(cms, 'decrypt');
+        jest.spyOn(SessionlessEnvelopedData.prototype, 'decrypt');
         const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
           messageSerialized,
           recipientPrivateKey,
         );
 
-        // @ts-ignore
-        const payloadCiphertext = await cms.encrypt.mock.results[0].value;
-        expect(cms.decrypt).toBeCalledWith(payloadCiphertext, recipientPrivateKey);
+        expect(SessionlessEnvelopedData.prototype.decrypt).toBeCalledWith(recipientPrivateKey);
 
         expect(messageDeserialized.exportPayload()).toEqual(PAYLOAD);
       });
@@ -819,24 +825,26 @@ describe('MessageSerializer', () => {
     describe('Signature', () => {
       test('Signature should be accepted if valid', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(cms, 'sign');
+        jest.spyOn(cmsSignedData, 'sign');
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
           recipientCertificate,
         );
 
-        jest.spyOn(cms, 'verifySignature');
+        jest.spyOn(cmsSignedData, 'verifySignature');
         await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey);
 
-        // @ts-ignore
-        const signatureCiphertext = await cms.sign.mock.results[0].value;
+        const signatureCiphertext = await getMockContext(cmsSignedData.sign).results[0].value;
         const signaturePlaintext = messageSerialized.slice(
           0,
           messageSerialized.byteLength - signatureCiphertext.length - 2,
         );
-        expect(cms.verifySignature).toBeCalledTimes(1);
-        expect(cms.verifySignature).toBeCalledWith(signatureCiphertext, signaturePlaintext);
+        expect(cmsSignedData.verifySignature).toBeCalledTimes(1);
+        expect(cmsSignedData.verifySignature).toBeCalledWith(
+          signatureCiphertext,
+          signaturePlaintext,
+        );
       });
 
       test('Signature should not be accepted if invalid', async () => {
@@ -844,7 +852,7 @@ describe('MessageSerializer', () => {
         const signerCertificate = await generateStubCert({
           subjectPublicKey: signerKeyPair.publicKey,
         });
-        const invalidSignature = await cms.sign(
+        const invalidSignature = await cmsSignedData.sign(
           bufferToArray(Buffer.from('Hello world')),
           signerKeyPair.privateKey,
           signerCertificate,
@@ -867,7 +875,7 @@ describe('MessageSerializer', () => {
         const signerCertificate = await generateStubCert({
           subjectPublicKey: signerKeyPair.publicKey,
         });
-        const invalidSignature = await cms.sign(
+        const invalidSignature = await cmsSignedData.sign(
           bufferToArray(Buffer.from('Hello world')),
           signerKeyPair.privateKey,
           signerCertificate,
@@ -903,11 +911,12 @@ describe('MessageSerializer', () => {
 
       test('Sender certificate chain should be extracted from signature', async () => {
         const caCertificate = await generateStubCert();
+        const envelopedData = await SessionlessEnvelopedData.encrypt(PAYLOAD, recipientCertificate);
         const messageSerialized = await serializeWithoutValidation({
-          payloadBuffer: await cms.encrypt(PAYLOAD, recipientCertificate),
+          payloadBuffer: envelopedData.serialize(),
         });
 
-        jest.spyOn(cms, 'verifySignature').mockImplementationOnce(async () => ({
+        jest.spyOn(cmsSignedData, 'verifySignature').mockImplementationOnce(async () => ({
           signerCertificate: senderCertificate,
           signerCertificateChain: [senderCertificate, caCertificate],
         }));
@@ -969,7 +978,7 @@ describe('MessageSerializer', () => {
 
     const finalSignature = Buffer.from(
       signature ||
-        (await cms.sign(
+        (await cmsSignedData.sign(
           bufferToArray(serialization.toBuffer()),
           senderPrivateKey,
           senderCertificate,

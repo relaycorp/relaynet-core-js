@@ -2,7 +2,12 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import * as cms from '../crypto_wrappers/cms';
+import {
+  EncryptionOptions,
+  EnvelopedData,
+  SessionlessEnvelopedData,
+} from '../crypto_wrappers/cms/envelopedData';
+import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import Message from './Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
@@ -64,7 +69,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     message: MessageSpecialization,
     senderPrivateKey: CryptoKey,
     recipientCertificate: Certificate,
-    options?: Partial<cms.EncryptionOptions | cms.SignatureOptions>,
+    options?: Partial<EncryptionOptions | cmsSignedData.SignatureOptions>,
   ): Promise<ArrayBuffer> {
     //region Validation
     validateRecipientAddressLength(message.recipientAddress);
@@ -103,24 +108,25 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Payload
-    const cmsEnvelopedData = await cms.encrypt(
+    const envelopedData = await SessionlessEnvelopedData.encrypt(
       message.exportPayload(),
       recipientCertificate,
-      options as cms.EncryptionOptions,
+      options as EncryptionOptions,
     );
-    serialization.writeUInt32LE(cmsEnvelopedData.byteLength);
-    serialization.writeBuffer(Buffer.from(cmsEnvelopedData));
+    const envelopedDataSerialized = await envelopedData.serialize();
+    serialization.writeUInt32LE(envelopedDataSerialized.byteLength);
+    serialization.writeBuffer(Buffer.from(envelopedDataSerialized));
     //endregion
 
     const serializationBeforeSignature = serialization.toBuffer();
 
     //region Signature
-    const signature = await cms.sign(
+    const signature = await cmsSignedData.sign(
       bufferToArray(serializationBeforeSignature),
       senderPrivateKey,
       message.senderCertificate,
       new Set([message.senderCertificate, ...message.senderCertificateChain]),
-      options as cms.SignatureOptions,
+      options as cmsSignedData.SignatureOptions,
     );
     validateSignatureLength(signature);
     const signatureLengthPrefix = Buffer.allocUnsafe(2);
@@ -153,15 +159,15 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     validateMessageTiming(messageFields, signatureVerification);
     //endregion
 
-    const payloadPlaintext = await cms.decrypt(
+    const cmsEnvelopedData = EnvelopedData.deserialize(
       bufferToArray(messageFields.payload),
-      recipientPrivateKey,
-    );
+    ) as SessionlessEnvelopedData;
+    const plaintext = await cmsEnvelopedData.decrypt(recipientPrivateKey);
 
     return new this.messageClass(
       messageFields.recipientAddress,
       signatureVerification.signerCertificate,
-      payloadPlaintext,
+      plaintext,
       {
         date: new Date(messageFields.dateTimestamp * 1_000),
         id: messageFields.id,
@@ -259,7 +265,7 @@ function parseMessage(serialization: ArrayBuffer): MessageFields {
 async function verifySignature(
   messageSerialized: ArrayBuffer,
   messageFields: MessageFields,
-): Promise<cms.SignatureVerification> {
+): Promise<cmsSignedData.SignatureVerification> {
   const signatureCiphertext = bufferToArray(messageFields.signature);
   const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
   const signaturePlaintext = messageSerialized.slice(
@@ -267,7 +273,7 @@ async function verifySignature(
     messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix,
   );
   try {
-    return await cms.verifySignature(signatureCiphertext, signaturePlaintext);
+    return await cmsSignedData.verifySignature(signatureCiphertext, signaturePlaintext);
   } catch (error) {
     throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
   }
@@ -275,7 +281,7 @@ async function verifySignature(
 
 function validateMessageTiming(
   messageFields: MessageFields,
-  signatureVerification: cms.SignatureVerification,
+  signatureVerification: cmsSignedData.SignatureVerification,
 ): void {
   const currentTimestamp = dateToTimestamp(new Date());
   if (currentTimestamp < messageFields.dateTimestamp) {

@@ -6,6 +6,7 @@ declare module 'pkijs' {
   // following expression to export things in bulk didn't have any effect:
   //   export * from "pkijs/src/_x509";
 
+  import AlgorithmIdentifier from 'pkijs/src/AlgorithmIdentifier';
   import Attribute from 'pkijs/src/Attribute';
   import AttributeTypeAndValue from 'pkijs/src/AttributeTypeAndValue';
   import AuthorityKeyIdentifier from 'pkijs/src/AuthorityKeyIdentifier';
@@ -17,7 +18,9 @@ declare module 'pkijs' {
   import EnvelopedData from 'pkijs/src/EnvelopedData';
   import Extension from 'pkijs/src/Extension';
   import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
+  import KeyAgreeRecipientInfo from 'pkijs/src/KeyAgreeRecipientInfo';
   import KeyTransRecipientInfo from 'pkijs/src/KeyTransRecipientInfo';
+  import OtherRecipientInfo from 'pkijs/src/OtherRecipientInfo';
   import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
   import RecipientInfo from 'pkijs/src/RecipientInfo';
   import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
@@ -27,6 +30,7 @@ declare module 'pkijs' {
   import SignerInfo from 'pkijs/src/SignerInfo';
 
   export {
+    AlgorithmIdentifier,
     Attribute,
     AttributeTypeAndValue,
     AuthorityKeyIdentifier,
@@ -38,7 +42,9 @@ declare module 'pkijs' {
     EnvelopedData,
     Extension,
     IssuerAndSerialNumber,
+    KeyAgreeRecipientInfo,
     KeyTransRecipientInfo,
+    OtherRecipientInfo,
     PublicKeyInfo,
     RecipientInfo,
     RelativeDistinguishedNames,
