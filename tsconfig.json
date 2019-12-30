@@ -2,7 +2,9 @@
   "extends": "@relaycorp/shared-config",
   "compilerOptions": {
     "outDir": "build/main",
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": ["node", "jest"],
+    "typeRoots": ["node_modules/@types", "src/types"]
   },
   "include": ["src/**/*.ts"]
 }
