@@ -1,6 +1,11 @@
 {
   "name": "@relaycorp/relaynet-core",
   "version": "1.0.0a1",
+  "author": {
+    "email": "no-reply@relaycorp.tech",
+    "name": "Relaycorp, Inc.",
+    "url": "https://relaycorp.tech/"
+  },
   "description": "Relaynet core library",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
