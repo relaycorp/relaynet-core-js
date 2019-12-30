@@ -55,7 +55,7 @@
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "@relaycorp/shared-config": "^1.1.0",
+    "@relaycorp/shared-config": "^1.1.2",
     "@types/asn1js": "0.0.1",
     "@types/jest": "^24.0.15",
     "@types/pkijs": "0.0.2",

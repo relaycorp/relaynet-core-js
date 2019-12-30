@@ -1,3 +1,2 @@
 branch: master
-plugins:
-  - @relaycorp/shared-config
+extends: @relaycorp/shared-config
