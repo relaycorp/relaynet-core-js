@@ -5,9 +5,12 @@
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
-  "repository": "https://github.com/gnarea/relaynet-core-js",
+  "repository": "https://github.com/relaycorp/relaynet-core-js",
   "license": "MIT",
-  "keywords": [],
+  "keywords": [
+    "relaynet",
+    "networking"
+  ],
   "scripts": {
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
