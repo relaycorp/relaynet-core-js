@@ -12,7 +12,9 @@
   "module": "build/module/index.js",
   "repository": "https://github.com/relaycorp/relaynet-core-js",
   "license": "MIT",
-  "keywords": ["relaynet"],
+  "keywords": [
+    "relaynet"
+  ],
   "scripts": {
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
@@ -53,7 +55,7 @@
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "@relaycorp/shared-config": "^1.0.3",
+    "@relaycorp/shared-config": "^1.1.0",
     "@types/asn1js": "0.0.1",
     "@types/jest": "^24.0.15",
     "@types/pkijs": "0.0.2",
@@ -71,8 +73,6 @@
     "ts-jest": "^24.0.2",
     "ts-node": "^8.5.4",
     "tslint": "^5.18.0",
-    "tslint-config-prettier": "^1.17.0",
-    "tslint-immutable": "^5.0.0",
     "typedoc": "^0.15.3",
     "typescript": "^3.7.4"
   },
