@@ -58,7 +58,6 @@
     "@types/verror": "^1.10.3",
     "asn1js": "^2.0.22",
     "codecov": "^3.5.0",
-    "cz-conventional-changelog": "^2.1.0",
     "gh-pages": "^2.0.1",
     "jest": "^24.8.0",
     "jest-date-mock": "^1.0.7",
@@ -75,11 +74,6 @@
     "tslint-immutable": "^5.0.0",
     "typedoc": "^0.15.3",
     "typescript": "^3.7.4"
-  },
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
   },
   "prettier": {
     "endOfLine": "lf",
