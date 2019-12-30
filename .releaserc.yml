@@ -1,2 +1,3 @@
+branch: master
 plugins:
   - @relaycorp/shared-config
