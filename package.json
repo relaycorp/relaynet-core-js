@@ -16,7 +16,6 @@
     "relaynet"
   ],
   "scripts": {
-    "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
     "build:module": "tsc -p tsconfig.module.json",
@@ -32,14 +31,12 @@
     "test:ci:unit": "run-s build test:ci:unit:jest cov:send",
     "test:ci:unit:jest": "jest --config jest.config.ci.js --coverage",
     "test:integration": "jest --config jest.config.integration.js",
-    "watch": "run-s \"test:unit -- --watch\"",
     "cov": "run-s build test:unit && opn coverage/lcov-report/index.html",
     "cov:send": "codecov",
     "doc": "run-s doc:html && opn build/docs/index.html",
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --out build/docs",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
-    "clean": "trash build test",
-    "prepare-release": "run-s all version doc:publish"
+    "clean": "trash build test"
   },
   "engines": {
     "node": ">=10"
