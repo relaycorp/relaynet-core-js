@@ -8,7 +8,7 @@ import { getPkijsCrypto } from '../lib/crypto_wrappers/_utils';
 import { SessionEnvelopedData } from '../lib/crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keyGenerators';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
-import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/nodes';
+import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/pki';
 
 const cryptoEngine = getPkijsCrypto();
 

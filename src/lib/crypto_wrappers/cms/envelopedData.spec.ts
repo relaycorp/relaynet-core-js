@@ -11,8 +11,8 @@ import {
   generateStubCert,
   getMockContext,
 } from '../../_test_utils';
-import { issueInitialDHKeyCertificate } from '../../nodes';
 import * as oids from '../../oids';
+import { issueInitialDHKeyCertificate } from '../../pki';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../keyGenerators';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';

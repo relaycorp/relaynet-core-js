@@ -11,7 +11,7 @@ import {
   issueInitialDHKeyCertificate,
   issueNodeCertificate,
   NodeCertificateOptions,
-} from './nodes';
+} from './pki';
 
 const pkijsCrypto = getPkijsCrypto();
 
