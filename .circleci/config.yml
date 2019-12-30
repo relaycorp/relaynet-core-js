@@ -25,7 +25,7 @@ commands:
       - restore_cache:
           keys:
             - v1-dependencies-node<< parameters.nodeVersion >>-{{ checksum "package.json" }}
-      - run: npm install
+      - run: npm ci
       - save_cache:
           paths:
             - node_modules
