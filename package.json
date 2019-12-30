@@ -77,5 +77,8 @@
     "endOfLine": "lf",
     "singleQuote": true,
     "trailingComma": "all"
+  },
+  "publishConfig": {
+    "tag": "dev"
   }
 }
