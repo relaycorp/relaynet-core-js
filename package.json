@@ -54,7 +54,7 @@
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "@relaycorp/shared-config": "^1.3.0",
+    "@relaycorp/shared-config": "^1.3.2",
     "@types/asn1js": "0.0.1",
     "@types/binary-parser": "^1.3.1",
     "@types/jest": "^24.0.15",
@@ -76,7 +76,7 @@
     "typedoc": "^0.15.3",
     "typescript": "^3.7.4"
   },
-  "prettier": "@relaycorp/shared-config",
+  "prettier": "@relaycorp/shared-config/.prettierrc.json",
   "publishConfig": {
     "access": "public",
     "tag": "dev"
