@@ -12,10 +12,7 @@
   "module": "build/module/index.js",
   "repository": "https://github.com/relaycorp/relaynet-core-js",
   "license": "MIT",
-  "keywords": [
-    "relaynet",
-    "networking"
-  ],
+  "keywords": ["relaynet"],
   "scripts": {
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
