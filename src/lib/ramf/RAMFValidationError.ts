@@ -1,5 +1,5 @@
-import { MessageFields } from './MessageSerializer';
 import RAMFError from './RAMFError';
+import { MessageFields } from './serialization';
 
 export default class RAMFValidationError extends RAMFError {
   constructor(

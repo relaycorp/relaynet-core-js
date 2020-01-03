@@ -82,20 +82,6 @@ describe('Message', () => {
       });
     });
 
-    describe('Payload', () => {
-      test('Payload should be imported when present', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, payload);
-
-        expect(message.payloadPlaintext).toBe(payload);
-      });
-
-      test('Payload import should be skipped when it is absent', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate);
-
-        expect(message.payloadPlaintext).toBe(undefined);
-      });
-    });
-
     describe('Sender certificate chain', () => {
       test('Sender certificate chain should only contain sender certificate by default', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);

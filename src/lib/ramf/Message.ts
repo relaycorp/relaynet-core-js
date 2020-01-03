@@ -1,5 +1,6 @@
 import uuid4 from 'uuid4';
 
+import { SignatureOptions } from '../..';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
@@ -23,18 +24,12 @@ export default abstract class Message {
   constructor(
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
-    payloadPlaintext?: ArrayBuffer,
+    readonly payloadSerialized: ArrayBuffer,
     options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
     this.date = options.date || new Date();
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
-
-    //region Payload
-    if (payloadPlaintext) {
-      this.importPayload(payloadPlaintext);
-    }
-    //endregion
 
     //region Sender certificate (chain)
     const initialChain = options.senderCertificateChain || new Set([]);
@@ -42,6 +37,13 @@ export default abstract class Message {
     //endregion
   }
 
-  public abstract exportPayload(): ArrayBuffer;
-  protected abstract importPayload(payloadPlaintext: ArrayBuffer): void;
+  // TODO:
+  // public abstract unwrapPayload(privateKey: CryptoKey): PayloadSpecialization;
+
+  // This method would be concrete if TS allowed us to store the message type and version as
+  // properties
+  public abstract async serialize(
+    senderPrivateKey: CryptoKey,
+    signatureOptions?: SignatureOptions,
+  ): Promise<ArrayBuffer>;
 }
