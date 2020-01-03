@@ -28,6 +28,7 @@ const PARSER = new Parser()
   .buffer('payload', { length: 'payloadLength' })
   .uint16('signatureLength')
   .buffer('signature', { length: 'signatureLength' });
+
 export interface MessageFields {
   readonly concreteMessageType: number;
   readonly concreteMessageVersion: number;
@@ -39,143 +40,118 @@ export interface MessageFields {
   readonly signature: Buffer;
 }
 
-export class MessageSerializer<MessageSpecialization extends Message<any>> {
-  // Ideally, the members of this class would be part of `Message`, but TS
-  // doesn't support static abstract members:
-  // https://github.com/microsoft/TypeScript/issues/34516
+/**
+ * Sign and encode the current message.
+ *
+ * @param message The message to serialize.
+ * @param concreteMessageTypeOctet
+ * @param concreteMessageVersionOctet
+ * @param senderPrivateKey The private key to sign the message.
+ * @param signatureOptions Any signature options.
+ */
+export async function serialize(
+  message: Message<any>,
+  concreteMessageTypeOctet: number,
+  concreteMessageVersionOctet: number,
+  senderPrivateKey: CryptoKey,
+  signatureOptions?: Partial<cmsSignedData.SignatureOptions>,
+): Promise<ArrayBuffer> {
+  //region Validation
+  validateRecipientAddressLength(message.recipientAddress);
+  validateMessageIdLength(message.id);
+  validateDate(message.date);
+  validateTtl(message.ttl);
+  //endregion
 
-  constructor(
-    protected readonly messageClass: new (...args: readonly any[]) => MessageSpecialization,
-    readonly concreteMessageTypeOctet: number,
-    readonly concreteMessageVersionOctet: number,
-  ) {}
+  const serialization = new SmartBuffer();
 
-  /**
-   * Encrypt, sign and encode the current message.
-   *
-   * @param message The message to serialize.
-   * @param senderPrivateKey The private key to sign the message.
-   * @param signatureOptions Any signature options.
-   */
-  public async serialize(
-    message: MessageSpecialization,
-    senderPrivateKey: CryptoKey,
-    signatureOptions?: Partial<cmsSignedData.SignatureOptions>,
-  ): Promise<ArrayBuffer> {
-    //region Validation
-    validateRecipientAddressLength(message.recipientAddress);
-    validateMessageIdLength(message.id);
-    validateDate(message.date);
-    validateTtl(message.ttl);
-    //endregion
+  //region File format signature
+  serialization.writeString('Relaynet');
+  serialization.writeUInt8(concreteMessageTypeOctet);
+  serialization.writeUInt8(concreteMessageVersionOctet);
+  //endregion
 
-    const serialization = new SmartBuffer();
+  //region Recipient address
+  serialization.writeUInt16LE(Buffer.byteLength(message.recipientAddress));
+  serialization.writeString(message.recipientAddress);
+  //endregion
 
-    //region File format signature
-    serialization.writeString('Relaynet');
-    serialization.writeUInt8(this.concreteMessageTypeOctet);
-    serialization.writeUInt8(this.concreteMessageVersionOctet);
-    //endregion
+  //region Message id
+  const messageId = message.id;
+  serialization.writeUInt8(messageId.length);
+  serialization.writeString(messageId, 'ascii');
+  //endregion
 
-    //region Recipient address
-    serialization.writeUInt16LE(Buffer.byteLength(message.recipientAddress));
-    serialization.writeString(message.recipientAddress);
-    //endregion
+  //region Date
+  serialization.writeUInt32LE(dateToTimestamp(message.date));
+  //endregion
 
-    //region Message id
-    const messageId = message.id;
-    serialization.writeUInt8(messageId.length);
-    serialization.writeString(messageId, 'ascii');
-    //endregion
+  //region TTL
+  const ttlBuffer = Buffer.allocUnsafe(3);
+  ttlBuffer.writeUIntLE(message.ttl, 0, 3);
+  serialization.writeBuffer(ttlBuffer);
+  //endregion
 
-    //region Date
-    serialization.writeUInt32LE(dateToTimestamp(message.date));
-    //endregion
+  //region Payload
+  const payloadSerialized = Buffer.from(message.payloadSerialized);
+  serialization.writeUInt32LE(payloadSerialized.byteLength);
+  serialization.writeBuffer(payloadSerialized);
+  //endregion
 
-    //region TTL
-    const ttlBuffer = Buffer.allocUnsafe(3);
-    ttlBuffer.writeUIntLE(message.ttl, 0, 3);
-    serialization.writeBuffer(ttlBuffer);
-    //endregion
+  const serializationBeforeSignature = serialization.toBuffer();
 
-    //region Payload
-    const payloadSerialized = Buffer.from(message.payloadSerialized);
-    serialization.writeUInt32LE(payloadSerialized.byteLength);
-    serialization.writeBuffer(payloadSerialized);
-    //endregion
+  //region Signature
+  const signature = await cmsSignedData.sign(
+    bufferToArray(serializationBeforeSignature),
+    senderPrivateKey,
+    message.senderCertificate,
+    new Set([message.senderCertificate, ...message.senderCertificateChain]),
+    signatureOptions,
+  );
+  validateSignatureLength(signature);
+  const signatureLengthPrefix = Buffer.allocUnsafe(2);
+  signatureLengthPrefix.writeUInt16LE(signature.byteLength, 0);
+  //endregion
 
-    const serializationBeforeSignature = serialization.toBuffer();
+  const finalSerialization = Buffer.concat([
+    serializationBeforeSignature,
+    signatureLengthPrefix,
+    Buffer.from(signature),
+  ]);
+  return bufferToArray(finalSerialization);
+}
 
-    //region Signature
-    const signature = await cmsSignedData.sign(
-      bufferToArray(serializationBeforeSignature),
-      senderPrivateKey,
-      message.senderCertificate,
-      new Set([message.senderCertificate, ...message.senderCertificateChain]),
-      signatureOptions,
-    );
-    validateSignatureLength(signature);
-    const signatureLengthPrefix = Buffer.allocUnsafe(2);
-    signatureLengthPrefix.writeUInt16LE(signature.byteLength, 0);
-    //endregion
+export async function deserialize<M extends Message<any>>(
+  serialization: ArrayBuffer,
+  concreteMessageTypeOctet: number,
+  concreteMessageVersionOctet: number,
+  messageClass: new (...args: readonly any[]) => M,
+): Promise<M> {
+  //region Parse and validate syntax
+  const messageFields = parseMessage(serialization);
 
-    const finalSerialization = Buffer.concat([
-      serializationBeforeSignature,
-      signatureLengthPrefix,
-      Buffer.from(signature),
-    ]);
-    return bufferToArray(finalSerialization);
-  }
+  validateFileFormatSignature(messageFields, concreteMessageTypeOctet, concreteMessageVersionOctet);
+  validateRecipientAddressLength(messageFields.recipientAddress);
+  validateSignatureLength(messageFields.signature);
+  //endregion
 
-  public async deserialize(serialization: ArrayBuffer): Promise<MessageSpecialization> {
-    //region Parse and validate syntax
-    const messageFields = parseMessage(serialization);
+  //region Post-deserialization validation
+  const signatureVerification = await verifySignature(serialization, messageFields);
 
-    this.validateFileFormatSignature(messageFields);
-    validateRecipientAddressLength(messageFields.recipientAddress);
-    validateSignatureLength(messageFields.signature);
-    //endregion
+  validateMessageTiming(messageFields, signatureVerification);
+  //endregion
 
-    //region Post-deserialization validation
-    const signatureVerification = await verifySignature(serialization, messageFields);
-
-    validateMessageTiming(messageFields, signatureVerification);
-    //endregion
-
-    return new this.messageClass(
-      messageFields.recipientAddress,
-      signatureVerification.signerCertificate,
-      messageFields.payload,
-      {
-        date: new Date(messageFields.dateTimestamp * 1_000),
-        id: messageFields.id,
-        senderCertificateChain: signatureVerification.signerCertificateChain,
-        ttl: messageFields.ttlBuffer.readUIntLE(0, 3),
-      },
-    );
-  }
-
-  private validateFileFormatSignature(messageFields: MessageFields): void {
-    //region Message type validation
-    if (messageFields.concreteMessageType !== this.concreteMessageTypeOctet) {
-      const expectedMessageTypeHex = decimalToHex(this.concreteMessageTypeOctet);
-      const actualMessageTypeHex = decimalToHex(messageFields.concreteMessageType);
-      throw new RAMFSyntaxError(
-        `Expected concrete message type ${expectedMessageTypeHex} but got ${actualMessageTypeHex}`,
-      );
-    }
-    //endregion
-
-    //region Message version validation
-    if (messageFields.concreteMessageVersion !== this.concreteMessageVersionOctet) {
-      const expectedVersionHex = decimalToHex(this.concreteMessageVersionOctet);
-      const actualVersionHex = decimalToHex(messageFields.concreteMessageVersion);
-      throw new RAMFSyntaxError(
-        `Expected concrete message version ${expectedVersionHex} but got ${actualVersionHex}`,
-      );
-    }
-    //endregion
-  }
+  return new messageClass(
+    messageFields.recipientAddress,
+    signatureVerification.signerCertificate,
+    messageFields.payload,
+    {
+      date: new Date(messageFields.dateTimestamp * 1_000),
+      id: messageFields.id,
+      senderCertificateChain: signatureVerification.signerCertificateChain,
+      ttl: messageFields.ttlBuffer.readUIntLE(0, 3),
+    },
+  );
 }
 
 function decimalToHex(numberDecimal: number): string {
@@ -187,6 +163,32 @@ function dateToTimestamp(date: Date): number {
 }
 
 //region Serialization and deserialization validation
+
+function validateFileFormatSignature(
+  messageFields: MessageFields,
+  concreteMessageTypeOctet: number,
+  concreteMessageVersionOctet: number,
+): void {
+  //region Message type validation
+  if (messageFields.concreteMessageType !== concreteMessageTypeOctet) {
+    const expectedMessageTypeHex = decimalToHex(concreteMessageTypeOctet);
+    const actualMessageTypeHex = decimalToHex(messageFields.concreteMessageType);
+    throw new RAMFSyntaxError(
+      `Expected concrete message type ${expectedMessageTypeHex} but got ${actualMessageTypeHex}`,
+    );
+  }
+  //endregion
+
+  //region Message version validation
+  if (messageFields.concreteMessageVersion !== concreteMessageVersionOctet) {
+    const expectedVersionHex = decimalToHex(concreteMessageVersionOctet);
+    const actualVersionHex = decimalToHex(messageFields.concreteMessageVersion);
+    throw new RAMFSyntaxError(
+      `Expected concrete message version ${expectedVersionHex} but got ${actualVersionHex}`,
+    );
+  }
+  //endregion
+}
 
 function validateRecipientAddressLength(recipientAddress: string): void {
   if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
