@@ -1,4 +1,4 @@
-/* tslint:disable:no-let max-classes-per-file */
+/* tslint:disable:no-let */
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';

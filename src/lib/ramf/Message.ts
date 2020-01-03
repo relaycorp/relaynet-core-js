@@ -1,7 +1,7 @@
 import uuid4 from 'uuid4';
 
+import { SignatureOptions } from '../..';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import Payload from './Payload';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
@@ -15,7 +15,7 @@ interface MessageOptions {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class Message<PayloadSpecialization extends Payload> {
+export default abstract class Message {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
@@ -37,5 +37,13 @@ export default abstract class Message<PayloadSpecialization extends Payload> {
     //endregion
   }
 
-  public abstract unwrapPayload(privateKey: CryptoKey): PayloadSpecialization;
+  // TODO:
+  // public abstract unwrapPayload(privateKey: CryptoKey): PayloadSpecialization;
+
+  // This method would be concrete if TS allowed us to store the message type and version as
+  // properties
+  public abstract async serialize(
+    senderPrivateKey: CryptoKey,
+    signatureOptions?: SignatureOptions,
+  ): Promise<ArrayBuffer>;
 }
