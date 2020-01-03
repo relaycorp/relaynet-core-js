@@ -6,53 +6,28 @@ declare module 'pkijs' {
   // following expression to export things in bulk didn't have any effect:
   //   export * from "pkijs/src/_x509";
 
-  import AlgorithmIdentifier from 'pkijs/src/AlgorithmIdentifier';
-  import Attribute from 'pkijs/src/Attribute';
-  import AttributeTypeAndValue from 'pkijs/src/AttributeTypeAndValue';
-  import AuthorityKeyIdentifier from 'pkijs/src/AuthorityKeyIdentifier';
-  import BasicConstraints from 'pkijs/src/BasicConstraints';
-  import Certificate from 'pkijs/src/Certificate';
-  import ContentInfo from 'pkijs/src/ContentInfo';
-  import CryptoEngine from 'pkijs/src/CryptoEngine';
-  import EncapsulatedContentInfo from 'pkijs/src/EncapsulatedContentInfo';
-  import EnvelopedData from 'pkijs/src/EnvelopedData';
-  import Extension from 'pkijs/src/Extension';
-  import IssuerAndSerialNumber from 'pkijs/src/IssuerAndSerialNumber';
-  import KeyAgreeRecipientInfo from 'pkijs/src/KeyAgreeRecipientInfo';
-  import KeyTransRecipientInfo from 'pkijs/src/KeyTransRecipientInfo';
-  import OtherRecipientInfo from 'pkijs/src/OtherRecipientInfo';
-  import PublicKeyInfo from 'pkijs/src/PublicKeyInfo';
-  import RecipientInfo from 'pkijs/src/RecipientInfo';
-  import RelativeDistinguishedNames from 'pkijs/src/RelativeDistinguishedNames';
-  import RSAESOAEPParams from 'pkijs/src/RSAESOAEPParams';
-  import SignedAndUnsignedAttributes from 'pkijs/src/SignedAndUnsignedAttributes';
-  import SignedData from 'pkijs/src/SignedData';
-  import SignerInfo from 'pkijs/src/SignerInfo';
-
-  export {
-    AlgorithmIdentifier,
-    Attribute,
-    AttributeTypeAndValue,
-    AuthorityKeyIdentifier,
-    BasicConstraints,
-    Certificate,
-    ContentInfo,
-    CryptoEngine,
-    EncapsulatedContentInfo,
-    EnvelopedData,
-    Extension,
-    IssuerAndSerialNumber,
-    KeyAgreeRecipientInfo,
-    KeyTransRecipientInfo,
-    OtherRecipientInfo,
-    PublicKeyInfo,
-    RecipientInfo,
-    RelativeDistinguishedNames,
-    RSAESOAEPParams,
-    SignedAndUnsignedAttributes,
-    SignedData,
-    SignerInfo,
-  };
+  export {default as AlgorithmIdentifier} from 'pkijs/src/AlgorithmIdentifier';
+  export {default as Attribute} from 'pkijs/src/Attribute';
+  export {default as AttributeTypeAndValue} from 'pkijs/src/AttributeTypeAndValue';
+  export {default as AuthorityKeyIdentifier} from 'pkijs/src/AuthorityKeyIdentifier';
+  export {default as BasicConstraints} from 'pkijs/src/BasicConstraints';
+  export {default as Certificate} from 'pkijs/src/Certificate';
+  export {default as ContentInfo} from 'pkijs/src/ContentInfo';
+  export {default as CryptoEngine} from 'pkijs/src/CryptoEngine';
+  export {default as EncapsulatedContentInfo} from 'pkijs/src/EncapsulatedContentInfo';
+  export {default as EnvelopedData} from 'pkijs/src/EnvelopedData';
+  export {default as Extension} from 'pkijs/src/Extension';
+  export {default as IssuerAndSerialNumber} from 'pkijs/src/IssuerAndSerialNumber';
+  export {default as KeyAgreeRecipientInfo} from 'pkijs/src/KeyAgreeRecipientInfo';
+  export {default as KeyTransRecipientInfo} from 'pkijs/src/KeyTransRecipientInfo';
+  export {default as OtherRecipientInfo} from 'pkijs/src/OtherRecipientInfo';
+  export {default as PublicKeyInfo} from 'pkijs/src/PublicKeyInfo';
+  export {default as RecipientInfo} from 'pkijs/src/RecipientInfo';
+  export {default as RelativeDistinguishedNames} from 'pkijs/src/RelativeDistinguishedNames';
+  export {default as RSAESOAEPParams} from 'pkijs/src/RSAESOAEPParams';
+  export {default as SignedAndUnsignedAttributes} from 'pkijs/src/SignedAndUnsignedAttributes';
+  export {default as SignedData} from 'pkijs/src/SignedData';
+  export {default as SignerInfo} from 'pkijs/src/SignerInfo';
 
   // Export all the stuff that "@types/pkijs" doesn't export but we use here
 
