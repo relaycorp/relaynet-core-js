@@ -14,6 +14,7 @@ setEngine('nodeEngine', webcrypto, cryptoEngine);
 //region Exports
 
 export { default as RelaynetError } from './lib/RelaynetError';
+export * from './lib/crypto_wrappers/keyGenerators';
 
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
