@@ -1,6 +1,7 @@
 import uuid4 from 'uuid4';
 
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import Payload from './Payload';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
@@ -14,7 +15,7 @@ interface MessageOptions {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class Message {
+export default abstract class Message<PayloadSpecialization extends Payload> {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
@@ -23,18 +24,12 @@ export default abstract class Message {
   constructor(
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
-    payloadPlaintext?: ArrayBuffer,
+    readonly payloadSerialized: ArrayBuffer,
     options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
     this.date = options.date || new Date();
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
-
-    //region Payload
-    if (payloadPlaintext) {
-      this.importPayload(payloadPlaintext);
-    }
-    //endregion
 
     //region Sender certificate (chain)
     const initialChain = options.senderCertificateChain || new Set([]);
@@ -42,6 +37,5 @@ export default abstract class Message {
     //endregion
   }
 
-  public abstract exportPayload(): ArrayBuffer;
-  protected abstract importPayload(payloadPlaintext: ArrayBuffer): void;
+  public abstract unwrapPayload(privateKey: CryptoKey): PayloadSpecialization;
 }

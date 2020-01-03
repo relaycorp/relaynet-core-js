@@ -6,18 +6,10 @@ import Payload from './Payload';
 
 export const NON_ASCII_STRING = '❤こんにちは'; // Multi-byte characters
 
-export class StubMessage extends Message {
-  // @ts-ignore
-  // tslint:disable-next-line:readonly-keyword
-  public payloadPlaintext: ArrayBuffer;
-
-  public exportPayload(): ArrayBuffer {
-    return this.payloadPlaintext;
-  }
-
-  protected importPayload(payloadPlaintext: ArrayBuffer): void {
-    // tslint:disable-next-line:no-object-mutation
-    this.payloadPlaintext = payloadPlaintext;
+export class StubMessage extends Message<StubPayload> {
+  // tslint:disable-next-line:variable-name
+  public unwrapPayload(_privateKey: CryptoKey): StubPayload {
+    return new StubPayload();
   }
 }
 

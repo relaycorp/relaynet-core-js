@@ -2,13 +2,7 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import {
-  EncryptionOptions,
-  EnvelopedData,
-  SessionlessEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
-import Certificate from '../crypto_wrappers/x509/Certificate';
 import Message from './Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
@@ -45,7 +39,7 @@ export interface MessageFields {
   readonly signature: Buffer;
 }
 
-export class MessageSerializer<MessageSpecialization extends Message> {
+export class MessageSerializer<MessageSpecialization extends Message<any>> {
   // Ideally, the members of this class would be part of `Message`, but TS
   // doesn't support static abstract members:
   // https://github.com/microsoft/TypeScript/issues/34516
@@ -61,15 +55,12 @@ export class MessageSerializer<MessageSpecialization extends Message> {
    *
    * @param message The message to serialize.
    * @param senderPrivateKey The private key to sign the message.
-   * @param recipientCertificate The certificate whose public key is to be used
-   *   to encrypt the payload.
-   * @param options Any encryption/signature options.
+   * @param signatureOptions Any signature options.
    */
   public async serialize(
     message: MessageSpecialization,
     senderPrivateKey: CryptoKey,
-    recipientCertificate: Certificate,
-    options?: Partial<EncryptionOptions | cmsSignedData.SignatureOptions>,
+    signatureOptions?: Partial<cmsSignedData.SignatureOptions>,
   ): Promise<ArrayBuffer> {
     //region Validation
     validateRecipientAddressLength(message.recipientAddress);
@@ -108,14 +99,9 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     //endregion
 
     //region Payload
-    const envelopedData = await SessionlessEnvelopedData.encrypt(
-      message.exportPayload(),
-      recipientCertificate,
-      options as EncryptionOptions,
-    );
-    const envelopedDataSerialized = await envelopedData.serialize();
-    serialization.writeUInt32LE(envelopedDataSerialized.byteLength);
-    serialization.writeBuffer(Buffer.from(envelopedDataSerialized));
+    const payloadSerialized = Buffer.from(message.payloadSerialized);
+    serialization.writeUInt32LE(payloadSerialized.byteLength);
+    serialization.writeBuffer(payloadSerialized);
     //endregion
 
     const serializationBeforeSignature = serialization.toBuffer();
@@ -126,7 +112,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
       senderPrivateKey,
       message.senderCertificate,
       new Set([message.senderCertificate, ...message.senderCertificateChain]),
-      options as cmsSignedData.SignatureOptions,
+      signatureOptions,
     );
     validateSignatureLength(signature);
     const signatureLengthPrefix = Buffer.allocUnsafe(2);
@@ -141,10 +127,7 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     return bufferToArray(finalSerialization);
   }
 
-  public async deserialize(
-    serialization: ArrayBuffer,
-    recipientPrivateKey: CryptoKey,
-  ): Promise<MessageSpecialization> {
+  public async deserialize(serialization: ArrayBuffer): Promise<MessageSpecialization> {
     //region Parse and validate syntax
     const messageFields = parseMessage(serialization);
 
@@ -159,15 +142,10 @@ export class MessageSerializer<MessageSpecialization extends Message> {
     validateMessageTiming(messageFields, signatureVerification);
     //endregion
 
-    const cmsEnvelopedData = EnvelopedData.deserialize(
-      bufferToArray(messageFields.payload),
-    ) as SessionlessEnvelopedData;
-    const plaintext = await cmsEnvelopedData.decrypt(recipientPrivateKey);
-
     return new this.messageClass(
       messageFields.recipientAddress,
       signatureVerification.signerCertificate,
-      plaintext,
+      messageFields.payload,
       {
         date: new Date(messageFields.dateTimestamp * 1_000),
         id: messageFields.id,

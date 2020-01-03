@@ -5,17 +5,17 @@ import * as jestDateMock from 'jest-date-mock';
 import { SmartBuffer } from 'smart-buffer';
 
 import {
+  expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
   getMockContext,
   getPromiseRejection,
 } from '../_test_utils';
-import { EnvelopedData, SessionlessEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { NON_ASCII_STRING, StubMessage, StubPayload } from './_test_utils';
+import { NON_ASCII_STRING, StubMessage } from './_test_utils';
 import { MessageFields, MessageSerializer } from './MessageSerializer';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
@@ -59,7 +59,6 @@ afterEach(() => {
 describe('MessageSerializer', () => {
   let recipientAddress: string;
   let recipientCertificate: Certificate;
-  let recipientPrivateKey: CryptoKey;
   let senderPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
   beforeAll(async () => {
@@ -75,7 +74,6 @@ describe('MessageSerializer', () => {
       subjectPublicKey: recipientKeyPair.publicKey,
     });
     recipientAddress = recipientCertificate.getCommonName();
-    recipientPrivateKey = recipientKeyPair.privateKey;
 
     const senderKeyPair = await generateRSAKeyPair();
     senderPrivateKey = senderKeyPair.privateKey;
@@ -100,7 +98,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('magic', 'Relaynet');
@@ -110,7 +107,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty(
@@ -123,7 +119,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty(
@@ -141,7 +136,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('recipientAddressLength', address.length);
@@ -155,7 +149,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('recipientAddress', address);
@@ -166,7 +159,7 @@ describe('MessageSerializer', () => {
         const stubMessage = new StubMessage(invalidAddress, senderCertificate, PAYLOAD);
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey),
           new RAMFSyntaxError('Recipient address exceeds maximum length'),
         );
       });
@@ -177,7 +170,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('recipientAddress', NON_ASCII_STRING);
@@ -188,7 +180,7 @@ describe('MessageSerializer', () => {
         const stubMessage = new StubMessage(invalidAddress, senderCertificate, PAYLOAD);
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey),
           new RAMFSyntaxError('Recipient address exceeds maximum length'),
         );
       });
@@ -203,7 +195,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(messageParts).toHaveProperty('idLength', idLength);
@@ -215,7 +206,7 @@ describe('MessageSerializer', () => {
         const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey),
           new RAMFSyntaxError('Custom id exceeds maximum length'),
         );
       });
@@ -228,7 +219,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         const expectedId = Buffer.from(NON_ASCII_STRING, 'ascii').toString('ascii');
@@ -243,7 +233,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           stubMessage,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
@@ -259,7 +248,7 @@ describe('MessageSerializer', () => {
         });
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey),
           new RAMFSyntaxError('Date cannot be before Unix epoch'),
         );
       });
@@ -273,7 +262,7 @@ describe('MessageSerializer', () => {
         });
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(stubMessage, senderPrivateKey),
           new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits'),
         );
       });
@@ -285,7 +274,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
-          recipientCertificate,
         );
 
         const messageParts = parseMessage(messageSerialized);
@@ -300,7 +288,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
-          recipientCertificate,
         );
         const messageParts = parseMessage(messageSerialized);
         expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(message.ttl);
@@ -312,7 +299,6 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
-          recipientCertificate,
         );
 
         const messageParts = parseMessage(messageSerialized);
@@ -324,7 +310,7 @@ describe('MessageSerializer', () => {
           ttl: -1,
         });
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey),
           new RAMFSyntaxError('TTL cannot be negative'),
         );
       });
@@ -334,58 +320,19 @@ describe('MessageSerializer', () => {
           ttl: 2 ** 24,
         });
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey),
           new RAMFSyntaxError('TTL must be less than 2^24'),
         );
       });
     });
 
-    describe('Payload', () => {
-      test('Payload should be encrypted', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
+    test('Payload should be serialized as is', async () => {
+      const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
 
-        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+      const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
-        expect(SessionlessEnvelopedData.encrypt).toBeCalledTimes(1);
-        expect(SessionlessEnvelopedData.encrypt).toBeCalledWith(
-          StubPayload.BUFFER,
-          recipientCertificate,
-          undefined,
-        );
-
-        const messageParts = parseMessage(messageSerialized);
-        const payloadCiphertext = messageParts.payload;
-        const cmsEnvelopedData = (await EnvelopedData.deserialize(
-          bufferToArray(payloadCiphertext),
-        )) as SessionlessEnvelopedData;
-        const plaintext = await cmsEnvelopedData.decrypt(recipientPrivateKey);
-        expect(plaintext).toEqual(StubPayload.BUFFER);
-      });
-
-      test('Encryption options should be honoured', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
-
-        const encryptionOptions = { aesKeySize: 256 };
-        await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-          encryptionOptions,
-        );
-
-        expect(SessionlessEnvelopedData.encrypt).toBeCalledTimes(1);
-        expect(SessionlessEnvelopedData.encrypt).toBeCalledWith(
-          StubPayload.BUFFER,
-          recipientCertificate,
-          encryptionOptions,
-        );
-      });
+      const messageParts = parseMessage(messageSerialized);
+      expectBuffersToEqual(messageParts.payload, Buffer.from(PAYLOAD));
     });
 
     describe('Signature', () => {
@@ -400,11 +347,7 @@ describe('MessageSerializer', () => {
         });
 
         jest.spyOn(cmsSignedData, 'sign');
-        messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
         expect(cmsSignedData.sign).toBeCalledTimes(1);
         // @ts-ignore
         cmsSignArgs = cmsSignedData.sign.mock.calls[0];
@@ -455,7 +398,7 @@ describe('MessageSerializer', () => {
         jest.spyOn(cmsSignedData, 'sign').mockReturnValue(Promise.resolve(mockSignature));
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate),
+          STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey),
           new RAMFSyntaxError(
             `Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`,
           ),
@@ -474,7 +417,7 @@ describe('MessageSerializer', () => {
           const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
 
           jest.spyOn(cmsSignedData, 'sign');
-          await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, recipientCertificate, {
+          await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey, {
             hashingAlgorithmName,
           });
           expect(cmsSignedData.sign).toBeCalledTimes(1);
@@ -491,7 +434,7 @@ describe('MessageSerializer', () => {
       test('Input should be refused if it does not start with "Relaynet"', async () => {
         const serialization = bufferToArray(Buffer.from('Relaycorp'));
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFSyntaxError('Serialization is not a valid RAMF message: Relaynet is not defined'),
         );
       });
@@ -503,14 +446,10 @@ describe('MessageSerializer', () => {
           STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet,
         );
         const altMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        const serialization = await altSerializer.serialize(
-          altMessage,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await altSerializer.serialize(altMessage, senderPrivateKey);
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFSyntaxError('Expected concrete message type 0x44 but got 0x45'),
         );
       });
@@ -522,14 +461,10 @@ describe('MessageSerializer', () => {
           STUB_MESSAGE_SERIALIZER.concreteMessageVersionOctet + 1,
         );
         const altMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        const serialization = await altSerializer.serialize(
-          altMessage,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await altSerializer.serialize(altMessage, senderPrivateKey);
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFSyntaxError('Expected concrete message version 0x2 but got 0x3'),
         );
       });
@@ -539,15 +474,8 @@ describe('MessageSerializer', () => {
       test('Address should be serialized with length prefix', async () => {
         const address = 'a'.repeat(2 ** 10 - 1);
         const message = new StubMessage(address, senderCertificate, PAYLOAD);
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
         expect(deserialization.recipientAddress).toEqual(address);
       });
 
@@ -555,7 +483,7 @@ describe('MessageSerializer', () => {
         const address = 'a'.repeat(2 ** 10);
         const messageSerialized = await serializeWithoutValidation({ address });
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized),
           new RAMFSyntaxError('Recipient address exceeds maximum length'),
         );
       });
@@ -563,15 +491,8 @@ describe('MessageSerializer', () => {
       test('Address should be UTF-8 encoded', async () => {
         const address = `scheme://${NON_ASCII_STRING}.com`;
         const message = new StubMessage(address, senderCertificate, PAYLOAD);
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
         expect(deserialization.recipientAddress).toEqual(address);
       });
     });
@@ -580,30 +501,16 @@ describe('MessageSerializer', () => {
       test('Id should be serialized with length prefix', async () => {
         const id = 'a'.repeat(2 ** 8 - 1);
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
         expect(deserialization.id).toEqual(id);
       });
 
       test('Id should be ASCII-encoded', async () => {
         const id = NON_ASCII_STRING;
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
         const expectedId = Buffer.from(id, 'ascii').toString('ascii');
         expect(deserialization.id).toEqual(expectedId);
       });
@@ -627,14 +534,10 @@ describe('MessageSerializer', () => {
         const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           stubSenderKeyPair.privateKey,
-          recipientCertificate,
         );
 
         jestDateMock.advanceTo(stubDate);
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
 
         expect(deserialization.date).toEqual(stubDate);
       });
@@ -647,17 +550,10 @@ describe('MessageSerializer', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: stubDate,
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         jestDateMock.advanceTo(stubDate);
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
 
         expect(deserialization.date).toEqual(stubDate);
       });
@@ -666,15 +562,11 @@ describe('MessageSerializer', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: new Date(STUB_DATE.getTime() + 1_000),
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         jestDateMock.advanceTo(STUB_DATE);
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFValidationError('Message date is in the future', parseMessage(serialization)),
         );
       });
@@ -684,15 +576,11 @@ describe('MessageSerializer', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: new Date(certStartDate.getTime() - 1_000),
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         jestDateMock.advanceTo(certStartDate);
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFValidationError(
             'Message was created before the sender certificate was valid',
             parseMessage(serialization),
@@ -705,17 +593,10 @@ describe('MessageSerializer', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: certEndDate,
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         jestDateMock.advanceTo(message.date);
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
 
         const expectedDate = new Date(certEndDate);
         expectedDate.setMilliseconds(0);
@@ -727,15 +608,11 @@ describe('MessageSerializer', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           date: new Date(certEndDate.getTime() + 1_000),
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         jestDateMock.advanceTo(message.date);
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFValidationError(
             'Message was created after the sender certificate expired',
             parseMessage(serialization),
@@ -748,16 +625,9 @@ describe('MessageSerializer', () => {
       test('TTL should be serialized as 24-bit unsigned integer', async () => {
         const ttl = 2 ** 24 - 1;
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { ttl });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
-        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(
-          serialization,
-          recipientPrivateKey,
-        );
+        const deserialization = await STUB_MESSAGE_SERIALIZER.deserialize(serialization);
 
         expect(deserialization.ttl).toEqual(ttl);
       });
@@ -767,59 +637,36 @@ describe('MessageSerializer', () => {
           date: senderCertificate.pkijsCertificate.notBefore.value,
           ttl: 1,
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         const currentDate = new Date(message.date);
         currentDate.setSeconds(currentDate.getSeconds() + message.ttl);
         currentDate.setMilliseconds(1); // Should be greater than zero so we can test rounding too
         jestDateMock.advanceTo(currentDate);
-        await expect(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
-        ).toResolve();
+        await expect(STUB_MESSAGE_SERIALIZER.deserialize(serialization)).toResolve();
       });
 
       test('TTL in the past should not be accepted', async () => {
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
           ttl: 1,
         });
-        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+        const serialization = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
         jestDateMock.advanceTo(message.date.getTime() + (message.ttl + 1) * 1_000);
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(serialization, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(serialization),
           new RAMFValidationError('Message already expired', parseMessage(serialization)),
         );
       });
     });
 
-    describe('Payload', () => {
-      test('Payload should be decrypted', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        jest.spyOn(SessionlessEnvelopedData, 'encrypt');
-        const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
-          message,
-          senderPrivateKey,
-          recipientCertificate,
-        );
+    test('Payload should be serialized with length prefix', async () => {
+      const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+      const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(message, senderPrivateKey);
 
-        jest.spyOn(SessionlessEnvelopedData.prototype, 'decrypt');
-        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
-          messageSerialized,
-          recipientPrivateKey,
-        );
+      const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized);
 
-        expect(SessionlessEnvelopedData.prototype.decrypt).toBeCalledWith(recipientPrivateKey);
-
-        expect(messageDeserialized.exportPayload()).toEqual(PAYLOAD);
-      });
+      expect(messageDeserialized.payloadSerialized).toEqual(Buffer.from(PAYLOAD));
     });
 
     describe('Signature', () => {
@@ -829,11 +676,10 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
-          recipientCertificate,
         );
 
         jest.spyOn(cmsSignedData, 'verifySignature');
-        await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey);
+        await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized);
 
         const signatureCiphertext = await getMockContext(cmsSignedData.sign).results[0].value;
         const signaturePlaintext = messageSerialized.slice(
@@ -861,7 +707,7 @@ describe('MessageSerializer', () => {
         const messageSerialized = await serializeWithoutValidation({}, invalidSignature);
 
         const error = await getPromiseRejection<RAMFValidationError>(
-          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized),
         );
         expect(error).toBeInstanceOf(RAMFValidationError);
         expect(error.message).toEqual(
@@ -885,7 +731,7 @@ describe('MessageSerializer', () => {
         const messageSerialized = await serializeWithoutValidation({ id }, invalidSignature);
 
         const error = await getPromiseRejection<RAMFValidationError>(
-          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized),
         );
         expect(error.invalidMessageFields).toHaveProperty('id', id);
       });
@@ -895,13 +741,9 @@ describe('MessageSerializer', () => {
         const messageSerialized = await STUB_MESSAGE_SERIALIZER.serialize(
           message,
           senderPrivateKey,
-          recipientCertificate,
         );
 
-        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(
-          messageSerialized,
-          recipientPrivateKey,
-        );
+        const messageDeserialized = await STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized);
 
         expectPkijsValuesToBeEqual(
           messageDeserialized.senderCertificate.pkijsCertificate,
@@ -911,10 +753,7 @@ describe('MessageSerializer', () => {
 
       test('Sender certificate chain should be extracted from signature', async () => {
         const caCertificate = await generateStubCert();
-        const envelopedData = await SessionlessEnvelopedData.encrypt(PAYLOAD, recipientCertificate);
-        const messageSerialized = await serializeWithoutValidation({
-          payloadBuffer: envelopedData.serialize(),
-        });
+        const messageSerialized = await serializeWithoutValidation({});
 
         jest.spyOn(cmsSignedData, 'verifySignature').mockImplementationOnce(async () => ({
           signerCertificate: senderCertificate,
@@ -922,7 +761,6 @@ describe('MessageSerializer', () => {
         }));
         const { senderCertificateChain } = await STUB_MESSAGE_SERIALIZER.deserialize(
           messageSerialized,
-          recipientPrivateKey,
         );
 
         expect(senderCertificateChain).toEqual(new Set([senderCertificate, caCertificate]));
@@ -934,7 +772,7 @@ describe('MessageSerializer', () => {
         const messageSerialized = await serializeWithoutValidation({}, signatureBuffer);
 
         await expectPromiseToReject(
-          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized, recipientPrivateKey),
+          STUB_MESSAGE_SERIALIZER.deserialize(messageSerialized),
           new RAMFSyntaxError(
             `Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`,
           ),
