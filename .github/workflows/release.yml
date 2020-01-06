@@ -35,12 +35,11 @@ jobs:
           gem install bundler
           cd docs
           bundle install --path vendor/bundle
-          bundle exec jekyll build --destination /tmp/docs
+          bundle exec jekyll build
 
           # TypeDoc docs:
           cd ..
-          DEST_DIR=/tmp/docs/api npm run doc-api-ci
-      - run: find /tmp/docs
+          npm run doc-api
 
       - name: Release
         env:
@@ -54,6 +53,6 @@ jobs:
           # https://github.com/peaceiris/actions-gh-pages/issues/9
           ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: /tmp/docs
+          PUBLISH_DIR: ./build/docs
         with:
           emptyCommits: false
