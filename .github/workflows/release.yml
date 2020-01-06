@@ -36,7 +36,7 @@ jobs:
         with:
           source: ./docs
           destination: ${{ github.workspace }}/build/docs
-      - run: mkdir ${{ github.workspace }}/build/docs/api
+      - run: mkdir /tmp/docs
       - name: Generate API documentation (TypeDoc)
         run: npm run doc-api-ci
         env:
