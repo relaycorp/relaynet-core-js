@@ -32,6 +32,7 @@ jobs:
       - name: Generate docs
         run: |
           # Jekyll docs:
+          gem install bundler
           cd docs
           bundle install --path vendor/bundle
           bundle exec jekyll build --destination /tmp/docs
