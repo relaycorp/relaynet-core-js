@@ -35,6 +35,7 @@ jobs:
         run: npm run doc-api-ci
         env:
           DEST_DIR: /tmp/docs/api
+      - run: find /tmp/docs
 
       - name: Release
         env:
