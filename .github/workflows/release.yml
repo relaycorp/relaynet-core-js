@@ -35,7 +35,7 @@ jobs:
         uses: gha-utilities/jekyll-build@v0.0.2
         with:
           source: ./docs
-          destination: ./build/docs
+          destination: ${{ github.workspace }}/build/docs
       - name: Generate API documentation (TypeDoc)
         run: npm run doc-api
       - name: Publish documentation
