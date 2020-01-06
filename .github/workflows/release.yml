@@ -38,3 +38,13 @@ jobs:
           destination: ./build/docs
       - name: Generate API documentation (TypeDoc)
         run: npm run doc-api
+      - name: Publish documentation
+        uses: peaceiris/actions-gh-pages@v2.6.0
+        env:
+          # We have to use a deploy key instead of GITHUB_TOKEN :(
+          # https://github.com/peaceiris/actions-gh-pages/issues/9
+          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./build/docs
+        with:
+          emptyCommits: false
