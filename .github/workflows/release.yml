@@ -35,12 +35,11 @@ jobs:
         uses: gha-utilities/jekyll-build@v0.0.2
         with:
           source: ./docs
-          destination: ${{ github.workspace }}/build/docs
-      - run: mkdir /tmp/docs
+          destination: /tmp/docs
       - name: Generate API documentation (TypeDoc)
         run: npm run doc-api-ci
         env:
-          DEST_DIR: ${{ github.workspace }}/build/docs/api
+          DEST_DIR: /tmp/docs/api
       - name: Publish documentation
         uses: peaceiris/actions-gh-pages@v2.6.0
         env:
@@ -48,6 +47,6 @@ jobs:
           # https://github.com/peaceiris/actions-gh-pages/issues/9
           ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./build/docs
+          PUBLISH_DIR: /tmp/docs
         with:
           emptyCommits: false
