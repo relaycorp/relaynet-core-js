@@ -33,9 +33,7 @@
     "test:integration": "jest --config jest.config.integration.js",
     "cov": "run-s build test:unit && opn coverage/lcov-report/index.html",
     "cov:send": "codecov",
-    "doc": "run-s doc:html && opn build/docs/index.html",
-    "doc:html": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --out build/docs",
-    "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
+    "doc-api": "typedoc src/index.ts --out build/docs/api",
     "clean": "trash build test"
   },
   "engines": {

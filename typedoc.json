@@ -1,0 +1,8 @@
+{
+  "exclude": ["**/*.spec.ts"],
+  "excludeNotExported": true,
+  "ignoreCompilerErrors": true,
+  "mode": "file",
+  "target": "ES6",
+  "theme": "minimal"
+}
