@@ -37,7 +37,9 @@ jobs:
           source: ./docs
           destination: ${{ github.workspace }}/build/docs
       - name: Generate API documentation (TypeDoc)
-        run: npm run doc-api
+        run: npm run doc-api-ci
+        env:
+          DEST_DIR: ${{ github.workspace }}/build/docs/api
       - name: Publish documentation
         uses: peaceiris/actions-gh-pages@v2.6.0
         env:

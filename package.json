@@ -11,6 +11,7 @@
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
   "repository": "https://github.com/relaycorp/relaynet-core-js",
+  "homepage": "https://docs.relaycorp.tech/relaynet-core-js/",
   "license": "MIT",
   "keywords": [
     "relaynet"
@@ -34,6 +35,7 @@
     "cov": "run-s build test:unit && opn coverage/lcov-report/index.html",
     "cov:send": "codecov",
     "doc-api": "typedoc src/index.ts --out build/docs/api",
+    "doc-api-ci": "typedoc src/index.ts --out ${DEST_DIR}",
     "clean": "trash build test"
   },
   "engines": {
