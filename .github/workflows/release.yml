@@ -25,11 +25,6 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
 
       - name: Generate verbose documentation (Jekyll)
         uses: gha-utilities/jekyll-build@v0.0.2
@@ -40,6 +35,12 @@ jobs:
         run: npm run doc-api-ci
         env:
           DEST_DIR: /tmp/docs/api
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
       - name: Publish documentation
         uses: peaceiris/actions-gh-pages@v2.6.0
         env:
