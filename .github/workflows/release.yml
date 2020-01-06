@@ -31,5 +31,10 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
 
+      - name: Generate verbose documentation (Jekyll)
+        uses: gha-utilities/jekyll-build@v0.0.2
+        with:
+          source: ./docs
+          destination: ./build/docs
       - name: Generate API documentation (TypeDoc)
         run: npm run doc-api

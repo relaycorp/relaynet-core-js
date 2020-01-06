@@ -1,0 +1,10 @@
+title: Relaynet SDK
+
+markdown: kramdown
+
+theme: millidocs
+remote_theme: alexander-heimbuch/millidocs
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
