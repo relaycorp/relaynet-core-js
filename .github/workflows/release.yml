@@ -26,16 +26,19 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Generate verbose documentation (Jekyll)
-        uses: gha-utilities/jekyll-build@v0.0.2
+      - uses: actions/setup-ruby@v1
         with:
-          source: ./docs
-          destination: /tmp/docs
-      - run: find /tmp/docs
-      - name: Generate API documentation (TypeDoc)
-        run: npm run doc-api-ci
-        env:
-          DEST_DIR: /tmp/docs/api
+          ruby-version: '2.5'
+      - name: Generate docs
+        run: |
+          # Jekyll docs:
+          cd docs
+          bundle install --path vendor/bundle
+          bundle exec jekyll build --destination /tmp/docs
+
+          # TypeDoc docs:
+          cd ..
+          DEST_DIR=/tmp/docs/api npm run doc-api-ci
       - run: find /tmp/docs
 
       - name: Release
