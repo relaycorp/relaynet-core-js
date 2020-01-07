@@ -2,10 +2,11 @@ title: Relaynet SDK
 
 markdown: kramdown
 
-baseurl: "/relaynet-core-js"
+baseurl: /relaynet-core-js
 destination: ../build/docs
-theme: millidocs
-remote_theme: alexander-heimbuch/millidocs
+remote_theme: pmarsceill/just-the-docs@v0.2.7-r
+
+search_enabled: false
 
 exclude:
   - Gemfile
