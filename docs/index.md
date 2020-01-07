@@ -4,7 +4,9 @@ title: Relaynet SDK
 ---
 # Relaynet SDK
 
-This library implements the core of Relaynet and is meant to be used by anyone using the network from a Node.js application.
+This library implements the core of [Relaynet](https://relaynet.link/) and is meant to be used by anyone using the network from a Node.js application.
+
+Please note that this documentation is mostly incomplete because the interface exposed by this library is changing rapidly as of this writing. We expect the library to reach a stable status and its documentation to be completed by the end of Q1 2020.
 
 ## Install
 
