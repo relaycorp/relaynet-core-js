@@ -41,10 +41,8 @@ workflows:
       - node-10:
           filters:
             branches:
-              ignore:
-                - gh-pages
+              ignore: gh-pages
       - node-12:
           filters:
             branches:
-              ignore:
-                - gh-pages
+              ignore: gh-pages
