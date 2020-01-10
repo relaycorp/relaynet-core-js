@@ -6,14 +6,14 @@ jobs:
     working_directory: ~/typescript-starter
     steps:
       - test:
-          nodeVersion: "10"
+          nodeVersion: '10'
   'node-12':
     docker:
       - image: circleci/node:12
     working_directory: ~/typescript-starter
     steps:
       - test:
-          nodeVersion: "12"
+          nodeVersion: '12'
 
 commands:
   test:
@@ -38,5 +38,13 @@ workflows:
   version: 2
   build:
     jobs:
-      - node-10
-      - node-12
+      - node-10:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+      - node-12:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
