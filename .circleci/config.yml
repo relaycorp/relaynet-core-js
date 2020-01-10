@@ -3,14 +3,14 @@ jobs:
   'node-10':
     docker:
       - image: circleci/node:10
-    working_directory: ~/typescript-starter
+    working_directory: ~/src
     steps:
       - test:
           nodeVersion: '10'
   'node-12':
     docker:
       - image: circleci/node:12
-    working_directory: ~/typescript-starter
+    working_directory: ~/src
     steps:
       - test:
           nodeVersion: '12'
