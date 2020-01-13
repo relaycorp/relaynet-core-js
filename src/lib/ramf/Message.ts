@@ -5,7 +5,7 @@ import Certificate from '../crypto_wrappers/x509/Certificate';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
-interface MessageOptions {
+export interface MessageOptions {
   readonly id: string;
   readonly date: Date;
   readonly ttl: number;
