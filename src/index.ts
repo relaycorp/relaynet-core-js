@@ -22,7 +22,7 @@ export { default as CertificateError } from './lib/crypto_wrappers/x509/Certific
 export * from './lib/pki';
 
 // CMS
-export { EncryptionOptions } from './lib/crypto_wrappers/cms/envelopedData';
+export * from './lib/crypto_wrappers/cms/envelopedData';
 export { SignatureOptions } from './lib/crypto_wrappers/cms/signedData';
 
 // RAMF
