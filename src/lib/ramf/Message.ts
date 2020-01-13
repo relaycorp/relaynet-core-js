@@ -37,9 +37,6 @@ export default abstract class Message {
     //endregion
   }
 
-  // TODO:
-  // public abstract unwrapPayload(privateKey: CryptoKey): PayloadSpecialization;
-
   // This method would be concrete if TS allowed us to store the message type and version as
   // properties
   public abstract async serialize(
