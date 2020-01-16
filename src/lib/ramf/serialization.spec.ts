@@ -13,7 +13,7 @@ import {
   getPromiseRejection,
 } from '../_test_utils';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
-import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
+import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { NON_ASCII_STRING, StubMessage } from './_test_utils';
 import RAMFSyntaxError from './RAMFSyntaxError';

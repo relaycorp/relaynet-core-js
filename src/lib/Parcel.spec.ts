@@ -2,7 +2,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { generateStubCert, getMockContext } from './_test_utils';
-import { generateRSAKeyPair } from './crypto_wrappers/keyGenerators';
+import { generateRSAKeyPair } from './crypto_wrappers/keys';
 import Parcel from './Parcel';
 import * as serialization from './ramf/serialization';
 

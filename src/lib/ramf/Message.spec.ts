@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert } from '../_test_utils';
-import { generateRSAKeyPair } from '../crypto_wrappers/keyGenerators';
+import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { StubMessage } from './_test_utils';
 

@@ -12,7 +12,7 @@ import {
   sha256Hex,
 } from '../../_test_utils';
 import * as oids from '../../oids';
-import { generateRSAKeyPair } from '../keyGenerators';
+import { generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';

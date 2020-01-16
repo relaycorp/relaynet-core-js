@@ -13,7 +13,7 @@ import {
 } from '../../_test_utils';
 import * as oids from '../../oids';
 import { issueInitialDHKeyCertificate } from '../../pki';
-import { generateECDHKeyPair, generateRSAKeyPair } from '../keyGenerators';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';

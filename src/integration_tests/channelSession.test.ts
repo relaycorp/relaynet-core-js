@@ -4,13 +4,14 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { expectBuffersToEqual } from '../lib/_test_utils';
-import { getPkijsCrypto } from '../lib/crypto_wrappers/_utils';
 import { SessionEnvelopedData } from '../lib/crypto_wrappers/cms/envelopedData';
-import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keyGenerators';
+import {
+  derDeserializeECDHPublicKey,
+  generateECDHKeyPair,
+  generateRSAKeyPair,
+} from '../lib/crypto_wrappers/keys';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
 import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/pki';
-
-const cryptoEngine = getPkijsCrypto();
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
@@ -104,13 +105,10 @@ test('Encryption and decryption with subsequent DH keys', async () => {
 });
 
 async function deserializeDhPublicKey(publicKeyDer: ArrayBuffer): Promise<CryptoKey> {
-  return cryptoEngine.importKey(
-    'spki',
-    publicKeyDer,
-    { name: 'ECDH', namedCurve: 'P-256' },
-    true,
-    [],
-  );
+  return derDeserializeECDHPublicKey(Buffer.from(publicKeyDer), {
+    name: 'ECDH',
+    namedCurve: 'P-256',
+  });
 }
 
 function checkRecipientInfo(
