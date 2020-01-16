@@ -168,6 +168,12 @@ export class SessionEnvelopedData extends EnvelopedData {
     return { keyId, publicKeyDer };
   }
 
+  public getRecipientKeyId(): number {
+    const recipientCertificate = this.pkijsEnvelopedData.recipientInfos[0].value
+      .recipientCertificate;
+    return convertAsn1IntegerToNumber(recipientCertificate.serialNumber);
+  }
+
   public async decrypt(
     privateKey: CryptoKey,
     dhRecipientCertificate: Certificate,
@@ -220,7 +226,11 @@ function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {
     );
   }
 
-  const keyIdString = originatorKeyIds[0].valueBlock.toString();
+  return convertAsn1IntegerToNumber(originatorKeyIds[0]);
+}
+
+function convertAsn1IntegerToNumber(asn1Integer: asn1js.Integer): number {
+  const keyIdString = asn1Integer.valueBlock.toString();
   return parseInt(keyIdString, 10);
 }
 

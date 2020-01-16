@@ -436,6 +436,13 @@ describe('SessionEnvelopedData', () => {
     });
   });
 
+  test('getRecipientKeyId() should return the recipient key id', async () => {
+    const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+    const actualKeyId = envelopedData.getRecipientKeyId();
+    expect(actualKeyId).toEqual(bobDhCertificate.pkijsCertificate.serialNumber.valueBlock.valueDec);
+  });
+
   describe('decrypt', () => {
     test('Decryption with the wrong private key should fail', async () => {
       const differentDhKeyPair = await generateECDHKeyPair();
