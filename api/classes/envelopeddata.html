@@ -2382,6 +2382,9 @@ img {
 					<a href="envelopeddata.html#pkijsenvelopeddata" class="tsd-kind-icon">pkijs<wbr>Enveloped<wbr>Data</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="envelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
 					<a href="envelopeddata.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
@@ -2428,6 +2431,7 @@ img {
 					<section class="tsd-index-section tsd-is-external">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="envelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="envelopeddata.html#serialize" class="tsd-kind-icon">serialize</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="envelopeddata.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
 						</ul>
@@ -2447,7 +2451,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/8d0a300/src/lib/crypto_wrappers/cms/envelopedData.ts#L67">src/lib/crypto_wrappers/cms/envelopedData.ts:67</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce6de8d/src/lib/crypto_wrappers/cms/envelopedData.ts#L67">src/lib/crypto_wrappers/cms/envelopedData.ts:67</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2469,13 +2473,36 @@ img {
 				<div class="tsd-signature tsd-kind-icon">pkijs<wbr>Enveloped<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">pkijs.EnvelopedData</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/8d0a300/src/lib/crypto_wrappers/cms/envelopedData.ts#L69">src/lib/crypto_wrappers/cms/envelopedData.ts:69</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce6de8d/src/lib/crypto_wrappers/cms/envelopedData.ts#L69">src/lib/crypto_wrappers/cms/envelopedData.ts:69</a></li>
 					</ul>
 				</aside>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
 			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="decrypt" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> decrypt</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">decrypt<span class="tsd-signature-symbol">(</span>privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce6de8d/src/lib/crypto_wrappers/cms/envelopedData.ts#L79">src/lib/crypto_wrappers/cms/envelopedData.ts:79</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>privateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
 				<a name="serialize" class="tsd-anchor"></a>
 				<h3>serialize</h3>
@@ -2486,7 +2513,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/8d0a300/src/lib/crypto_wrappers/cms/envelopedData.ts#L71">src/lib/crypto_wrappers/cms/envelopedData.ts:71</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce6de8d/src/lib/crypto_wrappers/cms/envelopedData.ts#L71">src/lib/crypto_wrappers/cms/envelopedData.ts:71</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ArrayBuffer</span></h4>
@@ -2503,7 +2530,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/8d0a300/src/lib/crypto_wrappers/cms/envelopedData.ts#L39">src/lib/crypto_wrappers/cms/envelopedData.ts:39</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce6de8d/src/lib/crypto_wrappers/cms/envelopedData.ts#L39">src/lib/crypto_wrappers/cms/envelopedData.ts:39</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
