@@ -75,6 +75,8 @@ export abstract class EnvelopedData {
     });
     return contentInfo.toSchema().toBER(false);
   }
+
+  public abstract async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer>;
 }
 
 /**
@@ -174,15 +176,20 @@ export class SessionEnvelopedData extends EnvelopedData {
     return convertAsn1IntegerToNumber(recipientCertificate.serialNumber);
   }
 
-  public async decrypt(
-    privateKey: CryptoKey,
-    dhRecipientCertificate: Certificate,
-  ): Promise<ArrayBuffer> {
-    return pkijsDecrypt(
-      this.pkijsEnvelopedData,
-      privateKey,
-      dhRecipientCertificate.pkijsCertificate,
-    );
+  public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
+    // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
+    // uses it for is to get the public key algorithm. Which you can get from the private key.
+    const recipientCertificate = this.pkijsEnvelopedData.recipientInfos[0].value
+      .recipientCertificate;
+    const dhCertificate: pkijs.Certificate = {
+      subjectPublicKeyInfo: {
+        // @ts-ignore
+        algorithm: {
+          algorithmParams: recipientCertificate.subjectPublicKeyInfo.algorithm.algorithmParams,
+        },
+      },
+    };
+    return pkijsDecrypt(this.pkijsEnvelopedData, dhPrivateKey, dhCertificate);
   }
 }
 

@@ -446,18 +446,11 @@ describe('SessionEnvelopedData', () => {
   describe('decrypt', () => {
     test('Decryption with the wrong private key should fail', async () => {
       const differentDhKeyPair = await generateECDHKeyPair();
-      const differentCertificate = await issueInitialDHKeyCertificate({
-        dhPublicKey: differentDhKeyPair.publicKey,
-        nodeCertificate,
-        nodePrivateKey,
-        serialNumber: 3,
-        validityEndDate: TOMORROW,
-      });
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
       expect.hasAssertions();
       try {
-        await envelopedData.decrypt(differentDhKeyPair.privateKey, differentCertificate);
+        await envelopedData.decrypt(differentDhKeyPair.privateKey);
       } catch (error) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toStartWith(`Decryption failed: ${error.cause().message}`);
@@ -467,21 +460,39 @@ describe('SessionEnvelopedData', () => {
     test('Decryption should succeed with the right private key', async () => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
-      const decryptedPlaintext = await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
+      const decryptedPlaintext = await envelopedData.decrypt(bobDhPrivateKey);
       expectBuffersToEqual(decryptedPlaintext, plaintext);
     });
 
-    test('Recipient DH public key should be used to calculate shared secret', async () => {
+    test('Recipient DH certificate should be faked to set the key algorithm', async () => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
       jest.spyOn(pkijs.EnvelopedData.prototype, 'decrypt');
-      await envelopedData.decrypt(bobDhPrivateKey, bobDhCertificate);
+      await envelopedData.decrypt(bobDhPrivateKey);
 
       const pkijsDecryptCall = getMockContext(pkijs.EnvelopedData.prototype.decrypt).calls[0];
       const pkijsDecryptCallArgs = pkijsDecryptCall[1];
-      expect(pkijsDecryptCallArgs).toHaveProperty(
-        'recipientCertificate',
-        bobDhCertificate.pkijsCertificate,
+      expect(
+        pkijsDecryptCallArgs.recipientCertificate.subjectPublicKeyInfo.algorithm.algorithmParams.valueBlock.toString(),
+      ).toEqual(
+        bobDhCertificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams.valueBlock.toString(),
+      );
+    });
+
+    test('Decryption with mismatching key algorithms should fail', async () => {
+      // This is a safeguard for the workaround to avoid having to pass the recipientCertificate
+      // to PKI.js EnvelopedData.encrypt().
+      const { privateKey } = await generateECDHKeyPair('P-384');
+      expect((privateKey.algorithm as EcKeyAlgorithm).namedCurve).not.toEqual(
+        (bobDhPrivateKey.algorithm as EcKeyAlgorithm).namedCurve,
+      );
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+      await expectPromiseToReject(
+        envelopedData.decrypt(privateKey),
+        // Leaving the typos unchanged because they come from a dependency of PKI.js and I
+        // want to make sure this scenario fails for the expected reason.
+        new CMSError('Decryption failed: Named corves of EC keys are not equals'),
       );
     });
   });

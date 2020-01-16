@@ -60,10 +60,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   // Run 1: Alice initiates contact with Bob. Bob decrypts message.
   const plaintext1 = bufferToArray(Buffer.from('Hi. My name is Alice.'));
   const encryptionResult1 = await SessionEnvelopedData.encrypt(plaintext1, bobDhCertificate);
-  const decryptedPlaintext1 = await encryptionResult1.envelopedData.decrypt(
-    bobKeyPair1.privateKey,
-    bobDhCertificate,
-  );
+  const decryptedPlaintext1 = await encryptionResult1.envelopedData.decrypt(bobKeyPair1.privateKey);
   expectBuffersToEqual(decryptedPlaintext1, plaintext1);
   checkRecipientInfo(encryptionResult1.envelopedData, bobDhCertificate);
 
@@ -82,7 +79,6 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   const encryptionResult2 = await SessionEnvelopedData.encrypt(plaintext2, aliceDhCert1);
   const decryptedPlaintext2 = await encryptionResult2.envelopedData.decrypt(
     encryptionResult1.dhPrivateKey as CryptoKey,
-    aliceDhCert1,
   );
   expectBuffersToEqual(decryptedPlaintext2, plaintext2);
   checkRecipientInfo(encryptionResult2.envelopedData, aliceDhCert1);
@@ -102,7 +98,6 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   const encryptionResult3 = await SessionEnvelopedData.encrypt(plaintext3, bobDhCert2);
   const decryptedPlaintext3 = await encryptionResult3.envelopedData.decrypt(
     encryptionResult2.dhPrivateKey as CryptoKey,
-    bobDhCert2,
   );
   expectBuffersToEqual(decryptedPlaintext3, plaintext3);
   checkRecipientInfo(encryptionResult3.envelopedData, bobDhCert2);
