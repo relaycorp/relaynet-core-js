@@ -4,6 +4,7 @@ import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { getPkijsCrypto } from '../_utils';
+import { derDeserializeECDHPublicKey } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
 import CMSError from './CMSError';
@@ -24,7 +25,7 @@ export interface SessionEncryptionResult {
 
 export interface SessionOriginatorKey {
   readonly keyId: number;
-  readonly publicKeyDer: ArrayBuffer; // DH or ECDH key
+  readonly publicKey: CryptoKey; // DH or ECDH key
 }
 
 export abstract class EnvelopedData {
@@ -158,16 +159,24 @@ export class SessionEnvelopedData extends EnvelopedData {
     return { dhPrivateKey, dhKeyId, envelopedData };
   }
 
-  public getOriginatorKey(): SessionOriginatorKey {
+  public async getOriginatorKey(): Promise<SessionOriginatorKey> {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
     if (recipientInfo.variant !== 2) {
       throw new CMSError(`Expected KeyAgreeRecipientInfo (got variant: ${recipientInfo.variant})`);
     }
-    const publicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
+    const originator = recipientInfo.value.originator.value;
+    const publicKeyDer = originator.toSchema().toBER(false);
 
-    return { keyId, publicKeyDer };
+    const curveOid = originator.algorithm.algorithmParams.valueBlock.toString();
+    // @ts-ignore
+    const curveParams = pkijsCrypto.getAlgorithmByOID(curveOid);
+    const publicKey = await derDeserializeECDHPublicKey(Buffer.from(publicKeyDer), {
+      name: 'ECDH',
+      namedCurve: curveParams.name,
+    });
+    return { keyId, publicKey };
   }
 
   public getRecipientKeyId(): number {

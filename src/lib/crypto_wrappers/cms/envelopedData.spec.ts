@@ -13,7 +13,7 @@ import {
 } from '../../_test_utils';
 import * as oids from '../../oids';
 import { issueInitialDHKeyCertificate } from '../../pki';
-import { generateECDHKeyPair, generateRSAKeyPair } from '../keys';
+import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
@@ -52,15 +52,18 @@ beforeAll(async () => {
 
 // For channel session tests:
 let bobDhPrivateKey: CryptoKey;
+let bobDhPublicKey: CryptoKey;
 let bobDhCertificate: Certificate;
+const bobDhCertificateSerialNumber = 3;
 beforeAll(async () => {
   const bobDhKeyPair = await generateECDHKeyPair();
   bobDhPrivateKey = bobDhKeyPair.privateKey;
+  bobDhPublicKey = bobDhKeyPair.publicKey;
   bobDhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: bobDhKeyPair.publicKey,
+    dhPublicKey: bobDhPublicKey,
     nodeCertificate,
     nodePrivateKey,
-    serialNumber: 2,
+    serialNumber: bobDhCertificateSerialNumber,
     validityEndDate: TOMORROW,
   });
 });
@@ -328,6 +331,18 @@ describe('SessionEnvelopedData', () => {
       ).toEqual((dhKeyId as number).toString());
     });
 
+    // test('Originator key should be acceptable in lieu of certificate', async () => {
+    //   jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
+    //   const bobOriginatorKey : SessionOriginatorKey = {
+    //     keyId: bobDhCertificateSerialNumber,
+    //     publicKeyDer:
+    //   }
+    //   const { dhPrivateKey } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+    //
+    //   const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
+    //   expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
+    // });
+
     describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(
         plaintext,
@@ -361,18 +376,18 @@ describe('SessionEnvelopedData', () => {
       test('Call should fail if unprotectedAttrs is missing', async () => {
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = undefined;
 
-        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
-          CMSError,
-          'unprotectedAttrs must be present when using channel session',
+        await expectPromiseToReject(
+          envelopedData.getOriginatorKey(),
+          new CMSError('unprotectedAttrs must be present when using channel session'),
         );
       });
 
       test('Call should fail if unprotectedAttrs is present but empty', async () => {
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [];
 
-        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
-          CMSError,
-          'unprotectedAttrs must be present when using channel session',
+        await expectPromiseToReject(
+          envelopedData.getOriginatorKey(),
+          new CMSError('unprotectedAttrs must be present when using channel session'),
         );
       });
 
@@ -383,9 +398,9 @@ describe('SessionEnvelopedData', () => {
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [otherAttribute];
 
-        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
-          CMSError,
-          'unprotectedAttrs does not contain originator key id',
+        await expectPromiseToReject(
+          envelopedData.getOriginatorKey(),
+          new CMSError('unprotectedAttrs does not contain originator key id'),
         );
       });
 
@@ -396,9 +411,9 @@ describe('SessionEnvelopedData', () => {
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
 
-        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
-          CMSError,
-          'Originator key id attribute must have exactly one value (got 0)',
+        await expectPromiseToReject(
+          envelopedData.getOriginatorKey(),
+          new CMSError('Originator key id attribute must have exactly one value (got 0)'),
         );
       });
 
@@ -409,28 +424,31 @@ describe('SessionEnvelopedData', () => {
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
 
-        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
-          CMSError,
-          'Originator key id attribute must have exactly one value (got 2)',
+        await expectPromiseToReject(
+          envelopedData.getOriginatorKey(),
+          new CMSError('Originator key id attribute must have exactly one value (got 2)'),
         );
       });
     });
 
     describe('publicKey', () => {
-      test('Originator DH public key should be returned if it is valid', () => {
-        const { publicKeyDer } = envelopedData.getOriginatorKey();
+      test('Originator DH public key should be returned if it is valid', async () => {
+        const { publicKey } = await envelopedData.getOriginatorKey();
 
         const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
-        const expectedPublicKey = recipientInfo.value.originator.value.toSchema().toBER(false);
-        expectBuffersToEqual(expectedPublicKey, publicKeyDer as ArrayBuffer);
+        const expectedPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
+        expectBuffersToEqual(
+          Buffer.from(expectedPublicKeyDer),
+          await derSerializePublicKey(publicKey),
+        );
       });
 
-      test('Call should fail if RecipientInfo is not KeyAgreeRecipientInfo', () => {
+      test('Call should fail if RecipientInfo is not KeyAgreeRecipientInfo', async () => {
         envelopedData.pkijsEnvelopedData.recipientInfos[0].variant = 3;
 
-        expect(() => envelopedData.getOriginatorKey()).toThrowWithMessage(
-          CMSError,
-          'Expected KeyAgreeRecipientInfo (got variant: 3)',
+        await expectPromiseToReject(
+          envelopedData.getOriginatorKey(),
+          new CMSError('Expected KeyAgreeRecipientInfo (got variant: 3)'),
         );
       });
     });

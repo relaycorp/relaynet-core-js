@@ -5,11 +5,7 @@ import * as pkijs from 'pkijs';
 
 import { expectBuffersToEqual } from '../lib/_test_utils';
 import { SessionEnvelopedData } from '../lib/crypto_wrappers/cms/envelopedData';
-import {
-  derDeserializeECDHPublicKey,
-  generateECDHKeyPair,
-  generateRSAKeyPair,
-} from '../lib/crypto_wrappers/keys';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keys';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
 import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/pki';
 
@@ -67,9 +63,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
   const plaintext2 = bufferToArray(Buffer.from('Hi, Alice. My name is Bob.'));
-  const alicePublicKey1 = await deserializeDhPublicKey(
-    encryptionResult1.envelopedData.getOriginatorKey().publicKeyDer,
-  );
+  const alicePublicKey1 = (await encryptionResult1.envelopedData.getOriginatorKey()).publicKey;
   const aliceDhCert1 = await issueInitialDHKeyCertificate({
     dhPublicKey: alicePublicKey1,
     nodeCertificate,
@@ -86,9 +80,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
   const plaintext3 = bufferToArray(Buffer.from('Nice to meet you, Bob.'));
-  const bobPublicKey2 = await deserializeDhPublicKey(
-    encryptionResult2.envelopedData.getOriginatorKey().publicKeyDer,
-  );
+  const bobPublicKey2 = (await encryptionResult2.envelopedData.getOriginatorKey()).publicKey;
   const bobDhCert2 = await issueInitialDHKeyCertificate({
     dhPublicKey: bobPublicKey2,
     nodeCertificate,
@@ -103,13 +95,6 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   expectBuffersToEqual(decryptedPlaintext3, plaintext3);
   checkRecipientInfo(encryptionResult3.envelopedData, bobDhCert2);
 });
-
-async function deserializeDhPublicKey(publicKeyDer: ArrayBuffer): Promise<CryptoKey> {
-  return derDeserializeECDHPublicKey(Buffer.from(publicKeyDer), {
-    name: 'ECDH',
-    namedCurve: 'P-256',
-  });
-}
 
 function checkRecipientInfo(
   envelopedData: SessionEnvelopedData,
