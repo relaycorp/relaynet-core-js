@@ -22,6 +22,7 @@ import {
   EnvelopedData,
   SessionEnvelopedData,
   SessionlessEnvelopedData,
+  SessionOriginatorKey,
 } from './envelopedData';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
@@ -331,17 +332,24 @@ describe('SessionEnvelopedData', () => {
       ).toEqual((dhKeyId as number).toString());
     });
 
-    // test('Originator key should be acceptable in lieu of certificate', async () => {
-    //   jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
-    //   const bobOriginatorKey : SessionOriginatorKey = {
-    //     keyId: bobDhCertificateSerialNumber,
-    //     publicKeyDer:
-    //   }
-    //   const { dhPrivateKey } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-    //
-    //   const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
-    //   expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
-    // });
+    test('Originator key should be acceptable in lieu of certificate', async () => {
+      jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
+      const bobOriginatorKey: SessionOriginatorKey = {
+        keyId: 123123,
+        publicKey: bobDhPublicKey,
+      };
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobOriginatorKey);
+
+      expect(envelopedData.getRecipientKeyId()).toEqual(bobOriginatorKey.keyId);
+
+      const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
+      const recipientCertificate = recipientInfo.value.recipientCertificate;
+      const recipientPublicKey = recipientCertificate.subjectPublicKeyInfo.toSchema().toBER(false);
+      expectBuffersToEqual(
+        await derSerializePublicKey(bobOriginatorKey.publicKey),
+        Buffer.from(recipientPublicKey),
+      );
+    });
 
     describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(
@@ -490,10 +498,11 @@ describe('SessionEnvelopedData', () => {
 
       const pkijsDecryptCall = getMockContext(pkijs.EnvelopedData.prototype.decrypt).calls[0];
       const pkijsDecryptCallArgs = pkijsDecryptCall[1];
-      expect(
-        pkijsDecryptCallArgs.recipientCertificate.subjectPublicKeyInfo.algorithm.algorithmParams.valueBlock.toString(),
-      ).toEqual(
-        bobDhCertificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams.valueBlock.toString(),
+      const actualAlgorithm =
+        pkijsDecryptCallArgs.recipientCertificate.subjectPublicKeyInfo.algorithm;
+      const expectedAlgorithm = bobDhCertificate.pkijsCertificate.subjectPublicKeyInfo.algorithm;
+      expect(actualAlgorithm.algorithmParams.valueBlock.toString()).toEqual(
+        expectedAlgorithm.algorithmParams.valueBlock.toString(),
       );
     });
 

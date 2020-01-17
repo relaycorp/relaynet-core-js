@@ -127,7 +127,7 @@ function getAesKeySize(aesKeySize: number | undefined): number {
 export class SessionEnvelopedData extends EnvelopedData {
   public static async encrypt(
     plaintext: ArrayBuffer,
-    certificate: Certificate,
+    certificateOrOriginatorKey: Certificate | SessionOriginatorKey,
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
@@ -141,7 +141,8 @@ export class SessionEnvelopedData extends EnvelopedData {
       unprotectedAttrs: [serialNumberAttribute],
     });
 
-    pkijsEnvelopedData.addRecipientByCertificate(certificate.pkijsCertificate, {}, 2);
+    const pkijsCertificate = await getOrMakePkijsCertificate(certificateOrOriginatorKey);
+    pkijsEnvelopedData.addRecipientByCertificate(pkijsCertificate, {}, 2);
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     const [pkijsEncryptionResult] = await pkijsEnvelopedData.encrypt(
@@ -153,7 +154,7 @@ export class SessionEnvelopedData extends EnvelopedData {
 
     // pkijs.EnvelopedData.encrypt() deleted the algorithm params so we should reinstate them:
     pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
-      certificate.pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
+      pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
 
     const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
     return { dhPrivateKey, dhKeyId, envelopedData };
@@ -218,6 +219,20 @@ async function pkijsDecrypt(
   } catch (error) {
     throw new CMSError(error, 'Decryption failed');
   }
+}
+
+async function getOrMakePkijsCertificate(
+  certificateOrOriginatorKey: Certificate | SessionOriginatorKey,
+): Promise<pkijs.Certificate> {
+  if (certificateOrOriginatorKey instanceof Certificate) {
+    return certificateOrOriginatorKey.pkijsCertificate;
+  }
+
+  const pkijsCertificate = new pkijs.Certificate({
+    serialNumber: new asn1js.Integer({ value: certificateOrOriginatorKey.keyId }),
+  });
+  await pkijsCertificate.subjectPublicKeyInfo.importKey(certificateOrOriginatorKey.publicKey);
+  return pkijsCertificate;
 }
 
 function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {

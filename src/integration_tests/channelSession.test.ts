@@ -4,7 +4,10 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { expectBuffersToEqual } from '../lib/_test_utils';
-import { SessionEnvelopedData } from '../lib/crypto_wrappers/cms/envelopedData';
+import {
+  SessionEnvelopedData,
+  SessionOriginatorKey,
+} from '../lib/crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keys';
 import Certificate from '../lib/crypto_wrappers/x509/Certificate';
 import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/pki';
@@ -63,42 +66,28 @@ test('Encryption and decryption with subsequent DH keys', async () => {
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
   const plaintext2 = bufferToArray(Buffer.from('Hi, Alice. My name is Bob.'));
-  const alicePublicKey1 = (await encryptionResult1.envelopedData.getOriginatorKey()).publicKey;
-  const aliceDhCert1 = await issueInitialDHKeyCertificate({
-    dhPublicKey: alicePublicKey1,
-    nodeCertificate,
-    nodePrivateKey: nodeKeyPair.privateKey,
-    serialNumber: encryptionResult1.dhKeyId as number,
-    validityEndDate: TOMORROW,
-  });
-  const encryptionResult2 = await SessionEnvelopedData.encrypt(plaintext2, aliceDhCert1);
+  const alicePublicKey1 = await encryptionResult1.envelopedData.getOriginatorKey();
+  const encryptionResult2 = await SessionEnvelopedData.encrypt(plaintext2, alicePublicKey1);
   const decryptedPlaintext2 = await encryptionResult2.envelopedData.decrypt(
     encryptionResult1.dhPrivateKey as CryptoKey,
   );
   expectBuffersToEqual(decryptedPlaintext2, plaintext2);
-  checkRecipientInfo(encryptionResult2.envelopedData, aliceDhCert1);
+  checkRecipientInfo(encryptionResult2.envelopedData, alicePublicKey1);
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
   const plaintext3 = bufferToArray(Buffer.from('Nice to meet you, Bob.'));
-  const bobPublicKey2 = (await encryptionResult2.envelopedData.getOriginatorKey()).publicKey;
-  const bobDhCert2 = await issueInitialDHKeyCertificate({
-    dhPublicKey: bobPublicKey2,
-    nodeCertificate,
-    nodePrivateKey: nodeKeyPair.privateKey,
-    serialNumber: encryptionResult2.dhKeyId as number,
-    validityEndDate: TOMORROW,
-  });
-  const encryptionResult3 = await SessionEnvelopedData.encrypt(plaintext3, bobDhCert2);
+  const bobPublicKey2 = await encryptionResult2.envelopedData.getOriginatorKey();
+  const encryptionResult3 = await SessionEnvelopedData.encrypt(plaintext3, bobPublicKey2);
   const decryptedPlaintext3 = await encryptionResult3.envelopedData.decrypt(
     encryptionResult2.dhPrivateKey as CryptoKey,
   );
   expectBuffersToEqual(decryptedPlaintext3, plaintext3);
-  checkRecipientInfo(encryptionResult3.envelopedData, bobDhCert2);
+  checkRecipientInfo(encryptionResult3.envelopedData, bobPublicKey2);
 });
 
 function checkRecipientInfo(
   envelopedData: SessionEnvelopedData,
-  expectedRecipientCertificate: Certificate,
+  expectedRecipientCertificate: Certificate | SessionOriginatorKey,
 ): void {
   expect(envelopedData.pkijsEnvelopedData.recipientInfos).toHaveLength(1);
   const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
@@ -127,11 +116,11 @@ function checkRecipientInfo(
   const keyAgreeRecipientIdentifier =
     recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0].rid;
   expect(keyAgreeRecipientIdentifier.variant).toEqual(1);
-  expectBuffersToEqual(
-    keyAgreeRecipientIdentifier.value.issuer.toSchema().toBER(false),
-    expectedRecipientCertificate.pkijsCertificate.subject.toSchema().toBER(false),
-  );
+  const expectedKeyId =
+    expectedRecipientCertificate instanceof Certificate
+      ? expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock
+      : expectedRecipientCertificate.keyId;
   expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.toString()).toEqual(
-    expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.toString(),
+    expectedKeyId.toString(),
   );
 }
