@@ -4,6 +4,7 @@ import { CryptoEngine } from 'pkijs';
 
 import { expectBuffersToEqual } from '../_test_utils';
 import {
+  convertSignaturePrivateKeyToEncryption,
   derDeserializeECDHPrivateKey,
   derDeserializeECDHPublicKey,
   derDeserializeRSAPrivateKey,
@@ -149,6 +150,41 @@ describe('generateDHKeyPair', () => {
     expect(keyUses).toHaveLength(2);
     expect(keyUses).toContain('deriveBits');
     expect(keyUses).toContain('deriveKey');
+  });
+});
+
+describe('Key converters', () => {
+  let stubKeyPair: CryptoKeyPair;
+  beforeAll(async () => {
+    stubKeyPair = await generateRSAKeyPair();
+  });
+
+  test('convertSigningPrivateKeyToEncrypting', async () => {
+    const encryptionPrivateKey = await convertSignaturePrivateKeyToEncryption(
+      stubKeyPair.privateKey,
+    );
+
+    expect(encryptionPrivateKey.algorithm).toEqual(stubKeyPair.privateKey.algorithm);
+    expect(encryptionPrivateKey.extractable).toEqual(stubKeyPair.privateKey.extractable);
+    expect(encryptionPrivateKey.type).toEqual(stubKeyPair.privateKey.type);
+    expect(encryptionPrivateKey).toHaveProperty('usages', ['decrypt']);
+    expectBuffersToEqual(
+      await derSerializePrivateKey(encryptionPrivateKey),
+      await derSerializePrivateKey(stubKeyPair.privateKey),
+    );
+  });
+
+  test('convertSigningPublicKeyToEncrypting', async () => {
+    const encryptionPublicKey = await convertSignaturePublicKeyToEncryption(stubKeyPair.publicKey);
+
+    expect(encryptionPublicKey.algorithm).toEqual(stubKeyPair.publicKey.algorithm);
+    expect(encryptionPublicKey.extractable).toEqual(stubKeyPair.publicKey.extractable);
+    expect(encryptionPublicKey.type).toEqual(stubKeyPair.publicKey.type);
+    expect(encryptionPublicKey).toHaveProperty('usages', ['encrypt']);
+    expectBuffersToEqual(
+      await derSerializePrivateKey(encryptionPublicKey),
+      await derSerializePrivateKey(stubKeyPair.publicKey),
+    );
   });
 });
 

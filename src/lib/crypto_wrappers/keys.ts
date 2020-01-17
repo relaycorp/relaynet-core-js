@@ -10,7 +10,7 @@ export type ECDHCurveName = 'P-256' | 'P-384' | 'P-521';
 //region Key generators
 
 /**
- * Generate an RSA key pair
+ * Generate an RSA key pair for use with digital signatures only.
  *
  * @param modulus The RSA modulus for the keys (2048 or greater).
  * @param hashingAlgorithm The hashing algorithm (e.g., SHA-256, SHA-384, SHA-512).
@@ -45,6 +45,29 @@ export async function generateECDHKeyPair(
     'deriveBits',
     'deriveKey',
   ]);
+}
+
+//endregion
+
+//region Key conversion
+
+/**
+ * Return a copy of the private key that can be used for encryption.
+ *
+ * This is mainly needed when not using the channel session as the node keys are used for
+ * encryption as well.
+ *
+ * @param signingPrivateKey The RSA-PSS private key
+ * @return The same key as RSA-OAEP
+ */
+export async function convertSignaturePrivateKeyToEncryption(
+  signingPrivateKey: CryptoKey,
+): Promise<CryptoKey> {
+  const keySerialized = await derSerializePrivateKey(signingPrivateKey);
+  return derDeserializeRSAPrivateKey(
+    keySerialized,
+    signingPrivateKey.algorithm as RsaHashedImportParams,
+  );
 }
 
 //endregion
