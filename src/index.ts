@@ -15,6 +15,7 @@ setEngine('nodeEngine', webcrypto, cryptoEngine);
 
 export { default as RelaynetError } from './lib/RelaynetError';
 export * from './lib/crypto_wrappers/keys';
+export { SessionStore } from './lib/session';
 
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
