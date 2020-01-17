@@ -30,6 +30,16 @@ describe('generateRsaKeyPair', () => {
     expect(keyPair.privateKey.extractable).toBe(true);
   });
 
+  test('Keys should be used for signatures only', async () => {
+    const keyPair = await generateRSAKeyPair();
+
+    expect(keyPair).toHaveProperty('publicKey.algorithm.name', 'RSA-PSS');
+    expect(keyPair).toHaveProperty('publicKey.usages', ['verify']);
+
+    expect(keyPair).toHaveProperty('privateKey.algorithm.name', 'RSA-PSS');
+    expect(keyPair).toHaveProperty('privateKey.usages', ['sign']);
+  });
+
   describe('Modulus', () => {
     test('Default modulus should be 2048', async () => {
       const keyPair = await generateRSAKeyPair();
