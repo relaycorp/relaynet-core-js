@@ -3,13 +3,13 @@
  */
 export interface SessionStore {
   readonly getPrivateKey: (
-    dhPrivateKeyId: number,
+    dhKeyPairId: number,
     recipientPublicKey: CryptoKey,
   ) => Promise<CryptoKey>;
 
   readonly savePrivateKey: (
     dhPrivateKey: CryptoKey,
-    dhPrivateKeyId: number,
+    dhKeyPairId: number,
     recipientPublicKey: CryptoKey,
   ) => Promise<void>;
 }
