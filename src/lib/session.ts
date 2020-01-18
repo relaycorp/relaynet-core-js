@@ -1,3 +1,6 @@
+/**
+ * Interface to save and retrieve channel session keys.
+ */
 export interface SessionStore {
   readonly getPrivateKey: (
     dhPrivateKeyId: number,
