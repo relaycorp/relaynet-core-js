@@ -82,19 +82,19 @@ export async function derDeserializeECDHPublicKey(
 }
 
 export async function derDeserializeRSAPrivateKey(
-  publicKeyDer: Buffer,
+  privateKeyDer: Buffer,
   algorithmOptions: RsaHashedImportParams,
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey('pkcs8', bufferToArray(publicKeyDer), algorithmOptions, true, [
+  return cryptoEngine.importKey('pkcs8', bufferToArray(privateKeyDer), algorithmOptions, true, [
     'sign',
   ]);
 }
 
 export async function derDeserializeECDHPrivateKey(
-  publicKeyDer: Buffer,
+  privateKeyDer: Buffer,
   algorithmOptions: EcKeyImportParams,
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey('pkcs8', bufferToArray(publicKeyDer), algorithmOptions, true, [
+  return cryptoEngine.importKey('pkcs8', bufferToArray(privateKeyDer), algorithmOptions, true, [
     'deriveBits',
     'deriveKey',
   ]);
