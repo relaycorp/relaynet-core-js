@@ -1,9 +1,12 @@
 export interface SessionStore {
-  readonly getPrivateKey: (keyId: number, recipientAddress: string) => Promise<CryptoKey>;
+  readonly getPrivateKey: (
+    dhPrivateKeyId: number,
+    recipientPublicKey: CryptoKey,
+  ) => Promise<CryptoKey>;
 
   readonly savePrivateKey: (
-    key: CryptoKey,
-    keyId: number,
-    recipientAddress: string,
+    dhPrivateKey: CryptoKey,
+    dhPrivateKeyId: number,
+    recipientPublicKey: CryptoKey,
   ) => Promise<void>;
 }
