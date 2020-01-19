@@ -3,10 +3,15 @@ import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
-import { expectPromiseToReject, generateStubCert, sha256Hex } from '../../_test_utils';
+import {
+  expectBuffersToEqual,
+  expectPromiseToReject,
+  generateStubCert,
+  sha256Hex,
+} from '../../_test_utils';
 import * as oids from '../../oids';
 import { deserializeDer, getPkijsCrypto } from '../_utils';
-import { generateRSAKeyPair } from '../keys';
+import { derSerializePublicKey, generateRSAKeyPair } from '../keys';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
 
@@ -549,6 +554,22 @@ describe('validate()', () => {
       );
     });
   });
+});
+
+test('getPublicKey should return the subject public key', async () => {
+  const subjectKeyPair = await generateRSAKeyPair();
+  const cert = await generateStubCert({
+    attributes: { serialNumber: 12 },
+    issuerPrivateKey: subjectKeyPair.privateKey,
+    subjectPublicKey: subjectKeyPair.publicKey,
+  });
+
+  const publicKey = await cert.getPublicKey();
+
+  expectBuffersToEqual(
+    await derSerializePublicKey(publicKey),
+    await derSerializePublicKey(subjectKeyPair.publicKey),
+  );
 });
 
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<string> {

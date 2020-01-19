@@ -111,6 +111,10 @@ export default class Certificate {
     return matchingDnAttr[0].value.valueBlock.value;
   }
 
+  public async getPublicKey(): Promise<CryptoKey> {
+    return this.pkijsCertificate.getPublicKey();
+  }
+
   public validate(): void {
     // X.509 versioning starts at 0
     const x509CertVersion = this.pkijsCertificate.version + 1;
