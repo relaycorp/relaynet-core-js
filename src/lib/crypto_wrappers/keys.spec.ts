@@ -203,7 +203,7 @@ describe('Key serializers', () => {
 describe('Key deserializers', () => {
   const stubKeyDer = Buffer.from('Hey');
   const rsaAlgorithmOptions: RsaHashedImportParams = { name: 'RSA-PSS', hash: { name: 'SHA-256' } };
-  const ecdhAlgorithmOptions: EcKeyImportParams = { name: 'ECDH', namedCurve: 'P-256' };
+  const ecdhCurveName: NamedCurve = 'P-384';
 
   let stubKeyPair: CryptoKeyPair;
   beforeAll(async () => {
@@ -253,32 +253,52 @@ describe('Key deserializers', () => {
   test('derDeserializeECDHPublicKey should convert DER public key to ECDH key', async () => {
     mockImportKey.mockResolvedValueOnce(stubKeyPair.publicKey);
 
-    const publicKey = await derDeserializeECDHPublicKey(stubKeyDer, ecdhAlgorithmOptions);
+    const publicKey = await derDeserializeECDHPublicKey(stubKeyDer, ecdhCurveName);
 
     expect(publicKey).toBe(stubKeyPair.publicKey);
     expect(mockImportKey).toBeCalledTimes(1);
     expect(mockImportKey).toBeCalledWith(
       'spki',
       bufferToArray(stubKeyDer),
-      ecdhAlgorithmOptions,
+      { name: 'ECDH', namedCurve: ecdhCurveName },
       true,
       [],
     );
   });
 
+  test('derDeserializeECDHPublicKey should default to P-256', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.publicKey);
+
+    await derDeserializeECDHPublicKey(stubKeyDer);
+
+    expect(mockImportKey).toBeCalledTimes(1);
+    const algorithm = mockImportKey.mock.calls[0][2];
+    expect(algorithm).toHaveProperty('namedCurve', 'P-256');
+  });
+
   test('derDeserializeECDHPrivateKey should convert DER private key to ECDH key', async () => {
     mockImportKey.mockResolvedValueOnce(stubKeyPair.privateKey);
 
-    const privateKey = await derDeserializeECDHPrivateKey(stubKeyDer, ecdhAlgorithmOptions);
+    const privateKey = await derDeserializeECDHPrivateKey(stubKeyDer, ecdhCurveName);
 
     expect(privateKey).toBe(stubKeyPair.privateKey);
     expect(mockImportKey).toBeCalledTimes(1);
     expect(mockImportKey).toBeCalledWith(
       'pkcs8',
       bufferToArray(stubKeyDer),
-      ecdhAlgorithmOptions,
+      { name: 'ECDH', namedCurve: ecdhCurveName },
       true,
       ['deriveBits', 'deriveKey'],
     );
+  });
+
+  test('derDeserializeECDHPrivateKey should default to P-256', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.privateKey);
+
+    await derDeserializeECDHPrivateKey(stubKeyDer);
+
+    expect(mockImportKey).toBeCalledTimes(1);
+    const algorithm = mockImportKey.mock.calls[0][2];
+    expect(algorithm).toHaveProperty('namedCurve', 'P-256');
   });
 });

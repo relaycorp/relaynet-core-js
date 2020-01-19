@@ -173,10 +173,10 @@ export class SessionEnvelopedData extends EnvelopedData {
     const curveOid = originator.algorithm.algorithmParams.valueBlock.toString();
     // @ts-ignore
     const curveParams = pkijsCrypto.getAlgorithmByOID(curveOid);
-    const publicKey = await derDeserializeECDHPublicKey(Buffer.from(publicKeyDer), {
-      name: 'ECDH',
-      namedCurve: curveParams.name,
-    });
+    const publicKey = await derDeserializeECDHPublicKey(
+      Buffer.from(publicKeyDer),
+      curveParams.name,
+    );
     return { keyId, publicKey };
   }
 

@@ -76,9 +76,15 @@ export async function derDeserializeRSAPublicKey(
 
 export async function derDeserializeECDHPublicKey(
   publicKeyDer: Buffer,
-  algorithmOptions: EcKeyImportParams,
+  curveName: NamedCurve = 'P-256',
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey('spki', bufferToArray(publicKeyDer), algorithmOptions, true, []);
+  return cryptoEngine.importKey(
+    'spki',
+    bufferToArray(publicKeyDer),
+    { name: 'ECDH', namedCurve: curveName },
+    true,
+    [],
+  );
 }
 
 export async function derDeserializeRSAPrivateKey(
@@ -92,12 +98,15 @@ export async function derDeserializeRSAPrivateKey(
 
 export async function derDeserializeECDHPrivateKey(
   privateKeyDer: Buffer,
-  algorithmOptions: EcKeyImportParams,
+  curveName: NamedCurve = 'P-256',
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey('pkcs8', bufferToArray(privateKeyDer), algorithmOptions, true, [
-    'deriveBits',
-    'deriveKey',
-  ]);
+  return cryptoEngine.importKey(
+    'pkcs8',
+    bufferToArray(privateKeyDer),
+    { name: 'ECDH', namedCurve: curveName },
+    true,
+    ['deriveBits', 'deriveKey'],
+  );
 }
 
 //endregion
