@@ -181,14 +181,12 @@ export class SessionEnvelopedData extends EnvelopedData {
   }
 
   public getRecipientKeyId(): number {
-    const recipientCertificate = this.pkijsEnvelopedData.recipientInfos[0].value
-      .recipientCertificate;
-    return convertAsn1IntegerToNumber(recipientCertificate.serialNumber);
+    const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
+    const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
+    return convertAsn1IntegerToNumber(encryptedKey.rid.value.serialNumber);
   }
 
   public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
-    // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
-    // uses it for is to get the public key algorithm. Which you can get from the private key.
     const recipientCertificate = this.pkijsEnvelopedData.recipientInfos[0].value
       .recipientCertificate;
     const dhCertificate: pkijs.Certificate = {
@@ -224,6 +222,8 @@ async function pkijsDecrypt(
 async function getOrMakePkijsCertificate(
   certificateOrOriginatorKey: Certificate | SessionOriginatorKey,
 ): Promise<pkijs.Certificate> {
+  // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
+  // uses it for is to get the public key algorithm. Which you can get from the private key.
   if (certificateOrOriginatorKey instanceof Certificate) {
     return certificateOrOriginatorKey.pkijsCertificate;
   }

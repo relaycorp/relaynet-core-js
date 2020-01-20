@@ -3,14 +3,18 @@ import bufferToArray from 'buffer-to-arraybuffer';
 // @ts-ignore
 import * as pkijs from 'pkijs';
 
-import { expectBuffersToEqual } from '../lib/_test_utils';
 import {
+  Certificate,
+  EnvelopedData,
+  generateECDHKeyPair,
+  generateRSAKeyPair,
+  issueInitialDHKeyCertificate,
+  issueNodeCertificate,
   SessionEnvelopedData,
   SessionOriginatorKey,
-} from '../lib/crypto_wrappers/cms/envelopedData';
-import { generateECDHKeyPair, generateRSAKeyPair } from '../lib/crypto_wrappers/keys';
-import Certificate from '../lib/crypto_wrappers/x509/Certificate';
-import { issueInitialDHKeyCertificate, issueNodeCertificate } from '../lib/pki';
+} from '..';
+
+import { expectBuffersToEqual } from '../lib/_test_utils';
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
@@ -83,6 +87,31 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   );
   expectBuffersToEqual(decryptedPlaintext3, plaintext3);
   checkRecipientInfo(encryptionResult3.envelopedData, bobPublicKey2);
+});
+
+test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serialization', async () => {
+  // This essentially makes sure we're not reading `recipientCertificate` on the recipientInfo
+  // as PKI.js attaches it to the EnvelopedData value temporarily but isn't output to the
+  // ASN.1 representation because it isn't part of the CMS serialization.
+  const dhKeyPair = await generateECDHKeyPair();
+  const serialNumber = 2345;
+  const dhCertificate = await issueInitialDHKeyCertificate({
+    dhPublicKey: dhKeyPair.publicKey,
+    nodeCertificate,
+    nodePrivateKey: nodeKeyPair.privateKey,
+    serialNumber,
+    validityEndDate: TOMORROW,
+  });
+
+  const { envelopedData } = await SessionEnvelopedData.encrypt(
+    bufferToArray(Buffer.from('f')),
+    dhCertificate,
+  );
+
+  const envelopedDataDeserialized = EnvelopedData.deserialize(
+    envelopedData.serialize(),
+  ) as SessionEnvelopedData;
+  expect(envelopedDataDeserialized.getRecipientKeyId()).toEqual(serialNumber);
 });
 
 function checkRecipientInfo(

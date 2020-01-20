@@ -466,7 +466,7 @@ describe('SessionEnvelopedData', () => {
     const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
     const actualKeyId = envelopedData.getRecipientKeyId();
-    expect(actualKeyId).toEqual(bobDhCertificate.pkijsCertificate.serialNumber.valueBlock.valueDec);
+    expect(actualKeyId).toEqual(bobDhCertificateSerialNumber);
   });
 
   describe('decrypt', () => {
