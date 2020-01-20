@@ -114,6 +114,33 @@ test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serializat
   expect(envelopedDataDeserialized.getRecipientKeyId()).toEqual(serialNumber);
 });
 
+test('EnvelopedData should be decrypted after serialization', async () => {
+  // Make sure data can be decrypted after the EnvelopedData and/or the certificate have
+  // been serialized. This is a regression test for
+  // https://github.com/PeculiarVentures/PKI.js/pull/258
+  const dhKeyPair = await generateECDHKeyPair();
+  const serialNumber = 2345;
+  const dhCertificate = await issueInitialDHKeyCertificate({
+    dhPublicKey: dhKeyPair.publicKey,
+    nodeCertificate,
+    nodePrivateKey: nodeKeyPair.privateKey,
+    serialNumber,
+    validityEndDate: TOMORROW,
+  });
+
+  const plaintext = bufferToArray(Buffer.from('plaintext'));
+  const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, dhCertificate);
+
+  // Check it can be decrypted before serializing it:
+  expectBuffersToEqual(await envelopedData.decrypt(dhKeyPair.privateKey), plaintext);
+
+  // Check it can be decrypted after serializing and deserializing it:
+  const envelopedDataDeserialized = EnvelopedData.deserialize(
+    envelopedData.serialize(),
+  ) as SessionEnvelopedData;
+  expectBuffersToEqual(await envelopedDataDeserialized.decrypt(dhKeyPair.privateKey), plaintext);
+});
+
 function checkRecipientInfo(
   envelopedData: SessionEnvelopedData,
   expectedRecipientCertificate: Certificate | SessionOriginatorKey,

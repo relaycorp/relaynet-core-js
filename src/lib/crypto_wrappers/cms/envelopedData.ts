@@ -187,13 +187,12 @@ export class SessionEnvelopedData extends EnvelopedData {
   }
 
   public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
-    const recipientCertificate = this.pkijsEnvelopedData.recipientInfos[0].value
-      .recipientCertificate;
+    const originator = this.pkijsEnvelopedData.recipientInfos[0].value.originator;
     const dhCertificate: pkijs.Certificate = {
       subjectPublicKeyInfo: {
         // @ts-ignore
         algorithm: {
-          algorithmParams: recipientCertificate.subjectPublicKeyInfo.algorithm.algorithmParams,
+          algorithmParams: originator.value.algorithm.algorithmParams,
         },
       },
     };
