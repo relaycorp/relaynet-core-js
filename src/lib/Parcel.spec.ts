@@ -19,7 +19,7 @@ describe('Parcel', () => {
       issuerPrivateKey: senderKeyPair.privateKey,
     });
     senderPrivateKey = senderKeyPair.privateKey;
-    parcel = new Parcel('address', senderCertificate, bufferToArray(Buffer.from('hi')));
+    parcel = new Parcel('address', senderCertificate, Buffer.from('hi'));
   });
 
   describe('serialize', () => {

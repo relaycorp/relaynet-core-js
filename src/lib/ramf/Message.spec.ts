@@ -1,5 +1,4 @@
 /* tslint:disable:no-let max-classes-per-file */
-import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert } from '../_test_utils';
@@ -15,7 +14,7 @@ jest.mock('uuid4', () => {
   };
 });
 
-const payload = bufferToArray(Buffer.from('Hi'));
+const payload = Buffer.from('Hi');
 
 afterEach(() => {
   jest.restoreAllMocks();

@@ -20,7 +20,7 @@ import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 import { deserialize, MessageFields, serialize } from './serialization';
 
-const PAYLOAD = bufferToArray(Buffer.from('Hi'));
+const PAYLOAD = Buffer.from('Hi');
 
 const STUB_DATE = new Date(2014, 1, 19);
 STUB_DATE.setMilliseconds(0); // There should be tests covering rounding when there are milliseconds
@@ -387,7 +387,7 @@ describe('MessageSerializer', () => {
       );
 
       const messageParts = parseMessage(messageSerialized);
-      expectBuffersToEqual(messageParts.payload, Buffer.from(PAYLOAD));
+      expectBuffersToEqual(messageParts.payload, PAYLOAD);
     });
 
     describe('Signature', () => {
@@ -896,7 +896,7 @@ describe('MessageSerializer', () => {
         StubMessage,
       );
 
-      expect(messageDeserialized.payloadSerialized).toEqual(Buffer.from(PAYLOAD));
+      expect(messageDeserialized.payloadSerialized).toEqual(PAYLOAD);
     });
 
     describe('Signature', () => {

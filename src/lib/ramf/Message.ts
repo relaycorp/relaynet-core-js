@@ -24,7 +24,7 @@ export default abstract class Message {
   constructor(
     readonly recipientAddress: string,
     readonly senderCertificate: Certificate,
-    readonly payloadSerialized: ArrayBuffer,
+    readonly payloadSerialized: Buffer,
     options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
