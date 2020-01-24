@@ -76,6 +76,16 @@ describe('PrivateKeyStore', () => {
         });
       });
 
+      test('Numeric key ids should be converted to string', async () => {
+        const numericKeyId = 12345;
+        const store = new StubPrivateKeyStore();
+        store.keys[numericKeyId.toString()] = stubPrivateKeyData;
+
+        const privateKeyData = await store.fetchNodeKey(numericKeyId);
+
+        expect(privateKeyData).toBe(stubPrivateKey);
+      });
+
       test('Session keys should not be returned', async () => {
         const store = new StubPrivateKeyStore();
         store.keys[stubKeyId] = { ...stubPrivateKeyData, type: 'session' as const };
@@ -108,6 +118,15 @@ describe('PrivateKeyStore', () => {
         expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
         expect(store.keys[stubKeyId]).toHaveProperty('type', 'node');
         expect(store.keys[stubKeyId]).not.toHaveProperty('recipientPublicKeyDigest');
+      });
+
+      test('Numeric key ids should be converted to string', async () => {
+        const store = new StubPrivateKeyStore();
+        const numericKeyId = 12345;
+
+        await store.saveNodeKey(stubPrivateKey, numericKeyId);
+
+        expect(store.keys).toHaveProperty(numericKeyId.toString());
       });
 
       test('Errors should be wrapped', async () => {
@@ -175,6 +194,16 @@ describe('PrivateKeyStore', () => {
         expect(privateKeyData).toBe(stubPrivateKey);
       });
 
+      test('Numeric key ids should be converted to string', async () => {
+        const numericKeyId = 12345;
+        const store = new StubPrivateKeyStore();
+        store.keys[numericKeyId.toString()] = stubBoundPrivateKeyData;
+
+        const privateKeyData = await store.fetchSessionKey(numericKeyId, stubRecipientPublicKey);
+
+        expect(privateKeyData).toBe(stubPrivateKey);
+      });
+
       test('Keys bound to another recipient should not be returned', async () => {
         const store = new StubPrivateKeyStore();
         store.keys[stubKeyId] = {
@@ -234,6 +263,15 @@ describe('PrivateKeyStore', () => {
           'recipientPublicKeyDigest',
           await keys.getPublicKeyDigestHex(stubRecipientPublicKey),
         );
+      });
+
+      test('Numeric key ids should be converted to string', async () => {
+        const store = new StubPrivateKeyStore();
+        const numericKeyId = 12345;
+
+        await store.saveSessionKey(stubPrivateKey, numericKeyId, stubRecipientPublicKey);
+
+        expect(store.keys).toHaveProperty(numericKeyId.toString());
       });
 
       test('Errors should be wrapped', async () => {

@@ -16,7 +16,7 @@ export interface PrivateKeyData {
 export class PrivateKeyStoreError extends RelaynetError {}
 
 export abstract class PrivateKeyStore {
-  public async fetchNodeKey(keyId: string): Promise<CryptoKey> {
+  public async fetchNodeKey(keyId: string | number): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type !== 'node') {
@@ -29,7 +29,10 @@ export abstract class PrivateKeyStore {
     });
   }
 
-  public async fetchSessionKey(keyId: string, recipientPublicKey: CryptoKey): Promise<CryptoKey> {
+  public async fetchSessionKey(
+    keyId: string | number,
+    recipientPublicKey: CryptoKey,
+  ): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type !== 'session') {
@@ -46,14 +49,14 @@ export abstract class PrivateKeyStore {
     return derDeserializeECDHPrivateKey(keyData.keyDer, 'P-256');
   }
 
-  public async saveNodeKey(privateKey: CryptoKey, keyId: string): Promise<void> {
+  public async saveNodeKey(privateKey: CryptoKey, keyId: string | number): Promise<void> {
     const privateKeyDer = await derSerializePrivateKey(privateKey);
     const privateKeyData: PrivateKeyData = {
       keyDer: privateKeyDer,
       type: 'node',
     };
     try {
-      await this.saveKey(privateKeyData, keyId);
+      await this.saveKey(privateKeyData, keyId.toString());
     } catch (error) {
       throw new PrivateKeyStoreError(error, `Failed to save node key ${keyId}`);
     }
@@ -61,7 +64,7 @@ export abstract class PrivateKeyStore {
 
   public async saveSessionKey(
     privateKey: CryptoKey,
-    keyId: string,
+    keyId: string | number,
     recipientPublicKey?: CryptoKey,
   ): Promise<void> {
     const privateKeyData: PrivateKeyData = {
@@ -72,7 +75,7 @@ export abstract class PrivateKeyStore {
       type: 'session',
     };
     try {
-      await this.saveKey(privateKeyData, keyId);
+      await this.saveKey(privateKeyData, keyId.toString());
     } catch (error) {
       throw new PrivateKeyStoreError(error, `Failed to save session key ${keyId}`);
     }
@@ -82,9 +85,9 @@ export abstract class PrivateKeyStore {
 
   protected abstract async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void>;
 
-  private async fetchKeyOrThrowError(keyId: string): Promise<PrivateKeyData> {
+  private async fetchKeyOrThrowError(keyId: string | number): Promise<PrivateKeyData> {
     try {
-      return await this.fetchKey(keyId);
+      return await this.fetchKey(keyId.toString());
     } catch (error) {
       throw new PrivateKeyStoreError(error, `Failed to retrieve session key ${keyId}`);
     }
