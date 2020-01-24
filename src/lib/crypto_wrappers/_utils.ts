@@ -17,17 +17,6 @@ export function deserializeDer(derValue: ArrayBuffer): asn1js.LocalBaseBlock {
   return asn1Value.result;
 }
 
-export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
-  const pkijsCrypto = getPkijsCrypto();
-  const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
-  return pkijsCrypto.digest({ name: 'SHA-256' }, publicKeyDer);
-}
-
-export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<string> {
-  const digest = Buffer.from(await getPublicKeyDigest(publicKey));
-  return digest.toString('hex');
-}
-
 export function generateRandom32BitUnsignedNumber(): number {
   const numberArray = new Uint32Array(4);
   // @ts-ignore

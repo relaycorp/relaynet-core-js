@@ -1,6 +1,5 @@
 // tslint:disable:no-let no-object-mutation
 import { expectPromiseToReject } from './_test_utils';
-import { getPublicKeyDigestHex } from './crypto_wrappers/_utils';
 import * as keys from './crypto_wrappers/keys';
 import { PrivateKeyData, PrivateKeyStore, PrivateKeyStoreError } from './privateKeyStore';
 
@@ -107,7 +106,7 @@ describe('PrivateKeyStore', () => {
     beforeAll(async () => {
       stubBoundPrivateKeyData = {
         ...stubUnboundPrivateKeyData,
-        recipientPublicKeyDigest: await getPublicKeyDigestHex(stubRecipientPublicKey),
+        recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(stubRecipientPublicKey),
       };
     });
 

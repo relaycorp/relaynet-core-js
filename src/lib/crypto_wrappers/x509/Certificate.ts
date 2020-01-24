@@ -2,7 +2,8 @@ import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { deserializeDer, generateRandom32BitUnsignedNumber, getPublicKeyDigest } from '../_utils';
+import { deserializeDer, generateRandom32BitUnsignedNumber } from '../_utils';
+import { getPublicKeyDigest } from '../keys';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 

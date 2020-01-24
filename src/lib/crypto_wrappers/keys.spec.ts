@@ -1,8 +1,9 @@
 // tslint:disable:no-let
 import bufferToArray from 'buffer-to-arraybuffer';
+import { createHash } from 'crypto';
 import { CryptoEngine } from 'pkijs';
 
-import { expectBuffersToEqual } from '../_test_utils';
+import { expectBuffersToEqual, sha256Hex } from '../_test_utils';
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeECDHPublicKey,
@@ -13,6 +14,8 @@ import {
   ECDHCurveName,
   generateECDHKeyPair,
   generateRSAKeyPair,
+  getPublicKeyDigest,
+  getPublicKeyDigestHex,
 } from './keys';
 
 describe('generateRsaKeyPair', () => {
@@ -76,7 +79,7 @@ describe('generateRsaKeyPair', () => {
 
     ['SHA-384', 'SHA-512'].forEach(hashingAlgorithm => {
       test(`${hashingAlgorithm} should be supported`, async () => {
-        const keyPair = await generateRSAKeyPair({ hashingAlgorithm });
+        const keyPair = await generateRSAKeyPair({ hashingAlgorithm }); //endregion
         // @ts-ignore
         expect(keyPair.publicKey.algorithm.hash.name).toBe(hashingAlgorithm);
         // @ts-ignore
@@ -301,4 +304,25 @@ describe('Key deserializers', () => {
     const algorithm = mockImportKey.mock.calls[0][2];
     expect(algorithm).toHaveProperty('namedCurve', 'P-256');
   });
+});
+
+test('getPublicKeyDigest should return the SHA-256 digest of the public key', async () => {
+  const keyPair = await generateRSAKeyPair();
+
+  const digest = await getPublicKeyDigest(keyPair.publicKey);
+
+  expectBuffersToEqual(
+    Buffer.from(digest),
+    createHash('sha256')
+      .update(await derSerializePublicKey(keyPair.publicKey))
+      .digest(),
+  );
+});
+
+test('getPublicKeyDigest should return the SHA-256 hex digest of the public key', async () => {
+  const keyPair = await generateRSAKeyPair();
+
+  const digestHex = await getPublicKeyDigestHex(keyPair.publicKey);
+
+  expect(digestHex).toEqual(sha256Hex(await derSerializePublicKey(keyPair.publicKey)));
 });

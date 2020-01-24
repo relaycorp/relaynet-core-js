@@ -1,6 +1,9 @@
 /* tslint:disable:max-classes-per-file */
-import { getPublicKeyDigestHex } from './crypto_wrappers/_utils';
-import { derDeserializeECDHPrivateKey, derDeserializeRSAPrivateKey } from './crypto_wrappers/keys';
+import {
+  derDeserializeECDHPrivateKey,
+  derDeserializeRSAPrivateKey,
+  getPublicKeyDigestHex,
+} from './crypto_wrappers/keys';
 import RelaynetError from './RelaynetError';
 
 export interface PrivateKeyData {
