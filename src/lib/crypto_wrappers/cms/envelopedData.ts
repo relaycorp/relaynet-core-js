@@ -4,7 +4,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { getPkijsCrypto } from '../_utils';
+import { generateRandom32BitUnsignedNumber, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
@@ -263,12 +263,4 @@ function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {
 function convertAsn1IntegerToNumber(asn1Integer: asn1js.Integer): number {
   const keyIdString = asn1Integer.valueBlock.toString();
   return parseInt(keyIdString, 10);
-}
-
-function generateRandom32BitUnsignedNumber(): number {
-  const numberArray = new Uint32Array(4);
-  // @ts-ignore
-  pkijsCrypto.getRandomValues(numberArray);
-  const numberBuffer = Buffer.from(numberArray);
-  return numberBuffer.readUInt32LE(0);
 }

@@ -2,7 +2,7 @@ import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { deserializeDer, getPublicKeyDigest } from '../_utils';
+import { deserializeDer, generateRandom32BitUnsignedNumber, getPublicKeyDigest } from '../_utils';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 
@@ -47,13 +47,14 @@ export default class Certificate {
     const issuerPublicKey = options.issuerCertificate
       ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
+    const serialNumber = options.serialNumber ?? generateRandom32BitUnsignedNumber();
     const pkijsCert = new pkijs.Certificate({
       extensions: [
         makeBasicConstraintsExtension(options.isCA === true),
         await makeAuthorityKeyIdExtension(issuerPublicKey),
         await makeSubjectKeyIdExtension(options.subjectPublicKey),
       ],
-      serialNumber: new asn1js.Integer({ value: options.serialNumber }),
+      serialNumber: new asn1js.Integer({ value: serialNumber }),
       version: 2, // 2 = v3
     });
 

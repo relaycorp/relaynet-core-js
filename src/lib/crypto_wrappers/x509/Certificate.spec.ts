@@ -10,7 +10,7 @@ import {
   sha256Hex,
 } from '../../_test_utils';
 import * as oids from '../../oids';
-import { deserializeDer, getPkijsCrypto } from '../_utils';
+import * as utils from '../_utils';
 import { derSerializePublicKey, generateRSAKeyPair } from '../keys';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
@@ -18,7 +18,7 @@ import CertificateError from './CertificateError';
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 1);
 
-const pkijsCrypto = getPkijsCrypto();
+const pkijsCrypto = utils.getPkijsCrypto();
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -64,7 +64,6 @@ describe('deserialize()', () => {
 describe('issue()', () => {
   const baseCertificateOptions = {
     commonName: 'the CN',
-    serialNumber: 1,
     validityEndDate: futureDate,
   };
 
@@ -122,6 +121,20 @@ describe('issue()', () => {
     });
 
     expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(serialNumber);
+  });
+
+  test('should generate a serial number if none was set', async () => {
+    const prngSpy = jest.spyOn(utils, 'generateRandom32BitUnsignedNumber');
+
+    const cert = await Certificate.issue({
+      ...baseCertificateOptions,
+      issuerPrivateKey: keyPair.privateKey,
+      subjectPublicKey: keyPair.publicKey,
+    });
+
+    expect(prngSpy).toBeCalledTimes(1);
+    const generatedNumber = prngSpy.mock.results[0].value;
+    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(generatedNumber);
   });
 
   test('should create a certificate valid from now by default', async () => {
@@ -373,7 +386,7 @@ describe('issue()', () => {
       });
 
       const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
-      const basicConstraintsAsn1 = deserializeDer(extension.extnValue.valueBlock.valueHex);
+      const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
       const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
       expect(basicConstraints).toHaveProperty('cA', false);
     });
@@ -389,7 +402,7 @@ describe('issue()', () => {
       const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
       const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
       const extension = matchingExtensions[0];
-      const basicConstraintsAsn1 = deserializeDer(extension.extnValue.valueBlock.valueHex);
+      const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
       const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
       expect(basicConstraints).toHaveProperty('cA', true);
     });
@@ -402,7 +415,7 @@ describe('issue()', () => {
       });
 
       const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
-      const basicConstraintsAsn1 = deserializeDer(extension.extnValue.valueBlock.valueHex);
+      const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
       const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
       expect(basicConstraints).not.toHaveProperty('pathLenConstraint');
     });
@@ -421,7 +434,7 @@ describe('issue()', () => {
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
-      const akiExtensionAsn1 = deserializeDer(akiExtension.extnValue.valueBlock.valueHex);
+      const akiExtensionAsn1 = utils.deserializeDer(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1,
       });
@@ -451,7 +464,7 @@ describe('issue()', () => {
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
-      const akiExtensionAsn1 = deserializeDer(akiExtension.extnValue.valueBlock.valueHex);
+      const akiExtensionAsn1 = utils.deserializeDer(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1,
       });
@@ -484,7 +497,7 @@ describe('issue()', () => {
     expect(matchingExtensions).toHaveLength(1);
     const skiExtension = matchingExtensions[0];
     expect(skiExtension.critical).toBe(false);
-    const skiExtensionAsn1 = deserializeDer(skiExtension.extnValue.valueBlock.valueHex);
+    const skiExtensionAsn1 = utils.deserializeDer(skiExtension.extnValue.valueBlock.valueHex);
     expect(skiExtensionAsn1).toBeInstanceOf(asn1js.OctetString);
     // @ts-ignore
     const keyIdBuffer = Buffer.from(skiExtensionAsn1.valueBlock.valueHex);
@@ -497,7 +510,7 @@ test('serialize() should return a DER-encoded buffer', async () => {
 
   const certDer = cert.serialize();
 
-  const asn1Value = deserializeDer(certDer);
+  const asn1Value = utils.deserializeDer(certDer);
   const pkijsCert = new pkijs.Certificate({ schema: asn1Value });
 
   const subjectDnAttributes = pkijsCert.subject.typesAndValues;

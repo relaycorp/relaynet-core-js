@@ -22,3 +22,11 @@ export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuf
   const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
   return pkijsCrypto.digest({ name: 'SHA-256' }, publicKeyDer);
 }
+
+export function generateRandom32BitUnsignedNumber(): number {
+  const numberArray = new Uint32Array(4);
+  // @ts-ignore
+  getPkijsCrypto().getRandomValues(numberArray);
+  const numberBuffer = Buffer.from(numberArray);
+  return numberBuffer.readUInt32LE(0);
+}
