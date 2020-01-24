@@ -23,6 +23,11 @@ export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuf
   return pkijsCrypto.digest({ name: 'SHA-256' }, publicKeyDer);
 }
 
+export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<string> {
+  const digest = Buffer.from(await getPublicKeyDigest(publicKey));
+  return digest.toString('hex');
+}
+
 export function generateRandom32BitUnsignedNumber(): number {
   const numberArray = new Uint32Array(4);
   // @ts-ignore
