@@ -79,7 +79,7 @@ describe('generateRsaKeyPair', () => {
 
     ['SHA-384', 'SHA-512'].forEach(hashingAlgorithm => {
       test(`${hashingAlgorithm} should be supported`, async () => {
-        const keyPair = await generateRSAKeyPair({ hashingAlgorithm }); //endregion
+        const keyPair = await generateRSAKeyPair({ hashingAlgorithm });
         // @ts-ignore
         expect(keyPair.publicKey.algorithm.hash.name).toBe(hashingAlgorithm);
         // @ts-ignore
