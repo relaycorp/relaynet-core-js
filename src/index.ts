@@ -25,7 +25,7 @@ export {
   generateECDHKeyPair,
   generateRSAKeyPair,
 } from './lib/crypto_wrappers/keys';
-export { PrivateKeyStore } from './lib/privateKeyStore';
+export { PrivateKeyStore, PrivateKeyStoreError, PrivateKeyData } from './lib/privateKeyStore';
 
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
