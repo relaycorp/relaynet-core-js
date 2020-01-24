@@ -110,3 +110,13 @@ export async function derDeserializeECDHPrivateKey(
 }
 
 //endregion
+
+export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
+  const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+  return cryptoEngine.digest({ name: 'SHA-256' }, publicKeyDer);
+}
+
+export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<string> {
+  const digest = Buffer.from(await getPublicKeyDigest(publicKey));
+  return digest.toString('hex');
+}

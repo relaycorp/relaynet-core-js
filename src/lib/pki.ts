@@ -1,4 +1,4 @@
-import { getPublicKeyDigest } from './crypto_wrappers/_utils';
+import { getPublicKeyDigest } from './crypto_wrappers/keys';
 import BaseCertificateOptions from './crypto_wrappers/x509/BaseCertificateOptions';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateError from './crypto_wrappers/x509/CertificateError';

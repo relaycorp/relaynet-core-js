@@ -14,8 +14,18 @@ setEngine('nodeEngine', webcrypto, cryptoEngine);
 //region Exports
 
 export { default as RelaynetError } from './lib/RelaynetError';
-export * from './lib/crypto_wrappers/keys';
-export { SessionStore } from './lib/session';
+export {
+  derDeserializeECDHPrivateKey,
+  derDeserializeECDHPublicKey,
+  derDeserializeRSAPrivateKey,
+  derDeserializeRSAPublicKey,
+  derSerializePrivateKey,
+  derSerializePublicKey,
+  ECDHCurveName,
+  generateECDHKeyPair,
+  generateRSAKeyPair,
+} from './lib/crypto_wrappers/keys';
+export { PrivateKeyStore } from './lib/privateKeyStore';
 
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
