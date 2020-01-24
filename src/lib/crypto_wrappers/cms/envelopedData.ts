@@ -1,10 +1,11 @@
 // tslint:disable:no-object-mutation max-classes-per-file
 import * as asn1js from 'asn1js';
+import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { getPkijsCrypto } from '../_utils';
-import { derDeserializeECDHPublicKey } from '../keys';
+import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
 import CMSError from './CMSError';
@@ -205,10 +206,10 @@ async function pkijsDecrypt(
   privateKey: CryptoKey,
   dhCertificate?: pkijs.Certificate,
 ): Promise<ArrayBuffer> {
-  const privateKeyBuffer = await pkijsCrypto.exportKey('pkcs8', privateKey);
+  const privateKeyDer = await derSerializePrivateKey(privateKey);
   const encryptArgs = {
     recipientCertificate: dhCertificate,
-    recipientPrivateKey: privateKeyBuffer,
+    recipientPrivateKey: bufferToArray(privateKeyDer),
   };
   try {
     // @ts-ignore

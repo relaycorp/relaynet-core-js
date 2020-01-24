@@ -2,8 +2,7 @@ import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
 import { expectPromiseToReject, generateStubCert, getMockContext, sha256Hex } from './_test_utils';
-import { getPkijsCrypto } from './crypto_wrappers/_utils';
-import { generateRSAKeyPair } from './crypto_wrappers/keys';
+import { derSerializePublicKey, generateRSAKeyPair } from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 import {
@@ -12,8 +11,6 @@ import {
   issueNodeCertificate,
   NodeCertificateOptions,
 } from './pki';
-
-const pkijsCrypto = getPkijsCrypto();
 
 // tslint:disable-next-line:no-let
 let stubSubjectKeyPair: CryptoKeyPair;
@@ -60,7 +57,7 @@ describe('issueNodeCertificate', () => {
       subjectPublicKey: publicKey,
     });
 
-    const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
+    const publicKeyDer = await derSerializePublicKey(publicKey);
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions).toHaveProperty('commonName', `0${sha256Hex(publicKeyDer)}`);
   });

@@ -2,11 +2,9 @@ import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { deserializeDer, getPkijsCrypto } from '../_utils';
+import { deserializeDer, getPublicKeyDigest } from '../_utils';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
-
-const pkijsCrypto = getPkijsCrypto();
 
 /**
  * X.509 Certificate.
@@ -174,11 +172,6 @@ function validateIssuerCertificate(issuerCertificate: Certificate): void {
 }
 
 //endregion
-
-async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
-  const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
-  return pkijsCrypto.digest({ name: 'SHA-256' }, publicKeyDer);
-}
 
 interface Asn1jsSerializable {
   readonly toBER: (sizeOnly?: boolean) => ArrayBuffer;
