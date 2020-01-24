@@ -7,11 +7,22 @@ class StubPrivateKeyStore extends PrivateKeyStore {
   // tslint:disable-next-line:readonly-keyword
   public readonly keys: { [key: string]: PrivateKeyData } = {};
 
+  constructor(protected readonly failOnSave = false) {
+    super();
+  }
+
   protected async fetchKey(keyId: string): Promise<PrivateKeyData> {
     if (keyId in this.keys) {
       return this.keys[keyId];
     }
     throw new Error(`Unknown key ${keyId}`);
+  }
+
+  protected async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void> {
+    if (this.failOnSave) {
+      throw new Error('Denied');
+    }
+    this.keys[keyId] = privateKeyData;
   }
 }
 
@@ -19,26 +30,36 @@ describe('PrivateKeyStore', () => {
   const stubKeyId = '123';
   let stubPrivateKey: CryptoKey;
 
+  const stubPrivateKeyDer = Buffer.from('DER-encoded private key');
+  const mockDerSerialize = jest.spyOn(keys, 'derSerializePrivateKey');
+  beforeEach(() => {
+    mockDerSerialize.mockReset();
+    mockDerSerialize.mockResolvedValueOnce(stubPrivateKeyDer);
+  });
+  afterAll(() => {
+    mockDerSerialize.mockRestore();
+  });
+
   describe('Node keys', () => {
     beforeAll(async () => {
       const keyPair = await keys.generateRSAKeyPair();
       stubPrivateKey = keyPair.privateKey;
     });
 
-    const mockDerDeserialize = jest.spyOn(keys, 'derDeserializeRSAPrivateKey');
-    beforeEach(() => {
-      mockDerDeserialize.mockResolvedValueOnce(stubPrivateKey);
-    });
-    afterAll(() => {
-      mockDerDeserialize.mockRestore();
-    });
+    const stubPrivateKeyData = {
+      keyDer: Buffer.from('private key'),
+      recipientPublicKeyDigest: 'digest',
+      type: 'node' as const,
+    };
 
     describe('fetchNodeKey', () => {
-      const stubPrivateKeyData = {
-        keyDer: Buffer.from('private key'),
-        recipientPublicKeyDigest: 'digest',
-        type: 'node' as const,
-      };
+      const mockDerDeserialize = jest.spyOn(keys, 'derDeserializeRSAPrivateKey');
+      beforeEach(() => {
+        mockDerDeserialize.mockResolvedValueOnce(stubPrivateKey);
+      });
+      afterAll(() => {
+        mockDerDeserialize.mockRestore();
+      });
 
       test('Existing key should be returned', async () => {
         const store = new StubPrivateKeyStore();
@@ -73,6 +94,28 @@ describe('PrivateKeyStore', () => {
           new PrivateKeyStoreError(
             `Failed to retrieve session key ${stubKeyId}: Unknown key ${stubKeyId}`,
           ),
+        );
+      });
+    });
+
+    describe('saveNodeKey', () => {
+      test('Key should be stored', async () => {
+        const store = new StubPrivateKeyStore();
+
+        await store.saveNodeKey(stubPrivateKey, stubKeyId);
+
+        expect(store.keys).toHaveProperty(stubKeyId);
+        expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
+        expect(store.keys[stubKeyId]).toHaveProperty('type', 'node');
+        expect(store.keys[stubKeyId]).not.toHaveProperty('recipientPublicKeyDigest');
+      });
+
+      test('Errors should be wrapped', async () => {
+        const store = new StubPrivateKeyStore(true);
+
+        await expectPromiseToReject(
+          store.saveNodeKey(stubPrivateKey, stubKeyId),
+          new PrivateKeyStoreError(`Failed to save node key ${stubKeyId}: Denied`),
         );
       });
     });
@@ -163,6 +206,42 @@ describe('PrivateKeyStore', () => {
           new PrivateKeyStoreError(
             `Failed to retrieve session key ${stubKeyId}: Unknown key ${stubKeyId}`,
           ),
+        );
+      });
+    });
+
+    describe('saveSessionKey', () => {
+      test('Unbound key should be stored', async () => {
+        const store = new StubPrivateKeyStore();
+
+        await store.saveSessionKey(stubPrivateKey, stubKeyId);
+
+        expect(store.keys).toHaveProperty(stubKeyId);
+        expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
+        expect(store.keys[stubKeyId]).toHaveProperty('type', 'session');
+        expect(store.keys[stubKeyId]).toHaveProperty('recipientPublicKeyDigest', undefined);
+      });
+
+      test('Bound key should be stored', async () => {
+        const store = new StubPrivateKeyStore();
+
+        await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientPublicKey);
+
+        expect(store.keys).toHaveProperty(stubKeyId);
+        expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
+        expect(store.keys[stubKeyId]).toHaveProperty('type', 'session');
+        expect(store.keys[stubKeyId]).toHaveProperty(
+          'recipientPublicKeyDigest',
+          await keys.getPublicKeyDigestHex(stubRecipientPublicKey),
+        );
+      });
+
+      test('Errors should be wrapped', async () => {
+        const store = new StubPrivateKeyStore(true);
+
+        await expectPromiseToReject(
+          store.saveSessionKey(stubPrivateKey, stubKeyId),
+          new PrivateKeyStoreError(`Failed to save session key ${stubKeyId}: Denied`),
         );
       });
     });

@@ -2,6 +2,7 @@
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeRSAPrivateKey,
+  derSerializePrivateKey,
   getPublicKeyDigestHex,
 } from './crypto_wrappers/keys';
 import RelaynetError from './RelaynetError';
@@ -28,7 +29,6 @@ export abstract class PrivateKeyStore {
     });
   }
 
-  // @ts-ignore
   public async fetchSessionKey(keyId: string, recipientPublicKey?: CryptoKey): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
@@ -46,7 +46,41 @@ export abstract class PrivateKeyStore {
     return derDeserializeECDHPrivateKey(keyData.keyDer, 'P-256');
   }
 
+  public async saveNodeKey(privateKey: CryptoKey, keyId: string): Promise<void> {
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    const privateKeyData: PrivateKeyData = {
+      keyDer: privateKeyDer,
+      type: 'node',
+    };
+    try {
+      await this.saveKey(privateKeyData, keyId);
+    } catch (error) {
+      throw new PrivateKeyStoreError(error, `Failed to save node key ${keyId}`);
+    }
+  }
+
+  public async saveSessionKey(
+    privateKey: CryptoKey,
+    keyId: string,
+    recipientPublicKey?: CryptoKey,
+  ): Promise<void> {
+    const privateKeyData: PrivateKeyData = {
+      keyDer: await derSerializePrivateKey(privateKey),
+      recipientPublicKeyDigest: recipientPublicKey
+        ? await getPublicKeyDigestHex(recipientPublicKey)
+        : undefined,
+      type: 'session',
+    };
+    try {
+      await this.saveKey(privateKeyData, keyId);
+    } catch (error) {
+      throw new PrivateKeyStoreError(error, `Failed to save session key ${keyId}`);
+    }
+  }
+
   protected abstract async fetchKey(keyId: string): Promise<PrivateKeyData>;
+
+  protected abstract async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void>;
 
   private async fetchKeyOrThrowError(keyId: string): Promise<PrivateKeyData> {
     try {
@@ -55,12 +89,4 @@ export abstract class PrivateKeyStore {
       throw new PrivateKeyStoreError(error, `Failed to retrieve session key ${keyId}`);
     }
   }
-
-  // public async saveNodeKey(privateKey: CryptoKey, keyId: number): Promise<void>;
-  // public async saveSessionKey(
-  //   privateKey: CryptoKey,
-  //   keyId: number,
-  //   recipientPublicKey: CryptoKey,
-  // ): Promise<void>;
-  // protected abstract async saveKey(privateKeyData: PrivateKeyData, keyId: number): Promise<void>;
 }
