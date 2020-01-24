@@ -90,7 +90,7 @@ describe('PrivateKeyStore', () => {
         const store = new StubPrivateKeyStore();
 
         await expectPromiseToReject(
-          store.fetchSessionKey(stubKeyId),
+          store.fetchNodeKey(stubKeyId),
           new PrivateKeyStoreError(
             `Failed to retrieve session key ${stubKeyId}: Unknown key ${stubKeyId}`,
           ),
@@ -158,7 +158,7 @@ describe('PrivateKeyStore', () => {
         const store = new StubPrivateKeyStore();
         store.keys[stubKeyId] = stubUnboundPrivateKeyData;
 
-        const privateKeyData = await store.fetchSessionKey(stubKeyId);
+        const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientPublicKey);
 
         expect(privateKeyData).toBe(stubPrivateKey);
 
@@ -190,10 +190,10 @@ describe('PrivateKeyStore', () => {
 
       test('Node keys should not be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = { ...stubUnboundPrivateKeyData, type: 'node' as const };
+        store.keys[stubKeyId] = { ...stubBoundPrivateKeyData, type: 'node' as const };
 
         await expectPromiseToReject(
-          store.fetchSessionKey(stubKeyId),
+          store.fetchSessionKey(stubKeyId, stubRecipientPublicKey),
           new PrivateKeyStoreError(`Key ${stubKeyId} is not a session key`),
         );
       });
@@ -202,7 +202,7 @@ describe('PrivateKeyStore', () => {
         const store = new StubPrivateKeyStore();
 
         await expectPromiseToReject(
-          store.fetchSessionKey(stubKeyId),
+          store.fetchSessionKey(stubKeyId, stubRecipientPublicKey),
           new PrivateKeyStoreError(
             `Failed to retrieve session key ${stubKeyId}: Unknown key ${stubKeyId}`,
           ),

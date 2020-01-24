@@ -29,14 +29,14 @@ export abstract class PrivateKeyStore {
     });
   }
 
-  public async fetchSessionKey(keyId: string, recipientPublicKey?: CryptoKey): Promise<CryptoKey> {
+  public async fetchSessionKey(keyId: string, recipientPublicKey: CryptoKey): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type !== 'session') {
       throw new PrivateKeyStoreError(`Key ${keyId} is not a session key`);
     }
 
-    if (recipientPublicKey) {
+    if (keyData.recipientPublicKeyDigest) {
       const recipientPublicKeyDigest = await getPublicKeyDigestHex(recipientPublicKey);
       if (recipientPublicKeyDigest !== keyData.recipientPublicKeyDigest) {
         throw new PrivateKeyStoreError(`Key ${keyId} is bound to another recipient`);
