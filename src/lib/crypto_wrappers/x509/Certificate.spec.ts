@@ -524,6 +524,24 @@ test('serialize() should return a DER-encoded buffer', async () => {
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getCommonName());
 });
 
+test('getSerialNumber() should return the buffer in little-endian', async () => {
+  const serialNumber = 123456789;
+
+  const cert = await generateStubCert({ attributes: { serialNumber } });
+
+  const serialNumberBuffer = cert.getSerialNumber();
+  expect(serialNumberBuffer.readUIntLE(0, serialNumberBuffer.byteLength)).toEqual(serialNumber);
+});
+
+test('getSerialNumberHex() should return the hex representation of serial number', async () => {
+  const serialNumber = 123456789;
+
+  const cert = await generateStubCert({ attributes: { serialNumber } });
+
+  const serialNumberHex = cert.getSerialNumberHex();
+  expect(Buffer.from(serialNumberHex, 'hex')).toEqual(cert.getSerialNumber());
+});
+
 describe('getAddress()', () => {
   test('should return the address when found', async () => {
     const cert = await generateStubCert();

@@ -49,13 +49,14 @@ export default class Certificate {
       ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
     const serialNumber = options.serialNumber ?? generateRandom32BitUnsignedNumber();
+    const serialNumberBlock = new asn1js.Integer({ value: serialNumber });
     const pkijsCert = new pkijs.Certificate({
       extensions: [
         makeBasicConstraintsExtension(options.isCA === true),
         await makeAuthorityKeyIdExtension(issuerPublicKey),
         await makeSubjectKeyIdExtension(options.subjectPublicKey),
       ],
-      serialNumber: new asn1js.Integer({ value: serialNumber }),
+      serialNumber: serialNumberBlock,
       version: 2, // 2 = v3
     });
 
@@ -99,6 +100,28 @@ export default class Certificate {
   public serialize(): ArrayBuffer {
     const certAsn1js = this.pkijsCertificate.toSchema(true);
     return certAsn1js.toBER(false);
+  }
+
+  /**
+   * Return serial number as a little endian buffer.
+   *
+   * This doesn't return a `number` or `BigInt` because the serial number could require more than
+   * 8 octets (which is the maximum number of octets required to represent a 64-bit unsigned
+   * integer).
+   *
+   * Also, ASN.1 BER/DER integers are serialized in big endian but for consistency with the
+   * Relaynet specs and this library, the result uses little endian.
+   */
+  public getSerialNumber(): Buffer {
+    const serialNumberBlock = this.pkijsCertificate.serialNumber;
+    const numberBigEndian = new Uint8Array(serialNumberBlock.valueBlock.toBER());
+    const numberLittleEndian = numberBigEndian.reverse();
+    return Buffer.from(numberLittleEndian);
+  }
+
+  public getSerialNumberHex(): string {
+    const serialNumber = this.getSerialNumber();
+    return serialNumber.toString('hex');
   }
 
   public getCommonName(): string {
