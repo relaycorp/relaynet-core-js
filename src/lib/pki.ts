@@ -27,7 +27,7 @@ interface DHKeyCertificateOptions {
   readonly dhPublicKey: CryptoKey;
   readonly nodePrivateKey: CryptoKey;
   readonly nodeCertificate: Certificate;
-  readonly serialNumber: number;
+  readonly serialNumber?: number;
   readonly validityEndDate?: Date;
   readonly validityStartDate?: Date;
 }

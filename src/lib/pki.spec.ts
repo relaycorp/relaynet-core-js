@@ -91,7 +91,6 @@ describe('issueInitialDHKeyCertificate', () => {
       dhPublicKey: stubSubjectKeyPair.publicKey,
       nodeCertificate: stubNodeCertificate,
       nodePrivateKey: stubNodeKeyPair.privateKey,
-      serialNumber: 1,
     });
 
     expect(dhCertificate).toBe(stubCertificate);
@@ -102,7 +101,6 @@ describe('issueInitialDHKeyCertificate', () => {
       dhPublicKey: stubSubjectKeyPair.publicKey,
       nodeCertificate: stubNodeCertificate,
       nodePrivateKey: stubNodeKeyPair.privateKey,
-      serialNumber: 1,
     });
 
     const certificateOptions = getCertificateIssueCallOptions();
@@ -114,7 +112,6 @@ describe('issueInitialDHKeyCertificate', () => {
       dhPublicKey: stubSubjectKeyPair.publicKey,
       nodeCertificate: stubNodeCertificate,
       nodePrivateKey: stubNodeKeyPair.privateKey,
-      serialNumber: 1,
     });
 
     const certificateOptions = getCertificateIssueCallOptions();
@@ -126,7 +123,6 @@ describe('issueInitialDHKeyCertificate', () => {
       dhPublicKey: stubSubjectKeyPair.publicKey,
       nodeCertificate: stubNodeCertificate,
       nodePrivateKey: stubNodeKeyPair.privateKey,
-      serialNumber: 1,
     });
 
     const certificateOptions = getCertificateIssueCallOptions();
@@ -138,14 +134,24 @@ describe('issueInitialDHKeyCertificate', () => {
       dhPublicKey: stubSubjectKeyPair.publicKey,
       nodeCertificate: stubNodeCertificate,
       nodePrivateKey: stubNodeKeyPair.privateKey,
-      serialNumber: 1,
     });
 
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions.issuerPrivateKey).toBe(stubNodeKeyPair.privateKey);
   });
 
-  test('Serial number should be the one specified', async () => {
+  test('Serial number should be generated if unset', async () => {
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+    });
+
+    const certificateOptions = getCertificateIssueCallOptions();
+    expect(certificateOptions).toHaveProperty('serialNumber', undefined);
+  });
+
+  test('Serial number should be the one specified if one was set', async () => {
     const serialNumber = 42;
     await issueInitialDHKeyCertificate({
       dhPublicKey: stubSubjectKeyPair.publicKey,
@@ -167,7 +173,6 @@ describe('issueInitialDHKeyCertificate', () => {
         dhPublicKey: stubSubjectKeyPair.publicKey,
         nodeCertificate: stubNodeCertificate,
         nodePrivateKey: stubNodeKeyPair.privateKey,
-        serialNumber: 1,
       });
 
       const certificateOptions = getCertificateIssueCallOptions();
@@ -183,7 +188,6 @@ describe('issueInitialDHKeyCertificate', () => {
         dhPublicKey: stubSubjectKeyPair.publicKey,
         nodeCertificate: stubNodeCertificate,
         nodePrivateKey: stubNodeKeyPair.privateKey,
-        serialNumber: 1,
         validityEndDate: stubFutureDate,
         validityStartDate: customStartDate,
       });
@@ -200,7 +204,6 @@ describe('issueInitialDHKeyCertificate', () => {
         dhPublicKey: stubSubjectKeyPair.publicKey,
         nodeCertificate: stubNodeCertificate,
         nodePrivateKey: stubNodeKeyPair.privateKey,
-        serialNumber: 1,
       });
 
       const expectedEndDate = new Date(stubCurrentDate);
@@ -215,7 +218,6 @@ describe('issueInitialDHKeyCertificate', () => {
         dhPublicKey: stubSubjectKeyPair.publicKey,
         nodeCertificate: stubNodeCertificate,
         nodePrivateKey: stubNodeKeyPair.privateKey,
-        serialNumber: 1,
         validityEndDate: stubFutureDate,
       });
 
@@ -233,7 +235,6 @@ describe('issueInitialDHKeyCertificate', () => {
           dhPublicKey: stubSubjectKeyPair.publicKey,
           nodeCertificate: stubNodeCertificate,
           nodePrivateKey: stubNodeKeyPair.privateKey,
-          serialNumber: 1,
           validityEndDate: stubFutureDate,
           validityStartDate: startDate,
         }),
@@ -247,7 +248,6 @@ describe('issueInitialDHKeyCertificate', () => {
       dhPublicKey: stubSubjectKeyPair.publicKey,
       nodeCertificate: stubNodeCertificate,
       nodePrivateKey: stubNodeKeyPair.privateKey,
-      serialNumber: 1,
     });
 
     const certificateOptions = getCertificateIssueCallOptions();
