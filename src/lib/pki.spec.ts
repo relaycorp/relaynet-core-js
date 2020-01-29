@@ -42,7 +42,7 @@ describe('issueNodeCertificate', () => {
     expect(certificate).toBe(stubCertificate);
   });
 
-  test('Certificate should be issued with the original options', async () => {
+  test('Certificate should honor the specified options', async () => {
     await issueNodeCertificate(baseCertificateOptions);
 
     const certificateOptions = getCertificateIssueCallOptions();
@@ -60,6 +60,20 @@ describe('issueNodeCertificate', () => {
     const publicKeyDer = await derSerializePublicKey(publicKey);
     const certificateOptions = getCertificateIssueCallOptions();
     expect(certificateOptions).toHaveProperty('commonName', `0${sha256Hex(publicKeyDer)}`);
+  });
+
+  test('Certificate should be marked as CA by default', async () => {
+    await issueNodeCertificate(baseCertificateOptions);
+
+    const certificateOptions = getCertificateIssueCallOptions();
+    expect(certificateOptions).toHaveProperty('isCA', true);
+  });
+
+  test('Certificate can be marked as not a CA', async () => {
+    await issueNodeCertificate({ ...baseCertificateOptions, isCA: false });
+
+    const certificateOptions = getCertificateIssueCallOptions();
+    expect(certificateOptions).toHaveProperty('isCA', false);
   });
 });
 

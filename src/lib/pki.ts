@@ -13,7 +13,7 @@ export interface NodeCertificateOptions extends BaseCertificateOptions {}
 
 export async function issueNodeCertificate(options: NodeCertificateOptions): Promise<Certificate> {
   const address = await computePrivateNodeAddress(options.subjectPublicKey);
-  return Certificate.issue({ ...options, commonName: address });
+  return Certificate.issue({ ...options, commonName: address, isCA: options.isCA ?? true });
 }
 
 async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
