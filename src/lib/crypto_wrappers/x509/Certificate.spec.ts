@@ -9,6 +9,7 @@ import {
   expectBuffersToEqual,
   expectPromiseToReject,
   generateStubCert,
+  reSerializeCertificate,
   sha256Hex,
 } from '../../_test_utils';
 import * as oids from '../../oids';
@@ -592,7 +593,6 @@ describe('validate()', () => {
 describe('validateTrust', () => {
   let stubTrustedCaPrivateKey: CryptoKey;
   let stubTrustedCa: Certificate;
-
   beforeAll(async () => {
     const trustedCaKeyPair = await generateRSAKeyPair();
     stubTrustedCaPrivateKey = trustedCaKeyPair.privateKey;
@@ -613,26 +613,31 @@ describe('validateTrust', () => {
       }),
     );
 
-    await expect(cert.validateTrust([], [stubTrustedCa])).toResolve();
+    await expect(cert.getCertificationPath([], [stubTrustedCa])).resolves.toEqual([
+      cert,
+      stubTrustedCa,
+    ]);
   });
 
   test('Cert not issued by trusted cert should not be trusted', async () => {
     const cert = await generateStubCert();
 
     await expectPromiseToReject(
-      cert.validateTrust([], [stubTrustedCa]),
+      cert.getCertificationPath([], [stubTrustedCa]),
       new CertificateError('No valid certificate paths found'),
     );
   });
 
   test('Cert issued by intermediate CA should be trusted', async () => {
     const intermediateCaKeyPair = await generateRSAKeyPair();
-    const intermediateCaCert = await generateStubCert({
-      attributes: { isCA: true },
-      issuerCertificate: stubTrustedCa,
-      issuerPrivateKey: stubTrustedCaPrivateKey,
-      subjectPublicKey: intermediateCaKeyPair.publicKey,
-    });
+    const intermediateCaCert = reSerializeCertificate(
+      await generateStubCert({
+        attributes: { isCA: true },
+        issuerCertificate: stubTrustedCa,
+        issuerPrivateKey: stubTrustedCaPrivateKey,
+        subjectPublicKey: intermediateCaKeyPair.publicKey,
+      }),
+    );
 
     const cert = reSerializeCertificate(
       await generateStubCert({
@@ -642,8 +647,8 @@ describe('validateTrust', () => {
     );
 
     await expect(
-      cert.validateTrust([reSerializeCertificate(intermediateCaCert)], [stubTrustedCa]),
-    ).toResolve();
+      cert.getCertificationPath([intermediateCaCert], [stubTrustedCa]),
+    ).resolves.toEqual([cert, intermediateCaCert, stubTrustedCa]);
   });
 
   test('Cert issued by untrusted intermediate CA should not be trusted', async () => {
@@ -662,7 +667,10 @@ describe('validateTrust', () => {
     );
 
     await expectPromiseToReject(
-      cert.validateTrust([reSerializeCertificate(untrustedIntermediateCaCert)], [stubTrustedCa]),
+      cert.getCertificationPath(
+        [reSerializeCertificate(untrustedIntermediateCaCert)],
+        [stubTrustedCa],
+      ),
       new CertificateError('No valid certificate paths found'),
     );
   });
@@ -678,20 +686,11 @@ describe('validateTrust', () => {
     const cert = await generateStubCert();
 
     await expectPromiseToReject(
-      cert.validateTrust([trustedIntermediateCaCert], [stubTrustedCa]),
+      cert.getCertificationPath([trustedIntermediateCaCert], [stubTrustedCa]),
       new CertificateError('No valid certificate paths found'),
     );
   });
 });
-
-function reSerializeCertificate(cert: Certificate): Certificate {
-  // TODO: Raise bug in PKI.js project
-  // PKI.js sometimes tries to use attributes that are only set *after* the certificate has been
-  // deserialized, so you'd get a TypeError if you use a certificate you just created in memory.
-  // For example, `extension.parsedValue` would be `undefined` in
-  // https://github.com/PeculiarVentures/PKI.js/blob/9a39551aa9f1445406f96680318014c8d714e8e3/src/CertificateChainValidationEngine.js#L155
-  return Certificate.deserialize(cert.serialize());
-}
 
 test('getPublicKey should return the subject public key', async () => {
   const subjectKeyPair = await generateRSAKeyPair();
