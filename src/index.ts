@@ -43,6 +43,7 @@ export { default as ServiceMessage } from './lib/ramf/ServiceMessage';
 export { default as RAMFError } from './lib/ramf/RAMFError';
 export { default as RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';
 export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
+export { default as InvalidMessageError } from './lib/ramf/InvalidMessageError';
 export { default as Parcel } from './lib/Parcel';
 
 //endregion

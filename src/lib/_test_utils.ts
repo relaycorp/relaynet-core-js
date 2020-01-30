@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
-import { generateRSAKeyPair } from './crypto_wrappers/keys';
+import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 
@@ -38,12 +38,12 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   const keyPair = await generateRSAKeyPair();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
+  const subjectPublicKey = config.subjectPublicKey || keyPair.publicKey;
   return Certificate.issue({
-    commonName: 'commonName',
+    commonName: `0${getPublicKeyDigestHex(subjectPublicKey)}`,
     issuerCertificate: config.issuerCertificate,
     issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
-    serialNumber: 1,
-    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+    subjectPublicKey,
     validityEndDate: futureDate,
     ...config.attributes,
   });
@@ -100,4 +100,13 @@ export function expectBuffersToEqual(
 export function getMockContext(mockedObject: any): jest.MockContext<any, any> {
   const mockInstance = (mockedObject as unknown) as jest.MockInstance<any, any>;
   return mockInstance.mock;
+}
+
+export function reSerializeCertificate(cert: Certificate): Certificate {
+  // TODO: Raise bug in PKI.js project
+  // PKI.js sometimes tries to use attributes that are only set *after* the certificate has been
+  // deserialized, so you'd get a TypeError if you use a certificate you just created in memory.
+  // For example, `extension.parsedValue` would be `undefined` in
+  // https://github.com/PeculiarVentures/PKI.js/blob/9a39551aa9f1445406f96680318014c8d714e8e3/src/CertificateChainValidationEngine.js#L155
+  return Certificate.deserialize(cert.serialize());
 }

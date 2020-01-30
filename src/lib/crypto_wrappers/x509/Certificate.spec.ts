@@ -1,3 +1,5 @@
+/* tslint:disable:no-let */
+
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
@@ -7,6 +9,7 @@ import {
   expectBuffersToEqual,
   expectPromiseToReject,
   generateStubCert,
+  reSerializeCertificate,
   sha256Hex,
 } from '../../_test_utils';
 import * as oids from '../../oids';
@@ -542,7 +545,7 @@ test('getSerialNumberHex() should return the hex representation of serial number
   expect(Buffer.from(serialNumberHex, 'hex')).toEqual(cert.getSerialNumber());
 });
 
-describe('getAddress()', () => {
+describe('getCommonName()', () => {
   test('should return the address when found', async () => {
     const cert = await generateStubCert();
 
@@ -562,6 +565,18 @@ describe('getAddress()', () => {
       'Distinguished Name does not contain Common Name',
     );
   });
+});
+
+test('calculateSubjectPrivateAddress should return private node address', async () => {
+  const nodeKeyPair = await generateRSAKeyPair();
+  const nodeCertificate = await generateStubCert({
+    issuerPrivateKey: nodeKeyPair.privateKey,
+    subjectPublicKey: nodeKeyPair.publicKey,
+  });
+
+  await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
+    `0${await getPublicKeyDigest(nodeKeyPair.publicKey)}`,
+  );
 });
 
 describe('validate()', () => {
@@ -584,6 +599,108 @@ describe('validate()', () => {
         'Only X.509 v3 certificates are supported (got v2)',
       );
     });
+  });
+});
+
+describe('validateTrust', () => {
+  let stubTrustedCaPrivateKey: CryptoKey;
+  let stubTrustedCa: Certificate;
+  beforeAll(async () => {
+    const trustedCaKeyPair = await generateRSAKeyPair();
+    stubTrustedCaPrivateKey = trustedCaKeyPair.privateKey;
+    stubTrustedCa = reSerializeCertificate(
+      await generateStubCert({
+        attributes: { isCA: true },
+        issuerPrivateKey: trustedCaKeyPair.privateKey,
+        subjectPublicKey: trustedCaKeyPair.publicKey,
+      }),
+    );
+  });
+
+  test('Cert issued by trusted cert should be trusted', async () => {
+    const cert = reSerializeCertificate(
+      await generateStubCert({
+        issuerCertificate: stubTrustedCa,
+        issuerPrivateKey: stubTrustedCaPrivateKey,
+      }),
+    );
+
+    await expect(cert.getCertificationPath([], [stubTrustedCa])).resolves.toEqual([
+      cert,
+      stubTrustedCa,
+    ]);
+  });
+
+  test('Cert not issued by trusted cert should not be trusted', async () => {
+    const cert = await generateStubCert();
+
+    await expectPromiseToReject(
+      cert.getCertificationPath([], [stubTrustedCa]),
+      new CertificateError('No valid certificate paths found'),
+    );
+  });
+
+  test('Cert issued by intermediate CA should be trusted', async () => {
+    const intermediateCaKeyPair = await generateRSAKeyPair();
+    const intermediateCaCert = reSerializeCertificate(
+      await generateStubCert({
+        attributes: { isCA: true },
+        issuerCertificate: stubTrustedCa,
+        issuerPrivateKey: stubTrustedCaPrivateKey,
+        subjectPublicKey: intermediateCaKeyPair.publicKey,
+      }),
+    );
+
+    const cert = reSerializeCertificate(
+      await generateStubCert({
+        issuerCertificate: intermediateCaCert,
+        issuerPrivateKey: intermediateCaKeyPair.privateKey,
+      }),
+    );
+
+    await expect(
+      cert.getCertificationPath([intermediateCaCert], [stubTrustedCa]),
+    ).resolves.toEqual([cert, intermediateCaCert, stubTrustedCa]);
+  });
+
+  test('Cert issued by untrusted intermediate CA should not be trusted', async () => {
+    const untrustedIntermediateCaKeyPair = await generateRSAKeyPair();
+    const untrustedIntermediateCaCert = await generateStubCert({
+      attributes: { isCA: true },
+      issuerPrivateKey: untrustedIntermediateCaKeyPair.privateKey,
+      subjectPublicKey: untrustedIntermediateCaKeyPair.publicKey,
+    });
+
+    const cert = reSerializeCertificate(
+      await generateStubCert({
+        issuerCertificate: untrustedIntermediateCaCert,
+        issuerPrivateKey: untrustedIntermediateCaKeyPair.privateKey,
+      }),
+    );
+
+    await expectPromiseToReject(
+      cert.getCertificationPath(
+        [reSerializeCertificate(untrustedIntermediateCaCert)],
+        [stubTrustedCa],
+      ),
+      new CertificateError('No valid certificate paths found'),
+    );
+  });
+
+  test('Including trusted intermediate CA should not make certificate trusted', async () => {
+    const intermediateCaKeyPair = await generateRSAKeyPair();
+    const trustedIntermediateCaCert = await generateStubCert({
+      attributes: { isCA: true },
+      issuerPrivateKey: intermediateCaKeyPair.privateKey,
+      subjectPublicKey: intermediateCaKeyPair.publicKey,
+    });
+
+    const cert = await generateStubCert();
+
+    await expectPromiseToReject(
+      cert.getCertificationPath([trustedIntermediateCaCert], [stubTrustedCa]),
+      new CertificateError('No valid certificate paths found'),
+    );
   });
 });
 

@@ -2,6 +2,7 @@ import uuid4 from 'uuid4';
 
 import { SignatureOptions } from '../..';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import InvalidMessageError from './InvalidMessageError';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
@@ -9,7 +10,7 @@ interface MessageOptions {
   readonly id: string;
   readonly date: Date;
   readonly ttl: number;
-  readonly senderCertificateChain: ReadonlySet<Certificate>;
+  readonly senderCaCertificateChain: readonly Certificate[];
 }
 
 /**
@@ -19,7 +20,7 @@ export default abstract class Message {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
-  public readonly senderCertificateChain: ReadonlySet<Certificate>;
+  public readonly senderCaCertificateChain: readonly Certificate[];
 
   constructor(
     readonly recipientAddress: string,
@@ -31,10 +32,7 @@ export default abstract class Message {
     this.date = options.date || new Date();
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
-    //region Sender certificate (chain)
-    const initialChain = options.senderCertificateChain || new Set([]);
-    this.senderCertificateChain = new Set([...initialChain, senderCertificate]);
-    //endregion
+    this.senderCaCertificateChain = options.senderCaCertificateChain ?? [];
   }
 
   // This method would be concrete if TS allowed us to store the message type and version as
@@ -43,4 +41,31 @@ export default abstract class Message {
     senderPrivateKey: CryptoKey,
     signatureOptions?: SignatureOptions,
   ): Promise<ArrayBuffer>;
+
+  public async validate(trustedCertificates?: readonly Certificate[]): Promise<void> {
+    if (trustedCertificates) {
+      await this.validationAuthorization(trustedCertificates);
+    }
+  }
+
+  protected async validationAuthorization(
+    trustedCertificates: readonly Certificate[],
+  ): Promise<void> {
+    // tslint:disable-next-line:no-let
+    let certificationPath: readonly Certificate[];
+    try {
+      certificationPath = await this.senderCertificate.getCertificationPath(
+        this.senderCaCertificateChain,
+        trustedCertificates,
+      );
+    } catch (error) {
+      throw new InvalidMessageError(error, 'Sender is not authorized');
+    }
+
+    const recipientCertificate = certificationPath[1];
+    const recipientPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
+    if (recipientPrivateAddress !== this.recipientAddress) {
+      throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
+    }
+  }
 }

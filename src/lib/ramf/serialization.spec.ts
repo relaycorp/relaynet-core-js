@@ -391,14 +391,14 @@ describe('MessageSerializer', () => {
     });
 
     describe('Signature', () => {
-      let senderCertificateChain: Set<Certificate>;
+      let senderCaCertificateChain: readonly Certificate[];
       let messageSerialized: ArrayBuffer;
       let cmsSignArgs: readonly any[];
       let signature: Buffer;
       beforeAll(async () => {
-        senderCertificateChain = new Set([await generateStubCert()]);
+        senderCaCertificateChain = [await generateStubCert()];
         const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          senderCertificateChain,
+          senderCaCertificateChain,
         });
 
         jest.spyOn(cmsSignedData, 'sign');
@@ -436,16 +436,11 @@ describe('MessageSerializer', () => {
         expect(actualSenderCertificate).toBe(senderCertificate);
       });
 
-      test('Sender certificate should be attached', () => {
-        const attachedCertificates = cmsSignArgs[3];
-
-        expect(attachedCertificates).toContain(senderCertificate);
-      });
-
       test('Sender certificate chain should be attached', () => {
         const attachedCertificates = cmsSignArgs[3];
 
-        for (const cert of senderCertificateChain) {
+        expect(attachedCertificates).toHaveLength(senderCaCertificateChain.length);
+        for (const cert of senderCaCertificateChain) {
           expect(attachedCertificates).toContain(cert);
         }
       });
@@ -932,13 +927,11 @@ describe('MessageSerializer', () => {
 
       test('Signature should not be accepted if invalid', async () => {
         const signerKeyPair = await generateRSAKeyPair();
-        const signerCertificate = await generateStubCert({
-          subjectPublicKey: signerKeyPair.publicKey,
-        });
+        const differentSignerCertificate = await generateStubCert();
         const invalidSignature = await cmsSignedData.sign(
           bufferToArray(Buffer.from('Hello world')),
           signerKeyPair.privateKey,
-          signerCertificate,
+          differentSignerCertificate,
         );
 
         const messageSerialized = await serializeWithoutValidation({}, invalidSignature);
@@ -953,8 +946,7 @@ describe('MessageSerializer', () => {
         );
         expect(error).toBeInstanceOf(RAMFValidationError);
         expect(error.message).toEqual(
-          'Invalid RAMF message signature: Invalid signature: ' +
-            'Unable to find signer certificate (PKI.js code: 3)',
+          'Invalid RAMF message signature: Invalid signature:  (PKI.js code: 14)',
         );
       });
 
@@ -1010,17 +1002,17 @@ describe('MessageSerializer', () => {
         const messageSerialized = await serializeWithoutValidation({});
 
         jest.spyOn(cmsSignedData, 'verifySignature').mockImplementationOnce(async () => ({
+          attachedCertificates: [senderCertificate, caCertificate],
           signerCertificate: senderCertificate,
-          signerCertificateChain: [senderCertificate, caCertificate],
         }));
-        const { senderCertificateChain } = await deserialize(
+        const { senderCaCertificateChain } = await deserialize(
           messageSerialized,
           stubConcreteMessageTypeOctet,
           stubConcreteMessageVersionOctet,
           StubMessage,
         );
 
-        expect(senderCertificateChain).toEqual(new Set([senderCertificate, caCertificate]));
+        expect(senderCaCertificateChain).toEqual([senderCertificate, caCertificate]);
       });
 
       test('Length prefix should be less than 14 bits long', async () => {

@@ -3,7 +3,7 @@ import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { deserializeDer, generateRandom32BitUnsignedNumber } from '../_utils';
-import { getPublicKeyDigest } from '../keys';
+import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 
@@ -146,6 +146,38 @@ export default class Certificate {
         `Only X.509 v3 certificates are supported (got v${x509CertVersion})`,
       );
     }
+  }
+
+  public async calculateSubjectPrivateAddress(): Promise<string> {
+    const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
+    return `0${subjectKeyDigest}`;
+  }
+
+  /**
+   * Return the certification path (aka "certificate chain") if this certificate can be trusted.
+   *
+   * @param intermediateCaCertificates The alleged chain for the certificate
+   * @param trustedCertificates The collection of certificates that are actually trusted
+   * @throws CertificateError when this certificate is not on a certificate path from a CA in
+   *   `trustedCertificates`
+   */
+  public async getCertificationPath(
+    intermediateCaCertificates: readonly Certificate[],
+    trustedCertificates: readonly Certificate[],
+  ): Promise<readonly Certificate[]> {
+    const chainValidator = new pkijs.CertificateChainValidationEngine({
+      certs: [...intermediateCaCertificates.map(c => c.pkijsCertificate), this.pkijsCertificate],
+      trustedCerts: trustedCertificates.map(c => c.pkijsCertificate),
+    });
+    const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
+
+    if (!verification.result) {
+      throw new CertificateError(verification.resultMessage);
+    }
+
+    return verification.certificatePath.map(
+      (pkijsCert: pkijs.Certificate) => new Certificate(pkijsCert),
+    );
   }
 }
 

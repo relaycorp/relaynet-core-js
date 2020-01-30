@@ -1,10 +1,11 @@
 /* tslint:disable:no-let max-classes-per-file */
 import * as jestDateMock from 'jest-date-mock';
 
-import { generateStubCert } from '../_test_utils';
+import { expectPromiseToReject, generateStubCert, reSerializeCertificate } from '../_test_utils';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { StubMessage } from './_test_utils';
+import InvalidMessageError from './InvalidMessageError';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
@@ -81,31 +82,99 @@ describe('Message', () => {
       });
     });
 
-    describe('Sender certificate chain', () => {
-      test('Sender certificate chain should only contain sender certificate by default', () => {
+    describe('Sender CA certificate chain', () => {
+      test('CA certificate chain should be empty by default', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
-        expect(message.senderCertificateChain).toEqual(new Set([senderCertificate]));
+        expect(message.senderCaCertificateChain).toEqual([]);
       });
 
       test('A custom sender certificate chain should be accepted', async () => {
-        const chain = new Set([await generateStubCert(), senderCertificate]);
+        const chain: readonly Certificate[] = [await generateStubCert(), senderCertificate];
         const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCertificateChain: chain,
+          senderCaCertificateChain: chain,
         });
 
-        expect(message.senderCertificateChain).toEqual(chain);
+        expect(message.senderCaCertificateChain).toEqual(chain);
+      });
+    });
+  });
+
+  describe('validate', () => {
+    let stubRootCaCert: Certificate;
+    let stubRecipient: Certificate;
+    let stubAuthorizedSender: Certificate;
+    beforeAll(async () => {
+      const trustedCaKeyPair = await generateRSAKeyPair();
+      stubRootCaCert = reSerializeCertificate(
+        await generateStubCert({
+          attributes: { isCA: true, serialNumber: 1 },
+          issuerPrivateKey: trustedCaKeyPair.privateKey,
+          subjectPublicKey: trustedCaKeyPair.publicKey,
+        }),
+      );
+
+      const recipientKeyPair = await generateRSAKeyPair();
+      stubRecipient = reSerializeCertificate(
+        await generateStubCert({
+          attributes: { isCA: true, serialNumber: 2 },
+          issuerCertificate: stubRootCaCert,
+          issuerPrivateKey: trustedCaKeyPair.privateKey,
+          subjectPublicKey: recipientKeyPair.publicKey,
+        }),
+      );
+
+      stubAuthorizedSender = reSerializeCertificate(
+        await generateStubCert({
+          attributes: { isCA: false, serialNumber: 3 },
+          issuerCertificate: stubRecipient,
+          issuerPrivateKey: recipientKeyPair.privateKey,
+        }),
+      );
+    });
+
+    describe('Authorization', () => {
+      test('Parcel should be refused if sender is not trusted', async () => {
+        const message = new StubMessage(
+          await stubRecipient.calculateSubjectPrivateAddress(),
+          reSerializeCertificate(senderCertificate),
+          payload,
+        );
+
+        await expectPromiseToReject(
+          message.validate([stubRootCaCert]),
+          new InvalidMessageError('Sender is not authorized: No valid certificate paths found'),
+        );
       });
 
-      test('Sender certificate should be added to custom chain if missing', async () => {
-        const additionalCertificate = await generateStubCert();
-        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCertificateChain: new Set([additionalCertificate]),
+      test('Parcel should be accepted if sender is trusted', async () => {
+        const message = new StubMessage(
+          await stubRecipient.calculateSubjectPrivateAddress(),
+          stubAuthorizedSender,
+          payload,
+          {
+            senderCaCertificateChain: [stubRecipient],
+          },
+        );
+
+        await expect(message.validate([stubRootCaCert])).toResolve();
+      });
+
+      test('Parcel should be refused if recipient is not issuer of sender', async () => {
+        const message = new StubMessage('0deadbeef', stubAuthorizedSender, payload, {
+          senderCaCertificateChain: [stubRecipient],
         });
 
-        expect(message.senderCertificateChain).toEqual(
-          new Set([senderCertificate, additionalCertificate]),
+        await expectPromiseToReject(
+          message.validate([stubRootCaCert]),
+          new InvalidMessageError(`Sender is not authorized to reach ${message.recipientAddress}`),
         );
+      });
+
+      test('Authorization enforcement should be skipped if trusted certs are absent', async () => {
+        const message = new StubMessage('0deadbeef', senderCertificate, payload);
+
+        await expect(message.validate()).toResolve();
       });
     });
   });

@@ -105,7 +105,7 @@ export async function serialize(
     bufferToArray(serializationBeforeSignature),
     senderPrivateKey,
     message.senderCertificate,
-    new Set([message.senderCertificate, ...message.senderCertificateChain]),
+    message.senderCaCertificateChain,
     signatureOptions,
   );
   validateSignatureLength(signature);
@@ -148,7 +148,7 @@ export async function deserialize<M extends Message>(
     {
       date: new Date(messageFields.dateTimestamp * 1_000),
       id: messageFields.id,
-      senderCertificateChain: signatureVerification.signerCertificateChain,
+      senderCaCertificateChain: signatureVerification.attachedCertificates,
       ttl: messageFields.ttlBuffer.readUIntLE(0, 3),
     },
   );
