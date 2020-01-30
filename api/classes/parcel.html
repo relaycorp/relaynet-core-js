@@ -2391,16 +2391,22 @@ img {
 					<a href="parcel.html#recipientaddress" class="tsd-kind-icon">recipient<wbr>Address</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-					<a href="parcel.html#sendercertificate" class="tsd-kind-icon">sender<wbr>Certificate</a>
+					<a href="parcel.html#sendercacertificatechain" class="tsd-kind-icon">sender<wbr>CaCertificate<wbr>Chain</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-					<a href="parcel.html#sendercertificatechain" class="tsd-kind-icon">sender<wbr>Certificate<wbr>Chain</a>
+					<a href="parcel.html#sendercertificate" class="tsd-kind-icon">sender<wbr>Certificate</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 					<a href="parcel.html#ttl" class="tsd-kind-icon">ttl</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
 					<a href="parcel.html#serialize" class="tsd-kind-icon">serialize</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<a href="parcel.html#validate" class="tsd-kind-icon">validate</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-external">
+					<a href="parcel.html#validationauthorization" class="tsd-kind-icon">validation<wbr>Authorization</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
 					<a href="parcel.html#deserialize" class="tsd-kind-icon">deserialize</a>
@@ -2441,8 +2447,8 @@ img {
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#id" class="tsd-kind-icon">id</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#payloadserialized" class="tsd-kind-icon">payload<wbr>Serialized</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#recipientaddress" class="tsd-kind-icon">recipient<wbr>Address</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#sendercacertificatechain" class="tsd-kind-icon">sender<wbr>CaCertificate<wbr>Chain</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#sendercertificate" class="tsd-kind-icon">sender<wbr>Certificate</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#sendercertificatechain" class="tsd-kind-icon">sender<wbr>Certificate<wbr>Chain</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#ttl" class="tsd-kind-icon">ttl</a></li>
 						</ul>
 					</section>
@@ -2450,6 +2456,8 @@ img {
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="parcel.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="parcel.html#validate" class="tsd-kind-icon">validate</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-external"><a href="parcel.html#validationauthorization" class="tsd-kind-icon">validation<wbr>Authorization</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="parcel.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
 						</ul>
 					</section>
@@ -2469,7 +2477,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#constructor">constructor</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L22">src/lib/ramf/Message.ts:22</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L23">src/lib/ramf/Message.ts:23</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2501,7 +2509,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#date">date</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L20">src/lib/ramf/Message.ts:20</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L21">src/lib/ramf/Message.ts:21</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2512,7 +2520,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#id">id</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L19">src/lib/ramf/Message.ts:19</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L20">src/lib/ramf/Message.ts:20</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2523,7 +2531,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#payloadserialized">payloadSerialized</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L27">src/lib/ramf/Message.ts:27</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L28">src/lib/ramf/Message.ts:28</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2534,7 +2542,18 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#recipientaddress">recipientAddress</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L25">src/lib/ramf/Message.ts:25</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L26">src/lib/ramf/Message.ts:26</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+				<a name="sendercacertificatechain" class="tsd-anchor"></a>
+				<h3>sender<wbr>CaCertificate<wbr>Chain</h3>
+				<div class="tsd-signature tsd-kind-icon">sender<wbr>CaCertificate<wbr>Chain<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">keyof Certificate[]</span></div>
+				<aside class="tsd-sources">
+					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#sendercacertificatechain">senderCaCertificateChain</a></p>
+					<ul>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L23">src/lib/ramf/Message.ts:23</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2545,18 +2564,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#sendercertificate">senderCertificate</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L26">src/lib/ramf/Message.ts:26</a></li>
-					</ul>
-				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-				<a name="sendercertificatechain" class="tsd-anchor"></a>
-				<h3>sender<wbr>Certificate<wbr>Chain</h3>
-				<div class="tsd-signature tsd-kind-icon">sender<wbr>Certificate<wbr>Chain<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ReadonlySet</span><span class="tsd-signature-symbol">&lt;</span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">&gt;</span></div>
-				<aside class="tsd-sources">
-					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#sendercertificatechain">senderCertificateChain</a></p>
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L22">src/lib/ramf/Message.ts:22</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L27">src/lib/ramf/Message.ts:27</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2567,7 +2575,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#ttl">ttl</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/ramf/Message.ts#L21">src/lib/ramf/Message.ts:21</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L22">src/lib/ramf/Message.ts:22</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2585,7 +2593,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Overrides <a href="message.html">Message</a>.<a href="message.html#serialize">serialize</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/Parcel.ts#L18">src/lib/Parcel.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/Parcel.ts#L18">src/lib/Parcel.ts:18</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2601,6 +2609,54 @@ img {
 					</li>
 				</ul>
 			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+				<a name="validate" class="tsd-anchor"></a>
+				<h3>validate</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">validate<span class="tsd-signature-symbol">(</span>trustedCertificates<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">keyof Certificate[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#validate">validate</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L45">src/lib/ramf/Message.ts:45</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> trustedCertificates: <span class="tsd-signature-type">keyof Certificate[]</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-external">
+				<a name="validationauthorization" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> validation<wbr>Authorization</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">validation<wbr>Authorization<span class="tsd-signature-symbol">(</span>trustedCertificates<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">keyof Certificate[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="message.html">Message</a>.<a href="message.html#validationauthorization">validationAuthorization</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/ramf/Message.ts#L51">src/lib/ramf/Message.ts:51</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>trustedCertificates: <span class="tsd-signature-type">keyof Certificate[]</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
 				<a name="deserialize" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagStatic">Static</span> deserialize</h3>
@@ -2611,7 +2667,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/Parcel.ts#L9">src/lib/Parcel.ts:9</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/Parcel.ts#L9">src/lib/Parcel.ts:9</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>

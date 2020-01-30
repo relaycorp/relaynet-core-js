@@ -2382,6 +2382,12 @@ img {
 					<a href="certificate.html#pkijscertificate" class="tsd-kind-icon">pkijs<wbr>Certificate</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="certificate.html#calculatesubjectprivateaddress" class="tsd-kind-icon">calculate<wbr>Subject<wbr>Private<wbr>Address</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="certificate.html#getcertificationpath" class="tsd-kind-icon">get<wbr>Certification<wbr>Path</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
 					<a href="certificate.html#getcommonname" class="tsd-kind-icon">get<wbr>Common<wbr>Name</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
@@ -2447,6 +2453,8 @@ img {
 					<section class="tsd-index-section tsd-is-external">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="certificate.html#calculatesubjectprivateaddress" class="tsd-kind-icon">calculate<wbr>Subject<wbr>Private<wbr>Address</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="certificate.html#getcertificationpath" class="tsd-kind-icon">get<wbr>Certification<wbr>Path</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="certificate.html#getcommonname" class="tsd-kind-icon">get<wbr>Common<wbr>Name</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="certificate.html#getpublickey" class="tsd-kind-icon">get<wbr>Public<wbr>Key</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="certificate.html#getserialnumber" class="tsd-kind-icon">get<wbr>Serial<wbr>Number</a></li>
@@ -2472,7 +2480,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L93">src/lib/crypto_wrappers/x509/Certificate.ts:93</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L93">src/lib/crypto_wrappers/x509/Certificate.ts:93</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2494,13 +2502,73 @@ img {
 				<div class="tsd-signature tsd-kind-icon">pkijs<wbr>Certificate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">pkijs.Certificate</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L95">src/lib/crypto_wrappers/x509/Certificate.ts:95</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L95">src/lib/crypto_wrappers/x509/Certificate.ts:95</a></li>
 					</ul>
 				</aside>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
 			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="calculatesubjectprivateaddress" class="tsd-anchor"></a>
+				<h3>calculate<wbr>Subject<wbr>Private<wbr>Address</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">calculate<wbr>Subject<wbr>Private<wbr>Address<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L151">src/lib/crypto_wrappers/x509/Certificate.ts:151</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="getcertificationpath" class="tsd-anchor"></a>
+				<h3>get<wbr>Certification<wbr>Path</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">get<wbr>Certification<wbr>Path<span class="tsd-signature-symbol">(</span>intermediateCaCertificates<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">keyof Certificate[]</span>, trustedCertificates<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">keyof Certificate[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">keyof Certificate[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L164">src/lib/crypto_wrappers/x509/Certificate.ts:164</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Return the certification path (aka &quot;certificate chain&quot;) if this certificate can be trusted.</p>
+							</div>
+							<dl class="tsd-comment-tags">
+								<dt>throws</dt>
+								<dd><p>CertificateError when this certificate is not on a certificate path from a CA in
+									<code>trustedCertificates</code></p>
+								</dd>
+							</dl>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>intermediateCaCertificates: <span class="tsd-signature-type">keyof Certificate[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<p>The alleged chain for the certificate</p>
+								</div>
+							</li>
+							<li>
+								<h5>trustedCertificates: <span class="tsd-signature-type">keyof Certificate[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<p>The collection of certificates that are actually trusted</p>
+								</div>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">keyof Certificate[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
 				<a name="getcommonname" class="tsd-anchor"></a>
 				<h3>get<wbr>Common<wbr>Name</h3>
@@ -2511,7 +2579,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L127">src/lib/crypto_wrappers/x509/Certificate.ts:127</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L127">src/lib/crypto_wrappers/x509/Certificate.ts:127</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -2528,7 +2596,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L137">src/lib/crypto_wrappers/x509/Certificate.ts:137</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L137">src/lib/crypto_wrappers/x509/Certificate.ts:137</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -2545,7 +2613,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L115">src/lib/crypto_wrappers/x509/Certificate.ts:115</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L115">src/lib/crypto_wrappers/x509/Certificate.ts:115</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2572,7 +2640,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L122">src/lib/crypto_wrappers/x509/Certificate.ts:122</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L122">src/lib/crypto_wrappers/x509/Certificate.ts:122</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -2589,7 +2657,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L100">src/lib/crypto_wrappers/x509/Certificate.ts:100</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L100">src/lib/crypto_wrappers/x509/Certificate.ts:100</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2611,7 +2679,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L141">src/lib/crypto_wrappers/x509/Certificate.ts:141</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L141">src/lib/crypto_wrappers/x509/Certificate.ts:141</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -2628,7 +2696,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L23">src/lib/crypto_wrappers/x509/Certificate.ts:23</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L23">src/lib/crypto_wrappers/x509/Certificate.ts:23</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2664,7 +2732,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/c9a0a92/src/lib/crypto_wrappers/x509/Certificate.ts#L36">src/lib/crypto_wrappers/x509/Certificate.ts:36</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/6a4134a/src/lib/crypto_wrappers/x509/Certificate.ts#L36">src/lib/crypto_wrappers/x509/Certificate.ts:36</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
