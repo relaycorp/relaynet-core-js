@@ -932,13 +932,11 @@ describe('MessageSerializer', () => {
 
       test('Signature should not be accepted if invalid', async () => {
         const signerKeyPair = await generateRSAKeyPair();
-        const signerCertificate = await generateStubCert({
-          subjectPublicKey: signerKeyPair.publicKey,
-        });
+        const differentSignerCertificate = await generateStubCert();
         const invalidSignature = await cmsSignedData.sign(
           bufferToArray(Buffer.from('Hello world')),
           signerKeyPair.privateKey,
-          signerCertificate,
+          differentSignerCertificate,
         );
 
         const messageSerialized = await serializeWithoutValidation({}, invalidSignature);
@@ -953,8 +951,7 @@ describe('MessageSerializer', () => {
         );
         expect(error).toBeInstanceOf(RAMFValidationError);
         expect(error.message).toEqual(
-          'Invalid RAMF message signature: Invalid signature: ' +
-            'Unable to find signer certificate (PKI.js code: 3)',
+          'Invalid RAMF message signature: Invalid signature:  (PKI.js code: 14)',
         );
       });
 
@@ -1010,8 +1007,8 @@ describe('MessageSerializer', () => {
         const messageSerialized = await serializeWithoutValidation({});
 
         jest.spyOn(cmsSignedData, 'verifySignature').mockImplementationOnce(async () => ({
+          attachedCertificates: [senderCertificate, caCertificate],
           signerCertificate: senderCertificate,
-          signerCertificateChain: [senderCertificate, caCertificate],
         }));
         const { senderCertificateChain } = await deserialize(
           messageSerialized,

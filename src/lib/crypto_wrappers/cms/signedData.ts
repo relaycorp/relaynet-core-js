@@ -1,4 +1,5 @@
 // tslint:disable:no-object-mutation
+
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
@@ -12,7 +13,7 @@ const pkijsCrypto = getPkijsCrypto();
 
 export interface SignatureVerification {
   readonly signerCertificate: Certificate;
-  readonly signerCertificateChain: ReadonlyArray<Certificate>;
+  readonly attachedCertificates: readonly Certificate[];
 }
 
 export interface SignatureOptions {
@@ -25,7 +26,7 @@ export interface SignatureOptions {
  * @param plaintext
  * @param privateKey
  * @param signerCertificate
- * @param attachedCertificates
+ * @param additionalAttachedCertificates
  * @param options
  * @throws `CMSError` when attempting to use SHA-1 as the hashing function
  */
@@ -33,7 +34,7 @@ export async function sign(
   plaintext: ArrayBuffer,
   privateKey: CryptoKey,
   signerCertificate: Certificate,
-  attachedCertificates: ReadonlySet<Certificate> = new Set(),
+  additionalAttachedCertificates: ReadonlySet<Certificate> = new Set(),
   options: Partial<SignatureOptions> = {},
 ): Promise<ArrayBuffer> {
   // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
@@ -45,7 +46,9 @@ export async function sign(
   const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
   const signerInfo = initSignerInfo(signerCertificate, digest);
   const signedData = new pkijs.SignedData({
-    certificates: Array.from(attachedCertificates).map(c => c.pkijsCertificate),
+    certificates: [signerCertificate, ...additionalAttachedCertificates].map(
+      c => c.pkijsCertificate,
+    ),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
       eContentType: oids.CMS_DATA,
     }),
@@ -85,52 +88,32 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
 }
 
 /**
- * Verify CMS SignedData signature.
+ * Verify CMS SignedData `signature`.
+ *
+ * The CMS SignedData value must have the signer's certificate attached. CA certificates may
+ * also be attached.
  *
  * @param signature The CMS SignedData signature, DER-encoded.
  * @param plaintext The plaintext to be verified against signature.
- * @param detachedSignerCertificateOrTrustedCertificates Either the signer's certificate when
- *   detached from the SignedData or the set of trusted CAs.
+ * @return Signer's certificate chain, starting with the signer's certificate
  * @throws {CMSError} If `signature` could not be decoded or verified.
  */
 export async function verifySignature(
   signature: ArrayBuffer,
   plaintext: ArrayBuffer,
-  detachedSignerCertificateOrTrustedCertificates?: Certificate | ReadonlyArray<Certificate>,
 ): Promise<SignatureVerification> {
-  const detachedSignerCertificate =
-    detachedSignerCertificateOrTrustedCertificates instanceof Certificate
-      ? detachedSignerCertificateOrTrustedCertificates
-      : undefined;
-  const trustedCertificates =
-    detachedSignerCertificateOrTrustedCertificates instanceof Array
-      ? detachedSignerCertificateOrTrustedCertificates
-      : undefined;
-
   const contentInfo = deserializeContentInfo(signature);
 
   const signedData = new pkijs.SignedData({ schema: contentInfo.content });
-  if (detachedSignerCertificate) {
-    signedData.certificates = [detachedSignerCertificate.pkijsCertificate];
-  } else if (trustedCertificates) {
-    const originalCertificates = signedData.certificates as ReadonlyArray<pkijs.Certificate>;
-    signedData.certificates = [
-      ...originalCertificates,
-      ...trustedCertificates.map(c => c.pkijsCertificate),
-    ];
-  }
 
   // tslint:disable-next-line:no-let
   let verificationResult;
   try {
     verificationResult = await signedData.verify({
-      checkChain: !!trustedCertificates,
       data: plaintext,
       extendedMode: true,
+      includeSignerCertificate: true,
       signer: 0,
-      trustedCerts: trustedCertificates
-        ? trustedCertificates.map(c => c.pkijsCertificate)
-        : undefined,
     });
 
     if (!verificationResult.signatureVerified) {
@@ -140,21 +123,10 @@ export async function verifySignature(
     throw new CMSError(`Invalid signature: ${e.message} (PKI.js code: ${e.code})`);
   }
 
-  const pkijsCertificateChain = trustedCertificates
-    ? ((verificationResult as unknown) as MissingSignedDataVerifyResult).certificatePath
-    : [((verificationResult as unknown) as MissingSignedDataVerifyResult).signerCertificate];
   return {
+    attachedCertificates: (signedData.certificates as readonly pkijs.Certificate[]).map(
+      c => new Certificate(c),
+    ),
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
-    signerCertificateChain: pkijsCertificateChain.map(c => new Certificate(c)),
   };
-}
-
-/**
- * Attributes missing from the typing for `VerifyResult` in PKI.js
- *
- * TODO: Create PR for @types/pkijs
- */
-interface MissingSignedDataVerifyResult {
-  readonly certificatePath: ReadonlyArray<pkijs.Certificate>;
-  readonly signerCertificate: pkijs.Certificate;
 }

@@ -148,7 +148,7 @@ export async function deserialize<M extends Message>(
     {
       date: new Date(messageFields.dateTimestamp * 1_000),
       id: messageFields.id,
-      senderCertificateChain: signatureVerification.signerCertificateChain,
+      senderCertificateChain: signatureVerification.attachedCertificates,
       ttl: messageFields.ttlBuffer.readUIntLE(0, 3),
     },
   );

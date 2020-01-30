@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
-import { generateRSAKeyPair } from './crypto_wrappers/keys';
+import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 
@@ -38,12 +38,12 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   const keyPair = await generateRSAKeyPair();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 1);
+  const subjectPublicKey = config.subjectPublicKey || keyPair.publicKey;
   return Certificate.issue({
-    commonName: 'commonName',
+    commonName: `0${getPublicKeyDigestHex(subjectPublicKey)}`,
     issuerCertificate: config.issuerCertificate,
     issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
-    serialNumber: 1,
-    subjectPublicKey: config.subjectPublicKey || keyPair.publicKey,
+    subjectPublicKey,
     validityEndDate: futureDate,
     ...config.attributes,
   });
