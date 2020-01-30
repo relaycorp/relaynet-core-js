@@ -3,7 +3,7 @@ import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { deserializeDer, generateRandom32BitUnsignedNumber } from '../_utils';
-import { getPublicKeyDigest } from '../keys';
+import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
 import CertificateError from './CertificateError';
 import CertificateOptions from './CertificateOptions';
 
@@ -146,6 +146,11 @@ export default class Certificate {
         `Only X.509 v3 certificates are supported (got v${x509CertVersion})`,
       );
     }
+  }
+
+  public async calculateSubjectPrivateAddress(): Promise<string> {
+    const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
+    return `0${subjectKeyDigest}`;
   }
 
   /**

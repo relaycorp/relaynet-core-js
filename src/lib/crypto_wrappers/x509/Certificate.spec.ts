@@ -545,7 +545,7 @@ test('getSerialNumberHex() should return the hex representation of serial number
   expect(Buffer.from(serialNumberHex, 'hex')).toEqual(cert.getSerialNumber());
 });
 
-describe('getAddress()', () => {
+describe('getCommonName()', () => {
   test('should return the address when found', async () => {
     const cert = await generateStubCert();
 
@@ -565,6 +565,18 @@ describe('getAddress()', () => {
       'Distinguished Name does not contain Common Name',
     );
   });
+});
+
+test('calculateSubjectPrivateAddress should return private node address', async () => {
+  const nodeKeyPair = await generateRSAKeyPair();
+  const nodeCertificate = await generateStubCert({
+    issuerPrivateKey: nodeKeyPair.privateKey,
+    subjectPublicKey: nodeKeyPair.publicKey,
+  });
+
+  await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
+    `0${await getPublicKeyDigest(nodeKeyPair.publicKey)}`,
+  );
 });
 
 describe('validate()', () => {
