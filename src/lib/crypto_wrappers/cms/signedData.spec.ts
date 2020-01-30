@@ -145,12 +145,10 @@ describe('sign', () => {
     test('CA certificate chain should optionally be attached', async () => {
       const rootCaCertificate = await generateStubCert();
       const intermediateCaCertificate = await generateStubCert();
-      const contentInfoDer = await sign(
-        plaintext,
-        privateKey,
-        certificate,
-        new Set([intermediateCaCertificate, rootCaCertificate]),
-      );
+      const contentInfoDer = await sign(plaintext, privateKey, certificate, [
+        intermediateCaCertificate,
+        rootCaCertificate,
+      ]);
 
       const signedData = deserializeSignedData(contentInfoDer);
       expect(signedData).toHaveProperty('certificates');
@@ -178,7 +176,7 @@ describe('sign', () => {
 
     test.each([['SHA-384', 'SHA-512']])('%s should be supported', async hashingAlgorithmName => {
       jest.spyOn(pkijs.SignedData.prototype, 'sign');
-      const contentInfoDer = await sign(plaintext, privateKey, certificate, new Set(), {
+      const contentInfoDer = await sign(plaintext, privateKey, certificate, [], {
         hashingAlgorithmName,
       });
 
@@ -201,9 +199,7 @@ describe('sign', () => {
       expect.hasAssertions();
 
       try {
-        await sign(plaintext, privateKey, certificate, new Set(), {
-          hashingAlgorithmName: 'SHA-1',
-        });
+        await sign(plaintext, privateKey, certificate, [], { hashingAlgorithmName: 'SHA-1' });
       } catch (error) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toEqual('SHA-1 is disallowed by RS-018');
@@ -263,12 +259,10 @@ describe('verifySignature', () => {
       issuerPrivateKey: intermediateCaKeyPair.privateKey,
       subjectPublicKey: signerKeyPair.publicKey,
     });
-    const signatureDer = await sign(
-      plaintext,
-      signerKeyPair.privateKey,
-      signerCertificate,
-      new Set([intermediateCaCertificate, rootCaCertificate]),
-    );
+    const signatureDer = await sign(plaintext, signerKeyPair.privateKey, signerCertificate, [
+      intermediateCaCertificate,
+      rootCaCertificate,
+    ]);
 
     const { attachedCertificates } = await verifySignature(signatureDer, plaintext);
 

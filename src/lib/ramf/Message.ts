@@ -9,7 +9,7 @@ interface MessageOptions {
   readonly id: string;
   readonly date: Date;
   readonly ttl: number;
-  readonly senderCertificateChain: ReadonlySet<Certificate>;
+  readonly senderCaCertificateChain: readonly Certificate[];
 }
 
 /**
@@ -19,7 +19,7 @@ export default abstract class Message {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
-  public readonly senderCertificateChain: ReadonlySet<Certificate>;
+  public readonly senderCaCertificateChain: readonly Certificate[];
 
   constructor(
     readonly recipientAddress: string,
@@ -31,10 +31,7 @@ export default abstract class Message {
     this.date = options.date || new Date();
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
-    //region Sender certificate (chain)
-    const initialChain = options.senderCertificateChain || new Set([]);
-    this.senderCertificateChain = new Set([...initialChain, senderCertificate]);
-    //endregion
+    this.senderCaCertificateChain = options.senderCaCertificateChain ?? [];
   }
 
   // This method would be concrete if TS allowed us to store the message type and version as

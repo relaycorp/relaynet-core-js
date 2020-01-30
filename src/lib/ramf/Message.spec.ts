@@ -81,31 +81,20 @@ describe('Message', () => {
       });
     });
 
-    describe('Sender certificate chain', () => {
-      test('Sender certificate chain should only contain sender certificate by default', () => {
+    describe('Sender CA certificate chain', () => {
+      test('CA certificate chain should be empty by default', () => {
         const message = new StubMessage(recipientAddress, senderCertificate, payload);
 
-        expect(message.senderCertificateChain).toEqual(new Set([senderCertificate]));
+        expect(message.senderCaCertificateChain).toEqual([]);
       });
 
       test('A custom sender certificate chain should be accepted', async () => {
-        const chain = new Set([await generateStubCert(), senderCertificate]);
+        const chain: readonly Certificate[] = [await generateStubCert(), senderCertificate];
         const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCertificateChain: chain,
+          senderCaCertificateChain: chain,
         });
 
-        expect(message.senderCertificateChain).toEqual(chain);
-      });
-
-      test('Sender certificate should be added to custom chain if missing', async () => {
-        const additionalCertificate = await generateStubCert();
-        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCertificateChain: new Set([additionalCertificate]),
-        });
-
-        expect(message.senderCertificateChain).toEqual(
-          new Set([senderCertificate, additionalCertificate]),
-        );
+        expect(message.senderCaCertificateChain).toEqual(chain);
       });
     });
   });

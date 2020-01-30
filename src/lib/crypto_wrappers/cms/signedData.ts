@@ -26,7 +26,7 @@ export interface SignatureOptions {
  * @param plaintext
  * @param privateKey
  * @param signerCertificate
- * @param additionalAttachedCertificates
+ * @param caCertificates
  * @param options
  * @throws `CMSError` when attempting to use SHA-1 as the hashing function
  */
@@ -34,7 +34,7 @@ export async function sign(
   plaintext: ArrayBuffer,
   privateKey: CryptoKey,
   signerCertificate: Certificate,
-  additionalAttachedCertificates: ReadonlySet<Certificate> = new Set(),
+  caCertificates: readonly Certificate[] = [],
   options: Partial<SignatureOptions> = {},
 ): Promise<ArrayBuffer> {
   // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
@@ -46,9 +46,7 @@ export async function sign(
   const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
   const signerInfo = initSignerInfo(signerCertificate, digest);
   const signedData = new pkijs.SignedData({
-    certificates: [signerCertificate, ...additionalAttachedCertificates].map(
-      c => c.pkijsCertificate,
-    ),
+    certificates: [signerCertificate, ...caCertificates].map(c => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
       eContentType: oids.CMS_DATA,
     }),
