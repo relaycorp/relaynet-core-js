@@ -147,6 +147,29 @@ export default class Certificate {
       );
     }
   }
+
+  /**
+   * Report whether this certificate can be trusted.
+   *
+   * @param intermediateCaCertificates The alleged chain for the certificate
+   * @param trustedCertificates The collection of certificates that are actually trusted
+   * @throws CertificateError when this certificate is not on a certificate path from a CA in
+   *   `trustedCertificates`
+   */
+  public async validateTrust(
+    intermediateCaCertificates: readonly Certificate[],
+    trustedCertificates: readonly Certificate[],
+  ): Promise<void> {
+    const chainValidator = new pkijs.CertificateChainValidationEngine({
+      certs: [...intermediateCaCertificates.map(c => c.pkijsCertificate), this.pkijsCertificate],
+      trustedCerts: trustedCertificates.map(c => c.pkijsCertificate),
+    });
+    const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
+
+    if (!verification.result) {
+      throw new CertificateError(verification.resultMessage);
+    }
+  }
 }
 
 //region Extensions
