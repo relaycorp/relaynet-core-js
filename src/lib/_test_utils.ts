@@ -3,7 +3,7 @@ import * as pkijs from 'pkijs';
 
 import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
-import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
+import FullCertificateIssuanceOptions from './crypto_wrappers/x509/FullCertificateIssuanceOptions';
 
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
@@ -28,7 +28,7 @@ export function expectAsn1ValuesToBeEqual(
 }
 
 interface StubCertConfig {
-  readonly attributes: Partial<CertificateOptions>;
+  readonly attributes: Partial<FullCertificateIssuanceOptions>;
   readonly issuerCertificate: Certificate;
   readonly issuerPrivateKey: CryptoKey;
   readonly subjectPublicKey: CryptoKey;

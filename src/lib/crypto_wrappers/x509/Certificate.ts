@@ -5,7 +5,9 @@ import * as oids from '../../oids';
 import { deserializeDer, generateRandom32BitUnsignedNumber } from '../_utils';
 import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
 import CertificateError from './CertificateError';
-import CertificateOptions from './CertificateOptions';
+import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
+
+const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 
 /**
  * X.509 Certificate.
@@ -33,7 +35,7 @@ export default class Certificate {
    *
    * @param options
    */
-  public static async issue(options: CertificateOptions): Promise<Certificate> {
+  public static async issue(options: FullCertificateIssuanceOptions): Promise<Certificate> {
     //region Validation
     const validityStartDate = options.validityStartDate || new Date();
     if (options.validityEndDate < validityStartDate) {
@@ -52,7 +54,7 @@ export default class Certificate {
     const serialNumberBlock = new asn1js.Integer({ value: serialNumber });
     const pkijsCert = new pkijs.Certificate({
       extensions: [
-        makeBasicConstraintsExtension(options.isCA === true),
+        makeBasicConstraintsExtension(options.isCA === true, options.pathLenConstraint ?? 0),
         await makeAuthorityKeyIdExtension(issuerPublicKey),
         await makeSubjectKeyIdExtension(options.subjectPublicKey),
       ],
@@ -183,11 +185,17 @@ export default class Certificate {
 
 //region Extensions
 
-function makeBasicConstraintsExtension(isCA: boolean): pkijs.Extension {
+function makeBasicConstraintsExtension(cA: boolean, pathLenConstraint: number): pkijs.Extension {
+  if (pathLenConstraint < 0 || MAX_PATH_LENGTH_CONSTRAINT < pathLenConstraint) {
+    throw new CertificateError(
+      `pathLenConstraint must be between 0 and 2 (got ${pathLenConstraint})`,
+    );
+  }
+  const basicConstraints = new pkijs.BasicConstraints({ cA, pathLenConstraint });
   return new pkijs.Extension({
     critical: true,
     extnID: oids.BASIC_CONSTRAINTS,
-    extnValue: new pkijs.BasicConstraints({ cA: isCA }).toSchema().toBER(false),
+    extnValue: basicConstraints.toSchema().toBER(false),
   });
 }
 

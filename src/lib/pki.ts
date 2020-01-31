@@ -1,5 +1,5 @@
 import { getPublicKeyDigest } from './crypto_wrappers/keys';
-import BaseCertificateOptions from './crypto_wrappers/x509/BaseCertificateOptions';
+import BasicCertificateIssuanceOptions from './crypto_wrappers/x509/BasicCertificateIssuanceOptions';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateError from './crypto_wrappers/x509/CertificateError';
 
@@ -9,16 +9,58 @@ const MAX_DH_CERT_LENGTH_MS = MAX_DH_CERT_LENGTH_DAYS * SECONDS_PER_DAY * 1_000;
 
 const DEFAULT_DH_CERT_LENGTH_DAYS = 30;
 
-export interface NodeCertificateOptions extends BaseCertificateOptions {}
-
-export async function issueNodeCertificate(options: NodeCertificateOptions): Promise<Certificate> {
-  const address = await computePrivateNodeAddress(options.subjectPublicKey);
-  return Certificate.issue({ ...options, commonName: address, isCA: options.isCA ?? true });
+export interface GatewayCertificateIssuanceOptions extends BasicCertificateIssuanceOptions {
+  readonly issuerCertificate?: Certificate; // Absent/self-issued when gateway is public
 }
 
-async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
-  const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
-  return `0${publicKeyDigest.toString('hex')}`;
+/**
+ * Issue a Relaynet PKI certificate for a gateway.
+ *
+ * The issuer must be a gateway (itself or a peer).
+ *
+ * @param options
+ */
+export async function issueGatewayCertificate(
+  options: GatewayCertificateIssuanceOptions,
+): Promise<Certificate> {
+  const pathLenConstraint = options.issuerCertificate ? 1 : 2;
+  return issueNodeCertificate({ ...options, isCA: true, pathLenConstraint });
+}
+
+export interface EndpointCertificateIssuanceOptions extends BasicCertificateIssuanceOptions {
+  readonly issuerCertificate?: Certificate; // Absent/self-issued when endpoint is public
+}
+
+/**
+ * Issue a Relaynet PKI certificate for an endpoint.
+ *
+ * If the endpoint is public, it should self-issue its certificate. If it's private, its
+ * certificate must be issued by its local gateway.
+ *
+ * @param options
+ */
+export async function issueEndpointCertificate(
+  options: EndpointCertificateIssuanceOptions,
+): Promise<Certificate> {
+  return issueNodeCertificate({ ...options, isCA: true, pathLenConstraint: 0 });
+}
+
+export interface DeliveryAuthorizationIssuanceOptions extends BasicCertificateIssuanceOptions {
+  readonly issuerCertificate: Certificate;
+}
+
+/**
+ * Issue an initial (EC)DH certificate to initiate a channel session.
+ *
+ * The issuer must be the *private* node wishing to receive messages from the subject. Both
+ * nodes must be of the same type: Both gateways or both endpoints.
+ *
+ * @param options
+ */
+export async function issueDeliveryAuthorization(
+  options: DeliveryAuthorizationIssuanceOptions,
+): Promise<Certificate> {
+  return issueNodeCertificate({ ...options, isCA: false, pathLenConstraint: 0 });
 }
 
 export class DHCertificateError extends CertificateError {}
@@ -32,6 +74,14 @@ interface DHKeyCertificateOptions {
   readonly validityStartDate?: Date;
 }
 
+/**
+ * Issue an initial (EC)DH certificate to initiate a channel session.
+ *
+ * The subject must be the node initiating the session and the issue must be the recipient of the
+ * initial message.
+ *
+ * @param options
+ */
 export async function issueInitialDHKeyCertificate(
   options: DHKeyCertificateOptions,
 ): Promise<Certificate> {
@@ -51,11 +101,27 @@ export async function issueInitialDHKeyCertificate(
     isCA: false,
     issuerCertificate: options.nodeCertificate,
     issuerPrivateKey: options.nodePrivateKey,
+    pathLenConstraint: 0,
     serialNumber: options.serialNumber,
     subjectPublicKey: options.dhPublicKey,
     validityEndDate: endDate,
     validityStartDate: startDate,
   });
+}
+
+interface NodeCertificateOptions extends BasicCertificateIssuanceOptions {
+  readonly isCA: boolean;
+  readonly pathLenConstraint: number;
+}
+
+async function issueNodeCertificate(options: NodeCertificateOptions): Promise<Certificate> {
+  const address = await computePrivateNodeAddress(options.subjectPublicKey);
+  return Certificate.issue({ ...options, commonName: address });
+}
+
+async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
+  const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
+  return `0${publicKeyDigest.toString('hex')}`;
 }
 
 function getDateAfterDays(initialDate: Date, additionalDays: number): Date {

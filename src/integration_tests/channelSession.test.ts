@@ -8,8 +8,8 @@ import {
   EnvelopedData,
   generateECDHKeyPair,
   generateRSAKeyPair,
+  issueEndpointCertificate,
   issueInitialDHKeyCertificate,
-  issueNodeCertificate,
   SessionEnvelopedData,
   SessionOriginatorKey,
 } from '..';
@@ -25,8 +25,7 @@ let nodeKeyPair: CryptoKeyPair;
 let nodeCertificate: Certificate;
 beforeAll(async () => {
   nodeKeyPair = await generateRSAKeyPair();
-  nodeCertificate = await issueNodeCertificate({
-    isCA: true,
+  nodeCertificate = await issueEndpointCertificate({
     issuerPrivateKey: nodeKeyPair.privateKey,
     serialNumber: 1,
     subjectPublicKey: nodeKeyPair.publicKey,
