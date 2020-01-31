@@ -38,9 +38,9 @@ This library supports the following Relaynet specs:
 
 - [RS-000 (Relaynet Core)](https://specs.relaynet.link/RS-000).
 - [RS-001 (RAMF v1)](https://specs.relaynet.link/RS-001).
-- [RS-002 (Relaynet PKI)](https://specs.relaynet.link/RS-003).
-- [RS-003 (Relaynet Channel Session Protocol)](https://specs.relaynet.link/RS-004).
-- [RS-018 (Relaynet Cryptographic Algorithms, Version 1)](https://specs.relaynet.link/RS-004). In addition to the required algorithms, the following are also supported:
+- [RS-002 (Relaynet PKI)](https://specs.relaynet.link/RS-002).
+- [RS-003 (Relaynet Channel Session Protocol)](https://specs.relaynet.link/RS-003).
+- [RS-018 (Relaynet Cryptographic Algorithms, Version 1)](https://specs.relaynet.link/RS-018). In addition to the required algorithms, the following are also supported:
   - Hashing functions: SHA-384 and SHA-512.
   - Ciphers: AES-192 and AES-256.
   - ECDH curves: P-384 and P-521.
