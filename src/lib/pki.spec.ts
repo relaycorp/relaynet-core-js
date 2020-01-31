@@ -1,79 +1,222 @@
+// tslint:disable:no-let
+
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
-import { expectPromiseToReject, generateStubCert, getMockContext, sha256Hex } from './_test_utils';
-import { derSerializePublicKey, generateRSAKeyPair } from './crypto_wrappers/keys';
+import { expectPromiseToReject, generateStubCert } from './_test_utils';
+import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
+import BasicCertificateIssuanceOptions from './crypto_wrappers/x509/BasicCertificateIssuanceOptions';
 import Certificate from './crypto_wrappers/x509/Certificate';
-import CertificateOptions from './crypto_wrappers/x509/CertificateOptions';
 import {
+  DeliveryAuthorizationIssuanceOptions,
   DHCertificateError,
+  GatewayCertificateIssuanceOptions,
+  issueDeliveryAuthorization,
+  issueEndpointCertificate,
+  issueGatewayCertificate,
   issueInitialDHKeyCertificate,
-  issueNodeCertificate,
-  NodeCertificateOptions,
 } from './pki';
 
-// tslint:disable-next-line:no-let
 let stubSubjectKeyPair: CryptoKeyPair;
+let stubCertificate: Certificate;
 beforeAll(async () => {
   stubSubjectKeyPair = await generateRSAKeyPair();
+  stubCertificate = await generateStubCert({
+    issuerPrivateKey: stubSubjectKeyPair.privateKey,
+    subjectPublicKey: stubSubjectKeyPair.publicKey,
+  });
 });
 
-const stubCertificate: Certificate = new Certificate(new pkijs.Certificate());
+const mockCertificateIssue = jest.spyOn(Certificate, 'issue');
 beforeEach(() => {
-  jest.spyOn(Certificate, 'issue').mockResolvedValueOnce(Promise.resolve(stubCertificate));
+  mockCertificateIssue.mockReset();
+  mockCertificateIssue.mockResolvedValue(Promise.resolve(stubCertificate));
+});
+afterAll(() => {
+  mockCertificateIssue.mockRestore();
 });
 
-describe('issueNodeCertificate', () => {
-  // tslint:disable-next-line:no-let
-  let baseCertificateOptions: NodeCertificateOptions;
+let basicCertificateOptions: BasicCertificateIssuanceOptions;
+beforeAll(async () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  basicCertificateOptions = {
+    issuerPrivateKey: stubSubjectKeyPair.privateKey,
+    serialNumber: 135,
+    subjectPublicKey: stubSubjectKeyPair.publicKey,
+    validityEndDate: tomorrow,
+    validityStartDate: new Date(),
+  };
+});
 
-  beforeAll(async () => {
-    baseCertificateOptions = {
+describe('issueGatewayCertificate', () => {
+  let minimalCertificateOptions: GatewayCertificateIssuanceOptions;
+  beforeAll(() => {
+    minimalCertificateOptions = {
       issuerPrivateKey: stubSubjectKeyPair.privateKey,
-      serialNumber: 1,
       subjectPublicKey: stubSubjectKeyPair.publicKey,
       validityEndDate: new Date(),
     };
   });
 
   test('Certificate should be a valid X.509 certificate', async () => {
-    const certificate = await issueNodeCertificate(baseCertificateOptions);
+    const certificate = await issueGatewayCertificate(minimalCertificateOptions);
 
     expect(certificate).toBe(stubCertificate);
   });
 
-  test('Certificate should honor the specified options', async () => {
-    await issueNodeCertificate(baseCertificateOptions);
+  test('Certificate should honor all the basic options', async () => {
+    await issueGatewayCertificate({ ...minimalCertificateOptions, ...basicCertificateOptions });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions).toMatchObject(baseCertificateOptions);
+    expect(mockCertificateIssue.mock.calls[0][0]).toMatchObject(basicCertificateOptions);
   });
 
   test('Certificate should have its private address as its Common Name (CN)', async () => {
-    const { publicKey } = await generateRSAKeyPair();
+    await issueGatewayCertificate(minimalCertificateOptions);
 
-    await issueNodeCertificate({
-      ...baseCertificateOptions,
-      subjectPublicKey: publicKey,
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(
+      'commonName',
+      `0${await getPublicKeyDigestHex(stubSubjectKeyPair.publicKey)}`,
+    );
+  });
+
+  test('Subject should be marked as CA', async () => {
+    await issueGatewayCertificate(minimalCertificateOptions);
+
+    expect(mockCertificateIssue).toBeCalledTimes(1);
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('isCA', true);
+  });
+
+  test('pathLenConstraint should be 2 if self-issued', async () => {
+    await issueGatewayCertificate(minimalCertificateOptions);
+
+    expect(mockCertificateIssue).toBeCalledTimes(1);
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 2);
+  });
+
+  test('pathLenConstraint should be 1 if issued by another gateway', async () => {
+    await issueGatewayCertificate({
+      ...minimalCertificateOptions,
+      issuerCertificate: new Certificate(new pkijs.Certificate()),
     });
 
-    const publicKeyDer = await derSerializePublicKey(publicKey);
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions).toHaveProperty('commonName', `0${sha256Hex(publicKeyDer)}`);
+    expect(mockCertificateIssue).toBeCalledTimes(1);
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 1);
+  });
+});
+
+describe('issueEndpointCertificate', () => {
+  let minimalCertificateOptions: GatewayCertificateIssuanceOptions;
+  beforeAll(() => {
+    minimalCertificateOptions = {
+      issuerPrivateKey: stubSubjectKeyPair.privateKey,
+      subjectPublicKey: stubSubjectKeyPair.publicKey,
+      validityEndDate: new Date(),
+    };
   });
 
-  test('Certificate should be marked as CA by default', async () => {
-    await issueNodeCertificate(baseCertificateOptions);
+  test('Certificate should be a valid X.509 certificate', async () => {
+    const certificate = await issueEndpointCertificate(minimalCertificateOptions);
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions).toHaveProperty('isCA', true);
+    expect(certificate).toBe(stubCertificate);
   });
 
-  test('Certificate can be marked as not a CA', async () => {
-    await issueNodeCertificate({ ...baseCertificateOptions, isCA: false });
+  test('Certificate should honor all the basic options', async () => {
+    await issueEndpointCertificate({ ...minimalCertificateOptions, ...basicCertificateOptions });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions).toHaveProperty('isCA', false);
+    expect(mockCertificateIssue.mock.calls[0][0]).toMatchObject(basicCertificateOptions);
+  });
+
+  test('Certificate should have its private address as its Common Name (CN)', async () => {
+    await issueEndpointCertificate(minimalCertificateOptions);
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(
+      'commonName',
+      `0${await getPublicKeyDigestHex(stubSubjectKeyPair.publicKey)}`,
+    );
+  });
+
+  test('Certificate can be self-issued', async () => {
+    expect(minimalCertificateOptions).not.toHaveProperty('issuerCertificate');
+
+    await issueEndpointCertificate(minimalCertificateOptions);
+  });
+
+  test('Certificate can be issued by a gateway', async () => {
+    const gatewayCertificate = new Certificate(new pkijs.Certificate());
+    await issueEndpointCertificate({
+      ...minimalCertificateOptions,
+      issuerCertificate: gatewayCertificate,
+    });
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(
+      'issuerCertificate',
+      gatewayCertificate,
+    );
+  });
+
+  test('Subject should be marked as CA', async () => {
+    await issueEndpointCertificate(minimalCertificateOptions);
+
+    expect(mockCertificateIssue).toBeCalledTimes(1);
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('isCA', true);
+  });
+
+  test('pathLenConstraint should be 0', async () => {
+    await issueEndpointCertificate(minimalCertificateOptions);
+
+    expect(mockCertificateIssue).toBeCalledTimes(1);
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 0);
+  });
+});
+
+describe('issueDeliveryAuthorization', () => {
+  let minimalCertificateOptions: DeliveryAuthorizationIssuanceOptions;
+  beforeAll(async () => {
+    const authorizerKeyPair = await generateRSAKeyPair();
+    minimalCertificateOptions = {
+      issuerCertificate: await generateStubCert({
+        attributes: { isCA: true },
+        issuerPrivateKey: authorizerKeyPair.privateKey,
+        subjectPublicKey: authorizerKeyPair.publicKey,
+      }),
+      issuerPrivateKey: authorizerKeyPair.privateKey,
+      subjectPublicKey: stubSubjectKeyPair.publicKey,
+      validityEndDate: new Date(),
+    };
+  });
+
+  test('Certificate should be a valid X.509 certificate', async () => {
+    const certificate = await issueDeliveryAuthorization(minimalCertificateOptions);
+
+    expect(certificate).toBe(stubCertificate);
+  });
+
+  test('Certificate should honor all the basic options', async () => {
+    await issueDeliveryAuthorization({ ...minimalCertificateOptions, ...basicCertificateOptions });
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toMatchObject(basicCertificateOptions);
+  });
+
+  test('Certificate should have its private address as its Common Name (CN)', async () => {
+    await issueDeliveryAuthorization(minimalCertificateOptions);
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(
+      'commonName',
+      `0${await getPublicKeyDigestHex(stubSubjectKeyPair.publicKey)}`,
+    );
+  });
+
+  test('Subject should not be marked as CA', async () => {
+    await issueDeliveryAuthorization(minimalCertificateOptions);
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('isCA', false);
+  });
+
+  test('pathLenConstraint should be 0', async () => {
+    await issueDeliveryAuthorization(minimalCertificateOptions);
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 0);
   });
 });
 
@@ -83,9 +226,7 @@ describe('issueInitialDHKeyCertificate', () => {
   const stubFutureDate = new Date(2019, 1, 1);
   stubFutureDate.setDate(stubFutureDate.getDate() + 1);
 
-  // tslint:disable-next-line:no-let
   let stubNodeKeyPair: CryptoKeyPair;
-  // tslint:disable-next-line:no-let
   let stubNodeCertificate: Certificate;
   beforeAll(async () => {
     stubNodeKeyPair = await generateRSAKeyPair();
@@ -117,8 +258,9 @@ describe('issueInitialDHKeyCertificate', () => {
       nodePrivateKey: stubNodeKeyPair.privateKey,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.commonName).toEqual(stubNodeCertificate.getCommonName());
+    expect(mockCertificateIssue.mock.calls[0][0].commonName).toEqual(
+      stubNodeCertificate.getCommonName(),
+    );
   });
 
   test('Subject key should be the one specified', async () => {
@@ -128,8 +270,9 @@ describe('issueInitialDHKeyCertificate', () => {
       nodePrivateKey: stubNodeKeyPair.privateKey,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.subjectPublicKey).toBe(stubSubjectKeyPair.publicKey);
+    expect(mockCertificateIssue.mock.calls[0][0].subjectPublicKey).toBe(
+      stubSubjectKeyPair.publicKey,
+    );
   });
 
   test('Issuer certificate should be that of the node', async () => {
@@ -139,8 +282,7 @@ describe('issueInitialDHKeyCertificate', () => {
       nodePrivateKey: stubNodeKeyPair.privateKey,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.issuerCertificate).toBe(stubNodeCertificate);
+    expect(mockCertificateIssue.mock.calls[0][0].issuerCertificate).toBe(stubNodeCertificate);
   });
 
   test('Issuer private key should be that of the node', async () => {
@@ -150,8 +292,7 @@ describe('issueInitialDHKeyCertificate', () => {
       nodePrivateKey: stubNodeKeyPair.privateKey,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.issuerPrivateKey).toBe(stubNodeKeyPair.privateKey);
+    expect(mockCertificateIssue.mock.calls[0][0].issuerPrivateKey).toBe(stubNodeKeyPair.privateKey);
   });
 
   test('Serial number should be generated if unset', async () => {
@@ -161,8 +302,7 @@ describe('issueInitialDHKeyCertificate', () => {
       nodePrivateKey: stubNodeKeyPair.privateKey,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions).toHaveProperty('serialNumber', undefined);
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('serialNumber', undefined);
   });
 
   test('Serial number should be the one specified if one was set', async () => {
@@ -174,8 +314,7 @@ describe('issueInitialDHKeyCertificate', () => {
       serialNumber,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.serialNumber).toEqual(serialNumber);
+    expect(mockCertificateIssue.mock.calls[0][0].serialNumber).toEqual(serialNumber);
   });
 
   describe('Validity dates', () => {
@@ -189,8 +328,7 @@ describe('issueInitialDHKeyCertificate', () => {
         nodePrivateKey: stubNodeKeyPair.privateKey,
       });
 
-      const certificateOptions = getCertificateIssueCallOptions();
-      expect(certificateOptions.validityStartDate).toEqual(stubCurrentDate);
+      expect(mockCertificateIssue.mock.calls[0][0].validityStartDate).toEqual(stubCurrentDate);
     });
 
     test('Custom start date should be honored', async () => {
@@ -206,8 +344,7 @@ describe('issueInitialDHKeyCertificate', () => {
         validityStartDate: customStartDate,
       });
 
-      const certificateOptions = getCertificateIssueCallOptions();
-      expect(certificateOptions.validityStartDate).toEqual(customStartDate);
+      expect(mockCertificateIssue.mock.calls[0][0].validityStartDate).toEqual(customStartDate);
     });
 
     test(`End date should default to 30 days from start date`, async () => {
@@ -223,8 +360,7 @@ describe('issueInitialDHKeyCertificate', () => {
       const expectedEndDate = new Date(stubCurrentDate);
       expectedEndDate.setDate(expectedEndDate.getDate() + 30);
 
-      const certificateOptions = getCertificateIssueCallOptions();
-      expect(certificateOptions.validityEndDate).toEqual(expectedEndDate);
+      expect(mockCertificateIssue.mock.calls[0][0].validityEndDate).toEqual(expectedEndDate);
     });
 
     test('Custom end date should be honored', async () => {
@@ -235,8 +371,7 @@ describe('issueInitialDHKeyCertificate', () => {
         validityEndDate: stubFutureDate,
       });
 
-      const certificateOptions = getCertificateIssueCallOptions();
-      expect(certificateOptions.validityEndDate).toEqual(stubFutureDate);
+      expect(mockCertificateIssue.mock.calls[0][0].validityEndDate).toEqual(stubFutureDate);
     });
 
     test(`Certificate should not be valid for over ${MAX_VALIDITY_DAYS} days`, async () => {
@@ -264,13 +399,16 @@ describe('issueInitialDHKeyCertificate', () => {
       nodePrivateKey: stubNodeKeyPair.privateKey,
     });
 
-    const certificateOptions = getCertificateIssueCallOptions();
-    expect(certificateOptions.isCA).toBeFalse();
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('isCA', false);
+  });
+
+  test('pathLenConstraint should be set to 0', async () => {
+    await issueInitialDHKeyCertificate({
+      dhPublicKey: stubSubjectKeyPair.publicKey,
+      nodeCertificate: stubNodeCertificate,
+      nodePrivateKey: stubNodeKeyPair.privateKey,
+    });
+
+    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 0);
   });
 });
-
-function getCertificateIssueCallOptions(): CertificateOptions {
-  expect(Certificate.issue).toBeCalledTimes(1);
-  const certificateIssueCall = getMockContext(Certificate.issue).calls[0];
-  return certificateIssueCall[0];
-}

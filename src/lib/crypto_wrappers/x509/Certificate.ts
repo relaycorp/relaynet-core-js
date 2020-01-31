@@ -5,7 +5,9 @@ import * as oids from '../../oids';
 import { deserializeDer, generateRandom32BitUnsignedNumber } from '../_utils';
 import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
 import CertificateError from './CertificateError';
-import CertificateOptions from './CertificateOptions';
+import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
+
+const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 
 /**
  * X.509 Certificate.
@@ -33,7 +35,7 @@ export default class Certificate {
    *
    * @param options
    */
-  public static async issue(options: CertificateOptions): Promise<Certificate> {
+  public static async issue(options: FullCertificateIssuanceOptions): Promise<Certificate> {
     //region Validation
     const validityStartDate = options.validityStartDate || new Date();
     if (options.validityEndDate < validityStartDate) {
