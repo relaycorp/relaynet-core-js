@@ -1,3 +1,5 @@
+// tslint:disable:no-let
+
 // @ts-ignore
 import bufferToArray from 'buffer-to-arraybuffer';
 // @ts-ignore
@@ -19,9 +21,7 @@ import { expectBuffersToEqual } from '../lib/_test_utils';
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
 
-// tslint:disable-next-line:no-let
 let nodeKeyPair: CryptoKeyPair;
-// tslint:disable-next-line:no-let
 let nodeCertificate: Certificate;
 beforeAll(async () => {
   nodeKeyPair = await generateRSAKeyPair();
