@@ -358,7 +358,7 @@ describe('issue()', () => {
   });
 
   describe('Basic Constraints extension', () => {
-    test('Extension should be included', async () => {
+    test('Extension should be included and marked as critical', async () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
         issuerPrivateKey: keyPair.privateKey,
@@ -368,17 +368,7 @@ describe('issue()', () => {
       const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
       const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
       expect(matchingExtensions).toHaveLength(1);
-    });
-
-    test('Extension should be critical', async () => {
-      const cert = await Certificate.issue({
-        ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
-      });
-
-      const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
-      expect(extension).toHaveProperty('critical', true);
+      expect(matchingExtensions[0]).toHaveProperty('critical', true);
     });
 
     test('CA flag should be false by default', async () => {
@@ -388,9 +378,7 @@ describe('issue()', () => {
         subjectPublicKey: keyPair.publicKey,
       });
 
-      const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
-      const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
-      const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
+      const basicConstraints = getBasicConstraintsExtension(cert);
       expect(basicConstraints).toHaveProperty('cA', false);
     });
 
@@ -401,26 +389,56 @@ describe('issue()', () => {
         issuerPrivateKey: keyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
       });
-
-      const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
-      const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
-      const extension = matchingExtensions[0];
-      const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
-      const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
+      const basicConstraints = getBasicConstraintsExtension(cert);
       expect(basicConstraints).toHaveProperty('cA', true);
     });
 
-    test('Path length should be unspecified', async () => {
+    test('pathLenConstraint should be 0 by default', async () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
         issuerPrivateKey: keyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
       });
 
-      const extension = (cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>)[0];
-      const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
-      const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
-      expect(basicConstraints).not.toHaveProperty('pathLenConstraint');
+      const basicConstraints = getBasicConstraintsExtension(cert);
+      expect(basicConstraints).toHaveProperty('pathLenConstraint', 0);
+    });
+
+    test('pathLenConstraint can be set to a custom value <= 2', async () => {
+      const pathLenConstraint = 2;
+      const cert = await Certificate.issue({
+        ...baseCertificateOptions,
+        issuerPrivateKey: keyPair.privateKey,
+        pathLenConstraint,
+        subjectPublicKey: keyPair.publicKey,
+      });
+
+      const basicConstraints = getBasicConstraintsExtension(cert);
+      expect(basicConstraints).toHaveProperty('pathLenConstraint', pathLenConstraint);
+    });
+
+    test('pathLenConstraint should not be greater than 2', async () => {
+      await expectPromiseToReject(
+        Certificate.issue({
+          ...baseCertificateOptions,
+          issuerPrivateKey: keyPair.privateKey,
+          pathLenConstraint: 3,
+          subjectPublicKey: keyPair.publicKey,
+        }),
+        new CertificateError('pathLenConstraint must be between 0 and 2 (got 3)'),
+      );
+    });
+
+    test('pathLenConstraint should not be negative', async () => {
+      await expectPromiseToReject(
+        Certificate.issue({
+          ...baseCertificateOptions,
+          issuerPrivateKey: keyPair.privateKey,
+          pathLenConstraint: -1,
+          subjectPublicKey: keyPair.publicKey,
+        }),
+        new CertificateError('pathLenConstraint must be between 0 and 2 (got -1)'),
+      );
     });
   });
 
@@ -719,6 +737,14 @@ test('getPublicKey should return the subject public key', async () => {
     await derSerializePublicKey(subjectKeyPair.publicKey),
   );
 });
+
+function getBasicConstraintsExtension(cert: Certificate): pkijs.BasicConstraints {
+  const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
+  const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
+  const extension = matchingExtensions[0];
+  const basicConstraintsAsn1 = utils.deserializeDer(extension.extnValue.valueBlock.valueHex);
+  return new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
+}
 
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<string> {
   // @ts-ignore
