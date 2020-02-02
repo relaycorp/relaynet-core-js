@@ -39,6 +39,11 @@ describe('Message', () => {
     });
   });
 
+  let stubSenderChain: AuthorizedSenderChain;
+  beforeAll(async () => {
+    stubSenderChain = await generateAuthorizedSenderChain();
+  });
+
   describe('constructor', () => {
     describe('Id', () => {
       test('Id should fall back to UUID4 when left unspecified', () => {
@@ -100,73 +105,58 @@ describe('Message', () => {
     });
   });
 
+  test('getSenderCertificationPath should return certification path', async () => {
+    const message = new StubMessage(
+      await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
+      stubSenderChain.senderCert,
+      payload,
+      {
+        senderCaCertificateChain: [stubSenderChain.recipientCert],
+      },
+    );
+
+    await expect(message.getSenderCertificationPath([stubSenderChain.rootCert])).resolves.toEqual([
+      stubSenderChain.senderCert,
+      stubSenderChain.recipientCert,
+      stubSenderChain.rootCert,
+    ]);
+  });
+
   describe('validate', () => {
-    let stubRootCaCert: Certificate;
-    let stubRecipient: Certificate;
-    let stubAuthorizedSender: Certificate;
-    beforeAll(async () => {
-      const trustedCaKeyPair = await generateRSAKeyPair();
-      stubRootCaCert = reSerializeCertificate(
-        await generateStubCert({
-          attributes: { isCA: true, serialNumber: 1 },
-          issuerPrivateKey: trustedCaKeyPair.privateKey,
-          subjectPublicKey: trustedCaKeyPair.publicKey,
-        }),
-      );
-
-      const recipientKeyPair = await generateRSAKeyPair();
-      stubRecipient = reSerializeCertificate(
-        await generateStubCert({
-          attributes: { isCA: true, serialNumber: 2 },
-          issuerCertificate: stubRootCaCert,
-          issuerPrivateKey: trustedCaKeyPair.privateKey,
-          subjectPublicKey: recipientKeyPair.publicKey,
-        }),
-      );
-
-      stubAuthorizedSender = reSerializeCertificate(
-        await generateStubCert({
-          attributes: { isCA: false, serialNumber: 3 },
-          issuerCertificate: stubRecipient,
-          issuerPrivateKey: recipientKeyPair.privateKey,
-        }),
-      );
-    });
-
     describe('Authorization', () => {
       test('Parcel should be refused if sender is not trusted', async () => {
         const message = new StubMessage(
-          await stubRecipient.calculateSubjectPrivateAddress(),
+          await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
           reSerializeCertificate(senderCertificate),
           payload,
         );
 
         await expectPromiseToReject(
-          message.validate([stubRootCaCert]),
+          message.validate([stubSenderChain.rootCert]),
           new InvalidMessageError('Sender is not authorized: No valid certificate paths found'),
         );
       });
 
       test('Parcel should be accepted if sender is trusted', async () => {
         const message = new StubMessage(
-          await stubRecipient.calculateSubjectPrivateAddress(),
-          stubAuthorizedSender,
+          await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
+          stubSenderChain.senderCert,
           payload,
           {
-            senderCaCertificateChain: [stubRecipient],
+            senderCaCertificateChain: [stubSenderChain.recipientCert],
           },
         );
 
-        await expect(message.validate([stubRootCaCert])).toResolve();
+        await expect(message.validate([stubSenderChain.rootCert])).toResolve();
       });
 
       test('Parcel should be refused if recipient is not issuer of sender', async () => {
-        const message = new StubMessage('0deadbeef', stubAuthorizedSender, payload, {
-          senderCaCertificateChain: [stubRecipient],
+        const message = new StubMessage('0deadbeef', stubSenderChain.senderCert, payload, {
+          senderCaCertificateChain: [stubSenderChain.recipientCert],
         });
 
         await expectPromiseToReject(
-          message.validate([stubRootCaCert]),
+          message.validate([stubSenderChain.rootCert]),
           new InvalidMessageError(`Sender is not authorized to reach ${message.recipientAddress}`),
         );
       });
@@ -179,3 +169,40 @@ describe('Message', () => {
     });
   });
 });
+
+interface AuthorizedSenderChain {
+  readonly rootCert: Certificate;
+  readonly recipientCert: Certificate;
+  readonly senderCert: Certificate;
+}
+
+async function generateAuthorizedSenderChain(): Promise<AuthorizedSenderChain> {
+  const rootKeyPair = await generateRSAKeyPair();
+  const rootCert = reSerializeCertificate(
+    await generateStubCert({
+      attributes: { isCA: true, serialNumber: 1 },
+      issuerPrivateKey: rootKeyPair.privateKey,
+      subjectPublicKey: rootKeyPair.publicKey,
+    }),
+  );
+
+  const recipientKeyPair = await generateRSAKeyPair();
+  const recipientCert = reSerializeCertificate(
+    await generateStubCert({
+      attributes: { isCA: true, serialNumber: 2 },
+      issuerCertificate: rootCert,
+      issuerPrivateKey: rootKeyPair.privateKey,
+      subjectPublicKey: recipientKeyPair.publicKey,
+    }),
+  );
+
+  const senderCert = reSerializeCertificate(
+    await generateStubCert({
+      attributes: { isCA: false, serialNumber: 3 },
+      issuerCertificate: recipientCert,
+      issuerPrivateKey: recipientKeyPair.privateKey,
+    }),
+  );
+
+  return { recipientCert, rootCert, senderCert };
+}

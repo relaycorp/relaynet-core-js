@@ -42,22 +42,28 @@ export default abstract class Message {
     signatureOptions?: SignatureOptions,
   ): Promise<ArrayBuffer>;
 
+  public async getSenderCertificationPath(
+    trustedCertificates: readonly Certificate[],
+  ): Promise<readonly Certificate[]> {
+    return this.senderCertificate.getCertificationPath(
+      this.senderCaCertificateChain,
+      trustedCertificates,
+    );
+  }
+
   public async validate(trustedCertificates?: readonly Certificate[]): Promise<void> {
     if (trustedCertificates) {
-      await this.validationAuthorization(trustedCertificates);
+      await this.validateAuthorization(trustedCertificates);
     }
   }
 
-  protected async validationAuthorization(
+  protected async validateAuthorization(
     trustedCertificates: readonly Certificate[],
   ): Promise<void> {
     // tslint:disable-next-line:no-let
     let certificationPath: readonly Certificate[];
     try {
-      certificationPath = await this.senderCertificate.getCertificationPath(
-        this.senderCaCertificateChain,
-        trustedCertificates,
-      );
+      certificationPath = await this.getSenderCertificationPath(trustedCertificates);
     } catch (error) {
       throw new InvalidMessageError(error, 'Sender is not authorized');
     }
