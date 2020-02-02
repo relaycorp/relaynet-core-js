@@ -69,6 +69,22 @@ test('Messages by authorized senders should be accepted', async () => {
   await parcel.validate([relayingGatewayCert]);
 });
 
+test('Certificate chain should be computed corrected', async () => {
+  const parcel = new Parcel(
+    await peerEndpointCert.calculateSubjectPrivateAddress(),
+    endpointPdaCert,
+    Buffer.from('hey'),
+    { senderCaCertificateChain: [peerEndpointCert, localGatewayCert] },
+  );
+
+  await expect(parcel.getSenderCertificationPath([relayingGatewayCert])).resolves.toEqual([
+    endpointPdaCert,
+    peerEndpointCert,
+    localGatewayCert,
+    relayingGatewayCert,
+  ]);
+});
+
 test('Messages by unauthorized senders should be refused', async () => {
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
