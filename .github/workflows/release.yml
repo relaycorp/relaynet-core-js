@@ -47,7 +47,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
       - name: Publish documentation
-        uses: peaceiris/actions-gh-pages@v2.6.0
+        uses: peaceiris/actions-gh-pages@v2.10.1
         env:
           # We have to use a deploy key instead of GITHUB_TOKEN :(
           # https://github.com/peaceiris/actions-gh-pages/issues/9
@@ -56,3 +56,4 @@ jobs:
           PUBLISH_DIR: ./build/docs
         with:
           emptyCommits: false
+          commitMessage: "${{ github.event.head_commit.message }} [skip ci]"
