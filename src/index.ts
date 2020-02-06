@@ -27,7 +27,7 @@ export {
 } from './lib/crypto_wrappers/keys';
 export { PrivateKeyStore, PrivateKeyStoreError, PrivateKeyData } from './lib/privateKeyStore';
 
-export { CargoRelay, CargoRelayClient } from './lib/cargoRelay';
+export * from './lib/cargoRelay';
 
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
