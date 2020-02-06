@@ -2427,7 +2427,7 @@ img {
 			<a href="interfaces/basiccertificateissuanceoptions.html" class="tsd-kind-icon">Basic<wbr>Certificate<wbr>Issuance<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface tsd-is-external">
-			<a href="interfaces/cargorelay.html" class="tsd-kind-icon">Cargo<wbr>Relay</a>
+			<a href="interfaces/cargodelivery.html" class="tsd-kind-icon">Cargo<wbr>Delivery</a>
 		</li>
 		<li class=" tsd-kind-interface tsd-is-external">
 			<a href="interfaces/cargorelayclient.html" class="tsd-kind-icon">Cargo<wbr>Relay<wbr>Client</a>
@@ -2470,6 +2470,9 @@ img {
 		</li>
 		<li class=" tsd-kind-type-alias tsd-is-external">
 			<a href="globals.html#ecdhcurvename" class="tsd-kind-icon">ECDHCurve<wbr>Name</a>
+		</li>
+		<li class=" tsd-kind-type-alias tsd-is-external">
+			<a href="globals.html#localcargoid" class="tsd-kind-icon">Local<wbr>Cargo<wbr>Id</a>
 		</li>
 		<li class=" tsd-kind-variable tsd-is-external">
 			<a href="globals.html#authority_key" class="tsd-kind-icon">AUTHORITY_<wbr>KEY</a>
@@ -2611,7 +2614,7 @@ img {
 						<h3>Interfaces</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/basiccertificateissuanceoptions.html" class="tsd-kind-icon">Basic<wbr>Certificate<wbr>Issuance<wbr>Options</a></li>
-							<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/cargorelay.html" class="tsd-kind-icon">Cargo<wbr>Relay</a></li>
+							<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/cargodelivery.html" class="tsd-kind-icon">Cargo<wbr>Delivery</a></li>
 							<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/cargorelayclient.html" class="tsd-kind-icon">Cargo<wbr>Relay<wbr>Client</a></li>
 							<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/deliveryauthorizationissuanceoptions.html" class="tsd-kind-icon">Delivery<wbr>Authorization<wbr>Issuance<wbr>Options</a></li>
 							<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/encryptionoptions.html" class="tsd-kind-icon">Encryption<wbr>Options</a></li>
@@ -2631,6 +2634,7 @@ img {
 						<h3>Type aliases</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-type-alias tsd-is-external"><a href="globals.html#ecdhcurvename" class="tsd-kind-icon">ECDHCurve<wbr>Name</a></li>
+							<li class="tsd-kind-type-alias tsd-is-external"><a href="globals.html#localcargoid" class="tsd-kind-icon">Local<wbr>Cargo<wbr>Id</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section tsd-is-external">
@@ -2686,9 +2690,25 @@ img {
 				<div class="tsd-signature tsd-kind-icon">ECDHCurve<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"P-256"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"P-384"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"P-521"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L8">src/lib/crypto_wrappers/keys.ts:8</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L8">src/lib/crypto_wrappers/keys.ts:8</a></li>
 					</ul>
 				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-is-external">
+				<a name="localcargoid" class="tsd-anchor"></a>
+				<h3>Local<wbr>Cargo<wbr>Id</h3>
+				<div class="tsd-signature tsd-kind-icon">Local<wbr>Cargo<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/cargoRelay.ts#L6">src/lib/cargoRelay.ts:6</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The local id of the cargo to be delivered.</p>
+					</div>
+					<p>It can be a file name or DB primary key, for example.</p>
+				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
@@ -2699,7 +2719,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">AUTHORITY_<wbr>KEY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"2.5.29.35"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;2.5.29.35&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L9">src/lib/oids.ts:9</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L9">src/lib/oids.ts:9</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2709,7 +2729,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">BASIC_<wbr>CONSTRAINTS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"2.5.29.19"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;2.5.29.19&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L8">src/lib/oids.ts:8</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L8">src/lib/oids.ts:8</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2719,7 +2739,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">CMS_<wbr>ATTR_<wbr>CONTENT_<wbr>TYPE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"1.2.840.113549.1.9.3"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;1.2.840.113549.1.9.3&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L17">src/lib/oids.ts:17</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L17">src/lib/oids.ts:17</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2729,7 +2749,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">CMS_<wbr>ATTR_<wbr>DIGEST<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"1.2.840.113549.1.9.4"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;1.2.840.113549.1.9.4&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L18">src/lib/oids.ts:18</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L18">src/lib/oids.ts:18</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2739,7 +2759,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">CMS_<wbr>DATA<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"1.2.840.113549.1.7.1"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;1.2.840.113549.1.7.1&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L14">src/lib/oids.ts:14</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L14">src/lib/oids.ts:14</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2749,7 +2769,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">CMS_<wbr>ENVELOPED_<wbr>DATA<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"1.2.840.113549.1.7.3"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;1.2.840.113549.1.7.3&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L16">src/lib/oids.ts:16</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L16">src/lib/oids.ts:16</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2759,7 +2779,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">CMS_<wbr>SIGNED_<wbr>DATA<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"1.2.840.113549.1.7.2"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;1.2.840.113549.1.7.2&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L15">src/lib/oids.ts:15</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L15">src/lib/oids.ts:15</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2769,7 +2789,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">COMMON_<wbr>NAME<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"2.5.4.3"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;2.5.4.3&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L5">src/lib/oids.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L5">src/lib/oids.ts:5</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2784,7 +2804,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">RELAYNET_<wbr>ORIGINATOR_<wbr>EPHEMERAL_<wbr>CERT_<wbr>SERIAL_<wbr>NUMBER<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"0.4.0.127.0.17.0.1.0"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;0.4.0.127.0.17.0.1.0&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L23">src/lib/oids.ts:23</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L23">src/lib/oids.ts:23</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2794,7 +2814,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">SUBJECT_<wbr>KEY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"2.5.29.14"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;2.5.29.14&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/oids.ts#L10">src/lib/oids.ts:10</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/oids.ts#L10">src/lib/oids.ts:10</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2811,7 +2831,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L99">src/lib/crypto_wrappers/keys.ts:99</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L99">src/lib/crypto_wrappers/keys.ts:99</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2837,7 +2857,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L77">src/lib/crypto_wrappers/keys.ts:77</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L77">src/lib/crypto_wrappers/keys.ts:77</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2863,7 +2883,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L90">src/lib/crypto_wrappers/keys.ts:90</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L90">src/lib/crypto_wrappers/keys.ts:90</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2889,7 +2909,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L68">src/lib/crypto_wrappers/keys.ts:68</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L68">src/lib/crypto_wrappers/keys.ts:68</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2915,7 +2935,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L59">src/lib/crypto_wrappers/keys.ts:59</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L59">src/lib/crypto_wrappers/keys.ts:59</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2938,7 +2958,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L54">src/lib/crypto_wrappers/keys.ts:54</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L54">src/lib/crypto_wrappers/keys.ts:54</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2961,7 +2981,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/ramf/serialization.ts#L124">src/lib/ramf/serialization.ts:124</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/ramf/serialization.ts#L124">src/lib/ramf/serialization.ts:124</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -3001,7 +3021,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/cms/_utils.ts#L6">src/lib/crypto_wrappers/cms/_utils.ts:6</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/cms/_utils.ts#L6">src/lib/crypto_wrappers/cms/_utils.ts:6</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3024,7 +3044,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/_utils.ts#L12">src/lib/crypto_wrappers/_utils.ts:12</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/_utils.ts#L12">src/lib/crypto_wrappers/_utils.ts:12</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3047,7 +3067,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L41">src/lib/crypto_wrappers/keys.ts:41</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L41">src/lib/crypto_wrappers/keys.ts:41</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3070,7 +3090,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L19">src/lib/crypto_wrappers/keys.ts:19</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L19">src/lib/crypto_wrappers/keys.ts:19</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3105,7 +3125,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/_utils.ts#L20">src/lib/crypto_wrappers/_utils.ts:20</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/_utils.ts#L20">src/lib/crypto_wrappers/_utils.ts:20</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
@@ -3122,7 +3142,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/_utils.ts#L4">src/lib/crypto_wrappers/_utils.ts:4</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/_utils.ts#L4">src/lib/crypto_wrappers/_utils.ts:4</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">SubtleCrypto</span></h4>
@@ -3139,7 +3159,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L114">src/lib/crypto_wrappers/keys.ts:114</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L114">src/lib/crypto_wrappers/keys.ts:114</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3162,7 +3182,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/keys.ts#L119">src/lib/crypto_wrappers/keys.ts:119</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/keys.ts#L119">src/lib/crypto_wrappers/keys.ts:119</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3185,7 +3205,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/pki.ts#L60">src/lib/pki.ts:60</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/pki.ts#L60">src/lib/pki.ts:60</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3217,7 +3237,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/pki.ts#L42">src/lib/pki.ts:42</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/pki.ts#L42">src/lib/pki.ts:42</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3249,7 +3269,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/pki.ts#L23">src/lib/pki.ts:23</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/pki.ts#L23">src/lib/pki.ts:23</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3280,7 +3300,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/pki.ts#L85">src/lib/pki.ts:85</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/pki.ts#L85">src/lib/pki.ts:85</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3312,7 +3332,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/ramf/serialization.ts#L52">src/lib/ramf/serialization.ts:52</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/ramf/serialization.ts#L52">src/lib/ramf/serialization.ts:52</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3361,7 +3381,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/cms/signedData.ts#L33">src/lib/crypto_wrappers/cms/signedData.ts:33</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/cms/signedData.ts#L33">src/lib/crypto_wrappers/cms/signedData.ts:33</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3406,7 +3426,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/790b349/src/lib/crypto_wrappers/cms/signedData.ts#L99">src/lib/crypto_wrappers/cms/signedData.ts:99</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5aabb55/src/lib/crypto_wrappers/cms/signedData.ts#L99">src/lib/crypto_wrappers/cms/signedData.ts:99</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
