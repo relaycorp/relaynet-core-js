@@ -5,7 +5,7 @@
  */
 export type LocalCargoId = string;
 
-export interface CargoDelivery {
+export interface CargoDeliveryRequest {
   readonly localId: LocalCargoId;
   readonly cargo: Buffer;
 }
@@ -13,7 +13,9 @@ export interface CargoDelivery {
 export interface CargoRelayClient {
   readonly close: () => void;
 
-  readonly deliverCargo: (cargo: IterableIterator<CargoDelivery>) => IterableIterator<LocalCargoId>;
+  readonly deliverCargo: (
+    cargo: IterableIterator<CargoDeliveryRequest>,
+  ) => IterableIterator<LocalCargoId>;
 
   readonly collectCargo: () => readonly Buffer[];
 }
