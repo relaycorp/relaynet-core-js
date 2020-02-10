@@ -38,6 +38,11 @@ export async function generateRSAKeyPair({
   return cryptoEngine.generateKey(algorithm.algorithm, true, algorithm.usages);
 }
 
+/**
+ * Generate ECDH key pair.
+ *
+ * @param curveName
+ */
 export async function generateECDHKeyPair(
   curveName: ECDHCurveName = 'P-256',
 ): Promise<CryptoKeyPair> {
@@ -51,11 +56,21 @@ export async function generateECDHKeyPair(
 
 //region Key serialization
 
+/**
+ * Return DER serialization of public key.
+ *
+ * @param publicKey
+ */
 export async function derSerializePublicKey(publicKey: CryptoKey): Promise<Buffer> {
   const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
   return Buffer.from(publicKeyDer);
 }
 
+/**
+ * Return DER serialization of private key.
+ *
+ * @param privateKey
+ */
 export async function derSerializePrivateKey(privateKey: CryptoKey): Promise<Buffer> {
   const keyDer = (await cryptoEngine.exportKey('pkcs8', privateKey)) as ArrayBuffer;
   return Buffer.from(keyDer);
@@ -65,6 +80,12 @@ export async function derSerializePrivateKey(privateKey: CryptoKey): Promise<Buf
 
 //region key deserialization
 
+/**
+ * Parse DER-serialized RSA public key.
+ *
+ * @param publicKeyDer
+ * @param algorithmOptions
+ */
 export async function derDeserializeRSAPublicKey(
   publicKeyDer: Buffer,
   algorithmOptions: RsaHashedImportParams,
@@ -74,6 +95,12 @@ export async function derDeserializeRSAPublicKey(
   ]);
 }
 
+/**
+ * Parse DER-serialized ECDH public key.
+ *
+ * @param publicKeyDer
+ * @param curveName
+ */
 export async function derDeserializeECDHPublicKey(
   publicKeyDer: Buffer,
   curveName: NamedCurve = 'P-256',
@@ -87,6 +114,12 @@ export async function derDeserializeECDHPublicKey(
   );
 }
 
+/**
+ * Parse DER-serialized RSA private key.
+ *
+ * @param privateKeyDer
+ * @param algorithmOptions
+ */
 export async function derDeserializeRSAPrivateKey(
   privateKeyDer: Buffer,
   algorithmOptions: RsaHashedImportParams,
@@ -96,6 +129,12 @@ export async function derDeserializeRSAPrivateKey(
   ]);
 }
 
+/**
+ * Parse DER-serialized ECDH private key.
+ *
+ * @param privateKeyDer
+ * @param curveName
+ */
 export async function derDeserializeECDHPrivateKey(
   privateKeyDer: Buffer,
   curveName: NamedCurve = 'P-256',
@@ -111,11 +150,21 @@ export async function derDeserializeECDHPrivateKey(
 
 //endregion
 
+/**
+ * Return SHA-256 digest of public key.
+ *
+ * @param publicKey
+ */
 export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
   const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
   return cryptoEngine.digest({ name: 'SHA-256' }, publicKeyDer);
 }
 
+/**
+ * Return hexadecimal, SHA-256 digest of public key.
+ *
+ * @param publicKey
+ */
 export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<string> {
   const digest = Buffer.from(await getPublicKeyDigest(publicKey));
   return digest.toString('hex');

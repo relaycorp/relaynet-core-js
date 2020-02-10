@@ -35,13 +35,25 @@ export default abstract class Message {
     this.senderCaCertificateChain = options.senderCaCertificateChain ?? [];
   }
 
-  // This method would be concrete if TS allowed us to store the message type and version as
-  // properties
+  /**
+   * Return RAMF serialization of message.
+   *
+   * @param senderPrivateKey
+   * @param signatureOptions
+   */
   public abstract async serialize(
+    // This method would be concrete if TS allowed us to store the message type and version as
+    // properties
     senderPrivateKey: CryptoKey,
     signatureOptions?: SignatureOptions,
   ): Promise<ArrayBuffer>;
 
+  /**
+   * Return certification path between sender's certificate and one certificate in
+   * `trustedCertificates`.
+   *
+   * @param trustedCertificates
+   */
   public async getSenderCertificationPath(
     trustedCertificates: readonly Certificate[],
   ): Promise<readonly Certificate[]> {
@@ -51,6 +63,12 @@ export default abstract class Message {
     );
   }
 
+  /**
+   * Report whether the message is valid.
+   *
+   * @param trustedCertificates If present, will check that the sender is authorized to send
+   *   the message based on the trusted certificates.
+   */
   public async validate(trustedCertificates?: readonly Certificate[]): Promise<void> {
     if (trustedCertificates) {
       await this.validateAuthorization(trustedCertificates);

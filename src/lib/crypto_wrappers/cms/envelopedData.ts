@@ -15,17 +15,30 @@ const pkijsCrypto = getPkijsCrypto();
 const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
 
 export interface EncryptionOptions {
+  /** The AES key size (128, 192 or 256) */
   readonly aesKeySize: number;
 }
 
+/**
+ * Result of producing an EnvelopedData value with the Channel Session Protocol.
+ */
 export interface SessionEncryptionResult {
+  /** Id of ECDH key pair. */
   readonly dhKeyId: number;
-  readonly dhPrivateKey: CryptoKey; // DH or ECDH key
+
+  /** Private key of the ECDH key pair */
+  readonly dhPrivateKey: CryptoKey;
+
+  /** EnvelopedData value using the Channel Session Protocol. */
   readonly envelopedData: SessionEnvelopedData;
 }
 
+/** Key of the sender/producer of the EnvelopedData value using the Channel Session Protocol */
 export interface SessionOriginatorKey {
+  /** Id of the ECDH key pair */
   readonly keyId: number;
+
+  /** Public key of the ECDH key pair. */
   readonly publicKey: CryptoKey; // DH or ECDH key
 }
 
@@ -70,6 +83,11 @@ export abstract class EnvelopedData {
 
   protected constructor(readonly pkijsEnvelopedData: pkijs.EnvelopedData) {}
 
+  /**
+   * Return the DER serialization of the current EnvelopedData value.
+   *
+   * It'll be wrapped around a `ContentInfo` value.
+   */
   public serialize(): ArrayBuffer {
     const contentInfo = new pkijs.ContentInfo({
       content: this.pkijsEnvelopedData.toSchema(),
@@ -78,13 +96,27 @@ export abstract class EnvelopedData {
     return contentInfo.toSchema().toBER(false);
   }
 
+  /**
+   * Return the plaintext for the ciphertext contained in the current EnvelopedData value.
+   *
+   * @param privateKey The private key to decrypt the ciphertext.
+   */
   public abstract async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer>;
 }
 
 /**
- * CMS EnvelopedData representation using key transport (KeyTransRecipientInfo).
+ * CMS EnvelopedData representation that doesn't use the Channel Session Protocol.
+ *
+ * Consequently, it uses the key transport choice (`KeyTransRecipientInfo`) from CMS.
  */
 export class SessionlessEnvelopedData extends EnvelopedData {
+  /**
+   * Return an EnvelopedData value without using the Channel Session Protocol.
+   *
+   * @param plaintext The plaintext whose ciphertext has to be embedded in the EnvelopedData value.
+   * @param certificate The certificate for the recipient.
+   * @param options Any encryption options.
+   */
   public static async encrypt(
     plaintext: ArrayBuffer,
     certificate: Certificate,
@@ -121,11 +153,18 @@ function getAesKeySize(aesKeySize: number | undefined): number {
 }
 
 /**
- * CMS EnvelopedData representation using key agreement (KeyAgreeRecipientInfo).
+ * CMS EnvelopedData representation using the Channel Session Protocol.
  *
- * Or more specifically, using Relaynet's channel session protocol.
+ * Consequently, it uses the key agreement (`KeyAgreeRecipientInfo`) from CMS.
  */
 export class SessionEnvelopedData extends EnvelopedData {
+  /**
+   * Return an EnvelopedData value using the Channel Session Protocol.
+   *
+   * @param plaintext The plaintext whose ciphertext has to be embedded in the EnvelopedData value.
+   * @param certificateOrOriginatorKey The ECDH certificate or public key of the recipient.
+   * @param options Any encryption options.
+   */
   public static async encrypt(
     plaintext: ArrayBuffer,
     certificateOrOriginatorKey: Certificate | SessionOriginatorKey,
@@ -161,6 +200,9 @@ export class SessionEnvelopedData extends EnvelopedData {
     return { dhPrivateKey, dhKeyId, envelopedData };
   }
 
+  /**
+   * Return the key of the ECDH key of the originator/producer of the EnvelopedData value.
+   */
   public async getOriginatorKey(): Promise<SessionOriginatorKey> {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
@@ -181,6 +223,7 @@ export class SessionEnvelopedData extends EnvelopedData {
     return { keyId, publicKey };
   }
 
+  /** Return the id of the ECDH key pair used of the recipient */
   public getRecipientKeyId(): number {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
