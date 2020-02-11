@@ -598,25 +598,21 @@ test('calculateSubjectPrivateAddress should return private node address', async 
 });
 
 describe('validate()', () => {
-  describe('X.509 certificate version', () => {
-    test('it should accept version 3', async () => {
-      const cert = await generateStubCert();
-      // tslint:disable-next-line:no-object-mutation
-      cert.pkijsCertificate.version = 2; // Versioning starts at 0
+  test('Valid certificates should be accepted', async () => {
+    const cert = await generateStubCert();
 
-      cert.validate();
-    });
+    cert.validate();
+  });
 
-    test('it should refuse versions other than 3', async () => {
-      const cert = await generateStubCert();
-      // tslint:disable-next-line:no-object-mutation
-      cert.pkijsCertificate.version = 1;
+  test('Certificate version other than 3 should be refused', async () => {
+    const cert = await generateStubCert();
+    // tslint:disable-next-line:no-object-mutation
+    cert.pkijsCertificate.version = 1;
 
-      expect(() => cert.validate()).toThrowWithMessage(
-        CertificateError,
-        'Only X.509 v3 certificates are supported (got v2)',
-      );
-    });
+    expect(() => cert.validate()).toThrowWithMessage(
+      CertificateError,
+      'Only X.509 v3 certificates are supported (got v2)',
+    );
   });
 });
 
