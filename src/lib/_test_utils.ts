@@ -40,7 +40,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   futureDate.setDate(futureDate.getDate() + 1);
   const subjectPublicKey = config.subjectPublicKey || keyPair.publicKey;
   return Certificate.issue({
-    commonName: `0${getPublicKeyDigestHex(subjectPublicKey)}`,
+    commonName: `0${await getPublicKeyDigestHex(subjectPublicKey)}`,
     issuerCertificate: config.issuerCertificate,
     issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
     subjectPublicKey,

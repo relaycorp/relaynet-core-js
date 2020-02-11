@@ -61,10 +61,10 @@ beforeAll(async () => {
   bobDhPrivateKey = bobDhKeyPair.privateKey;
   bobDhPublicKey = bobDhKeyPair.publicKey;
   bobDhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: bobDhPublicKey,
-    nodeCertificate,
-    nodePrivateKey,
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodePrivateKey,
     serialNumber: bobDhCertificateSerialNumber,
+    subjectPublicKey: bobDhPublicKey,
     validityEndDate: TOMORROW,
   });
 });

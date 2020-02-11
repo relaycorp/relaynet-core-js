@@ -7,8 +7,6 @@ const MAX_DH_CERT_LENGTH_DAYS = 60;
 const SECONDS_PER_DAY = 86_400;
 const MAX_DH_CERT_LENGTH_MS = MAX_DH_CERT_LENGTH_DAYS * SECONDS_PER_DAY * 1_000;
 
-const DEFAULT_DH_CERT_LENGTH_DAYS = 30;
-
 export interface GatewayCertificateIssuanceOptions extends BasicCertificateIssuanceOptions {
   readonly issuerCertificate?: Certificate; // Absent/self-issued when gateway is public
 }
@@ -65,13 +63,9 @@ export async function issueDeliveryAuthorization(
 
 export class DHCertificateError extends CertificateError {}
 
-interface DHKeyCertificateOptions {
-  readonly dhPublicKey: CryptoKey;
-  readonly nodePrivateKey: CryptoKey;
-  readonly nodeCertificate: Certificate;
-  readonly serialNumber?: number;
-  readonly validityEndDate?: Date;
-  readonly validityStartDate?: Date;
+/** Issuance options for certificate with (EC)DH subject key */
+export interface DHKeyCertificateOptions extends BasicCertificateIssuanceOptions {
+  readonly issuerCertificate: Certificate;
 }
 
 /**
@@ -86,10 +80,7 @@ export async function issueInitialDHKeyCertificate(
   options: DHKeyCertificateOptions,
 ): Promise<Certificate> {
   const startDate = options.validityStartDate || new Date();
-  const endDate =
-    options.validityEndDate || getDateAfterDays(startDate, DEFAULT_DH_CERT_LENGTH_DAYS);
-
-  const certValidityLengthMs = endDate.getTime() - startDate.getTime();
+  const certValidityLengthMs = options.validityEndDate.getTime() - startDate.getTime();
   if (MAX_DH_CERT_LENGTH_MS < certValidityLengthMs) {
     throw new DHCertificateError(
       `DH key may not be valid for more than ${MAX_DH_CERT_LENGTH_DAYS} days`,
@@ -97,15 +88,10 @@ export async function issueInitialDHKeyCertificate(
   }
 
   return Certificate.issue({
-    commonName: options.nodeCertificate.getCommonName(),
+    ...options,
+    commonName: options.issuerCertificate.getCommonName(),
     isCA: false,
-    issuerCertificate: options.nodeCertificate,
-    issuerPrivateKey: options.nodePrivateKey,
     pathLenConstraint: 0,
-    serialNumber: options.serialNumber,
-    subjectPublicKey: options.dhPublicKey,
-    validityEndDate: endDate,
-    validityStartDate: startDate,
   });
 }
 
@@ -122,10 +108,4 @@ async function issueNodeCertificate(options: NodeCertificateOptions): Promise<Ce
 async function computePrivateNodeAddress(publicKey: CryptoKey): Promise<string> {
   const publicKeyDigest = Buffer.from(await getPublicKeyDigest(publicKey));
   return `0${publicKeyDigest.toString('hex')}`;
-}
-
-function getDateAfterDays(initialDate: Date, additionalDays: number): Date {
-  const newDate = new Date(initialDate);
-  newDate.setDate(initialDate.getDate() + additionalDays);
-  return newDate;
 }

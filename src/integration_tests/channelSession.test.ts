@@ -36,10 +36,10 @@ beforeAll(async () => {
 test('DH certificate can be issued, serialized and deserialized', async () => {
   const dhKeyPair = await generateECDHKeyPair();
   const dhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: dhKeyPair.publicKey,
-    nodeCertificate,
-    nodePrivateKey: nodeKeyPair.privateKey,
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodeKeyPair.privateKey,
     serialNumber: 2,
+    subjectPublicKey: dhKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
 
@@ -53,10 +53,10 @@ test('DH certificate can be issued, serialized and deserialized', async () => {
 test('Encryption and decryption with subsequent DH keys', async () => {
   const bobKeyPair1 = await generateECDHKeyPair();
   const bobDhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: bobKeyPair1.publicKey,
-    nodeCertificate,
-    nodePrivateKey: nodeKeyPair.privateKey,
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodeKeyPair.privateKey,
     serialNumber: 2,
+    subjectPublicKey: bobKeyPair1.publicKey,
     validityEndDate: TOMORROW,
   });
 
@@ -95,10 +95,10 @@ test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serializat
   const dhKeyPair = await generateECDHKeyPair();
   const serialNumber = 2345;
   const dhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: dhKeyPair.publicKey,
-    nodeCertificate,
-    nodePrivateKey: nodeKeyPair.privateKey,
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodeKeyPair.privateKey,
     serialNumber,
+    subjectPublicKey: dhKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
 
@@ -120,10 +120,10 @@ test('EnvelopedData should be decrypted after serialization', async () => {
   const dhKeyPair = await generateECDHKeyPair();
   const serialNumber = 2345;
   const dhCertificate = await issueInitialDHKeyCertificate({
-    dhPublicKey: dhKeyPair.publicKey,
-    nodeCertificate,
-    nodePrivateKey: nodeKeyPair.privateKey,
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodeKeyPair.privateKey,
     serialNumber,
+    subjectPublicKey: dhKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
 
