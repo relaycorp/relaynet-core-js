@@ -1,19 +1,19 @@
-// This module wouldn't duplicate Cargo.ts if TypeScript supported static+abstract methods
+// This module wouldn't duplicate Parcel.ts if TypeScript supported static+abstract methods
 
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
 import Message from './Message';
 
-const concreteMessageTypeOctet = 0x50;
+const concreteMessageTypeOctet = 0x43;
 const concreteMessageVersionOctet = 0;
 
-export default class Parcel extends Message {
-  public static async deserialize(parcelSerialized: ArrayBuffer): Promise<Parcel> {
+export default class Cargo extends Message {
+  public static async deserialize(parcelSerialized: ArrayBuffer): Promise<Cargo> {
     return serialization.deserialize(
       parcelSerialized,
       concreteMessageTypeOctet,
       concreteMessageVersionOctet,
-      Parcel,
+      Cargo,
     );
   }
 
