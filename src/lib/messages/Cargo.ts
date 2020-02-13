@@ -1,4 +1,4 @@
-// This module wouldn't duplicate Parcel.ts if TypeScript supported static+abstract methods
+// This module wouldn't duplicate Parcel.ts if TypeScript supported static+abstract members
 
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
