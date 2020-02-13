@@ -1,10 +1,10 @@
 /* tslint:disable:no-let */
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { generateStubCert, getMockContext } from './_test_utils';
-import { generateRSAKeyPair } from './crypto_wrappers/keys';
+import { generateStubCert, getMockContext } from '../_test_utils';
+import { generateRSAKeyPair } from '../crypto_wrappers/keys';
+import * as serialization from '../ramf/serialization';
 import Parcel from './Parcel';
-import * as serialization from './ramf/serialization';
 
 afterAll(() => {
   jest.restoreAllMocks();

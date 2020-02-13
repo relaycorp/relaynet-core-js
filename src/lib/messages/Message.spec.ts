@@ -4,7 +4,7 @@ import * as jestDateMock from 'jest-date-mock';
 import { expectPromiseToReject, generateStubCert, reSerializeCertificate } from '../_test_utils';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { StubMessage } from './_test_utils';
+import { StubMessage } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';

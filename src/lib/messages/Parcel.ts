@@ -1,6 +1,6 @@
-import { SignatureOptions } from './crypto_wrappers/cms/signedData';
-import Message from './ramf/Message';
-import * as serialization from './ramf/serialization';
+import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
+import * as serialization from '../ramf/serialization';
+import Message from './Message';
 
 const concreteMessageTypeOctet = 0x50;
 const concreteMessageVersionOctet = 0;

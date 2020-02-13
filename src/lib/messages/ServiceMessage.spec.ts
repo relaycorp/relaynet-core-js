@@ -1,5 +1,5 @@
 import { Parser } from 'binary-parser';
-import RAMFError from './RAMFError';
+import RAMFError from '../ramf/RAMFError';
 import ServiceMessage from './ServiceMessage';
 
 describe('ServiceMessage', () => {

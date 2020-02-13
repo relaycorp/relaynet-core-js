@@ -1,6 +1,6 @@
 import uuid4 from 'uuid4';
 
-import { SignatureOptions } from '../..';
+import { SignatureOptions } from '../../index';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from './InvalidMessageError';
 

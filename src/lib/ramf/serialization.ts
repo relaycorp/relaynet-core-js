@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
-import Message from './Message';
+import Message from '../messages/Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 

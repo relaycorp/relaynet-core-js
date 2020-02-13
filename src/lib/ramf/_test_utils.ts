@@ -2,7 +2,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
-import Message from './Message';
+import Message from '../messages/Message';
 
 export const NON_ASCII_STRING = '❤こんにちは'; // Multi-byte characters
 
