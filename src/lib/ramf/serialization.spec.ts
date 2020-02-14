@@ -21,6 +21,7 @@ import RAMFValidationError from './RAMFValidationError';
 import { deserialize, MessageFields, serialize } from './serialization';
 
 const PAYLOAD = Buffer.from('Hi');
+const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1;
 
 const STUB_DATE = new Date(2014, 1, 19);
 STUB_DATE.setMilliseconds(0); // There should be tests covering rounding when there are milliseconds
@@ -39,7 +40,8 @@ const MESSAGE_PARSER = new Parser()
   .string('id', { length: 'idLength', encoding: 'ascii' })
   .uint32('dateTimestamp')
   .buffer('ttlBuffer', { length: 3 })
-  .uint32('payloadLength')
+  // @ts-ignore
+  .buffer('payloadLength', { length: 3, formatter: parse24BitNumber })
   .buffer('payload', { length: 'payloadLength' })
   .uint16('signatureLength')
   .buffer('signature', { length: 'signatureLength' });
@@ -376,18 +378,52 @@ describe('MessageSerializer', () => {
       });
     });
 
-    test('Payload should be serialized as is', async () => {
-      const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+    describe('Payload', () => {
+      test('Payload should be serialized as is', async () => {
+        const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH));
+        const message = new StubMessage(recipientAddress, senderCertificate, largePayload);
 
-      const messageSerialized = await serialize(
-        message,
-        stubConcreteMessageTypeOctet,
-        stubConcreteMessageVersionOctet,
-        senderPrivateKey,
-      );
+        const messageSerialized = await serialize(
+          message,
+          stubConcreteMessageTypeOctet,
+          stubConcreteMessageVersionOctet,
+          senderPrivateKey,
+        );
 
-      const messageParts = parseMessage(messageSerialized);
-      expectBuffersToEqual(messageParts.payload, PAYLOAD);
+        const messageParts = parseMessage(messageSerialized);
+        expectBuffersToEqual(messageParts.payload, largePayload);
+      });
+
+      test('Payload length prefix should be serialized as a 23-bit unsigned integer', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+
+        const messageSerialized = await serialize(
+          message,
+          stubConcreteMessageTypeOctet,
+          stubConcreteMessageVersionOctet,
+          senderPrivateKey,
+        );
+
+        const { payloadLength } = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+        expect(payloadLength).toEqual(PAYLOAD.byteLength);
+      });
+
+      test('Payload size should not exceed 2 ** 23 octets', async () => {
+        const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH + 1));
+        const message = new StubMessage(recipientAddress, senderCertificate, largePayload);
+        await expectPromiseToReject(
+          serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          ),
+          new RAMFSyntaxError(
+            `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${MAX_PAYLOAD_LENGTH +
+              1})`,
+          ),
+        );
+      });
     });
 
     describe('Signature', () => {
@@ -875,23 +911,42 @@ describe('MessageSerializer', () => {
       });
     });
 
-    test('Payload should be serialized with length prefix', async () => {
-      const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-      const messageSerialized = await serialize(
-        message,
-        stubConcreteMessageTypeOctet,
-        stubConcreteMessageVersionOctet,
-        senderPrivateKey,
-      );
+    describe('Payload', () => {
+      test('Payload should be serialized with length prefix', async () => {
+        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+        const messageSerialized = await serialize(
+          message,
+          stubConcreteMessageTypeOctet,
+          stubConcreteMessageVersionOctet,
+          senderPrivateKey,
+        );
 
-      const messageDeserialized = await deserialize(
-        messageSerialized,
-        stubConcreteMessageTypeOctet,
-        stubConcreteMessageVersionOctet,
-        StubMessage,
-      );
+        const messageDeserialized = await deserialize(
+          messageSerialized,
+          stubConcreteMessageTypeOctet,
+          stubConcreteMessageVersionOctet,
+          StubMessage,
+        );
 
-      expect(messageDeserialized.payloadSerialized).toEqual(PAYLOAD);
+        expect(messageDeserialized.payloadSerialized).toEqual(PAYLOAD);
+      });
+
+      test('Payload size should not exceed 2 ** 23 octets', async () => {
+        const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH + 1));
+        const messageSerialized = await serializeWithoutValidation({ payloadBuffer: largePayload });
+
+        await expect(
+          deserialize(
+            messageSerialized,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            StubMessage,
+          ),
+        ).rejects.toMatchObject<Partial<RAMFValidationError>>({
+          message: `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${MAX_PAYLOAD_LENGTH +
+            1})`,
+        });
+      });
     });
 
     describe('Signature', () => {
@@ -1065,8 +1120,10 @@ describe('MessageSerializer', () => {
     ttlBuffer.writeUIntLE(ttl, 0, 3);
     serialization.writeBuffer(ttlBuffer);
 
-    serialization.writeUInt32LE(payloadBuffer.byteLength);
-    serialization.writeBuffer(Buffer.from(payloadBuffer));
+    const payloadLength = Buffer.allocUnsafe(3);
+    payloadLength.writeUIntLE(payloadBuffer.byteLength, 0, 3);
+    serialization.writeBuffer(payloadLength);
+    serialization.writeBuffer(payloadBuffer);
 
     const finalSignature = Buffer.from(
       signature ||

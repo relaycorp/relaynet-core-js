@@ -11,6 +11,7 @@ const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
 const MAX_ID_LENGTH = 2 ** 8 - 1;
 const MAX_DATE_TIMESTAMP_SEC = 2 ** 32 - 1;
 const MAX_TTL = 2 ** 24 - 1;
+const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1;
 const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
 
 const PARSER = new Parser()
@@ -24,7 +25,10 @@ const PARSER = new Parser()
   .string('id', { length: 'idLength', encoding: 'ascii' })
   .uint32('dateTimestamp')
   .buffer('ttlBuffer', { length: 3 })
-  .uint32('payloadLength')
+  .buffer('payloadLength', {
+    formatter: (buf: Parser.Data) => (buf as Buffer).readUIntLE(0, 3),
+    length: 3,
+  })
   .buffer('payload', { length: 'payloadLength' })
   .uint16('signatureLength')
   .buffer('signature', { length: 'signatureLength' });
@@ -61,6 +65,7 @@ export async function serialize(
   validateMessageIdLength(message.id);
   validateDate(message.date);
   validateTtl(message.ttl);
+  validatePayloadLength(message.payloadSerialized);
   //endregion
 
   const serialization = new SmartBuffer();
@@ -93,8 +98,10 @@ export async function serialize(
   //endregion
 
   //region Payload
+  const payloadLength = Buffer.allocUnsafe(3);
+  payloadLength.writeUIntLE(message.payloadSerialized.byteLength, 0, 3);
   const payloadSerialized = Buffer.from(message.payloadSerialized);
-  serialization.writeUInt32LE(payloadSerialized.byteLength);
+  serialization.writeBuffer(payloadLength);
   serialization.writeBuffer(payloadSerialized);
   //endregion
 
@@ -132,6 +139,7 @@ export async function deserialize<M extends Message>(
 
   validateFileFormatSignature(messageFields, concreteMessageTypeOctet, concreteMessageVersionOctet);
   validateRecipientAddressLength(messageFields.recipientAddress);
+  validatePayloadLength(messageFields.payload);
   validateSignatureLength(messageFields.signature);
   //endregion
 
@@ -218,6 +226,15 @@ function validateTtl(ttl: number): void {
   }
   if (MAX_TTL < ttl) {
     throw new RAMFSyntaxError('TTL must be less than 2^24');
+  }
+}
+
+function validatePayloadLength(payloadBuffer: ArrayBuffer): void {
+  const length = payloadBuffer.byteLength;
+  if (MAX_PAYLOAD_LENGTH < length) {
+    throw new RAMFSyntaxError(
+      `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${length})`,
+    );
   }
 }
 
