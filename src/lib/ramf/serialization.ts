@@ -26,7 +26,10 @@ const PARSER = new Parser()
   .uint32('dateTimestamp')
   .buffer('ttlBuffer', { length: 3 })
   .buffer('payloadLength', {
-    formatter: (buf: Parser.Data) => (buf as Buffer).readUIntLE(0, 3),
+    // Ugly workaround for https://github.com/keichi/binary-parser/issues/33
+    // @ts-ignore
+    // tslint:disable-next-line:function-constructor
+    formatter: new Function('buf', 'return buf.readUIntLE(0, 3)'),
     length: 3,
   })
   .buffer('payload', { length: 'payloadLength' })
