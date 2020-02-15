@@ -24,11 +24,11 @@ This library can be used for different purposes, so please refer to the document
 
 Most people will be interested in [adding Relaynet support to their app](howto-service.md), whether the app is pre-existing or is being built from scratch.
 
-Relaycorp provides implementations for gateways, relayers and bindings, so if you're contributing to those implementations or for whatever reason you'd like to build your own, please refer to the follow documents:
+Relaycorp provides implementations for gateways, couriers and bindings, so if you're contributing to those implementations or for whatever reason you'd like to build your own, please refer to the follow documents:
 
 - [Implementing a binding](howto-binding.md).
 - [Implementing a gateway](howto-gateway.md).
-- [Implementing a relayer](howto-relayer.md).
+- [Implementing a courier](howto-courier.md).
 
 TypeScript type declarations are included with this library. [Read API documentation](./api).
 

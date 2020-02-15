@@ -13,25 +13,25 @@ import { generateStubCert, reSerializeCertificate } from '../lib/_test_utils';
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
 
-let relayingGatewayCert: Certificate;
-let localGatewayCert: Certificate;
+let publicGatewayCert: Certificate;
+let privateGatewayCert: Certificate;
 let peerEndpointCert: Certificate;
 let endpointPdaCert: Certificate;
 beforeAll(async () => {
-  const relayingGatewayKeyPair = await generateRSAKeyPair();
-  relayingGatewayCert = reSerializeCertificate(
+  const publicGatewayKeyPair = await generateRSAKeyPair();
+  publicGatewayCert = reSerializeCertificate(
     await issueGatewayCertificate({
-      issuerPrivateKey: relayingGatewayKeyPair.privateKey,
-      subjectPublicKey: relayingGatewayKeyPair.publicKey,
+      issuerPrivateKey: publicGatewayKeyPair.privateKey,
+      subjectPublicKey: publicGatewayKeyPair.publicKey,
       validityEndDate: TOMORROW,
     }),
   );
 
   const localGatewayKeyPair = await generateRSAKeyPair();
-  localGatewayCert = reSerializeCertificate(
+  privateGatewayCert = reSerializeCertificate(
     await issueGatewayCertificate({
-      issuerCertificate: relayingGatewayCert,
-      issuerPrivateKey: relayingGatewayKeyPair.privateKey,
+      issuerCertificate: publicGatewayCert,
+      issuerPrivateKey: publicGatewayKeyPair.privateKey,
       subjectPublicKey: localGatewayKeyPair.publicKey,
       validityEndDate: TOMORROW,
     }),
@@ -40,7 +40,7 @@ beforeAll(async () => {
   const peerEndpointKeyPair = await generateRSAKeyPair();
   peerEndpointCert = reSerializeCertificate(
     await issueEndpointCertificate({
-      issuerCertificate: localGatewayCert,
+      issuerCertificate: privateGatewayCert,
       issuerPrivateKey: localGatewayKeyPair.privateKey,
       subjectPublicKey: peerEndpointKeyPair.publicKey,
       validityEndDate: TOMORROW,
@@ -63,10 +63,10 @@ test('Messages by authorized senders should be accepted', async () => {
     await peerEndpointCert.calculateSubjectPrivateAddress(),
     endpointPdaCert,
     Buffer.from('hey'),
-    { senderCaCertificateChain: [peerEndpointCert, localGatewayCert] },
+    { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
   );
 
-  await parcel.validate([relayingGatewayCert]);
+  await parcel.validate([publicGatewayCert]);
 });
 
 test('Certificate chain should be computed corrected', async () => {
@@ -74,14 +74,14 @@ test('Certificate chain should be computed corrected', async () => {
     await peerEndpointCert.calculateSubjectPrivateAddress(),
     endpointPdaCert,
     Buffer.from('hey'),
-    { senderCaCertificateChain: [peerEndpointCert, localGatewayCert] },
+    { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
   );
 
-  await expect(parcel.getSenderCertificationPath([relayingGatewayCert])).resolves.toEqual([
+  await expect(parcel.getSenderCertificationPath([publicGatewayCert])).resolves.toEqual([
     endpointPdaCert,
     peerEndpointCert,
-    localGatewayCert,
-    relayingGatewayCert,
+    privateGatewayCert,
+    publicGatewayCert,
   ]);
 });
 
@@ -90,10 +90,10 @@ test('Messages by unauthorized senders should be refused', async () => {
     await peerEndpointCert.calculateSubjectPrivateAddress(),
     await generateStubCert(),
     Buffer.from('hey'),
-    { senderCaCertificateChain: [peerEndpointCert, localGatewayCert] },
+    { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
   );
 
-  await expect(parcel.validate([relayingGatewayCert])).rejects.toHaveProperty(
+  await expect(parcel.validate([publicGatewayCert])).rejects.toHaveProperty(
     'message',
     'Sender is not authorized: No valid certificate paths found',
   );
