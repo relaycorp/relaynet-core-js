@@ -40,7 +40,7 @@ export { SignatureOptions } from './lib/crypto_wrappers/cms/signedData';
 
 // RAMF
 export { default as Message } from './lib/messages/Message';
-export { default as Payload } from './lib/messages/Payload';
+export { default as Payload } from './lib/messages/PayloadPlaintext';
 export { default as ServiceMessage } from './lib/messages/ServiceMessage';
 export { default as RAMFError } from './lib/ramf/RAMFError';
 export { default as RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';

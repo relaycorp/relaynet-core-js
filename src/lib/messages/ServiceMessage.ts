@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
 import RAMFError from '../ramf/RAMFError';
-import Payload from './Payload';
+import PayloadPlaintext from './PayloadPlaintext';
 
 const MAX_TYPE_LENGTH = 2 ** 8 - 1; // 8-bit
 const MAX_VALUE_LENGTH = 2 ** 32 - 1; // 32-bit
@@ -18,7 +18,7 @@ const PARSER = new Parser()
 /**
  * Service message as encapsulated in a parcel.
  */
-export default class ServiceMessage implements Payload {
+export default class ServiceMessage implements PayloadPlaintext {
   /**
    * Initialize a service message from the `serialization`.
    *
