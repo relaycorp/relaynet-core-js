@@ -2,14 +2,22 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { expectBuffersToEqual } from '../_test_utils';
+import {
+  convertAsyncIteratorToArray,
+  expectBuffersToEqual,
+  generateStubCert,
+} from '../_test_utils';
 import { deserializeDer } from '../crypto_wrappers/_utils';
+import { generateRSAKeyPair } from '../crypto_wrappers/keys';
+import Certificate from '../crypto_wrappers/x509/Certificate';
+import Cargo from './Cargo';
 import CargoMessageSet from './CargoMessageSet';
 import InvalidMessageError from './InvalidMessageError';
+import Parcel from './Parcel';
 
 const STUB_MESSAGE = Buffer.from('hiya');
 
-describe('CargoMessages', () => {
+describe('CargoMessageSet', () => {
   describe('serialize', () => {
     test('An empty set should serialized as such', () => {
       const payload = new CargoMessageSet(new Set([]));
@@ -127,6 +135,64 @@ describe('CargoMessages', () => {
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
       expect(cargoMessages.messages).toEqual(new Set(messages));
+    });
+  });
+
+  describe('deserializeMessages', () => {
+    let privateKey: CryptoKey;
+    let certificate: Certificate;
+
+    beforeAll(async () => {
+      const senderKeyPair = await generateRSAKeyPair();
+      privateKey = senderKeyPair.privateKey;
+      certificate = await generateStubCert({
+        issuerPrivateKey: privateKey,
+        subjectPublicKey: senderKeyPair.publicKey,
+      });
+    });
+
+    test('Parcels should be yielded', async () => {
+      const parcel = new Parcel('address', certificate, Buffer.from('hi'));
+      const parcelSerialization = Buffer.from(await parcel.serialize(privateKey));
+      const cargoMessageSet = new CargoMessageSet(new Set([parcelSerialization]));
+
+      const messages = await convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages());
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toBeInstanceOf(Parcel);
+      expect(messages[0]).toHaveProperty('recipientAddress', parcel.recipientAddress);
+    });
+
+    test('An error should be thrown when non-RAMF messages are found', async () => {
+      const cargoMessageSet = new CargoMessageSet(new Set([Buffer.from('Not RAMF')]));
+
+      await expect(
+        convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
+      ).rejects.toMatchObject<Partial<InvalidMessageError>>({
+        message: expect.stringMatching(
+          /^Invalid message found: Serialization is not a valid RAMF message/,
+        ),
+      });
+    });
+
+    test('An error should be thrown when unsupported RAMF messages are found', async () => {
+      const innerCargo = new Cargo('address', certificate, Buffer.from('hi'));
+      const cargoSerialization = Buffer.from(await innerCargo.serialize(privateKey));
+      const cargoMessageSet = new CargoMessageSet(new Set([cargoSerialization]));
+
+      await expect(
+        convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
+      ).rejects.toMatchObject<Partial<InvalidMessageError>>({
+        message: expect.stringMatching(/^Invalid message found: Expected concrete message type/),
+      });
+    });
+
+    test('An empty set should result in no yielded values', async () => {
+      const cargoMessageSet = new CargoMessageSet(new Set([]));
+
+      await expect(
+        convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
+      ).resolves.toEqual([]);
     });
   });
 });

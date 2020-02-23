@@ -110,3 +110,14 @@ export function reSerializeCertificate(cert: Certificate): Certificate {
   // https://github.com/PeculiarVentures/PKI.js/blob/9a39551aa9f1445406f96680318014c8d714e8e3/src/CertificateChainValidationEngine.js#L155
   return Certificate.deserialize(cert.serialize());
 }
+
+export async function convertAsyncIteratorToArray<T>(
+  iterator: AsyncIterableIterator<T>,
+): Promise<readonly T[]> {
+  // tslint:disable-next-line:readonly-array
+  const values = [];
+  for await (const value of iterator) {
+    values.push(value);
+  }
+  return values;
+}

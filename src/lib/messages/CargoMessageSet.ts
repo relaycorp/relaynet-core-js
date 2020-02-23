@@ -3,6 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 
 import { deserializeDer } from '../crypto_wrappers/_utils';
 import InvalidMessageError from './InvalidMessageError';
+import Parcel from './Parcel';
 import PayloadPlaintext from './PayloadPlaintext';
 
 /**
@@ -44,5 +45,15 @@ export default class CargoMessageSet implements PayloadPlaintext {
     // tslint:disable-next-line:no-object-mutation
     set.valueBlock.value = messagesSerialized;
     return set.toBER(false);
+  }
+
+  public async *deserializeMessages(): AsyncIterableIterator<Parcel> {
+    for (const message of this.messages) {
+      try {
+        yield Parcel.deserialize(bufferToArray(message));
+      } catch (error) {
+        throw new InvalidMessageError(error, 'Invalid message found');
+      }
+    }
   }
 }
