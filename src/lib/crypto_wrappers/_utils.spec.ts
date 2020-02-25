@@ -3,18 +3,19 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import WebCrypto from 'node-webcrypto-ossl';
 import * as pkijs from 'pkijs';
 
-import { deserializeDer, getPkijsCrypto } from './_utils';
+import { deserializeDer, generateRandom64BitValue, getPkijsCrypto } from './_utils';
+
+const stubWebcrypto = new WebCrypto();
 
 jest.mock('pkijs');
 
 describe('getPkijsCrypto', () => {
   test('It should pass on the crypto object it got', () => {
-    const webcrypto = new WebCrypto();
     // @ts-ignore
-    pkijs.getCrypto.mockReturnValue(webcrypto.subtle);
-
+    pkijs.getCrypto.mockReturnValue(stubWebcrypto.subtle);
     const crypto = getPkijsCrypto();
-    expect(crypto).toBe(webcrypto.subtle);
+
+    expect(crypto).toBe(stubWebcrypto.subtle);
   });
 
   test('It should error out if there is no crypto object', () => {
@@ -42,4 +43,25 @@ describe('deserializeDer', () => {
       new Error('Value is not DER-encoded'),
     );
   });
+});
+
+test('generateRandom64BitValue() should generate a cryptographically secure value', () => {
+  const expectedBytes: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8];
+  const mockWebcrypto = {
+    getRandomValues: jest.fn().mockImplementation((array: Uint8Array) => array.set(expectedBytes)),
+  };
+  // @ts-ignore
+  pkijs.getCrypto.mockReset();
+  // @ts-ignore
+  pkijs.getCrypto.mockReturnValue(mockWebcrypto);
+
+  const randomValue = generateRandom64BitValue();
+
+  expect(randomValue).toBeInstanceOf(ArrayBuffer);
+  expect(randomValue).toHaveProperty('byteLength', 8);
+
+  const expectedGeneratedValue = new ArrayBuffer(8);
+  const expectedGeneratedValueView = new Uint8Array(expectedGeneratedValue);
+  expectedGeneratedValueView.set(expectedBytes);
+  expect(randomValue).toEqual(expectedGeneratedValue);
 });

@@ -17,10 +17,9 @@ export function deserializeDer(derValue: ArrayBuffer): asn1js.LocalBaseBlock {
   return asn1Value.result;
 }
 
-export function generateRandom32BitUnsignedNumber(): number {
-  const numberArray = new Uint32Array(4);
+export function generateRandom64BitValue(): ArrayBuffer {
+  const value = new ArrayBuffer(8);
   // @ts-ignore
-  getPkijsCrypto().getRandomValues(numberArray);
-  const numberBuffer = Buffer.from(numberArray);
-  return numberBuffer.readUInt32LE(0);
+  getPkijsCrypto().getRandomValues(new Uint8Array(value));
+  return value;
 }

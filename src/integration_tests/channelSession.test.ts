@@ -27,7 +27,6 @@ beforeAll(async () => {
   nodeKeyPair = await generateRSAKeyPair();
   nodeCertificate = await issueEndpointCertificate({
     issuerPrivateKey: nodeKeyPair.privateKey,
-    serialNumber: 1,
     subjectPublicKey: nodeKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
@@ -38,7 +37,6 @@ test('DH certificate can be issued, serialized and deserialized', async () => {
   const dhCertificate = await issueInitialDHKeyCertificate({
     issuerCertificate: nodeCertificate,
     issuerPrivateKey: nodeKeyPair.privateKey,
-    serialNumber: 2,
     subjectPublicKey: dhKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
@@ -55,7 +53,6 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   const bobDhCertificate = await issueInitialDHKeyCertificate({
     issuerCertificate: nodeCertificate,
     issuerPrivateKey: nodeKeyPair.privateKey,
-    serialNumber: 2,
     subjectPublicKey: bobKeyPair1.publicKey,
     validityEndDate: TOMORROW,
   });
@@ -93,11 +90,9 @@ test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serializat
   // as PKI.js attaches it to the EnvelopedData value temporarily but isn't output to the
   // ASN.1 representation because it isn't part of the CMS serialization.
   const dhKeyPair = await generateECDHKeyPair();
-  const serialNumber = 2345;
   const dhCertificate = await issueInitialDHKeyCertificate({
     issuerCertificate: nodeCertificate,
     issuerPrivateKey: nodeKeyPair.privateKey,
-    serialNumber,
     subjectPublicKey: dhKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
@@ -110,7 +105,7 @@ test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serializat
   const envelopedDataDeserialized = EnvelopedData.deserialize(
     envelopedData.serialize(),
   ) as SessionEnvelopedData;
-  expect(envelopedDataDeserialized.getRecipientKeyId()).toEqual(serialNumber);
+  expect(envelopedDataDeserialized.getRecipientKeyId()).toEqual(dhCertificate.getSerialNumber());
 });
 
 test('EnvelopedData should be decrypted after serialization', async () => {
@@ -118,11 +113,9 @@ test('EnvelopedData should be decrypted after serialization', async () => {
   // been serialized. This is a regression test for
   // https://github.com/PeculiarVentures/PKI.js/pull/258
   const dhKeyPair = await generateECDHKeyPair();
-  const serialNumber = 2345;
   const dhCertificate = await issueInitialDHKeyCertificate({
     issuerCertificate: nodeCertificate,
     issuerPrivateKey: nodeKeyPair.privateKey,
-    serialNumber,
     subjectPublicKey: dhKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
@@ -173,9 +166,7 @@ function checkRecipientInfo(
   expect(keyAgreeRecipientIdentifier.variant).toEqual(1);
   const expectedKeyId =
     expectedRecipientCertificate instanceof Certificate
-      ? expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock
-      : expectedRecipientCertificate.keyId;
-  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.toString()).toEqual(
-    expectedKeyId.toString(),
-  );
+      ? expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.valueHex
+      : bufferToArray(expectedRecipientCertificate.keyId);
+  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.valueHex).toEqual(expectedKeyId);
 }

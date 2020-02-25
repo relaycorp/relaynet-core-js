@@ -4,7 +4,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { generateRandom32BitUnsignedNumber, getPkijsCrypto } from '../_utils';
+import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
@@ -24,7 +24,7 @@ export interface EncryptionOptions {
  */
 export interface SessionEncryptionResult {
   /** Id of ECDH key pair. */
-  readonly dhKeyId: number;
+  readonly dhKeyId: ArrayBuffer;
 
   /** Private key of the ECDH key pair */
   readonly dhPrivateKey: CryptoKey;
@@ -36,7 +36,7 @@ export interface SessionEncryptionResult {
 /** Key of the sender/producer of the EnvelopedData value using the Channel Session Protocol */
 export interface SessionOriginatorKey {
   /** Id of the ECDH key pair */
-  readonly keyId: number;
+  readonly keyId: Buffer;
 
   /** Public key of the ECDH key pair. */
   readonly publicKey: CryptoKey; // DH or ECDH key
@@ -171,10 +171,14 @@ export class SessionEnvelopedData extends EnvelopedData {
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
-    const dhKeyId = generateRandom32BitUnsignedNumber();
+    const dhKeyId = generateRandom64BitValue();
+    const serialNumberAttrValue = new asn1js.Integer({
+      // @ts-ignore
+      valueHex: dhKeyId,
+    });
     const serialNumberAttribute = new pkijs.Attribute({
       type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-      values: [new asn1js.Integer({ value: dhKeyId })],
+      values: [serialNumberAttrValue],
     });
 
     const pkijsEnvelopedData = new pkijs.EnvelopedData({
@@ -224,10 +228,11 @@ export class SessionEnvelopedData extends EnvelopedData {
   }
 
   /** Return the id of the ECDH key pair used of the recipient */
-  public getRecipientKeyId(): number {
+  public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
-    return convertAsn1IntegerToNumber(encryptedKey.rid.value.serialNumber);
+    const serialNumberBlock = encryptedKey.rid.value.serialNumber;
+    return Buffer.from(serialNumberBlock.valueBlock.valueHex);
   }
 
   public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
@@ -272,13 +277,16 @@ async function getOrMakePkijsCertificate(
   }
 
   const pkijsCertificate = new pkijs.Certificate({
-    serialNumber: new asn1js.Integer({ value: certificateOrOriginatorKey.keyId }),
+    serialNumber: new asn1js.Integer({
+      // @ts-ignore
+      valueHex: bufferToArray(certificateOrOriginatorKey.keyId),
+    }),
   });
   await pkijsCertificate.subjectPublicKeyInfo.importKey(certificateOrOriginatorKey.publicKey);
   return pkijsCertificate;
 }
 
-function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {
+function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): Buffer {
   const unprotectedAttrs = envelopedData.unprotectedAttrs || [];
   if (unprotectedAttrs.length === 0) {
     throw new CMSError('unprotectedAttrs must be present when using channel session');
@@ -300,10 +308,6 @@ function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): number {
     );
   }
 
-  return convertAsn1IntegerToNumber(originatorKeyIds[0]);
-}
-
-function convertAsn1IntegerToNumber(asn1Integer: asn1js.Integer): number {
-  const keyIdString = asn1Integer.valueBlock.toString();
-  return parseInt(keyIdString, 10);
+  const serialNumberBlock = originatorKeyIds[0];
+  return Buffer.from(serialNumberBlock.valueBlock.valueHex);
 }

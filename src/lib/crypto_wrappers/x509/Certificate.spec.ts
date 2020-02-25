@@ -114,30 +114,17 @@ describe('issue()', () => {
     );
   });
 
-  test('should store the specified serial number', async () => {
-    const serialNumber = 2019;
-    const cert = await Certificate.issue({
-      ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      serialNumber,
-      subjectPublicKey: keyPair.publicKey,
-    });
-
-    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(serialNumber);
-  });
-
   test('should generate a serial number if none was set', async () => {
-    const prngSpy = jest.spyOn(utils, 'generateRandom32BitUnsignedNumber');
-
+    const generateRandom64BitValueSpy = jest.spyOn(utils, 'generateRandom64BitValue');
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
       issuerPrivateKey: keyPair.privateKey,
       subjectPublicKey: keyPair.publicKey,
     });
 
-    expect(prngSpy).toBeCalledTimes(1);
-    const generatedNumber = prngSpy.mock.results[0].value;
-    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueDec).toBe(generatedNumber);
+    expect(generateRandom64BitValueSpy).toBeCalledTimes(1);
+    const generatedNumber = generateRandom64BitValueSpy.mock.results[0].value;
+    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueHex).toEqual(generatedNumber);
   });
 
   test('should create a certificate valid from now by default', async () => {
@@ -199,7 +186,6 @@ describe('issue()', () => {
     const cert = await Certificate.issue({
       commonName,
       issuerPrivateKey: privateKey,
-      serialNumber: 1,
       subjectPublicKey: publicKey,
       validityEndDate: futureDate,
     });
@@ -545,19 +531,18 @@ test('serialize() should return a DER-encoded buffer', async () => {
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getCommonName());
 });
 
-test('getSerialNumber() should return the buffer in little-endian', async () => {
-  const serialNumber = 123456789;
-
-  const cert = await generateStubCert({ attributes: { serialNumber } });
+test('getSerialNumber() should return the serial number as a buffer', async () => {
+  const generateRandom64BitValueSpy = jest.spyOn(utils, 'generateRandom64BitValue');
+  const cert = await generateStubCert();
 
   const serialNumberBuffer = cert.getSerialNumber();
-  expect(serialNumberBuffer.readUIntLE(0, serialNumberBuffer.byteLength)).toEqual(serialNumber);
+  const expectedSerialNumberHex = generateRandom64BitValueSpy.mock.results[0].value;
+  expect(serialNumberBuffer).toEqual(Buffer.from(expectedSerialNumberHex));
+  expect(serialNumberBuffer.equals(Buffer.from(expectedSerialNumberHex))).toBeTrue();
 });
 
 test('getSerialNumberHex() should return the hex representation of serial number', async () => {
-  const serialNumber = 123456789;
-
-  const cert = await generateStubCert({ attributes: { serialNumber } });
+  const cert = await generateStubCert();
 
   const serialNumberHex = cert.getSerialNumberHex();
   expect(Buffer.from(serialNumberHex, 'hex')).toEqual(cert.getSerialNumber());
@@ -721,7 +706,6 @@ describe('validateTrust', () => {
 test('getPublicKey should return the subject public key', async () => {
   const subjectKeyPair = await generateRSAKeyPair();
   const cert = await generateStubCert({
-    attributes: { serialNumber: 12 },
     issuerPrivateKey: subjectKeyPair.privateKey,
     subjectPublicKey: subjectKeyPair.publicKey,
   });

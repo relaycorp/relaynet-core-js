@@ -2,7 +2,7 @@ import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { deserializeDer, generateRandom32BitUnsignedNumber } from '../_utils';
+import { deserializeDer, generateRandom64BitValue } from '../_utils';
 import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
 import CertificateError from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
@@ -50,8 +50,10 @@ export default class Certificate {
     const issuerPublicKey = options.issuerCertificate
       ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
-    const serialNumber = options.serialNumber ?? generateRandom32BitUnsignedNumber();
-    const serialNumberBlock = new asn1js.Integer({ value: serialNumber });
+    const serialNumberBlock = new asn1js.Integer({
+      // @ts-ignore
+      valueHex: generateRandom64BitValue(),
+    });
     const pkijsCert = new pkijs.Certificate({
       extensions: [
         makeBasicConstraintsExtension(options.isCA === true, options.pathLenConstraint ?? 0),
@@ -105,20 +107,16 @@ export default class Certificate {
   }
 
   /**
-   * Return serial number as a little endian buffer.
+   * Return serial number.
    *
    * This doesn't return a `number` or `BigInt` because the serial number could require more than
    * 8 octets (which is the maximum number of octets required to represent a 64-bit unsigned
    * integer).
-   *
-   * Also, ASN.1 BER/DER integers are serialized in big endian but for consistency with the
-   * Relaynet specs and this library, the result uses little endian.
    */
   public getSerialNumber(): Buffer {
     const serialNumberBlock = this.pkijsCertificate.serialNumber;
-    const numberBigEndian = new Uint8Array(serialNumberBlock.valueBlock.toBER());
-    const numberLittleEndian = numberBigEndian.reverse();
-    return Buffer.from(numberLittleEndian);
+    const serialNumber = serialNumberBlock.valueBlock.toBER();
+    return Buffer.from(serialNumber);
   }
 
   public getSerialNumberHex(): string {

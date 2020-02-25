@@ -45,7 +45,7 @@ beforeAll(async () => {
   const nodeKeyPair = await generateRSAKeyPair();
   nodePrivateKey = nodeKeyPair.privateKey;
   nodeCertificate = await generateStubCert({
-    attributes: { isCA: true, serialNumber: 1 },
+    attributes: { isCA: true },
     issuerPrivateKey: nodePrivateKey,
     subjectPublicKey: nodeKeyPair.publicKey,
   });
@@ -55,7 +55,6 @@ beforeAll(async () => {
 let bobDhPrivateKey: CryptoKey;
 let bobDhPublicKey: CryptoKey;
 let bobDhCertificate: Certificate;
-const bobDhCertificateSerialNumber = 3;
 beforeAll(async () => {
   const bobDhKeyPair = await generateECDHKeyPair();
   bobDhPrivateKey = bobDhKeyPair.privateKey;
@@ -63,7 +62,6 @@ beforeAll(async () => {
   bobDhCertificate = await issueInitialDHKeyCertificate({
     issuerCertificate: nodeCertificate,
     issuerPrivateKey: nodePrivateKey,
-    serialNumber: bobDhCertificateSerialNumber,
     subjectPublicKey: bobDhPublicKey,
     validityEndDate: TOMORROW,
   });
@@ -314,10 +312,8 @@ describe('SessionEnvelopedData', () => {
         bobDhCertificate,
       );
 
-      // Serial number would be 0 if the input to getRandomValues() was initialized but the
-      // function was not called. This is somewhat brittle but we can't use spyOn() because that
-      // wouldn't call the spied function, which is also used by EnvelopedData.encrypt().
-      expect(dhKeyId).not.toEqual(0);
+      expect(dhKeyId).toBeInstanceOf(ArrayBuffer);
+      expect(dhKeyId).toHaveProperty('byteLength', 8);
 
       expect(envelopedData.pkijsEnvelopedData.unprotectedAttrs).toHaveLength(1);
       const dhKeyIdAttribute = (envelopedData.pkijsEnvelopedData
@@ -326,16 +322,14 @@ describe('SessionEnvelopedData', () => {
         'type',
         OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
       );
-      expect(
-        // @ts-ignore
-        dhKeyIdAttribute.values[0].valueBlock.toString(),
-      ).toEqual((dhKeyId as number).toString());
+      // @ts-ignore
+      expectBuffersToEqual(dhKeyIdAttribute.values[0].valueBlock.valueHex, dhKeyId);
     });
 
     test('Originator key should be acceptable in lieu of certificate', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
       const bobOriginatorKey: SessionOriginatorKey = {
-        keyId: 123123,
+        keyId: Buffer.from('key id'),
         publicKey: bobDhPublicKey,
       };
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobOriginatorKey);
@@ -377,7 +371,7 @@ describe('SessionEnvelopedData', () => {
         const dhKeyIdAttribute = unprotectedAttrs[0];
         expect(keyId).toEqual(
           // @ts-ignore
-          parseInt(dhKeyIdAttribute.values[0].valueBlock.toString(), 10),
+          Buffer.from(dhKeyIdAttribute.values[0].valueBlock.valueHex),
         );
       });
 
@@ -466,7 +460,7 @@ describe('SessionEnvelopedData', () => {
     const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
     const actualKeyId = envelopedData.getRecipientKeyId();
-    expect(actualKeyId).toEqual(bobDhCertificateSerialNumber);
+    expect(actualKeyId).toEqual(bobDhCertificate.getSerialNumber());
   });
 
   describe('decrypt', () => {
