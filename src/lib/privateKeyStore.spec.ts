@@ -101,9 +101,7 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.fetchNodeKey(stubKeyId),
-          new PrivateKeyStoreError(
-            `Failed to retrieve key ${stubKeyId}: Unknown key ${stubKeyId}`,
-          ),
+          new PrivateKeyStoreError(`Failed to retrieve key ${stubKeyId}: Unknown key ${stubKeyId}`),
         );
       });
     });
@@ -232,9 +230,7 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.fetchSessionKey(stubKeyId, stubRecipientPublicKey),
-          new PrivateKeyStoreError(
-            `Failed to retrieve key ${stubKeyId}: Unknown key ${stubKeyId}`,
-          ),
+          new PrivateKeyStoreError(`Failed to retrieve key ${stubKeyId}: Unknown key ${stubKeyId}`),
         );
       });
     });
