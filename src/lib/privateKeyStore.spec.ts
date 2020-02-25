@@ -11,6 +11,10 @@ class StubPrivateKeyStore extends PrivateKeyStore {
     super();
   }
 
+  public registerStubKey(keyId: Buffer, privateKeyData: PrivateKeyData): void {
+    this.keys[keyId.toString('base64')] = privateKeyData;
+  }
+
   protected async fetchKey(keyId: string): Promise<PrivateKeyData> {
     if (keyId in this.keys) {
       return this.keys[keyId];
@@ -27,7 +31,8 @@ class StubPrivateKeyStore extends PrivateKeyStore {
 }
 
 describe('PrivateKeyStore', () => {
-  const stubKeyId = '123';
+  const stubKeyId = Buffer.from([1, 3, 5, 7, 9]);
+  const stubKeyIdBase64 = stubKeyId.toString('base64');
   let stubPrivateKey: CryptoKey;
 
   const stubPrivateKeyDer = Buffer.from('DER-encoded private key');
@@ -63,7 +68,7 @@ describe('PrivateKeyStore', () => {
 
       test('Existing key should be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = stubPrivateKeyData;
+        store.registerStubKey(stubKeyId, stubPrivateKeyData);
 
         const privateKeyData = await store.fetchNodeKey(stubKeyId);
 
@@ -76,19 +81,18 @@ describe('PrivateKeyStore', () => {
         });
       });
 
-      test('Numeric key ids should be converted to string', async () => {
-        const numericKeyId = 12345;
+      test('Key ids should be base64-encoded', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[numericKeyId.toString()] = stubPrivateKeyData;
+        store.registerStubKey(stubKeyId, stubPrivateKeyData);
 
-        const privateKeyData = await store.fetchNodeKey(numericKeyId);
+        const privateKeyData = await store.fetchNodeKey(stubKeyId);
 
         expect(privateKeyData).toBe(stubPrivateKey);
       });
 
       test('Session keys should not be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = { ...stubPrivateKeyData, type: 'session' as const };
+        store.registerStubKey(stubKeyId, { ...stubPrivateKeyData, type: 'session' as const });
 
         await expectPromiseToReject(
           store.fetchNodeKey(stubKeyId),
@@ -101,7 +105,7 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.fetchNodeKey(stubKeyId),
-          new PrivateKeyStoreError(`Failed to retrieve key ${stubKeyId}: Unknown key ${stubKeyId}`),
+          new PrivateKeyStoreError(`Failed to retrieve key: Unknown key ${stubKeyIdBase64}`),
         );
       });
     });
@@ -112,19 +116,19 @@ describe('PrivateKeyStore', () => {
 
         await store.saveNodeKey(stubPrivateKey, stubKeyId);
 
-        expect(store.keys).toHaveProperty(stubKeyId);
-        expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
-        expect(store.keys[stubKeyId]).toHaveProperty('type', 'node');
-        expect(store.keys[stubKeyId]).not.toHaveProperty('recipientPublicKeyDigest');
+        expect(store.keys).toHaveProperty(stubKeyIdBase64);
+        const keyDatum = store.keys[stubKeyIdBase64];
+        expect(keyDatum).toHaveProperty('keyDer', stubPrivateKeyDer);
+        expect(keyDatum).toHaveProperty('type', 'node');
+        expect(keyDatum).not.toHaveProperty('recipientPublicKeyDigest');
       });
 
-      test('Numeric key ids should be converted to string', async () => {
+      test('Key ids should be base64-encoded', async () => {
         const store = new StubPrivateKeyStore();
-        const numericKeyId = 12345;
 
-        await store.saveNodeKey(stubPrivateKey, numericKeyId);
+        await store.saveNodeKey(stubPrivateKey, stubKeyId);
 
-        expect(store.keys).toHaveProperty(numericKeyId.toString());
+        expect(store.keys).toHaveProperty(stubKeyIdBase64);
       });
 
       test('Errors should be wrapped', async () => {
@@ -132,7 +136,7 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.saveNodeKey(stubPrivateKey, stubKeyId),
-          new PrivateKeyStoreError(`Failed to save node key ${stubKeyId}: Denied`),
+          new PrivateKeyStoreError(`Failed to save key: Denied`),
         );
       });
     });
@@ -173,7 +177,7 @@ describe('PrivateKeyStore', () => {
     describe('fetchSessionKey', () => {
       test('Existing, unbound key should be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = stubUnboundPrivateKeyData;
+        store.registerStubKey(stubKeyId, stubUnboundPrivateKeyData);
 
         const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientPublicKey);
 
@@ -185,29 +189,28 @@ describe('PrivateKeyStore', () => {
 
       test('Existing, bound key should be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = stubBoundPrivateKeyData;
+        store.registerStubKey(stubKeyId, stubBoundPrivateKeyData);
 
         const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientPublicKey);
 
         expect(privateKeyData).toBe(stubPrivateKey);
       });
 
-      test('Numeric key ids should be converted to string', async () => {
-        const numericKeyId = 12345;
+      test('Key ids should be base64-encoded', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[numericKeyId.toString()] = stubBoundPrivateKeyData;
+        store.registerStubKey(stubKeyId, stubBoundPrivateKeyData);
 
-        const privateKeyData = await store.fetchSessionKey(numericKeyId, stubRecipientPublicKey);
+        const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientPublicKey);
 
         expect(privateKeyData).toBe(stubPrivateKey);
       });
 
       test('Keys bound to another recipient should not be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = {
+        store.registerStubKey(stubKeyId, {
           ...stubBoundPrivateKeyData,
           recipientPublicKeyDigest: `not ${stubBoundPrivateKeyData.recipientPublicKeyDigest}`,
-        };
+        });
 
         await expectPromiseToReject(
           store.fetchSessionKey(stubKeyId, stubRecipientPublicKey),
@@ -217,7 +220,7 @@ describe('PrivateKeyStore', () => {
 
       test('Node keys should not be returned', async () => {
         const store = new StubPrivateKeyStore();
-        store.keys[stubKeyId] = { ...stubBoundPrivateKeyData, type: 'node' as const };
+        store.registerStubKey(stubKeyId, { ...stubBoundPrivateKeyData, type: 'node' as const });
 
         await expectPromiseToReject(
           store.fetchSessionKey(stubKeyId, stubRecipientPublicKey),
@@ -230,7 +233,7 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.fetchSessionKey(stubKeyId, stubRecipientPublicKey),
-          new PrivateKeyStoreError(`Failed to retrieve key ${stubKeyId}: Unknown key ${stubKeyId}`),
+          new PrivateKeyStoreError(`Failed to retrieve key: Unknown key ${stubKeyIdBase64}`),
         );
       });
     });
@@ -241,10 +244,10 @@ describe('PrivateKeyStore', () => {
 
         await store.saveSessionKey(stubPrivateKey, stubKeyId);
 
-        expect(store.keys).toHaveProperty(stubKeyId);
-        expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
-        expect(store.keys[stubKeyId]).toHaveProperty('type', 'session');
-        expect(store.keys[stubKeyId]).toHaveProperty('recipientPublicKeyDigest', undefined);
+        expect(store.keys).toHaveProperty(stubKeyIdBase64);
+        expect(store.keys[stubKeyIdBase64]).toHaveProperty('keyDer', stubPrivateKeyDer);
+        expect(store.keys[stubKeyIdBase64]).toHaveProperty('type', 'session');
+        expect(store.keys[stubKeyIdBase64]).toHaveProperty('recipientPublicKeyDigest', undefined);
       });
 
       test('Bound key should be stored', async () => {
@@ -252,22 +255,21 @@ describe('PrivateKeyStore', () => {
 
         await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientPublicKey);
 
-        expect(store.keys).toHaveProperty(stubKeyId);
-        expect(store.keys[stubKeyId]).toHaveProperty('keyDer', stubPrivateKeyDer);
-        expect(store.keys[stubKeyId]).toHaveProperty('type', 'session');
-        expect(store.keys[stubKeyId]).toHaveProperty(
+        expect(store.keys).toHaveProperty(stubKeyIdBase64);
+        expect(store.keys[stubKeyIdBase64]).toHaveProperty('keyDer', stubPrivateKeyDer);
+        expect(store.keys[stubKeyIdBase64]).toHaveProperty('type', 'session');
+        expect(store.keys[stubKeyIdBase64]).toHaveProperty(
           'recipientPublicKeyDigest',
           await keys.getPublicKeyDigestHex(stubRecipientPublicKey),
         );
       });
 
-      test('Numeric key ids should be converted to string', async () => {
+      test('Key ids should be base64-encoded', async () => {
         const store = new StubPrivateKeyStore();
-        const numericKeyId = 12345;
 
-        await store.saveSessionKey(stubPrivateKey, numericKeyId, stubRecipientPublicKey);
+        await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientPublicKey);
 
-        expect(store.keys).toHaveProperty(numericKeyId.toString());
+        expect(store.keys).toHaveProperty(stubKeyIdBase64);
       });
 
       test('Errors should be wrapped', async () => {
@@ -275,7 +277,7 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.saveSessionKey(stubPrivateKey, stubKeyId),
-          new PrivateKeyStoreError(`Failed to save session key ${stubKeyId}: Denied`),
+          new PrivateKeyStoreError(`Failed to save key: Denied`),
         );
       });
     });
