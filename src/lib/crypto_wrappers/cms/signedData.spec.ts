@@ -242,19 +242,18 @@ describe('verifySignature', () => {
   test('Attached CA certificates should be output when verification passes', async () => {
     const rootCaKeyPair = await generateRSAKeyPair();
     const rootCaCertificate = await generateStubCert({
-      attributes: { isCA: true, serialNumber: 1 },
+      attributes: { isCA: true },
       subjectPublicKey: rootCaKeyPair.publicKey,
     });
     const intermediateCaKeyPair = await generateRSAKeyPair();
     const intermediateCaCertificate = await generateStubCert({
-      attributes: { isCA: true, serialNumber: 2 },
+      attributes: { isCA: true },
       issuerCertificate: rootCaCertificate,
       issuerPrivateKey: rootCaKeyPair.privateKey,
       subjectPublicKey: intermediateCaKeyPair.publicKey,
     });
     const signerKeyPair = await generateRSAKeyPair();
     const signerCertificate = await generateStubCert({
-      attributes: { serialNumber: 3 },
       issuerCertificate: intermediateCaCertificate,
       issuerPrivateKey: intermediateCaKeyPair.privateKey,
       subjectPublicKey: signerKeyPair.publicKey,

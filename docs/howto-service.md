@@ -27,7 +27,6 @@ async function initEndpoint() {
   const certificate = await issueNodeCertificate({
     issuerPrivateKey: privateKey,
     subjectPublicKey: publicKey,
-    serialNumber: 1234,
   });
   yourFunctionToShareCertificate(certificate);
 }
@@ -39,7 +38,7 @@ The private address of your endpoint will be derived from its public key, so dep
 
 As shown in the diagram below, each message between two applications is encapsulated as a parcel, so sending and receiving messages involves serializing and deserializing parcels:
 
-![](./assets/diagrams/protocol-layers.svg)
+![](assets/diagrams/protocol-layers.svg)
 
 For example, consider a centralized service whose applications exchange JSON messages such as the one below:
 
@@ -108,7 +107,6 @@ async function generateInitialKeyPair() {
     issuerPrivateKey: endpointPrivateKey,
     issuerCertificate: endpointCertificate,
     subjectPublicKey: publicKey,
-    serialNumber: 12345,
   });
   yourFunctionToShareInitialCertificate(certificate);
 }

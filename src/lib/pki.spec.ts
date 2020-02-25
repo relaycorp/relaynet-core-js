@@ -43,7 +43,6 @@ beforeAll(async () => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   basicCertificateOptions = {
     issuerPrivateKey: stubSubjectKeyPair.privateKey,
-    serialNumber: 135,
     subjectPublicKey: stubSubjectKeyPair.publicKey,
     validityEndDate: tomorrow,
     validityStartDate: new Date(),
@@ -233,7 +232,6 @@ describe('issueInitialDHKeyCertificate', () => {
   beforeAll(async () => {
     stubNodeKeyPair = await generateRSAKeyPair();
     stubNodeCertificate = await generateStubCert({
-      attributes: { serialNumber: 0 },
       issuerPrivateKey: stubNodeKeyPair.privateKey,
       subjectPublicKey: stubNodeKeyPair.publicKey,
     });
@@ -287,16 +285,6 @@ describe('issueInitialDHKeyCertificate', () => {
     await issueInitialDHKeyCertificate(baseIssuanceOptions);
 
     expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('serialNumber', undefined);
-  });
-
-  test('Serial number should be the one specified if one was set', async () => {
-    const serialNumber = 42;
-    await issueInitialDHKeyCertificate({
-      ...baseIssuanceOptions,
-      serialNumber,
-    });
-
-    expect(mockCertificateIssue.mock.calls[0][0].serialNumber).toEqual(serialNumber);
   });
 
   describe('Validity dates', () => {

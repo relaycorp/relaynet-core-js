@@ -180,7 +180,7 @@ async function generateAuthorizedSenderChain(): Promise<AuthorizedSenderChain> {
   const rootKeyPair = await generateRSAKeyPair();
   const rootCert = reSerializeCertificate(
     await generateStubCert({
-      attributes: { isCA: true, serialNumber: 1 },
+      attributes: { isCA: true },
       issuerPrivateKey: rootKeyPair.privateKey,
       subjectPublicKey: rootKeyPair.publicKey,
     }),
@@ -189,7 +189,7 @@ async function generateAuthorizedSenderChain(): Promise<AuthorizedSenderChain> {
   const recipientKeyPair = await generateRSAKeyPair();
   const recipientCert = reSerializeCertificate(
     await generateStubCert({
-      attributes: { isCA: true, serialNumber: 2 },
+      attributes: { isCA: true },
       issuerCertificate: rootCert,
       issuerPrivateKey: rootKeyPair.privateKey,
       subjectPublicKey: recipientKeyPair.publicKey,
@@ -198,7 +198,7 @@ async function generateAuthorizedSenderChain(): Promise<AuthorizedSenderChain> {
 
   const senderCert = reSerializeCertificate(
     await generateStubCert({
-      attributes: { isCA: false, serialNumber: 3 },
+      attributes: { isCA: false },
       issuerCertificate: recipientCert,
       issuerPrivateKey: recipientKeyPair.privateKey,
     }),
