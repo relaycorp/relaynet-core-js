@@ -89,7 +89,7 @@ export abstract class PrivateKeyStore {
     try {
       return await this.fetchKey(keyId.toString());
     } catch (error) {
-      throw new PrivateKeyStoreError(error, `Failed to retrieve session key ${keyId}`);
+      throw new PrivateKeyStoreError(error, `Failed to retrieve key ${keyId}`);
     }
   }
 }
