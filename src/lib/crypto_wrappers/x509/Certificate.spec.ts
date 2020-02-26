@@ -582,6 +582,22 @@ test('calculateSubjectPrivateAddress should return private node address', async 
   );
 });
 
+describe('isEqual', () => {
+  test('Equal certificates should be reported as such', async () => {
+    const cert1 = await generateStubCert();
+    const cert2 = Certificate.deserialize(cert1.serialize());
+
+    expect(cert1.isEqual(cert2)).toBeTrue();
+  });
+
+  test('Different certificates should be reported as such', async () => {
+    const cert1 = await generateStubCert();
+    const cert2 = await generateStubCert();
+
+    expect(cert1.isEqual(cert2)).toBeFalse();
+  });
+});
+
 describe('validate()', () => {
   test('Valid certificates should be accepted', async () => {
     const cert = await generateStubCert();

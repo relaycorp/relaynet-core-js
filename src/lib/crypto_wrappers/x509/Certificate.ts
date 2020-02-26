@@ -138,6 +138,17 @@ export default class Certificate {
     return this.pkijsCertificate.getPublicKey();
   }
 
+  /**
+   * Report whether this certificate is the same as `otherCertificate`.
+   *
+   * @param otherCertificate
+   */
+  public isEqual(otherCertificate: Certificate): boolean {
+    const thisCertSerialized = Buffer.from(this.serialize());
+    const otherCertSerialized = Buffer.from(otherCertificate.serialize());
+    return thisCertSerialized.equals(otherCertSerialized);
+  }
+
   public validate(): void {
     // X.509 versioning starts at 0
     const x509CertVersion = this.pkijsCertificate.version + 1;
