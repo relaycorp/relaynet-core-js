@@ -27,7 +27,6 @@ export {
 } from './lib/crypto_wrappers/keys';
 export { PrivateKeyStore, PrivateKeyStoreError, PrivateKeyData } from './lib/privateKeyStore';
 
-export { default as BaseNode } from './lib/nodes/BaseNode';
 export * from './lib/cargoRelay';
 
 // PKI

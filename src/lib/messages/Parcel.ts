@@ -3,11 +3,12 @@
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
 import Message from './Message';
+import ServiceMessage from './ServiceMessage';
 
 const concreteMessageTypeOctet = 0x50;
 const concreteMessageVersionOctet = 0;
 
-export default class Parcel extends Message {
+export default class Parcel extends Message<ServiceMessage> {
   public static async deserialize(parcelSerialized: ArrayBuffer): Promise<Parcel> {
     return serialization.deserialize(
       parcelSerialized,
@@ -16,6 +17,8 @@ export default class Parcel extends Message {
       Parcel,
     );
   }
+
+  protected readonly deserializePayload = ServiceMessage.deserialize;
 
   public async serialize(
     senderPrivateKey: CryptoKey,

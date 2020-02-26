@@ -24,11 +24,12 @@ export default class ServiceMessage implements PayloadPlaintext {
    *
    * @param serialization
    */
-  public static deserialize(serialization: Buffer): ServiceMessage {
+  public static deserialize(serialization: ArrayBuffer): ServiceMessage {
+    const serializationBuffer = Buffer.from(serialization);
     // tslint:disable-next-line:no-let
     let messageParts;
     try {
-      messageParts = PARSER.parse(serialization);
+      messageParts = PARSER.parse(serializationBuffer);
     } catch (error) {
       throw new RAMFError('Invalid service message serialization');
     }
