@@ -6,13 +6,13 @@ import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import * as serialization from '../ramf/serialization';
 import Message from './Message';
 
-interface MessageClass<M extends Message> {
+interface MessageClass<M extends Message<any>> {
   readonly deserialize: (serialization: ArrayBuffer) => Promise<M>;
   // tslint:disable-next-line:no-mixed-interface
   new (...args: readonly any[]): M;
 }
 
-export function describeMessage<M extends Message>(
+export function describeMessage<M extends Message<any>>(
   messageClass: MessageClass<M>,
   messageType: number,
   messageVersion: number,
