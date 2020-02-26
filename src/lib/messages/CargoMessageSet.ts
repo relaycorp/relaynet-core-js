@@ -12,8 +12,8 @@ import PayloadPlaintext from './PayloadPlaintext';
  * That is, the set of RAMF messages the cargo contains.
  */
 export default class CargoMessageSet implements PayloadPlaintext {
-  public static deserialize(serialization: Buffer): CargoMessageSet {
-    const asn1Value = deserializeDer(bufferToArray(serialization));
+  public static deserialize(serialization: ArrayBuffer): CargoMessageSet {
+    const asn1Value = deserializeDer(serialization);
     const result = asn1js.compareSchema(asn1Value, asn1Value, CargoMessageSet.ASN1_SCHEMA);
     if (!result.verified) {
       throw new InvalidMessageError('Serialization is not a valid CargoMessageSet');

@@ -1,10 +1,10 @@
-// tslint:disable:no-let no-object-mutation
+// tslint:disable:no-let
 import { expectPromiseToReject, generateStubCert } from './_test_utils';
 import * as keys from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import { PrivateKeyData, PrivateKeyStore, PrivateKeyStoreError } from './privateKeyStore';
 
-class StubPrivateKeyStore extends PrivateKeyStore {
+class MockPrivateKeyStore extends PrivateKeyStore {
   // tslint:disable-next-line:readonly-keyword
   public readonly keys: { [key: string]: PrivateKeyData } = {};
 
@@ -13,6 +13,7 @@ class StubPrivateKeyStore extends PrivateKeyStore {
   }
 
   public registerStubKey(keyId: Buffer, privateKeyData: PrivateKeyData): void {
+    // tslint:disable-next-line:no-object-mutation
     this.keys[keyId.toString('base64')] = privateKeyData;
   }
 
@@ -27,6 +28,7 @@ class StubPrivateKeyStore extends PrivateKeyStore {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
+    // tslint:disable-next-line:no-object-mutation
     this.keys[keyId] = privateKeyData;
   }
 }
@@ -68,7 +70,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Existing key should be returned', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, stubPrivateKeyData);
 
         const privateKeyData = await store.fetchNodeKey(stubKeyId);
@@ -83,7 +85,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Key ids should be base64-encoded', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, stubPrivateKeyData);
 
         const privateKeyData = await store.fetchNodeKey(stubKeyId);
@@ -92,7 +94,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Session keys should not be returned', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, { ...stubPrivateKeyData, type: 'session' as const });
 
         await expectPromiseToReject(
@@ -102,7 +104,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Errors should be wrapped', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await expectPromiseToReject(
           store.fetchNodeKey(stubKeyId),
@@ -113,7 +115,7 @@ describe('PrivateKeyStore', () => {
 
     describe('saveNodeKey', () => {
       test('Key should be stored', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await store.saveNodeKey(stubPrivateKey, stubKeyId);
 
@@ -125,7 +127,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Key ids should be base64-encoded', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await store.saveNodeKey(stubPrivateKey, stubKeyId);
 
@@ -133,7 +135,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Errors should be wrapped', async () => {
-        const store = new StubPrivateKeyStore(true);
+        const store = new MockPrivateKeyStore(true);
 
         await expectPromiseToReject(
           store.saveNodeKey(stubPrivateKey, stubKeyId),
@@ -182,7 +184,7 @@ describe('PrivateKeyStore', () => {
 
     describe('fetchSessionKey', () => {
       test('Existing, unbound key should be returned', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, stubUnboundPrivateKeyData);
 
         const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientCertificate);
@@ -194,7 +196,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Existing, bound key should be returned', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, stubBoundPrivateKeyData);
 
         const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientCertificate);
@@ -203,7 +205,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Key ids should be base64-encoded', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, stubBoundPrivateKeyData);
 
         const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientCertificate);
@@ -212,7 +214,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Keys bound to another recipient should not be returned', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, {
           ...stubBoundPrivateKeyData,
           recipientPublicKeyDigest: `not ${stubBoundPrivateKeyData.recipientPublicKeyDigest}`,
@@ -225,7 +227,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Node keys should not be returned', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
         store.registerStubKey(stubKeyId, { ...stubBoundPrivateKeyData, type: 'node' as const });
 
         await expectPromiseToReject(
@@ -235,7 +237,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Errors should be wrapped', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await expectPromiseToReject(
           store.fetchSessionKey(stubKeyId, stubRecipientCertificate),
@@ -246,7 +248,7 @@ describe('PrivateKeyStore', () => {
 
     describe('saveSessionKey', () => {
       test('Unbound key should be stored', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await store.saveSessionKey(stubPrivateKey, stubKeyId);
 
@@ -257,7 +259,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Bound key should be stored', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientCertificate);
 
@@ -271,7 +273,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Key ids should be base64-encoded', async () => {
-        const store = new StubPrivateKeyStore();
+        const store = new MockPrivateKeyStore();
 
         await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientCertificate);
 
@@ -279,7 +281,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Errors should be wrapped', async () => {
-        const store = new StubPrivateKeyStore(true);
+        const store = new MockPrivateKeyStore(true);
 
         await expectPromiseToReject(
           store.saveSessionKey(stubPrivateKey, stubKeyId),

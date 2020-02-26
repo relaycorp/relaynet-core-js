@@ -1,4 +1,6 @@
 import { Parser } from 'binary-parser';
+import bufferToArray from 'buffer-to-arraybuffer';
+
 import RAMFError from '../ramf/RAMFError';
 import ServiceMessage from './ServiceMessage';
 
@@ -67,7 +69,7 @@ describe('ServiceMessage', () => {
 
   describe('deserialize', () => {
     test('Invalid buffers should result in an error', () => {
-      const invalidBuffer = Buffer.from('nope.jpeg');
+      const invalidBuffer = bufferToArray(Buffer.from('nope.jpeg'));
       expect(() => ServiceMessage.deserialize(invalidBuffer)).toThrowWithMessage(
         RAMFError,
         'Invalid service message serialization',
@@ -76,7 +78,7 @@ describe('ServiceMessage', () => {
 
     test('A valid serialization should result in a new ServiceMessage', () => {
       const originalMessage = new ServiceMessage('text/plain', Buffer.from('Hey'));
-      const serialization = Buffer.from(originalMessage.serialize());
+      const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
 
       const finalMessage = ServiceMessage.deserialize(serialization);
       expect(finalMessage.type).toEqual(originalMessage.type);
@@ -89,7 +91,7 @@ describe('ServiceMessage', () => {
         'text/plain',
         Buffer.from('A'.repeat(valueLength)),
       );
-      const serialization = Buffer.from(originalMessage.serialize());
+      const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
 
       const finalMessage = ServiceMessage.deserialize(serialization);
       expect(finalMessage.value).toHaveLength(valueLength);

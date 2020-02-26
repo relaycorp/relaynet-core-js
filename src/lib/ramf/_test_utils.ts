@@ -3,10 +3,19 @@ import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
 import Message from '../messages/Message';
+import PayloadPlaintext from '../messages/PayloadPlaintext';
 
 export const NON_ASCII_STRING = '❤こんにちは'; // Multi-byte characters
 
-export class StubMessage extends Message {
+export class StubPayload implements PayloadPlaintext {
+  constructor(public readonly content: ArrayBuffer) {}
+
+  public serialize(): ArrayBuffer {
+    return this.content;
+  }
+}
+
+export class StubMessage extends Message<StubPayload> {
   public async serialize(
     // tslint:disable-next-line:variable-name
     _senderPrivateKey: CryptoKey,
@@ -14,5 +23,9 @@ export class StubMessage extends Message {
     _signatureOptions?: SignatureOptions,
   ): Promise<ArrayBuffer> {
     return bufferToArray(Buffer.from('hi'));
+  }
+
+  protected deserializePayload(payloadPlaintext: ArrayBuffer): StubPayload {
+    return new StubPayload(payloadPlaintext);
   }
 }

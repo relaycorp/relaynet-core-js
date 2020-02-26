@@ -69,6 +69,10 @@ export async function expectPromiseToReject(
   throw new Error(`Expected promise to throw error ${expectedError}`);
 }
 
+export function castMock<T>(partialMock: Partial<T>): T {
+  return (partialMock as unknown) as T;
+}
+
 export async function getPromiseRejection<ErrorType extends Error>(
   promise: Promise<any>,
 ): Promise<ErrorType> {

@@ -69,7 +69,7 @@ describe('CargoMessageSet', () => {
 
   describe('deserialize', () => {
     test('Non-DER-encoded values should be refused', () => {
-      const invalidSerialization = Buffer.from('I pretend to be valid');
+      const invalidSerialization = bufferToArray(Buffer.from('I pretend to be valid'));
 
       expect(() => CargoMessageSet.deserialize(invalidSerialization)).toThrowWithMessage(
         Error,
@@ -79,7 +79,7 @@ describe('CargoMessageSet', () => {
 
     test('Outer value should be an ASN.1 SET', () => {
       const asn1Integer = new asn1js.Integer({ value: 1 });
-      const invalidSerialization = Buffer.from(asn1Integer.toBER(false));
+      const invalidSerialization = asn1Integer.toBER(false);
 
       expect(() => CargoMessageSet.deserialize(invalidSerialization)).toThrowWithMessage(
         InvalidMessageError,
@@ -91,7 +91,7 @@ describe('CargoMessageSet', () => {
       const asn1Set = new asn1js.Set();
       // tslint:disable-next-line:no-object-mutation
       asn1Set.valueBlock.value = [new asn1js.Integer({ value: 1 })];
-      const invalidSerialization = Buffer.from(asn1Set.toBER(false));
+      const invalidSerialization = asn1Set.toBER(false);
 
       expect(() => CargoMessageSet.deserialize(invalidSerialization)).toThrowWithMessage(
         InvalidMessageError,
@@ -101,7 +101,7 @@ describe('CargoMessageSet', () => {
 
     test('A set without values should be treated as an empty set', () => {
       const asn1Set = new asn1js.Set();
-      const serialization = Buffer.from(asn1Set.toBER(false));
+      const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
       expect(cargoMessages.messages).toEqual(new Set());
@@ -110,7 +110,7 @@ describe('CargoMessageSet', () => {
     test('An empty set should be accepted', () => {
       const asn1Set = new asn1js.Set();
       asn1Set.valueBlock.value = [];
-      const serialization = Buffer.from(asn1Set.toBER(false));
+      const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
       expect(cargoMessages.messages).toEqual(new Set());
@@ -119,7 +119,7 @@ describe('CargoMessageSet', () => {
     test('A single-item set should be accepted', () => {
       const asn1Set = new asn1js.Set();
       asn1Set.valueBlock.value = [new asn1js.BitString({ valueHex: bufferToArray(STUB_MESSAGE) })];
-      const serialization = Buffer.from(asn1Set.toBER(false));
+      const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
       expect(cargoMessages.messages).toEqual(new Set([STUB_MESSAGE]));
@@ -131,7 +131,7 @@ describe('CargoMessageSet', () => {
       asn1Set.valueBlock.value = messages.map(
         m => new asn1js.BitString({ valueHex: bufferToArray(m) }),
       );
-      const serialization = Buffer.from(asn1Set.toBER(false));
+      const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
       expect(cargoMessages.messages).toEqual(new Set(messages));

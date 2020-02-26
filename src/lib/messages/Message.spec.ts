@@ -1,10 +1,22 @@
 /* tslint:disable:no-let max-classes-per-file */
+import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
-import { expectPromiseToReject, generateStubCert, reSerializeCertificate } from '../_test_utils';
-import { generateRSAKeyPair } from '../crypto_wrappers/keys';
+import {
+  castMock,
+  expectPromiseToReject,
+  generateStubCert,
+  reSerializeCertificate,
+} from '../_test_utils';
+import {
+  SessionEnvelopedData,
+  SessionlessEnvelopedData,
+} from '../crypto_wrappers/cms/envelopedData';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { StubMessage } from '../ramf/_test_utils';
+import { issueInitialDHKeyCertificate } from '../pki';
+import { PrivateKeyStore } from '../privateKeyStore';
+import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
@@ -15,7 +27,7 @@ jest.mock('uuid4', () => {
   };
 });
 
-const payload = Buffer.from('Hi');
+const STUB_PAYLOAD_PLAINTEXT = Buffer.from('Hi');
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -25,12 +37,15 @@ afterEach(() => {
 describe('Message', () => {
   let recipientAddress: string;
   let recipientCertificate: Certificate;
+  let recipientPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
   beforeAll(async () => {
     const recipientKeyPair = await generateRSAKeyPair();
     recipientCertificate = await generateStubCert({
+      attributes: { isCA: true },
       subjectPublicKey: recipientKeyPair.publicKey,
     });
+    recipientPrivateKey = recipientKeyPair.privateKey;
     recipientAddress = recipientCertificate.getCommonName();
 
     const senderKeyPair = await generateRSAKeyPair();
@@ -47,7 +62,11 @@ describe('Message', () => {
   describe('constructor', () => {
     describe('Id', () => {
       test('Id should fall back to UUID4 when left unspecified', () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
 
         expect(message.id).toEqual(mockStubUuid4);
       });
@@ -58,7 +77,11 @@ describe('Message', () => {
         const now = new Date(2019, 1, 1, 1, 1, 1, 1);
         jestDateMock.advanceTo(now);
 
-        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
 
         expect(message.date).toEqual(now);
       });
@@ -66,7 +89,12 @@ describe('Message', () => {
       test('A custom date should be accepted', () => {
         const date = new Date(2020, 1, 1, 1, 1, 1, 1);
 
-        const message = new StubMessage(recipientAddress, senderCertificate, payload, { date });
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { date },
+        );
 
         expect(message.date).toEqual(date);
       });
@@ -74,14 +102,23 @@ describe('Message', () => {
 
     describe('TTL', () => {
       test('TTL should be 5 minutes by default', () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
 
         expect(message.ttl).toEqual(5 * 60);
       });
 
       test('A custom TTL under 2^24 should be accepted', () => {
         const ttl = 2 ** 24 - 1;
-        const message = new StubMessage(recipientAddress, senderCertificate, payload, { ttl });
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { ttl },
+        );
 
         expect(message.ttl).toEqual(ttl);
       });
@@ -89,16 +126,25 @@ describe('Message', () => {
 
     describe('Sender CA certificate chain', () => {
       test('CA certificate chain should be empty by default', () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, payload);
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
 
         expect(message.senderCaCertificateChain).toEqual([]);
       });
 
       test('A custom sender certificate chain should be accepted', async () => {
         const chain: readonly Certificate[] = [await generateStubCert(), senderCertificate];
-        const message = new StubMessage(recipientAddress, senderCertificate, payload, {
-          senderCaCertificateChain: chain,
-        });
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          {
+            senderCaCertificateChain: chain,
+          },
+        );
 
         expect(message.senderCaCertificateChain).toEqual(chain);
       });
@@ -109,7 +155,7 @@ describe('Message', () => {
     const message = new StubMessage(
       await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
       stubSenderChain.senderCert,
-      payload,
+      STUB_PAYLOAD_PLAINTEXT,
       {
         senderCaCertificateChain: [stubSenderChain.recipientCert],
       },
@@ -128,7 +174,7 @@ describe('Message', () => {
         const message = new StubMessage(
           await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
           reSerializeCertificate(senderCertificate),
-          payload,
+          STUB_PAYLOAD_PLAINTEXT,
         );
 
         await expectPromiseToReject(
@@ -141,7 +187,7 @@ describe('Message', () => {
         const message = new StubMessage(
           await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
           stubSenderChain.senderCert,
-          payload,
+          STUB_PAYLOAD_PLAINTEXT,
           {
             senderCaCertificateChain: [stubSenderChain.recipientCert],
           },
@@ -151,9 +197,14 @@ describe('Message', () => {
       });
 
       test('Parcel should be refused if recipient is not issuer of sender', async () => {
-        const message = new StubMessage('0deadbeef', stubSenderChain.senderCert, payload, {
-          senderCaCertificateChain: [stubSenderChain.recipientCert],
-        });
+        const message = new StubMessage(
+          '0deadbeef',
+          stubSenderChain.senderCert,
+          STUB_PAYLOAD_PLAINTEXT,
+          {
+            senderCaCertificateChain: [stubSenderChain.recipientCert],
+          },
+        );
 
         await expectPromiseToReject(
           message.validate([stubSenderChain.rootCert]),
@@ -162,10 +213,70 @@ describe('Message', () => {
       });
 
       test('Authorization enforcement should be skipped if trusted certs are absent', async () => {
-        const message = new StubMessage('0deadbeef', senderCertificate, payload);
+        const message = new StubMessage('0deadbeef', senderCertificate, STUB_PAYLOAD_PLAINTEXT);
 
         await expect(message.validate()).toResolve();
       });
+    });
+  });
+
+  describe('unwrapPayload', () => {
+    test('SessionlessEnvelopedData payload should be decrypted', async () => {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(
+        STUB_PAYLOAD_PLAINTEXT,
+        recipientCertificate,
+      );
+
+      const keyStore = castMock<PrivateKeyStore>({
+        fetchNodeKey: jest.fn().mockResolvedValue(recipientPrivateKey),
+      });
+
+      const stubMessage = new StubMessage(
+        '0123',
+        senderCertificate,
+        Buffer.from(envelopedData.serialize()),
+      );
+
+      const payload = await stubMessage.unwrapPayload(keyStore);
+
+      expect(payload).toBeInstanceOf(StubPayload);
+      expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
+      expect(keyStore.fetchNodeKey).toBeCalledWith(recipientCertificate.getSerialNumber());
+    });
+
+    test('SessionEnvelopedData payload should be decrypted', async () => {
+      const recipientDhKeyPair = await generateECDHKeyPair();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const recipientDhCertificate = await issueInitialDHKeyCertificate({
+        issuerCertificate: recipientCertificate,
+        issuerPrivateKey: recipientPrivateKey,
+        subjectPublicKey: recipientDhKeyPair.publicKey,
+        validityEndDate: tomorrow,
+      });
+      const { envelopedData } = await SessionEnvelopedData.encrypt(
+        STUB_PAYLOAD_PLAINTEXT,
+        recipientDhCertificate,
+      );
+
+      const keyStore = castMock<PrivateKeyStore>({
+        fetchSessionKey: jest.fn().mockResolvedValue(recipientDhKeyPair.privateKey),
+      });
+
+      const stubMessage = new StubMessage(
+        '0123',
+        senderCertificate,
+        Buffer.from(envelopedData.serialize()),
+      );
+
+      const payload = await stubMessage.unwrapPayload(keyStore);
+
+      expect(payload).toBeInstanceOf(StubPayload);
+      expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
+      expect(keyStore.fetchSessionKey).toBeCalledWith(
+        recipientDhCertificate.getSerialNumber(),
+        senderCertificate,
+      );
     });
   });
 });

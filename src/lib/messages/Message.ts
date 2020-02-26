@@ -1,8 +1,12 @@
+import bufferToArray from 'buffer-to-arraybuffer';
 import uuid4 from 'uuid4';
 
-import { SignatureOptions } from '../../index';
+import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
+import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import { PrivateKeyStore } from '../privateKeyStore';
 import InvalidMessageError from './InvalidMessageError';
+import PayloadPlaintext from './PayloadPlaintext';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
@@ -16,7 +20,7 @@ interface MessageOptions {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class Message {
+export default abstract class Message<Payload extends PayloadPlaintext> {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;
@@ -63,6 +67,17 @@ export default abstract class Message {
     );
   }
 
+  public async unwrapPayload(keyStore: PrivateKeyStore): Promise<Payload> {
+    const payload = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
+    const keyId = payload.getRecipientKeyId();
+    const privateKey =
+      payload instanceof SessionEnvelopedData
+        ? await keyStore.fetchSessionKey(keyId, this.senderCertificate)
+        : await keyStore.fetchNodeKey(keyId);
+    const payloadPlaintext = await payload.decrypt(privateKey);
+    return this.deserializePayload(payloadPlaintext);
+  }
+
   /**
    * Report whether the message is valid.
    *
@@ -74,6 +89,8 @@ export default abstract class Message {
       await this.validateAuthorization(trustedCertificates);
     }
   }
+
+  protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;
 
   protected async validateAuthorization(
     trustedCertificates: readonly Certificate[],

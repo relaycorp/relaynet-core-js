@@ -57,7 +57,7 @@ export interface MessageFields {
  * @param signatureOptions Any signature options.
  */
 export async function serialize(
-  message: Message,
+  message: Message<any>,
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,
   senderPrivateKey: CryptoKey,
@@ -131,7 +131,7 @@ export async function serialize(
   return bufferToArray(finalSerialization);
 }
 
-export async function deserialize<M extends Message>(
+export async function deserialize<M extends Message<any>>(
   serialization: ArrayBuffer,
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,
