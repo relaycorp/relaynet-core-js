@@ -5,6 +5,7 @@ import {
   derSerializePrivateKey,
   getPublicKeyDigestHex,
 } from './crypto_wrappers/keys';
+import Certificate from './crypto_wrappers/x509/Certificate';
 import RelaynetError from './RelaynetError';
 
 export interface PrivateKeyData {
@@ -29,7 +30,10 @@ export abstract class PrivateKeyStore {
     });
   }
 
-  public async fetchSessionKey(keyId: Buffer, recipientPublicKey: CryptoKey): Promise<CryptoKey> {
+  public async fetchSessionKey(
+    keyId: Buffer,
+    recipientCertificate: Certificate,
+  ): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type !== 'session') {
@@ -37,7 +41,9 @@ export abstract class PrivateKeyStore {
     }
 
     if (keyData.recipientPublicKeyDigest) {
-      const recipientPublicKeyDigest = await getPublicKeyDigestHex(recipientPublicKey);
+      const recipientPublicKeyDigest = await getPublicKeyDigestHex(
+        await recipientCertificate.getPublicKey(),
+      );
       if (recipientPublicKeyDigest !== keyData.recipientPublicKeyDigest) {
         throw new PrivateKeyStoreError(`Key ${keyId} is bound to another recipient`);
       }
@@ -58,12 +64,12 @@ export abstract class PrivateKeyStore {
   public async saveSessionKey(
     privateKey: CryptoKey,
     keyId: Buffer,
-    recipientPublicKey?: CryptoKey,
+    recipientCertificate?: Certificate,
   ): Promise<void> {
     const privateKeyData: PrivateKeyData = {
       keyDer: await derSerializePrivateKey(privateKey),
-      recipientPublicKeyDigest: recipientPublicKey
-        ? await getPublicKeyDigestHex(recipientPublicKey)
+      recipientPublicKeyDigest: recipientCertificate
+        ? await getPublicKeyDigestHex(await recipientCertificate.getPublicKey())
         : undefined,
       type: 'session',
     };
