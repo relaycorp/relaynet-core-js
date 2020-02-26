@@ -2372,6 +2372,9 @@ img {
 					<a href="envelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="envelopeddata.html#getrecipientkeyid" class="tsd-kind-icon">get<wbr>Recipient<wbr>Key<wbr>Id</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
 					<a href="envelopeddata.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
@@ -2407,6 +2410,7 @@ img {
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="envelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="envelopeddata.html#getrecipientkeyid" class="tsd-kind-icon">get<wbr>Recipient<wbr>Key<wbr>Id</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="envelopeddata.html#serialize" class="tsd-kind-icon">serialize</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="envelopeddata.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
 						</ul>
@@ -2426,7 +2430,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a1b5441/src/lib/crypto_wrappers/cms/envelopedData.ts#L104">src/lib/crypto_wrappers/cms/envelopedData.ts:104</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/dc65913/src/lib/crypto_wrappers/cms/envelopedData.ts#L104">src/lib/crypto_wrappers/cms/envelopedData.ts:104</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2448,6 +2452,33 @@ img {
 				</ul>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="getrecipientkeyid" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Recipient<wbr>Key<wbr>Id</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">get<wbr>Recipient<wbr>Key<wbr>Id<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/dc65913/src/lib/crypto_wrappers/cms/envelopedData.ts#L115">src/lib/crypto_wrappers/cms/envelopedData.ts:115</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Return the id of the recipient&#39;s key used to encrypt the content.</p>
+							</div>
+							<p>This id will often be the recipient&#39;s certificate&#39;s serial number, in which case the issuer
+								will be ignored: This method is meant to be used by the recipient so it can look up the
+								corresponding private key to decrypt the content. We could certainly extract the issuer to
+								verify it matches the expected one, but if the id doesn&#39;t match any key decryption
+							won&#39;t even be attempted, so there&#39;s really no risk from ignoring the issuer.</p>
+						</div>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
 				<a name="serialize" class="tsd-anchor"></a>
 				<h3>serialize</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
@@ -2457,7 +2488,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a1b5441/src/lib/crypto_wrappers/cms/envelopedData.ts#L91">src/lib/crypto_wrappers/cms/envelopedData.ts:91</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/dc65913/src/lib/crypto_wrappers/cms/envelopedData.ts#L91">src/lib/crypto_wrappers/cms/envelopedData.ts:91</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2480,7 +2511,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a1b5441/src/lib/crypto_wrappers/cms/envelopedData.ts#L54">src/lib/crypto_wrappers/cms/envelopedData.ts:54</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/dc65913/src/lib/crypto_wrappers/cms/envelopedData.ts#L54">src/lib/crypto_wrappers/cms/envelopedData.ts:54</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
