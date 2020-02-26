@@ -285,6 +285,13 @@ describe('SessionlessEnvelopedData', () => {
       expectBuffersToEqual(actualPlaintext, plaintext);
     });
   });
+
+  test('getRecipientKeyId() should return the recipient key id', async () => {
+    const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, nodeCertificate);
+
+    const actualKeyId = envelopedData.getRecipientKeyId();
+    expect(actualKeyId).toEqual(nodeCertificate.getSerialNumber());
+  });
 });
 
 describe('SessionEnvelopedData', () => {

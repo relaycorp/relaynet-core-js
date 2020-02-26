@@ -102,6 +102,17 @@ export abstract class EnvelopedData {
    * @param privateKey The private key to decrypt the ciphertext.
    */
   public abstract async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer>;
+
+  /**
+   * Return the id of the recipient's key used to encrypt the content.
+   *
+   * This id will often be the recipient's certificate's serial number, in which case the issuer
+   * will be ignored: This method is meant to be used by the recipient so it can look up the
+   * corresponding private key to decrypt the content. We could certainly extract the issuer to
+   * verify it matches the expected one, but if the id doesn't match any key decryption
+   * won't even be attempted, so there's really no risk from ignoring the issuer.
+   */
+  public abstract getRecipientKeyId(): Buffer;
 }
 
 /**
@@ -142,6 +153,12 @@ export class SessionlessEnvelopedData extends EnvelopedData {
 
   public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
     return pkijsDecrypt(this.pkijsEnvelopedData, privateKey);
+  }
+
+  public getRecipientKeyId(): Buffer {
+    const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
+    const serialNumberBlock = recipientInfo.rid.serialNumber;
+    return Buffer.from(serialNumberBlock.valueBlock.valueHex);
   }
 }
 
@@ -227,7 +244,6 @@ export class SessionEnvelopedData extends EnvelopedData {
     return { keyId, publicKey };
   }
 
-  /** Return the id of the ECDH key pair used of the recipient */
   public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
