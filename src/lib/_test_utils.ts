@@ -1,9 +1,11 @@
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
+import { SignatureOptions } from './crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import FullCertificateIssuanceOptions from './crypto_wrappers/x509/FullCertificateIssuanceOptions';
+import Message from './messages/Message';
 
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
@@ -69,6 +71,10 @@ export async function expectPromiseToReject(
   throw new Error(`Expected promise to throw error ${expectedError}`);
 }
 
+export function castMock<T>(partialMock: Partial<T>): T {
+  return (partialMock as unknown) as T;
+}
+
 export async function getPromiseRejection<ErrorType extends Error>(
   promise: Promise<any>,
 ): Promise<ErrorType> {
@@ -120,4 +126,13 @@ export async function convertAsyncIteratorToArray<T>(
     values.push(value);
   }
   return values;
+}
+
+export class MockMessage extends Message {
+  public async serialize(
+    _senderPrivateKey: CryptoKey,
+    _signatureOptions?: SignatureOptions,
+  ): Promise<ArrayBuffer> {
+    throw new Error('Unimplemented');
+  }
 }
