@@ -20,9 +20,9 @@ import CMSError from './CMSError';
 import {
   EncryptionOptions,
   EnvelopedData,
+  OriginatorSessionKey,
   SessionEnvelopedData,
   SessionlessEnvelopedData,
-  SessionOriginatorKey,
 } from './envelopedData';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
@@ -335,7 +335,7 @@ describe('SessionEnvelopedData', () => {
 
     test('Originator key should be acceptable in lieu of certificate', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
-      const bobOriginatorKey: SessionOriginatorKey = {
+      const bobOriginatorKey: OriginatorSessionKey = {
         keyId: Buffer.from('key id'),
         publicKey: bobDhPublicKey,
       };

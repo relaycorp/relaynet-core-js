@@ -34,7 +34,7 @@ export interface SessionEncryptionResult {
 }
 
 /** Key of the sender/producer of the EnvelopedData value using the Channel Session Protocol */
-export interface SessionOriginatorKey {
+export interface OriginatorSessionKey {
   /** Id of the ECDH key pair */
   readonly keyId: Buffer;
 
@@ -184,7 +184,7 @@ export class SessionEnvelopedData extends EnvelopedData {
    */
   public static async encrypt(
     plaintext: ArrayBuffer,
-    certificateOrOriginatorKey: Certificate | SessionOriginatorKey,
+    certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
@@ -224,7 +224,7 @@ export class SessionEnvelopedData extends EnvelopedData {
   /**
    * Return the key of the ECDH key of the originator/producer of the EnvelopedData value.
    */
-  public async getOriginatorKey(): Promise<SessionOriginatorKey> {
+  public async getOriginatorKey(): Promise<OriginatorSessionKey> {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
@@ -284,7 +284,7 @@ async function pkijsDecrypt(
 }
 
 async function getOrMakePkijsCertificate(
-  certificateOrOriginatorKey: Certificate | SessionOriginatorKey,
+  certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
 ): Promise<pkijs.Certificate> {
   // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
   // uses it for is to get the public key algorithm. Which you can get from the private key.

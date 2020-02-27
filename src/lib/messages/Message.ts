@@ -3,8 +3,8 @@ import uuid4 from 'uuid4';
 
 import {
   EnvelopedData,
+  OriginatorSessionKey,
   SessionEnvelopedData,
-  SessionOriginatorKey,
 } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -73,7 +73,7 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
 
   public async unwrapPayload(
     keyStore: PrivateKeyStore,
-  ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: SessionOriginatorKey }> {
+  ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: OriginatorSessionKey }> {
     const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
 
     const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, keyStore);
