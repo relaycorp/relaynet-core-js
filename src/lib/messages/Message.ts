@@ -1,7 +1,11 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import uuid4 from 'uuid4';
 
-import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
+import {
+  EnvelopedData,
+  SessionEnvelopedData,
+  SessionOriginatorKey,
+} from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyStore } from '../privateKeyStore';
@@ -67,15 +71,20 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
     );
   }
 
-  public async unwrapPayload(keyStore: PrivateKeyStore): Promise<Payload> {
-    const payload = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
-    const keyId = payload.getRecipientKeyId();
-    const privateKey =
-      payload instanceof SessionEnvelopedData
-        ? await keyStore.fetchSessionKey(keyId, this.senderCertificate)
-        : await keyStore.fetchNodeKey(keyId);
-    const payloadPlaintext = await payload.decrypt(privateKey);
-    return this.deserializePayload(payloadPlaintext);
+  public async unwrapPayload(
+    keyStore: PrivateKeyStore,
+  ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: SessionOriginatorKey }> {
+    const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
+
+    const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, keyStore);
+    const payload = await this.deserializePayload(payloadPlaintext);
+
+    const senderSessionKey =
+      payloadEnvelopedData instanceof SessionEnvelopedData
+        ? await payloadEnvelopedData.getOriginatorKey()
+        : undefined;
+
+    return { payload, senderSessionKey };
   }
 
   /**
@@ -88,6 +97,18 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
     if (trustedCertificates) {
       await this.validateAuthorization(trustedCertificates);
     }
+  }
+
+  protected async decryptPayload(
+    payloadEnvelopedData: EnvelopedData,
+    keyStore: PrivateKeyStore,
+  ): Promise<ArrayBuffer> {
+    const keyId = payloadEnvelopedData.getRecipientKeyId();
+    const privateKey =
+      payloadEnvelopedData instanceof SessionEnvelopedData
+        ? await keyStore.fetchSessionKey(keyId, this.senderCertificate)
+        : await keyStore.fetchNodeKey(keyId);
+    return payloadEnvelopedData.decrypt(privateKey);
   }
 
   protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;

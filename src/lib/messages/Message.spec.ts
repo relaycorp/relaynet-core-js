@@ -237,11 +237,13 @@ describe('Message', () => {
         Buffer.from(envelopedData.serialize()),
       );
 
-      const payload = await stubMessage.unwrapPayload(keyStore);
+      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(keyStore);
 
       expect(payload).toBeInstanceOf(StubPayload);
       expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
       expect(keyStore.fetchNodeKey).toBeCalledWith(recipientCertificate.getSerialNumber());
+
+      expect(senderSessionKey).toBeUndefined();
     });
 
     test('SessionEnvelopedData payload should be decrypted', async () => {
@@ -269,7 +271,7 @@ describe('Message', () => {
         Buffer.from(envelopedData.serialize()),
       );
 
-      const payload = await stubMessage.unwrapPayload(keyStore);
+      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(keyStore);
 
       expect(payload).toBeInstanceOf(StubPayload);
       expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
@@ -277,6 +279,8 @@ describe('Message', () => {
         recipientDhCertificate.getSerialNumber(),
         senderCertificate,
       );
+
+      expect(senderSessionKey).toEqual(await envelopedData.getOriginatorKey());
     });
   });
 });
