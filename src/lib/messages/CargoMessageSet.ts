@@ -35,7 +35,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
     ],
   });
 
-  constructor(public readonly messages: ReadonlySet<Buffer>) {}
+  constructor(public readonly messages: Set<Buffer>) {}
 
   public serialize(): ArrayBuffer {
     const messagesSerialized = Array.from(this.messages).map(
