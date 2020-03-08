@@ -79,7 +79,7 @@ describe('sign', () => {
       );
     });
 
-    test('Signature should be detached', async () => {
+    test('Content should be detached', async () => {
       jest.spyOn(pkijs.SignedData.prototype, 'sign');
       const contentInfoDer = await sign(plaintext, privateKey, certificate);
 
