@@ -128,389 +128,315 @@ describe('MessageSerializer', () => {
       });
     });
 
-    describe('Recipient address', () => {
-      test('Address should be serialized with length prefix', async () => {
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+    describe('Fields', () => {
+      test.todo('Fields should be contained in SignedData value');
 
-        const messageSerialized = await serialize(
-          stubMessage,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        expect(messageParts).toHaveProperty('recipientAddressLength', recipientAddress.length);
-        expect(messageParts).toHaveProperty('recipientAddress', recipientAddress);
-      });
+      describe('Recipient address', () => {
+        test('Address should be serialized with length prefix', async () => {
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
 
-      test('Address should be representable with 10 bits', async () => {
-        const address = 'a'.repeat(2 ** 10 - 1);
-        const stubMessage = new StubMessage(address, senderCertificate, PAYLOAD);
-
-        const messageSerialized = await serialize(
-          stubMessage,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        expect(messageParts).toHaveProperty('recipientAddress', address);
-      });
-
-      test('Address should not exceed 10 bits length', async () => {
-        const invalidAddress = 'a'.repeat(2 ** 10);
-        const stubMessage = new StubMessage(invalidAddress, senderCertificate, PAYLOAD);
-
-        await expectPromiseToReject(
-          serialize(
+          const messageSerialized = await serialize(
             stubMessage,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             senderPrivateKey,
-          ),
-          new RAMFSyntaxError('Recipient address exceeds maximum length'),
-        );
-      });
-
-      test('Non-ASCII addresses should be UTF-8 encoded', async () => {
-        const stubMessage = new StubMessage(NON_ASCII_STRING, senderCertificate, PAYLOAD);
-
-        const messageSerialized = await serialize(
-          stubMessage,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        expect(messageParts).toHaveProperty('recipientAddress', NON_ASCII_STRING);
-      });
-
-      test('Multi-byte characters should be accounted for in length validation', async () => {
-        const invalidAddress = '❤'.repeat(2 ** 10 - 1);
-        const stubMessage = new StubMessage(invalidAddress, senderCertificate, PAYLOAD);
-
-        await expectPromiseToReject(
-          serialize(
-            stubMessage,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            senderPrivateKey,
-          ),
-          new RAMFSyntaxError('Recipient address exceeds maximum length'),
-        );
-      });
-    });
-
-    describe('Message id', () => {
-      test('Id should be up to 8 bits long', async () => {
-        const idLength = 2 ** 8 - 1;
-        const id = 'a'.repeat(idLength);
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
-
-        const messageSerialized = await serialize(
-          stubMessage,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        expect(messageParts).toHaveProperty('idLength', idLength);
-        expect(messageParts).toHaveProperty('id', stubMessage.id);
-      });
-
-      test('A custom id with a length greater than 8 bits should be refused', async () => {
-        const id = 'a'.repeat(2 ** 8);
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
-
-        await expectPromiseToReject(
-          serialize(
-            stubMessage,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            senderPrivateKey,
-          ),
-          new RAMFSyntaxError('Custom id exceeds maximum length'),
-        );
-      });
-
-      test('Id should be ASCII-encoded', async () => {
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          id: NON_ASCII_STRING,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          expect(messageParts).toHaveProperty('recipientAddressLength', recipientAddress.length);
+          expect(messageParts).toHaveProperty('recipientAddress', recipientAddress);
         });
 
-        const messageSerialized = await serialize(
-          stubMessage,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        const expectedId = Buffer.from(NON_ASCII_STRING, 'ascii').toString('ascii');
-        expect(messageParts).toHaveProperty('id', expectedId);
-      });
-    });
+        test('Address should be representable with 10 bits', async () => {
+          const address = 'a'.repeat(2 ** 10 - 1);
+          const stubMessage = new StubMessage(address, senderCertificate, PAYLOAD);
 
-    describe('Date', () => {
-      test('Date should be serialized as 32-bit unsigned integer', async () => {
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-
-        const messageSerialized = await serialize(
-          stubMessage,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
-        expect(messageParts).toHaveProperty('dateTimestamp', expectedTimestamp);
-      });
-
-      test('Date should not be before Unix epoch', async () => {
-        // Don't pass the number of seconds since epoch directly because the local timezone would
-        // be used
-        const invalidDate = new Date('1969-12-31T23:59:59.000Z');
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          date: invalidDate,
-        });
-
-        await expectPromiseToReject(
-          serialize(
+          const messageSerialized = await serialize(
             stubMessage,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             senderPrivateKey,
-          ),
-          new RAMFSyntaxError('Date cannot be before Unix epoch'),
-        );
-      });
-
-      test('Timestamp should be less than 2 ^ 32', async () => {
-        // Don't pass the number of seconds since epoch directly because the local timezone would
-        // be used
-        const invalidDate = new Date('2106-02-07T06:28:16.000Z'); // 2 ^ 32 seconds since epoch
-        const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          date: invalidDate,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          expect(messageParts).toHaveProperty('recipientAddress', address);
         });
 
-        await expectPromiseToReject(
-          serialize(
+        test('Address should not exceed 10 bits length', async () => {
+          const invalidAddress = 'a'.repeat(2 ** 10);
+          const stubMessage = new StubMessage(invalidAddress, senderCertificate, PAYLOAD);
+
+          await expectPromiseToReject(
+            serialize(
+              stubMessage,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('Recipient address exceeds maximum length'),
+          );
+        });
+
+        test('Non-ASCII addresses should be UTF-8 encoded', async () => {
+          const stubMessage = new StubMessage(NON_ASCII_STRING, senderCertificate, PAYLOAD);
+
+          const messageSerialized = await serialize(
             stubMessage,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             senderPrivateKey,
-          ),
-          new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits'),
-        );
-      });
-
-      test('Date should be serialized as UTC', async () => {
-        const date = new Date('01 Jan 2019 12:00:00 GMT+11:00');
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { date });
-
-        const messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-
-        const messageParts = parseMessage(messageSerialized);
-        expect(messageParts).toHaveProperty('dateTimestamp', date.getTime() / 1_000);
-      });
-    });
-
-    describe('TTL', () => {
-      test('TTL should be serialized as 24-bit unsigned integer', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-
-        const messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        const messageParts = parseMessage(messageSerialized);
-        expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(message.ttl);
-      });
-
-      test('TTL of zero should be accepted', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { ttl: 0 });
-
-        const messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-
-        const messageParts = parseMessage(messageSerialized);
-        expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(0);
-      });
-
-      test('TTL should not be negative', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          ttl: -1,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          expect(messageParts).toHaveProperty('recipientAddress', NON_ASCII_STRING);
         });
-        await expectPromiseToReject(
-          serialize(
+
+        test('Multi-byte characters should be accounted for in length validation', async () => {
+          const invalidAddress = '❤'.repeat(2 ** 10 - 1);
+          const stubMessage = new StubMessage(invalidAddress, senderCertificate, PAYLOAD);
+
+          await expectPromiseToReject(
+            serialize(
+              stubMessage,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('Recipient address exceeds maximum length'),
+          );
+        });
+      });
+
+      describe('Message id', () => {
+        test('Id should be up to 8 bits long', async () => {
+          const idLength = 2 ** 8 - 1;
+          const id = 'a'.repeat(idLength);
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
+
+          const messageSerialized = await serialize(
+            stubMessage,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          expect(messageParts).toHaveProperty('idLength', idLength);
+          expect(messageParts).toHaveProperty('id', stubMessage.id);
+        });
+
+        test('A custom id with a length greater than 8 bits should be refused', async () => {
+          const id = 'a'.repeat(2 ** 8);
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
+
+          await expectPromiseToReject(
+            serialize(
+              stubMessage,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('Custom id exceeds maximum length'),
+          );
+        });
+
+        test('Id should be ASCII-encoded', async () => {
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+            id: NON_ASCII_STRING,
+          });
+
+          const messageSerialized = await serialize(
+            stubMessage,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          const expectedId = Buffer.from(NON_ASCII_STRING, 'ascii').toString('ascii');
+          expect(messageParts).toHaveProperty('id', expectedId);
+        });
+      });
+
+      describe('Date', () => {
+        test('Date should be serialized as 32-bit unsigned integer', async () => {
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+
+          const messageSerialized = await serialize(
+            stubMessage,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          const expectedTimestamp = Math.floor(stubMessage.date.getTime() / 1000);
+          expect(messageParts).toHaveProperty('dateTimestamp', expectedTimestamp);
+        });
+
+        test('Date should not be before Unix epoch', async () => {
+          // Don't pass the number of seconds since epoch directly because the local timezone would
+          // be used
+          const invalidDate = new Date('1969-12-31T23:59:59.000Z');
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+            date: invalidDate,
+          });
+
+          await expectPromiseToReject(
+            serialize(
+              stubMessage,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('Date cannot be before Unix epoch'),
+          );
+        });
+
+        test('Timestamp should be less than 2 ^ 32', async () => {
+          // Don't pass the number of seconds since epoch directly because the local timezone would
+          // be used
+          const invalidDate = new Date('2106-02-07T06:28:16.000Z'); // 2 ^ 32 seconds since epoch
+          const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+            date: invalidDate,
+          });
+
+          await expectPromiseToReject(
+            serialize(
+              stubMessage,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits'),
+          );
+        });
+
+        test('Date should be serialized as UTC', async () => {
+          const date = new Date('01 Jan 2019 12:00:00 GMT+11:00');
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { date });
+
+          const messageSerialized = await serialize(
             message,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             senderPrivateKey,
-          ),
-          new RAMFSyntaxError('TTL cannot be negative'),
-        );
-      });
+          );
 
-      test('TTL should not be more than 24 bits long', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          ttl: 2 ** 24,
+          const messageParts = parseMessage(messageSerialized);
+          expect(messageParts).toHaveProperty('dateTimestamp', date.getTime() / 1_000);
         });
-        await expectPromiseToReject(
-          serialize(
-            message,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            senderPrivateKey,
-          ),
-          new RAMFSyntaxError('TTL must be less than 2^24'),
-        );
-      });
-    });
-
-    describe('Payload', () => {
-      test('Payload should be serialized as is', async () => {
-        const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH));
-        const message = new StubMessage(recipientAddress, senderCertificate, largePayload);
-
-        const messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-
-        const messageParts = parseMessage(messageSerialized);
-        expectBuffersToEqual(messageParts.payload, largePayload);
       });
 
-      test('Payload length prefix should be serialized as a 23-bit unsigned integer', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-
-        const messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-
-        const { payloadLength } = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
-        expect(payloadLength).toEqual(PAYLOAD.byteLength);
-      });
-
-      test('Payload size should not exceed 2 ** 23 octets', async () => {
-        const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH + 1));
-        const message = new StubMessage(recipientAddress, senderCertificate, largePayload);
-        await expectPromiseToReject(
-          serialize(
-            message,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            senderPrivateKey,
-          ),
-          new RAMFSyntaxError(
-            `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${MAX_PAYLOAD_LENGTH +
-              1})`,
-          ),
-        );
-      });
-    });
-
-    describe('Signature', () => {
-      let senderCaCertificateChain: readonly Certificate[];
-      let messageSerialized: ArrayBuffer;
-      let cmsSignArgs: readonly any[];
-      let signature: Buffer;
-      beforeAll(async () => {
-        senderCaCertificateChain = [await generateStubCert()];
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
-          senderCaCertificateChain,
-        });
-
-        jest.spyOn(cmsSignedData, 'sign');
-        messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          senderPrivateKey,
-        );
-        expect(cmsSignedData.sign).toBeCalledTimes(1);
-        // @ts-ignore
-        cmsSignArgs = cmsSignedData.sign.mock.calls[0];
-
-        const messageParts = parseMessage(messageSerialized);
-        signature = messageParts.signature;
-      });
-
-      test('Plaintext should be preceding RAMF message octets', () => {
-        const plaintext = Buffer.from(cmsSignArgs[0]);
-        const expectedPlaintextLength = messageSerialized.byteLength - 2 - signature.length;
-        const expectedPlaintext = Buffer.from(messageSerialized, 0, expectedPlaintextLength);
-
-        expect(plaintext.equals(expectedPlaintext)).toBeTrue();
-      });
-
-      test('The sender private key should be used to generate signature', () => {
-        const actualSenderPrivateKey = cmsSignArgs[1];
-
-        expect(actualSenderPrivateKey).toBe(senderPrivateKey);
-      });
-
-      test('The sender certificate should be used to generate signature', () => {
-        const actualSenderCertificate = cmsSignArgs[2];
-
-        expect(actualSenderCertificate).toBe(senderCertificate);
-      });
-
-      test('Sender certificate chain should be attached', () => {
-        const attachedCertificates = cmsSignArgs[3];
-
-        expect(attachedCertificates).toHaveLength(senderCaCertificateChain.length);
-        for (const cert of senderCaCertificateChain) {
-          expect(attachedCertificates).toContain(cert);
-        }
-      });
-
-      test('Signature should be less than 14 bits long', async () => {
-        const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
-        const mockSignature = new ArrayBuffer(0);
-        const signatureLength = 2 ** 14;
-        jest.spyOn(mockSignature, 'byteLength', 'get').mockReturnValue(signatureLength);
-        jest.spyOn(cmsSignedData, 'sign').mockReturnValue(Promise.resolve(mockSignature));
-
-        await expectPromiseToReject(
-          serialize(
-            message,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            senderPrivateKey,
-          ),
-          new RAMFSyntaxError(
-            `Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`,
-          ),
-        );
-      });
-
-      test('SHA-256 should be used by default', () => {
-        const signatureOptions = cmsSignArgs[4];
-
-        expect(signatureOptions).toBe(undefined);
-      });
-
-      test.each([['SHA-384', 'SHA-512']])(
-        '%s should also be supported',
-        async hashingAlgorithmName => {
+      describe('TTL', () => {
+        test('TTL should be serialized as 24-bit unsigned integer', async () => {
           const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+
+          const messageSerialized = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+          const messageParts = parseMessage(messageSerialized);
+          expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(message.ttl);
+        });
+
+        test('TTL of zero should be accepted', async () => {
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { ttl: 0 });
+
+          const messageSerialized = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+
+          const messageParts = parseMessage(messageSerialized);
+          expect(parse24BitNumber(messageParts.ttlBuffer)).toEqual(0);
+        });
+
+        test('TTL should not be negative', async () => {
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+            ttl: -1,
+          });
+          await expectPromiseToReject(
+            serialize(
+              message,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('TTL cannot be negative'),
+          );
+        });
+
+        test('TTL should not be more than 24 bits long', async () => {
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+            ttl: 2 ** 24,
+          });
+          await expectPromiseToReject(
+            serialize(
+              message,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError('TTL must be less than 2^24'),
+          );
+        });
+      });
+
+      describe('Payload', () => {
+        test('Payload should be serialized as is', async () => {
+          const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH));
+          const message = new StubMessage(recipientAddress, senderCertificate, largePayload);
+
+          const messageSerialized = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+
+          const messageParts = parseMessage(messageSerialized);
+          expectBuffersToEqual(messageParts.payload, largePayload);
+        });
+
+        test('Payload length prefix should be serialized as a 23-bit unsigned integer', async () => {
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+
+          const messageSerialized = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            senderPrivateKey,
+          );
+
+          const { payloadLength } = MESSAGE_PARSER.parse(Buffer.from(messageSerialized));
+          expect(payloadLength).toEqual(PAYLOAD.byteLength);
+        });
+
+        test('Payload size should not exceed 2 ** 23 octets', async () => {
+          const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH + 1));
+          const message = new StubMessage(recipientAddress, senderCertificate, largePayload);
+          await expectPromiseToReject(
+            serialize(
+              message,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError(
+              `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${MAX_PAYLOAD_LENGTH +
+                1})`,
+            ),
+          );
+        });
+      });
+
+      describe('Signature', () => {
+        let senderCaCertificateChain: readonly Certificate[];
+        let cmsSignArgs: readonly any[];
+        beforeAll(async () => {
+          senderCaCertificateChain = [await generateStubCert()];
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, {
+            senderCaCertificateChain,
+          });
 
           jest.spyOn(cmsSignedData, 'sign');
           await serialize(
@@ -518,20 +444,89 @@ describe('MessageSerializer', () => {
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             senderPrivateKey,
-            {
-              hashingAlgorithmName,
-            },
           );
           expect(cmsSignedData.sign).toBeCalledTimes(1);
           // @ts-ignore
-          const signatureArgs = cmsSignedData.sign.mock.calls[0];
-          expect(signatureArgs[4]).toEqual({ hashingAlgorithmName });
-        },
-      );
+          cmsSignArgs = cmsSignedData.sign.mock.calls[0];
+        });
+
+        test('The sender private key should be used to generate signature', () => {
+          const actualSenderPrivateKey = cmsSignArgs[1];
+
+          expect(actualSenderPrivateKey).toBe(senderPrivateKey);
+        });
+
+        test('The sender certificate should be used to generate signature', () => {
+          const actualSenderCertificate = cmsSignArgs[2];
+
+          expect(actualSenderCertificate).toBe(senderCertificate);
+        });
+
+        test('Sender certificate chain should be attached', () => {
+          const attachedCertificates = cmsSignArgs[3];
+
+          expect(attachedCertificates).toHaveLength(senderCaCertificateChain.length);
+          for (const cert of senderCaCertificateChain) {
+            expect(attachedCertificates).toContain(cert);
+          }
+        });
+
+        test('Signature should be less than 14 bits long', async () => {
+          const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+          const mockSignature = new ArrayBuffer(0);
+          const signatureLength = 2 ** 14;
+          jest.spyOn(mockSignature, 'byteLength', 'get').mockReturnValue(signatureLength);
+          jest.spyOn(cmsSignedData, 'sign').mockReturnValue(Promise.resolve(mockSignature));
+
+          await expectPromiseToReject(
+            serialize(
+              message,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+            ),
+            new RAMFSyntaxError(
+              `Signature length is ${signatureLength} but maximum is ${2 ** 14 - 1}`,
+            ),
+          );
+        });
+
+        test('SHA-256 should be used by default', () => {
+          const signatureOptions = cmsSignArgs[4];
+
+          expect(signatureOptions).toBe(undefined);
+        });
+
+        test.each([['SHA-384', 'SHA-512']])(
+          '%s should also be supported',
+          async hashingAlgorithmName => {
+            const message = new StubMessage(recipientAddress, senderCertificate, PAYLOAD);
+
+            jest.spyOn(cmsSignedData, 'sign');
+            await serialize(
+              message,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              senderPrivateKey,
+              {
+                hashingAlgorithmName,
+              },
+            );
+            expect(cmsSignedData.sign).toBeCalledTimes(1);
+            // @ts-ignore
+            const signatureArgs = cmsSignedData.sign.mock.calls[0];
+            expect(signatureArgs[4]).toEqual({ hashingAlgorithmName });
+          },
+        );
+      });
     });
   });
 
   describe('deserialize', () => {
+    test.todo('Messages up to 9 MiB should be accepted');
+
+    test.todo('Messages larger than 9 MiB should be refused');
+
     describe('Format signature', () => {
       test('Input should be refused if it does not start with "Relaynet"', async () => {
         const serialization = bufferToArray(Buffer.from('Relaycorp'));
