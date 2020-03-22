@@ -108,11 +108,7 @@ export async function verifySignature(
   // tslint:disable-next-line:no-let
   let verificationResult;
   try {
-    verificationResult = await signedData.verify({
-      extendedMode: true,
-      includeSignerCertificate: true,
-      signer: 0,
-    });
+    verificationResult = await signedData.verify({ extendedMode: true, signer: 0 });
 
     if (!verificationResult.signatureVerified) {
       throw verificationResult;
