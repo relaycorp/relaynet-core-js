@@ -105,10 +105,18 @@ export async function verifySignature(
 
   const signedData = new pkijs.SignedData({ schema: contentInfo.content });
 
+  // PKI.js is too slow at verifying the signature if the content is embedded (around 700ms for a
+  // 8 MiB content), but passing the content explicitly halves the time.
+  const plaintext = extractSignedDataContent(signedData.encapContentInfo);
+
   // tslint:disable-next-line:no-let
   let verificationResult;
   try {
-    verificationResult = await signedData.verify({ extendedMode: true, signer: 0 });
+    verificationResult = await signedData.verify({
+      data: plaintext,
+      extendedMode: true,
+      signer: 0,
+    });
 
     if (!verificationResult.signatureVerified) {
       throw verificationResult;
@@ -117,18 +125,28 @@ export async function verifySignature(
     throw new CMSError(`Invalid signature: ${e.message} (PKI.js code: ${e.code})`);
   }
 
-  // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
-  const plaintextOctetStringChunks = signedData.encapContentInfo.eContent.valueBlock.value;
-  const plaintextChunks = plaintextOctetStringChunks.map(
-    os => (os as asn1js.OctetString).valueBlock.valueHex,
-  );
-  const plaintext = Buffer.concat(plaintextChunks.map(c => new Uint8Array(c)));
-
   return {
     attachedCertificates: (signedData.certificates as readonly pkijs.Certificate[]).map(
       c => new Certificate(c),
     ),
-    plaintext: bufferToArray(plaintext),
+    plaintext,
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
   };
+}
+
+function extractSignedDataContent(encapContentInfo: pkijs.EncapsulatedContentInfo): ArrayBuffer {
+  if (encapContentInfo.eContent === undefined) {
+    throw new CMSError('CMS SignedData value should encapsulate content');
+  }
+  // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
+  const contentOctetStringChunks = encapContentInfo.eContent.valueBlock.value;
+  const contentChunks = contentOctetStringChunks.map(
+    os => (os as asn1js.OctetString).valueBlock.valueHex,
+  );
+  const content = Buffer.concat(contentChunks.map(c => new Uint8Array(c)));
+
+  // tslint:disable-next-line:no-delete
+  delete encapContentInfo.eContent;
+
+  return bufferToArray(content);
 }

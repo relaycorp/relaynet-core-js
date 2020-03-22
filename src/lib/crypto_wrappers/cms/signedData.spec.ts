@@ -244,6 +244,24 @@ describe('verifySignature', () => {
     );
   });
 
+  test('Value should be refused if content is not encapsulated', async () => {
+    const validSignedDataSerialized = await sign(plaintext, privateKey, certificate);
+    const signedData = deserializeSignedData(validSignedDataSerialized);
+    // tslint:disable-next-line:no-delete
+    delete signedData.encapContentInfo.eContent;
+    const invalidSignedData = new pkijs.ContentInfo({
+      content: signedData.toSchema(true),
+      contentType: oids.CMS_SIGNED_DATA,
+    });
+    const invalidSignedDataSerialized = invalidSignedData.toSchema().toBER(false);
+
+    await expect(verifySignature(invalidSignedDataSerialized)).rejects.toMatchObject<
+      Partial<CMSError>
+    >({
+      message: 'CMS SignedData value should encapsulate content',
+    });
+  });
+
   test('Valid signatures should be accepted', async () => {
     const signatureDer = await sign(plaintext, privateKey, certificate);
     await verifySignature(signatureDer);
