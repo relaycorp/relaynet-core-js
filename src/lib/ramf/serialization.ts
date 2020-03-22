@@ -7,18 +7,26 @@ import Message from '../messages/Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 
+const MAX_MESSAGE_LENGTH = 9437184; // 9 MiB
 const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
 const MAX_ID_LENGTH = 2 ** 8 - 1;
 const MAX_DATE_TIMESTAMP_SEC = 2 ** 32 - 1;
 const MAX_TTL = 2 ** 24 - 1;
-const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1;
-const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
+const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
-const PARSER = new Parser()
+const FORMAT_SIGNATURE_PARSER = new Parser()
   .endianess('little')
   .string('magic', { length: 8, assert: 'Relaynet' })
   .uint8('concreteMessageType')
-  .uint8('concreteMessageVersion')
+  .uint8('concreteMessageVersion');
+
+interface MessageFormatSignature {
+  readonly concreteMessageType: number;
+  readonly concreteMessageVersion: number;
+}
+
+const PARSER = new Parser()
+  .endianess('little')
   .uint16('recipientAddressLength')
   .string('recipientAddress', { length: 'recipientAddressLength' })
   .uint8('idLength')
@@ -32,19 +40,14 @@ const PARSER = new Parser()
     formatter: new Function('buf', 'return buf.readUIntLE(0, 3)'),
     length: 3,
   })
-  .buffer('payload', { length: 'payloadLength' })
-  .uint16('signatureLength')
-  .buffer('signature', { length: 'signatureLength' });
+  .buffer('payload', { length: 'payloadLength' });
 
-export interface MessageFields {
-  readonly concreteMessageType: number;
-  readonly concreteMessageVersion: number;
+export interface MessageFieldSet {
   readonly recipientAddress: string;
   readonly id: string;
   readonly dateTimestamp: number;
   readonly ttlBuffer: Buffer;
   readonly payload: Buffer;
-  readonly signature: Buffer;
 }
 
 /**
@@ -71,44 +74,45 @@ export async function serialize(
   validatePayloadLength(message.payloadSerialized);
   //endregion
 
-  const serialization = new SmartBuffer();
-
   //region File format signature
-  serialization.writeString('Relaynet');
-  serialization.writeUInt8(concreteMessageTypeOctet);
-  serialization.writeUInt8(concreteMessageVersionOctet);
+  const formatSignature = Buffer.allocUnsafe(10);
+  formatSignature.write('Relaynet');
+  formatSignature.writeUInt8(concreteMessageTypeOctet, 8);
+  formatSignature.writeUInt8(concreteMessageVersionOctet, 9);
   //endregion
 
+  const fieldSetSerialization = new SmartBuffer();
+
   //region Recipient address
-  serialization.writeUInt16LE(Buffer.byteLength(message.recipientAddress));
-  serialization.writeString(message.recipientAddress);
+  fieldSetSerialization.writeUInt16LE(Buffer.byteLength(message.recipientAddress));
+  fieldSetSerialization.writeString(message.recipientAddress);
   //endregion
 
   //region Message id
   const messageId = message.id;
-  serialization.writeUInt8(messageId.length);
-  serialization.writeString(messageId, 'ascii');
+  fieldSetSerialization.writeUInt8(messageId.length);
+  fieldSetSerialization.writeString(messageId, 'ascii');
   //endregion
 
   //region Date
-  serialization.writeUInt32LE(dateToTimestamp(message.date));
+  fieldSetSerialization.writeUInt32LE(dateToTimestamp(message.date));
   //endregion
 
   //region TTL
   const ttlBuffer = Buffer.allocUnsafe(3);
   ttlBuffer.writeUIntLE(message.ttl, 0, 3);
-  serialization.writeBuffer(ttlBuffer);
+  fieldSetSerialization.writeBuffer(ttlBuffer);
   //endregion
 
   //region Payload
   const payloadLength = Buffer.allocUnsafe(3);
   payloadLength.writeUIntLE(message.payloadSerialized.byteLength, 0, 3);
   const payloadSerialized = Buffer.from(message.payloadSerialized);
-  serialization.writeBuffer(payloadLength);
-  serialization.writeBuffer(payloadSerialized);
+  fieldSetSerialization.writeBuffer(payloadLength);
+  fieldSetSerialization.writeBuffer(payloadSerialized);
   //endregion
 
-  const serializationBeforeSignature = serialization.toBuffer();
+  const serializationBeforeSignature = fieldSetSerialization.toBuffer();
 
   //region Signature
   const signature = await cmsSignedData.sign(
@@ -118,17 +122,22 @@ export async function serialize(
     message.senderCaCertificateChain,
     signatureOptions,
   );
-  validateSignatureLength(signature);
-  const signatureLengthPrefix = Buffer.allocUnsafe(2);
-  signatureLengthPrefix.writeUInt16LE(signature.byteLength, 0);
   //endregion
 
-  const finalSerialization = Buffer.concat([
-    serializationBeforeSignature,
-    signatureLengthPrefix,
-    Buffer.from(signature),
-  ]);
-  return bufferToArray(finalSerialization);
+  // There doesn't seem to be an efficient way to concatenate ArrayBuffer instances, so we'll have
+  // to make a copy of the signature (which already contains a copy of the payload). So by the end
+  // of this function we'll need more than 3x the size of the payload in memory. This issue will
+  // go away with https://github.com/relaynet/specs/issues/14
+  const serialization = Buffer.concat([formatSignature, new Uint8Array(signature)]);
+  return bufferToArray(serialization);
+}
+
+function validateMessageLength(serialization: ArrayBuffer): void {
+  if (MAX_MESSAGE_LENGTH < serialization.byteLength) {
+    throw new RAMFSyntaxError(
+      `Message should not be longer than 9 MiB (got ${serialization.byteLength} octets)`,
+    );
+  }
 }
 
 export async function deserialize<M extends Message<any>>(
@@ -137,20 +146,21 @@ export async function deserialize<M extends Message<any>>(
   concreteMessageVersionOctet: number,
   messageClass: new (...args: readonly any[]) => M,
 ): Promise<M> {
-  //region Parse and validate syntax
-  const messageFields = parseMessage(serialization);
+  validateMessageLength(serialization);
+  const messageFormatSignature = parseMessageFormatSignature(serialization.slice(0, 10));
+  validateFileFormatSignature(
+    messageFormatSignature,
+    concreteMessageTypeOctet,
+    concreteMessageVersionOctet,
+  );
 
-  validateFileFormatSignature(messageFields, concreteMessageTypeOctet, concreteMessageVersionOctet);
+  const signatureVerification = await verifySignature(serialization.slice(10));
+
+  const messageFields = parseMessageFields(signatureVerification.plaintext);
   validateRecipientAddressLength(messageFields.recipientAddress);
   validatePayloadLength(messageFields.payload);
-  validateSignatureLength(messageFields.signature);
-  //endregion
-
-  //region Post-deserialization validation
-  const signatureVerification = await verifySignature(serialization, messageFields);
 
   validateMessageTiming(messageFields, signatureVerification);
-  //endregion
 
   return new messageClass(
     messageFields.recipientAddress,
@@ -176,7 +186,7 @@ function dateToTimestamp(date: Date): number {
 //region Serialization and deserialization validation
 
 function validateFileFormatSignature(
-  messageFields: MessageFields,
+  messageFields: MessageFormatSignature,
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,
 ): void {
@@ -235,18 +245,7 @@ function validateTtl(ttl: number): void {
 function validatePayloadLength(payloadBuffer: ArrayBuffer): void {
   const length = payloadBuffer.byteLength;
   if (MAX_PAYLOAD_LENGTH < length) {
-    throw new RAMFSyntaxError(
-      `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${length})`,
-    );
-  }
-}
-
-function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
-  const signatureLength = signatureBuffer.byteLength;
-  if (MAX_SIGNATURE_LENGTH < signatureLength) {
-    throw new RAMFSyntaxError(
-      `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`,
-    );
+    throw new RAMFSyntaxError(`Payload size must not exceed 8 MiB (got ${length} octets)`);
   }
 }
 
@@ -254,59 +253,54 @@ function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
 
 //region Deserialization validation
 
-function parseMessage(serialization: ArrayBuffer): MessageFields {
+function parseMessageFormatSignature(serialization: ArrayBuffer): MessageFormatSignature {
+  try {
+    return FORMAT_SIGNATURE_PARSER.parse(Buffer.from(serialization));
+  } catch (error) {
+    throw new RAMFSyntaxError(error, 'Serialization starts with invalid RAMF format signature');
+  }
+}
+
+function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
   try {
     return PARSER.parse(Buffer.from(serialization));
   } catch (error) {
-    throw new RAMFSyntaxError(error, 'Serialization is not a valid RAMF message');
+    throw new RAMFSyntaxError(error, 'CMS SignedData value contains invalid field set');
   }
 }
 
 async function verifySignature(
-  messageSerialized: ArrayBuffer,
-  messageFields: MessageFields,
+  cmsSignedDataSerialized: ArrayBuffer,
 ): Promise<cmsSignedData.SignatureVerification> {
-  const signatureCiphertext = bufferToArray(messageFields.signature);
-  const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
-  const signaturePlaintext = messageSerialized.slice(
-    0,
-    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix,
-  );
   try {
-    return await cmsSignedData.verifySignature(signatureCiphertext, signaturePlaintext);
+    return await cmsSignedData.verifySignature(cmsSignedDataSerialized);
   } catch (error) {
-    throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
+    throw new RAMFValidationError(error, 'Invalid RAMF message signature');
   }
 }
 
 function validateMessageTiming(
-  messageFields: MessageFields,
+  messageFields: MessageFieldSet,
   signatureVerification: cmsSignedData.SignatureVerification,
 ): void {
   const currentTimestamp = dateToTimestamp(new Date());
   if (currentTimestamp < messageFields.dateTimestamp) {
-    throw new RAMFValidationError('Message date is in the future', messageFields);
+    throw new RAMFValidationError('Message date is in the future');
   }
 
   const pkijsCertificate = signatureVerification.signerCertificate.pkijsCertificate;
   if (messageFields.dateTimestamp < dateToTimestamp(pkijsCertificate.notBefore.value)) {
-    throw new RAMFValidationError(
-      'Message was created before the sender certificate was valid',
-      messageFields,
-    );
+    throw new RAMFValidationError('Message was created before the sender certificate was valid');
   }
 
   if (dateToTimestamp(pkijsCertificate.notAfter.value) < messageFields.dateTimestamp) {
-    throw new RAMFValidationError(
-      'Message was created after the sender certificate expired',
-      messageFields,
-    );
+    throw new RAMFValidationError('Message was created after the sender certificate expired');
   }
 
   const ttl = messageFields.ttlBuffer.readUIntLE(0, 3);
   const expiryTimestamp = messageFields.dateTimestamp + ttl;
   if (expiryTimestamp < currentTimestamp) {
-    throw new RAMFValidationError('Message already expired', messageFields);
+    throw new RAMFValidationError('Message already expired');
   }
 }
 

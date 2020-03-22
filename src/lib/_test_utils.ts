@@ -88,6 +88,7 @@ export function expectBuffersToEqual(
   buffer1: Buffer | ArrayBuffer,
   buffer2: Buffer | ArrayBuffer,
 ): void {
+  expect(buffer1.byteLength).toEqual(buffer2.byteLength);
   if (buffer1 instanceof Buffer) {
     expect(buffer2).toBeInstanceOf(Buffer);
     expect(buffer1.equals(buffer2 as Buffer)).toBeTrue();

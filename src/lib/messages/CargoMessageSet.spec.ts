@@ -170,7 +170,7 @@ describe('CargoMessageSet', () => {
         convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
       ).rejects.toMatchObject<Partial<InvalidMessageError>>({
         message: expect.stringMatching(
-          /^Invalid message found: Serialization is not a valid RAMF message/,
+          /^Invalid message found: Serialization starts with invalid RAMF format signature/,
         ),
       });
     });
