@@ -114,7 +114,7 @@ describe('issue()', () => {
     );
   });
 
-  test('should generate a serial number if none was set', async () => {
+  test('should generate a serial number', async () => {
     const generateRandom64BitValueSpy = jest.spyOn(utils, 'generateRandom64BitValue');
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
