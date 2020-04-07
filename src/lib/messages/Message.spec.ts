@@ -168,6 +168,22 @@ describe('Message', () => {
     ]);
   });
 
+  test('expiryDate field should calculate expiry date from creation date and TTL', () => {
+    const message = new StubMessage(
+      'some-address',
+      stubSenderChain.senderCert,
+      STUB_PAYLOAD_PLAINTEXT,
+      {
+        date: new Date('2020-04-07T21:00:00Z'),
+        ttl: 5,
+      },
+    );
+
+    const expectedExpiryDate = new Date(message.date.getTime());
+    expectedExpiryDate.setSeconds(expectedExpiryDate.getSeconds() + message.ttl);
+    expect(message.expiryDate).toEqual(expectedExpiryDate);
+  });
+
   describe('validate', () => {
     describe('Authorization', () => {
       test('Parcel should be refused if sender is not trusted', async () => {

@@ -43,6 +43,11 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
     this.senderCaCertificateChain = options.senderCaCertificateChain ?? [];
   }
 
+  get expiryDate(): Date {
+    const creationDateTimestamp = this.date.getTime();
+    return new Date(creationDateTimestamp + this.ttl * 1_000);
+  }
+
   /**
    * Return RAMF serialization of message.
    *
