@@ -215,8 +215,8 @@ function validateRecipientAddressLength(recipientAddress: string): void {
   const length = Buffer.byteLength(recipientAddress);
   if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
     throw new RAMFSyntaxError(
-      `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} octets `+
-      `(got ${length})`,
+      `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} octets ` +
+        `(got ${length})`,
     );
   }
 }
