@@ -216,8 +216,8 @@ describe('MessageSerializer', () => {
       });
 
       describe('Message id', () => {
-        test('Id should be up to 8 bits long', async () => {
-          const idLength = 2 ** 8 - 1;
+        test('Id should be up to 64 characters long', async () => {
+          const idLength = 64;
           const id = 'a'.repeat(idLength);
           const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
 
@@ -232,8 +232,8 @@ describe('MessageSerializer', () => {
           expect(messageParts).toHaveProperty('id', stubMessage.id);
         });
 
-        test('A custom id with a length greater than 8 bits should be refused', async () => {
-          const id = 'a'.repeat(2 ** 8);
+        test('Ids longer than 64 characters should be refused', async () => {
+          const id = 'a'.repeat(65);
           const stubMessage = new StubMessage(recipientAddress, senderCertificate, PAYLOAD, { id });
 
           await expectPromiseToReject(
@@ -243,7 +243,7 @@ describe('MessageSerializer', () => {
               stubConcreteMessageVersionOctet,
               senderPrivateKey,
             ),
-            new RAMFSyntaxError('Custom id exceeds maximum length'),
+            new RAMFSyntaxError('Id should not span more than 64 characters (got 65)'),
           );
         });
 

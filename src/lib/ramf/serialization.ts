@@ -9,7 +9,7 @@ import RAMFValidationError from './RAMFValidationError';
 
 const MAX_MESSAGE_LENGTH = 9437184; // 9 MiB
 const MAX_RECIPIENT_ADDRESS_LENGTH = 1024;
-const MAX_ID_LENGTH = 2 ** 8 - 1;
+const MAX_ID_LENGTH = 64;
 const MAX_DATE_TIMESTAMP_SEC = 2 ** 32 - 1;
 const MAX_TTL = 2 ** 24 - 1;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
@@ -222,8 +222,11 @@ function validateRecipientAddressLength(recipientAddress: string): void {
 }
 
 function validateMessageIdLength(messageId: string): void {
-  if (MAX_ID_LENGTH < messageId.length) {
-    throw new RAMFSyntaxError('Custom id exceeds maximum length');
+  const length = messageId.length;
+  if (MAX_ID_LENGTH < length) {
+    throw new RAMFSyntaxError(
+      `Id should not span more than ${MAX_ID_LENGTH} characters (got ${length})`,
+    );
   }
 }
 
