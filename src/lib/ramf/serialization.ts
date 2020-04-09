@@ -8,7 +8,7 @@ import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 
 const MAX_MESSAGE_LENGTH = 9437184; // 9 MiB
-const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
+const MAX_RECIPIENT_ADDRESS_LENGTH = 1024;
 const MAX_ID_LENGTH = 2 ** 8 - 1;
 const MAX_DATE_TIMESTAMP_SEC = 2 ** 32 - 1;
 const MAX_TTL = 2 ** 24 - 1;
@@ -212,8 +212,12 @@ function validateFileFormatSignature(
 }
 
 function validateRecipientAddressLength(recipientAddress: string): void {
-  if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
-    throw new RAMFSyntaxError('Recipient address exceeds maximum length');
+  const length = Buffer.byteLength(recipientAddress);
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
+    throw new RAMFSyntaxError(
+      `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} octets `+
+      `(got ${length})`,
+    );
   }
 }
 
