@@ -6,6 +6,7 @@ import * as pkijs from 'pkijs';
 
 import {
   expectAsn1ValuesToBeEqual,
+  expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
@@ -14,7 +15,7 @@ import {
 import * as oids from '../../oids';
 import { generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
-import { deserializeContentInfo } from './_test_utils';
+import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
 import { sign, verifySignature } from './signedData';
 
@@ -77,16 +78,6 @@ describe('sign', () => {
         signerInfo.sid.serialNumber,
         certificate.pkijsCertificate.serialNumber,
       );
-    });
-
-    test('Content should be detached', async () => {
-      jest.spyOn(pkijs.SignedData.prototype, 'sign');
-      const contentInfoDer = await sign(plaintext, privateKey, certificate);
-
-      const signedData = deserializeSignedData(contentInfoDer);
-      expect(signedData.encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
-      expect(signedData.encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
-      expect(signedData.encapContentInfo).not.toHaveProperty('eContent');
     });
 
     describe('SignedAttributes', () => {
@@ -206,35 +197,97 @@ describe('sign', () => {
       }
     });
   });
+
+  test('Content should be attached', async () => {
+    jest.spyOn(pkijs.SignedData.prototype, 'sign');
+    const contentInfoDer = await sign(plaintext, privateKey, certificate);
+
+    const signedData = deserializeSignedData(contentInfoDer);
+    expect(signedData.encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
+    expect(signedData.encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
+    expect(signedData.encapContentInfo).toHaveProperty('eContent');
+    const plaintextOctetString = signedData.encapContentInfo.eContent.valueBlock.value[0];
+    expectBuffersToEqual(
+      (plaintextOctetString as asn1js.OctetString).valueBlock.valueHex,
+      plaintext,
+    );
+  });
 });
 
 describe('verifySignature', () => {
   test('A non-DER-encoded value should be refused', async () => {
     const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
     await expectPromiseToReject(
-      verifySignature(invalidSignature, plaintext),
+      verifySignature(invalidSignature),
       new CMSError('Could not deserialize CMS ContentInfo: Value is not DER-encoded'),
     );
   });
 
   test('Well-formed but invalid signatures should be rejected', async () => {
+    // Let's tamper with the payload
+    const signatureDer = await sign(plaintext, privateKey, certificate);
     const differentPlaintext = bufferToArray(Buffer.from('Different'));
-    const signatureDer = await sign(differentPlaintext, privateKey, certificate);
+    const cmsSignedData = deserializeSignedData(signatureDer);
+    // tslint:disable-next-line:no-object-mutation
+    cmsSignedData.encapContentInfo = new pkijs.EncapsulatedContentInfo({
+      eContent: new asn1js.OctetString({ valueHex: differentPlaintext }),
+      eContentType: oids.CMS_DATA,
+    });
+    const invalidCmsSignedDataSerialized = serializeContentInfo(
+      cmsSignedData.toSchema(true),
+      oids.CMS_SIGNED_DATA,
+    );
+
     await expectPromiseToReject(
-      verifySignature(signatureDer, plaintext),
+      verifySignature(invalidCmsSignedDataSerialized),
       new CMSError('Invalid signature:  (PKI.js code: 14)'),
     );
   });
 
+  test('Value should be refused if content is not encapsulated', async () => {
+    const validSignedDataSerialized = await sign(plaintext, privateKey, certificate);
+    const signedData = deserializeSignedData(validSignedDataSerialized);
+    // tslint:disable-next-line:no-delete
+    delete signedData.encapContentInfo.eContent;
+    const invalidSignedData = new pkijs.ContentInfo({
+      content: signedData.toSchema(true),
+      contentType: oids.CMS_SIGNED_DATA,
+    });
+    const invalidSignedDataSerialized = invalidSignedData.toSchema().toBER(false);
+
+    await expect(verifySignature(invalidSignedDataSerialized)).rejects.toMatchObject<
+      Partial<CMSError>
+    >({
+      message: 'CMS SignedData value should encapsulate content',
+    });
+  });
+
   test('Valid signatures should be accepted', async () => {
     const signatureDer = await sign(plaintext, privateKey, certificate);
-    await verifySignature(signatureDer, plaintext);
+    await verifySignature(signatureDer);
+  });
+
+  test('Plaintext should be output when verification passes', async () => {
+    const signatureDer = await sign(plaintext, privateKey, certificate);
+
+    const signatureVerification = await verifySignature(signatureDer);
+
+    expectBuffersToEqual(signatureVerification.plaintext, plaintext);
+  });
+
+  test('Large plaintexts chunked by PKI.js should be put back together', async () => {
+    const largePlaintext = bufferToArray(Buffer.from('a'.repeat(2 ** 20)));
+    const signatureDer = await sign(largePlaintext, privateKey, certificate);
+
+    const signatureVerification = await verifySignature(signatureDer);
+
+    expectBuffersToEqual(signatureVerification.plaintext, largePlaintext);
   });
 
   test('Signer certificate should be output when verification passes', async () => {
     const signatureDer = await sign(plaintext, privateKey, certificate);
 
-    const { signerCertificate } = await verifySignature(signatureDer, plaintext);
+    const { signerCertificate } = await verifySignature(signatureDer);
 
     expectPkijsValuesToBeEqual(signerCertificate.pkijsCertificate, certificate.pkijsCertificate);
   });
@@ -263,7 +316,7 @@ describe('verifySignature', () => {
       rootCaCertificate,
     ]);
 
-    const { attachedCertificates } = await verifySignature(signatureDer, plaintext);
+    const { attachedCertificates } = await verifySignature(signatureDer);
 
     expect(attachedCertificates).toHaveLength(3);
     expectPkijsValuesToBeEqual(

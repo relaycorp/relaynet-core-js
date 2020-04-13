@@ -72,8 +72,8 @@ describe('CargoMessageSet', () => {
       const invalidSerialization = bufferToArray(Buffer.from('I pretend to be valid'));
 
       expect(() => CargoMessageSet.deserialize(invalidSerialization)).toThrowWithMessage(
-        Error,
-        'Value is not DER-encoded',
+        InvalidMessageError,
+        'Serialization is not a valid CargoMessageSet',
       );
     });
 
@@ -170,7 +170,7 @@ describe('CargoMessageSet', () => {
         convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
       ).rejects.toMatchObject<Partial<InvalidMessageError>>({
         message: expect.stringMatching(
-          /^Invalid message found: Serialization is not a valid RAMF message/,
+          /^Invalid message found: Serialization starts with invalid RAMF format signature/,
         ),
       });
     });

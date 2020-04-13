@@ -1,7 +1,6 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { deserializeDer } from '../crypto_wrappers/_utils';
 import InvalidMessageError from './InvalidMessageError';
 import Parcel from './Parcel';
 import PayloadPlaintext from './PayloadPlaintext';
@@ -13,8 +12,7 @@ import PayloadPlaintext from './PayloadPlaintext';
  */
 export default class CargoMessageSet implements PayloadPlaintext {
   public static deserialize(serialization: ArrayBuffer): CargoMessageSet {
-    const asn1Value = deserializeDer(serialization);
-    const result = asn1js.compareSchema(asn1Value, asn1Value, CargoMessageSet.ASN1_SCHEMA);
+    const result = asn1js.verifySchema(serialization, CargoMessageSet.ASN1_SCHEMA);
     if (!result.verified) {
       throw new InvalidMessageError('Serialization is not a valid CargoMessageSet');
     }

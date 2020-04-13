@@ -1,51 +1,48 @@
+import * as asn1js from 'asn1js';
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
-import { SmartBuffer } from 'smart-buffer';
 
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import Message from '../messages/Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 
-const MAX_RECIPIENT_ADDRESS_LENGTH = 2 ** 10 - 1;
-const MAX_ID_LENGTH = 2 ** 8 - 1;
-const MAX_DATE_TIMESTAMP_SEC = 2 ** 32 - 1;
-const MAX_TTL = 2 ** 24 - 1;
-const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1;
-const MAX_SIGNATURE_LENGTH = 2 ** 14 - 1;
+const MAX_MESSAGE_LENGTH = 9437184; // 9 MiB
+const MAX_RECIPIENT_ADDRESS_LENGTH = 1024;
+const MAX_ID_LENGTH = 64;
+const MAX_TTL = 15552000;
+const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
-const PARSER = new Parser()
+const FORMAT_SIGNATURE_PARSER = new Parser()
   .endianess('little')
   .string('magic', { length: 8, assert: 'Relaynet' })
   .uint8('concreteMessageType')
-  .uint8('concreteMessageVersion')
-  .uint16('recipientAddressLength')
-  .string('recipientAddress', { length: 'recipientAddressLength' })
-  .uint8('idLength')
-  .string('id', { length: 'idLength', encoding: 'ascii' })
-  .uint32('dateTimestamp')
-  .buffer('ttlBuffer', { length: 3 })
-  .buffer('payloadLength', {
-    // Ugly workaround for https://github.com/keichi/binary-parser/issues/33
-    // @ts-ignore
-    // tslint:disable-next-line:function-constructor
-    formatter: new Function('buf', 'return buf.readUIntLE(0, 3)'),
-    length: 3,
-  })
-  .buffer('payload', { length: 'payloadLength' })
-  .uint16('signatureLength')
-  .buffer('signature', { length: 'signatureLength' });
+  .uint8('concreteMessageVersion');
 
-export interface MessageFields {
+interface MessageFormatSignature {
   readonly concreteMessageType: number;
   readonly concreteMessageVersion: number;
+}
+
+interface MessageFieldSet {
   readonly recipientAddress: string;
   readonly id: string;
-  readonly dateTimestamp: number;
-  readonly ttlBuffer: Buffer;
+  readonly date: Date;
+  readonly ttl: number;
   readonly payload: Buffer;
-  readonly signature: Buffer;
 }
+
+const ASN1_SCHEMA = new asn1js.Sequence({
+  name: 'RAMFMessage',
+  // @ts-ignore
+  value: [
+    new asn1js.VisibleString({ name: 'recipientAddress' } as any),
+    new asn1js.VisibleString({ name: 'id' } as any),
+    new asn1js.DateTime({ name: 'date' } as any),
+    new asn1js.Integer({ name: 'ttl' } as any),
+    new asn1js.OctetString({ name: 'payload' } as any),
+  ],
+});
 
 /**
  * Sign and encode the current message.
@@ -66,69 +63,55 @@ export async function serialize(
   //region Validation
   validateRecipientAddressLength(message.recipientAddress);
   validateMessageIdLength(message.id);
-  validateDate(message.date);
   validateTtl(message.ttl);
   validatePayloadLength(message.payloadSerialized);
   //endregion
 
-  const serialization = new SmartBuffer();
-
   //region File format signature
-  serialization.writeString('Relaynet');
-  serialization.writeUInt8(concreteMessageTypeOctet);
-  serialization.writeUInt8(concreteMessageVersionOctet);
+  const formatSignature = Buffer.allocUnsafe(10);
+  formatSignature.write('Relaynet');
+  formatSignature.writeUInt8(concreteMessageTypeOctet, 8);
+  formatSignature.writeUInt8(concreteMessageVersionOctet, 9);
   //endregion
 
-  //region Recipient address
-  serialization.writeUInt16LE(Buffer.byteLength(message.recipientAddress));
-  serialization.writeString(message.recipientAddress);
-  //endregion
-
-  //region Message id
-  const messageId = message.id;
-  serialization.writeUInt8(messageId.length);
-  serialization.writeString(messageId, 'ascii');
-  //endregion
-
-  //region Date
-  serialization.writeUInt32LE(dateToTimestamp(message.date));
-  //endregion
-
-  //region TTL
-  const ttlBuffer = Buffer.allocUnsafe(3);
-  ttlBuffer.writeUIntLE(message.ttl, 0, 3);
-  serialization.writeBuffer(ttlBuffer);
-  //endregion
-
-  //region Payload
-  const payloadLength = Buffer.allocUnsafe(3);
-  payloadLength.writeUIntLE(message.payloadSerialized.byteLength, 0, 3);
-  const payloadSerialized = Buffer.from(message.payloadSerialized);
-  serialization.writeBuffer(payloadLength);
-  serialization.writeBuffer(payloadSerialized);
-  //endregion
-
-  const serializationBeforeSignature = serialization.toBuffer();
+  const serializationBeforeSignature = new asn1js.Sequence({
+    // @ts-ignore
+    value: [
+      new asn1js.VisibleString({ value: message.recipientAddress }),
+      new asn1js.VisibleString({ value: message.id }),
+      new asn1js.DateTime(
+        // @ts-ignore
+        { value: message.date },
+      ),
+      new asn1js.Integer({ value: message.ttl }),
+      new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
+    ],
+  }).toBER(false);
 
   //region Signature
   const signature = await cmsSignedData.sign(
-    bufferToArray(serializationBeforeSignature),
+    serializationBeforeSignature,
     senderPrivateKey,
     message.senderCertificate,
     message.senderCaCertificateChain,
     signatureOptions,
   );
-  validateSignatureLength(signature);
-  const signatureLengthPrefix = Buffer.allocUnsafe(2);
-  signatureLengthPrefix.writeUInt16LE(signature.byteLength, 0);
   //endregion
 
-  const finalSerialization = Buffer.concat([
-    serializationBeforeSignature,
-    signatureLengthPrefix,
-    Buffer.from(signature),
-  ]);
-  return bufferToArray(finalSerialization);
+  // There doesn't seem to be an efficient way to concatenate ArrayBuffer instances, so we'll have
+  // to make a copy of the signature (which already contains a copy of the payload). So by the end
+  // of this function we'll need more than 3x the size of the payload in memory. This issue will
+  // go away with https://github.com/relaynet/specs/issues/14
+  const serialization = Buffer.concat([formatSignature, new Uint8Array(signature)]);
+  return bufferToArray(serialization);
+}
+
+function validateMessageLength(serialization: ArrayBuffer): void {
+  if (MAX_MESSAGE_LENGTH < serialization.byteLength) {
+    throw new RAMFSyntaxError(
+      `Message should not be longer than 9 MiB (got ${serialization.byteLength} octets)`,
+    );
+  }
 }
 
 export async function deserialize<M extends Message<any>>(
@@ -137,30 +120,33 @@ export async function deserialize<M extends Message<any>>(
   concreteMessageVersionOctet: number,
   messageClass: new (...args: readonly any[]) => M,
 ): Promise<M> {
-  //region Parse and validate syntax
-  const messageFields = parseMessage(serialization);
+  validateMessageLength(serialization);
+  const messageFormatSignature = parseMessageFormatSignature(serialization.slice(0, 10));
+  validateFileFormatSignature(
+    messageFormatSignature,
+    concreteMessageTypeOctet,
+    concreteMessageVersionOctet,
+  );
 
-  validateFileFormatSignature(messageFields, concreteMessageTypeOctet, concreteMessageVersionOctet);
+  const signatureVerification = await verifySignature(serialization.slice(10));
+
+  const messageFields = parseMessageFields(signatureVerification.plaintext);
   validateRecipientAddressLength(messageFields.recipientAddress);
+  validateMessageIdLength(messageFields.id);
+  validateTtl(messageFields.ttl);
   validatePayloadLength(messageFields.payload);
-  validateSignatureLength(messageFields.signature);
-  //endregion
-
-  //region Post-deserialization validation
-  const signatureVerification = await verifySignature(serialization, messageFields);
 
   validateMessageTiming(messageFields, signatureVerification);
-  //endregion
 
   return new messageClass(
     messageFields.recipientAddress,
     signatureVerification.signerCertificate,
     messageFields.payload,
     {
-      date: new Date(messageFields.dateTimestamp * 1_000),
+      date: messageFields.date,
       id: messageFields.id,
       senderCaCertificateChain: signatureVerification.attachedCertificates,
-      ttl: messageFields.ttlBuffer.readUIntLE(0, 3),
+      ttl: messageFields.ttl,
     },
   );
 }
@@ -169,14 +155,10 @@ function decimalToHex(numberDecimal: number): string {
   return '0x' + numberDecimal.toString(16);
 }
 
-function dateToTimestamp(date: Date): number {
-  return Math.floor(date.getTime() / 1_000);
-}
-
 //region Serialization and deserialization validation
 
 function validateFileFormatSignature(
-  messageFields: MessageFields,
+  messageFields: MessageFormatSignature,
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,
 ): void {
@@ -202,24 +184,21 @@ function validateFileFormatSignature(
 }
 
 function validateRecipientAddressLength(recipientAddress: string): void {
-  if (MAX_RECIPIENT_ADDRESS_LENGTH < Buffer.byteLength(recipientAddress)) {
-    throw new RAMFSyntaxError('Recipient address exceeds maximum length');
+  const length = recipientAddress.length;
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
+    throw new RAMFSyntaxError(
+      `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} characters ` +
+        `(got ${length})`,
+    );
   }
 }
 
 function validateMessageIdLength(messageId: string): void {
-  if (MAX_ID_LENGTH < messageId.length) {
-    throw new RAMFSyntaxError('Custom id exceeds maximum length');
-  }
-}
-
-function validateDate(date: Date): void {
-  const timestamp = dateToTimestamp(date);
-  if (timestamp < 0) {
-    throw new RAMFSyntaxError('Date cannot be before Unix epoch');
-  }
-  if (MAX_DATE_TIMESTAMP_SEC < timestamp) {
-    throw new RAMFSyntaxError('Date timestamp cannot be represented with 32 bits');
+  const length = messageId.length;
+  if (MAX_ID_LENGTH < length) {
+    throw new RAMFSyntaxError(
+      `Id should not span more than ${MAX_ID_LENGTH} characters (got ${length})`,
+    );
   }
 }
 
@@ -228,25 +207,14 @@ function validateTtl(ttl: number): void {
     throw new RAMFSyntaxError('TTL cannot be negative');
   }
   if (MAX_TTL < ttl) {
-    throw new RAMFSyntaxError('TTL must be less than 2^24');
+    throw new RAMFSyntaxError(`TTL must be less than ${MAX_TTL} (got ${ttl})`);
   }
 }
 
 function validatePayloadLength(payloadBuffer: ArrayBuffer): void {
   const length = payloadBuffer.byteLength;
   if (MAX_PAYLOAD_LENGTH < length) {
-    throw new RAMFSyntaxError(
-      `Payload size must not exceed ${MAX_PAYLOAD_LENGTH} octets (got ${length})`,
-    );
-  }
-}
-
-function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
-  const signatureLength = signatureBuffer.byteLength;
-  if (MAX_SIGNATURE_LENGTH < signatureLength) {
-    throw new RAMFSyntaxError(
-      `Signature length is ${signatureLength} but maximum is ${MAX_SIGNATURE_LENGTH}`,
-    );
+    throw new RAMFSyntaxError(`Payload size must not exceed 8 MiB (got ${length} octets)`);
   }
 }
 
@@ -254,59 +222,71 @@ function validateSignatureLength(signatureBuffer: ArrayBuffer): void {
 
 //region Deserialization validation
 
-function parseMessage(serialization: ArrayBuffer): MessageFields {
+function parseMessageFormatSignature(serialization: ArrayBuffer): MessageFormatSignature {
   try {
-    return PARSER.parse(Buffer.from(serialization));
+    return FORMAT_SIGNATURE_PARSER.parse(Buffer.from(serialization));
   } catch (error) {
-    throw new RAMFSyntaxError(error, 'Serialization is not a valid RAMF message');
+    throw new RAMFSyntaxError(error, 'Serialization starts with invalid RAMF format signature');
   }
 }
 
+function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
+  const result = asn1js.verifySchema(serialization, ASN1_SCHEMA);
+  if (!result.verified) {
+    throw new RAMFSyntaxError('Invalid RAMF fields');
+  }
+  const messageBlock = result.result.RAMFMessage;
+  return {
+    date: new Date(messageBlock.date.valueBlock.value),
+    id: messageBlock.id.valueBlock.value,
+    payload: Buffer.from(messageBlock.payload.valueBlock.valueHex),
+    recipientAddress: messageBlock.recipientAddress.valueBlock.value,
+    ttl: get32UIntFromIntegerBlock(messageBlock.ttl),
+  };
+}
+
+function get32UIntFromIntegerBlock(integerBlock: asn1js.Integer): number {
+  if (!integerBlock.valueBlock.isHexOnly) {
+    return integerBlock.valueBlock.valueDec;
+  }
+  const ttlBuffer = Buffer.from(integerBlock.valueBlock.valueHex);
+  return ttlBuffer.readUInt32BE(0);
+}
+
 async function verifySignature(
-  messageSerialized: ArrayBuffer,
-  messageFields: MessageFields,
+  cmsSignedDataSerialized: ArrayBuffer,
 ): Promise<cmsSignedData.SignatureVerification> {
-  const signatureCiphertext = bufferToArray(messageFields.signature);
-  const signatureCiphertextLengthWithLengthPrefix = 2 + signatureCiphertext.byteLength;
-  const signaturePlaintext = messageSerialized.slice(
-    0,
-    messageSerialized.byteLength - signatureCiphertextLengthWithLengthPrefix,
-  );
   try {
-    return await cmsSignedData.verifySignature(signatureCiphertext, signaturePlaintext);
+    return await cmsSignedData.verifySignature(cmsSignedDataSerialized);
   } catch (error) {
-    throw new RAMFValidationError('Invalid RAMF message signature', messageFields, error);
+    throw new RAMFValidationError(error, 'Invalid RAMF message signature');
   }
 }
 
 function validateMessageTiming(
-  messageFields: MessageFields,
+  messageFields: MessageFieldSet,
   signatureVerification: cmsSignedData.SignatureVerification,
 ): void {
-  const currentTimestamp = dateToTimestamp(new Date());
-  if (currentTimestamp < messageFields.dateTimestamp) {
-    throw new RAMFValidationError('Message date is in the future', messageFields);
+  const currentDate = new Date();
+  currentDate.setMilliseconds(0); // Round down to match precision of date field
+
+  if (currentDate < messageFields.date) {
+    throw new RAMFValidationError('Message date is in the future');
   }
 
   const pkijsCertificate = signatureVerification.signerCertificate.pkijsCertificate;
-  if (messageFields.dateTimestamp < dateToTimestamp(pkijsCertificate.notBefore.value)) {
-    throw new RAMFValidationError(
-      'Message was created before the sender certificate was valid',
-      messageFields,
-    );
+  if (messageFields.date < pkijsCertificate.notBefore.value) {
+    throw new RAMFValidationError('Message was created before the sender certificate was valid');
   }
 
-  if (dateToTimestamp(pkijsCertificate.notAfter.value) < messageFields.dateTimestamp) {
-    throw new RAMFValidationError(
-      'Message was created after the sender certificate expired',
-      messageFields,
-    );
+  if (pkijsCertificate.notAfter.value < messageFields.date) {
+    throw new RAMFValidationError('Message was created after the sender certificate expired');
   }
 
-  const ttl = messageFields.ttlBuffer.readUIntLE(0, 3);
-  const expiryTimestamp = messageFields.dateTimestamp + ttl;
-  if (expiryTimestamp < currentTimestamp) {
-    throw new RAMFValidationError('Message already expired', messageFields);
+  const expiryDate = new Date(messageFields.date);
+  expiryDate.setSeconds(expiryDate.getSeconds() + messageFields.ttl);
+  if (expiryDate < currentDate) {
+    throw new RAMFValidationError('Message already expired');
   }
 }
 

@@ -1,6 +1,7 @@
 // tslint:disable:no-object-mutation
 
 import * as asn1js from 'asn1js';
+import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
@@ -12,6 +13,7 @@ import CMSError from './CMSError';
 const pkijsCrypto = getPkijsCrypto();
 
 export interface SignatureVerification {
+  readonly plaintext: ArrayBuffer;
   readonly signerCertificate: Certificate;
   readonly attachedCertificates: readonly Certificate[];
 }
@@ -48,6 +50,7 @@ export async function sign(
   const signedData = new pkijs.SignedData({
     certificates: [signerCertificate, ...caCertificates].map(c => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
+      eContent: new asn1js.OctetString({ valueHex: plaintext }),
       eContentType: oids.CMS_DATA,
     }),
     signerInfos: [signerInfo],
@@ -91,18 +94,20 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
  * The CMS SignedData value must have the signer's certificate attached. CA certificates may
  * also be attached.
  *
- * @param signature The CMS SignedData signature, DER-encoded.
- * @param plaintext The plaintext to be verified against signature.
+ * @param cmsSignedDataSerialized The CMS SignedData signature, DER-encoded.
  * @return Signer's certificate chain, starting with the signer's certificate
  * @throws {CMSError} If `signature` could not be decoded or verified.
  */
 export async function verifySignature(
-  signature: ArrayBuffer,
-  plaintext: ArrayBuffer,
+  cmsSignedDataSerialized: ArrayBuffer,
 ): Promise<SignatureVerification> {
-  const contentInfo = deserializeContentInfo(signature);
+  const contentInfo = deserializeContentInfo(cmsSignedDataSerialized);
 
   const signedData = new pkijs.SignedData({ schema: contentInfo.content });
+
+  // PKI.js is too slow at verifying the signature if the content is embedded (around 700ms for a
+  // 8 MiB content), but passing the content explicitly halves the time.
+  const plaintext = extractSignedDataContent(signedData.encapContentInfo);
 
   // tslint:disable-next-line:no-let
   let verificationResult;
@@ -110,7 +115,6 @@ export async function verifySignature(
     verificationResult = await signedData.verify({
       data: plaintext,
       extendedMode: true,
-      includeSignerCertificate: true,
       signer: 0,
     });
 
@@ -125,6 +129,24 @@ export async function verifySignature(
     attachedCertificates: (signedData.certificates as readonly pkijs.Certificate[]).map(
       c => new Certificate(c),
     ),
+    plaintext,
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
   };
+}
+
+function extractSignedDataContent(encapContentInfo: pkijs.EncapsulatedContentInfo): ArrayBuffer {
+  if (encapContentInfo.eContent === undefined) {
+    throw new CMSError('CMS SignedData value should encapsulate content');
+  }
+  // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
+  const contentOctetStringChunks = encapContentInfo.eContent.valueBlock.value;
+  const contentChunks = contentOctetStringChunks.map(
+    os => (os as asn1js.OctetString).valueBlock.valueHex,
+  );
+  const content = Buffer.concat(contentChunks.map(c => new Uint8Array(c)));
+
+  // tslint:disable-next-line:no-delete
+  delete encapContentInfo.eContent;
+
+  return bufferToArray(content);
 }
