@@ -1,6 +1,6 @@
+import * as asn1js from 'asn1js';
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
-import { SmartBuffer } from 'smart-buffer';
 
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import Message from '../messages/Message';
@@ -81,42 +81,23 @@ export async function serialize(
   formatSignature.writeUInt8(concreteMessageVersionOctet, 9);
   //endregion
 
-  const fieldSetSerialization = new SmartBuffer();
-
-  //region Recipient address
-  fieldSetSerialization.writeUInt16LE(Buffer.byteLength(message.recipientAddress));
-  fieldSetSerialization.writeString(message.recipientAddress);
-  //endregion
-
-  //region Message id
-  const messageId = message.id;
-  fieldSetSerialization.writeUInt8(messageId.length);
-  fieldSetSerialization.writeString(messageId, 'ascii');
-  //endregion
-
-  //region Date
-  fieldSetSerialization.writeUInt32LE(dateToTimestamp(message.date));
-  //endregion
-
-  //region TTL
-  const ttlBuffer = Buffer.allocUnsafe(3);
-  ttlBuffer.writeUIntLE(message.ttl, 0, 3);
-  fieldSetSerialization.writeBuffer(ttlBuffer);
-  //endregion
-
-  //region Payload
-  const payloadLength = Buffer.allocUnsafe(3);
-  payloadLength.writeUIntLE(message.payloadSerialized.byteLength, 0, 3);
-  const payloadSerialized = Buffer.from(message.payloadSerialized);
-  fieldSetSerialization.writeBuffer(payloadLength);
-  fieldSetSerialization.writeBuffer(payloadSerialized);
-  //endregion
-
-  const serializationBeforeSignature = fieldSetSerialization.toBuffer();
+  const serializationBeforeSignature = new asn1js.Sequence({
+    // @ts-ignore
+    value: [
+      new asn1js.VisibleString({ value: message.recipientAddress }),
+      new asn1js.VisibleString({ value: message.id }),
+      new asn1js.DateTime(
+        // @ts-ignore
+        { value: message.date },
+      ),
+      new asn1js.Integer({ value: message.ttl }),
+      new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
+    ],
+  }).toBER(false);
 
   //region Signature
   const signature = await cmsSignedData.sign(
-    bufferToArray(serializationBeforeSignature),
+    serializationBeforeSignature,
     senderPrivateKey,
     message.senderCertificate,
     message.senderCaCertificateChain,
@@ -212,7 +193,7 @@ function validateFileFormatSignature(
 }
 
 function validateRecipientAddressLength(recipientAddress: string): void {
-  const length = Buffer.byteLength(recipientAddress);
+  const length = recipientAddress.length;
   if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
     throw new RAMFSyntaxError(
       `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} octets ` +
