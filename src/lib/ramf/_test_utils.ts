@@ -5,8 +5,6 @@ import { SignatureOptions } from '../..';
 import Message from '../messages/Message';
 import PayloadPlaintext from '../messages/PayloadPlaintext';
 
-export const NON_ASCII_STRING = '❤こんにちは'; // Multi-byte characters
-
 export class StubPayload implements PayloadPlaintext {
   constructor(public readonly content: ArrayBuffer) {}
 

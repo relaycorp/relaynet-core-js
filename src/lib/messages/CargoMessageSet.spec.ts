@@ -72,8 +72,8 @@ describe('CargoMessageSet', () => {
       const invalidSerialization = bufferToArray(Buffer.from('I pretend to be valid'));
 
       expect(() => CargoMessageSet.deserialize(invalidSerialization)).toThrowWithMessage(
-        Error,
-        'Value is not DER-encoded',
+        InvalidMessageError,
+        'Serialization is not a valid CargoMessageSet',
       );
     });
 
