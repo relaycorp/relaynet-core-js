@@ -9,9 +9,9 @@ const concreteMessageTypeOctet = 0x43;
 const concreteMessageVersionOctet = 0;
 
 export default class Cargo extends Message<CargoMessageSet> {
-  public static async deserialize(parcelSerialized: ArrayBuffer): Promise<Cargo> {
+  public static async deserialize(cargoSerialized: ArrayBuffer): Promise<Cargo> {
     return serialization.deserialize(
-      parcelSerialized,
+      cargoSerialized,
       concreteMessageTypeOctet,
       concreteMessageVersionOctet,
       Cargo,
