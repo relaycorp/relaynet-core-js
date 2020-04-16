@@ -2,7 +2,7 @@
 
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
-import CargoMessageSet from './CargoMessageSet';
+import CargoMessageSet from './payloads/CargoMessageSet';
 import Message from './Message';
 
 const concreteMessageTypeOctet = 0x43;

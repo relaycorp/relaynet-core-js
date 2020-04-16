@@ -6,67 +6,18 @@ import {
   convertAsyncIteratorToArray,
   expectBuffersToEqual,
   generateStubCert,
-} from '../_test_utils';
-import { deserializeDer } from '../crypto_wrappers/_utils';
-import { generateRSAKeyPair } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import Cargo from './Cargo';
+} from '../../_test_utils';
+import { deserializeDer } from '../../crypto_wrappers/_utils';
+import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import Cargo from '../Cargo';
+import InvalidMessageError from '../InvalidMessageError';
+import Parcel from '../Parcel';
 import CargoMessageSet from './CargoMessageSet';
-import InvalidMessageError from './InvalidMessageError';
-import Parcel from './Parcel';
 
 const STUB_MESSAGE = Buffer.from('hiya');
 
 describe('CargoMessageSet', () => {
-  describe('serialize', () => {
-    test('An empty set should serialized as such', () => {
-      const payload = new CargoMessageSet(new Set([]));
-
-      const serialization = payload.serialize();
-
-      const deserialization = deserializeDer(serialization);
-      expect(deserialization).toBeInstanceOf(asn1js.Set);
-      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(0);
-    });
-
-    test('A one-item set should serialized as such', () => {
-      const payload = new CargoMessageSet(new Set([STUB_MESSAGE]));
-
-      const serialization = payload.serialize();
-
-      const deserialization = deserializeDer(serialization);
-      expect(deserialization).toBeInstanceOf(asn1js.Set);
-
-      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
-      const stubMessageAsn1 = (deserialization as asn1js.Set).valueBlock.value[0];
-      expect(stubMessageAsn1).toBeInstanceOf(asn1js.BitString);
-      expectBuffersToEqual(
-        (stubMessageAsn1 as asn1js.BitString).valueBlock.valueHex,
-        bufferToArray(STUB_MESSAGE),
-      );
-    });
-
-    test('A multi-item set should serialized as such', () => {
-      const stubMessages: readonly Buffer[] = [STUB_MESSAGE, Buffer.from('bye')];
-      const payload = new CargoMessageSet(new Set(stubMessages));
-
-      const serialization = payload.serialize();
-
-      const deserialization = deserializeDer(serialization);
-      expect(deserialization).toBeInstanceOf(asn1js.Set);
-
-      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(stubMessages.length);
-      for (let index = 0; index < stubMessages.length; index++) {
-        const messageAsn1 = (deserialization as asn1js.Set).valueBlock.value[index];
-        expect(messageAsn1).toBeInstanceOf(asn1js.BitString);
-        expectBuffersToEqual(
-          (messageAsn1 as asn1js.BitString).valueBlock.valueHex,
-          bufferToArray(stubMessages[index]),
-        );
-      }
-    });
-  });
-
   describe('deserialize', () => {
     test('Non-DER-encoded values should be refused', () => {
       const invalidSerialization = bufferToArray(Buffer.from('I pretend to be valid'));
@@ -135,6 +86,55 @@ describe('CargoMessageSet', () => {
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
       expect(cargoMessages.messages).toEqual(new Set(messages));
+    });
+  });
+
+  describe('serialize', () => {
+    test('An empty set should serialized as such', () => {
+      const payload = new CargoMessageSet(new Set([]));
+
+      const serialization = payload.serialize();
+
+      const deserialization = deserializeDer(serialization);
+      expect(deserialization).toBeInstanceOf(asn1js.Set);
+      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(0);
+    });
+
+    test('A one-item set should serialized as such', () => {
+      const payload = new CargoMessageSet(new Set([STUB_MESSAGE]));
+
+      const serialization = payload.serialize();
+
+      const deserialization = deserializeDer(serialization);
+      expect(deserialization).toBeInstanceOf(asn1js.Set);
+
+      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
+      const stubMessageAsn1 = (deserialization as asn1js.Set).valueBlock.value[0];
+      expect(stubMessageAsn1).toBeInstanceOf(asn1js.BitString);
+      expectBuffersToEqual(
+        (stubMessageAsn1 as asn1js.BitString).valueBlock.valueHex,
+        bufferToArray(STUB_MESSAGE),
+      );
+    });
+
+    test('A multi-item set should serialized as such', () => {
+      const stubMessages: readonly Buffer[] = [STUB_MESSAGE, Buffer.from('bye')];
+      const payload = new CargoMessageSet(new Set(stubMessages));
+
+      const serialization = payload.serialize();
+
+      const deserialization = deserializeDer(serialization);
+      expect(deserialization).toBeInstanceOf(asn1js.Set);
+
+      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(stubMessages.length);
+      for (let index = 0; index < stubMessages.length; index++) {
+        const messageAsn1 = (deserialization as asn1js.Set).valueBlock.value[index];
+        expect(messageAsn1).toBeInstanceOf(asn1js.BitString);
+        expectBuffersToEqual(
+          (messageAsn1 as asn1js.BitString).valueBlock.valueHex,
+          bufferToArray(stubMessages[index]),
+        );
+      }
     });
   });
 
