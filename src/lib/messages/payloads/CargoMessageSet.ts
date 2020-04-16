@@ -1,5 +1,4 @@
 import * as asn1js from 'asn1js';
-import bufferToArray from 'buffer-to-arraybuffer';
 
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
@@ -17,7 +16,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
       throw new InvalidMessageError('Serialization is not a valid CargoMessageSet');
     }
     const messageSet: readonly asn1js.BitString[] = (result.result as any).message_set || [];
-    const messages: readonly Buffer[] = messageSet.map(v => Buffer.from(v.valueBlock.valueHex));
+    const messages = messageSet.map(v => v.valueBlock.valueHex);
     return new CargoMessageSet(new Set(messages));
   }
 
@@ -33,11 +32,11 @@ export default class CargoMessageSet implements PayloadPlaintext {
     ],
   });
 
-  constructor(public readonly messages: Set<Buffer>) {}
+  constructor(public readonly messages: Set<ArrayBuffer>) {}
 
   public serialize(): ArrayBuffer {
     const messagesSerialized = Array.from(this.messages).map(
-      m => new asn1js.BitString({ valueHex: bufferToArray(m) }),
+      m => new asn1js.BitString({ valueHex: m }),
     );
     const set = new asn1js.Set();
     // tslint:disable-next-line:no-object-mutation
@@ -48,7 +47,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
   public async *deserializeMessages(): AsyncIterableIterator<Parcel> {
     for (const message of this.messages) {
       try {
-        yield Parcel.deserialize(bufferToArray(message));
+        yield Parcel.deserialize(message);
       } catch (error) {
         throw new InvalidMessageError(error, 'Invalid message found');
       }

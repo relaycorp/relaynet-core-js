@@ -1,3 +1,4 @@
+import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
@@ -114,6 +115,16 @@ export function reSerializeCertificate(cert: Certificate): Certificate {
   // For example, `extension.parsedValue` would be `undefined` in
   // https://github.com/PeculiarVentures/PKI.js/blob/9a39551aa9f1445406f96680318014c8d714e8e3/src/CertificateChainValidationEngine.js#L155
   return Certificate.deserialize(cert.serialize());
+}
+
+export function arrayBufferFrom(input: string): ArrayBuffer {
+  return bufferToArray(Buffer.from(input));
+}
+
+export async function* arrayToAsyncIterable<T>(array: readonly T[]): AsyncIterable<T> {
+  for (const item of array) {
+    yield item;
+  }
 }
 
 export async function asyncIterableToArray<T>(iterable: AsyncIterable<T>): Promise<readonly T[]> {

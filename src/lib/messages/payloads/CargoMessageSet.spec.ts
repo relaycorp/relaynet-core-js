@@ -2,7 +2,13 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { asyncIterableToArray, expectBuffersToEqual, generateStubCert } from '../../_test_utils';
+import {
+  arrayBufferFrom,
+  arrayToAsyncIterable,
+  asyncIterableToArray,
+  expectBuffersToEqual,
+  generateStubCert,
+} from '../../_test_utils';
 import { deserializeDer } from '../../crypto_wrappers/_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
@@ -11,7 +17,7 @@ import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
 import CargoMessageSet from './CargoMessageSet';
 
-const STUB_MESSAGE = Buffer.from('hiya');
+const STUB_MESSAGE = arrayBufferFrom('hiya');
 
 describe('CargoMessageSet', () => {
   describe('deserialize', () => {
@@ -65,7 +71,7 @@ describe('CargoMessageSet', () => {
 
     test('A single-item set should be accepted', () => {
       const asn1Set = new asn1js.Set();
-      asn1Set.valueBlock.value = [new asn1js.BitString({ valueHex: bufferToArray(STUB_MESSAGE) })];
+      asn1Set.valueBlock.value = [new asn1js.BitString({ valueHex: STUB_MESSAGE })];
       const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
@@ -73,11 +79,9 @@ describe('CargoMessageSet', () => {
     });
 
     test('A multi-item set should be accepted', () => {
-      const messages: readonly Buffer[] = [STUB_MESSAGE, Buffer.from('another message')];
+      const messages: readonly ArrayBuffer[] = [STUB_MESSAGE, arrayBufferFrom('another message')];
       const asn1Set = new asn1js.Set();
-      asn1Set.valueBlock.value = messages.map(
-        m => new asn1js.BitString({ valueHex: bufferToArray(m) }),
-      );
+      asn1Set.valueBlock.value = messages.map(m => new asn1js.BitString({ valueHex: m }));
       const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
@@ -107,14 +111,11 @@ describe('CargoMessageSet', () => {
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
       const stubMessageAsn1 = (deserialization as asn1js.Set).valueBlock.value[0];
       expect(stubMessageAsn1).toBeInstanceOf(asn1js.BitString);
-      expectBuffersToEqual(
-        (stubMessageAsn1 as asn1js.BitString).valueBlock.valueHex,
-        bufferToArray(STUB_MESSAGE),
-      );
+      expectBuffersToEqual((stubMessageAsn1 as asn1js.BitString).valueBlock.valueHex, STUB_MESSAGE);
     });
 
     test('A multi-item set should serialized as such', () => {
-      const stubMessages: readonly Buffer[] = [STUB_MESSAGE, Buffer.from('bye')];
+      const stubMessages: readonly ArrayBuffer[] = [STUB_MESSAGE, arrayBufferFrom('bye')];
       const payload = new CargoMessageSet(new Set(stubMessages));
 
       const serialization = payload.serialize();
@@ -128,7 +129,7 @@ describe('CargoMessageSet', () => {
         expect(messageAsn1).toBeInstanceOf(asn1js.BitString);
         expectBuffersToEqual(
           (messageAsn1 as asn1js.BitString).valueBlock.valueHex,
-          bufferToArray(stubMessages[index]),
+          stubMessages[index],
         );
       }
     });
@@ -149,7 +150,7 @@ describe('CargoMessageSet', () => {
 
     test('Parcels should be yielded', async () => {
       const parcel = new Parcel('address', certificate, Buffer.from('hi'));
-      const parcelSerialization = Buffer.from(await parcel.serialize(privateKey));
+      const parcelSerialization = await parcel.serialize(privateKey);
       const cargoMessageSet = new CargoMessageSet(new Set([parcelSerialization]));
 
       const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
@@ -160,7 +161,7 @@ describe('CargoMessageSet', () => {
     });
 
     test('An error should be thrown when non-RAMF messages are found', async () => {
-      const cargoMessageSet = new CargoMessageSet(new Set([Buffer.from('Not RAMF')]));
+      const cargoMessageSet = new CargoMessageSet(new Set([arrayBufferFrom('Not RAMF')]));
 
       await expect(
         asyncIterableToArray(cargoMessageSet.deserializeMessages()),
@@ -173,7 +174,7 @@ describe('CargoMessageSet', () => {
 
     test('An error should be thrown when unsupported RAMF messages are found', async () => {
       const innerCargo = new Cargo('address', certificate, Buffer.from('hi'));
-      const cargoSerialization = Buffer.from(await innerCargo.serialize(privateKey));
+      const cargoSerialization = await innerCargo.serialize(privateKey);
       const cargoMessageSet = new CargoMessageSet(new Set([cargoSerialization]));
 
       await expect(

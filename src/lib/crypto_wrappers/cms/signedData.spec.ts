@@ -1,10 +1,10 @@
 // tslint:disable:no-let no-object-mutation
 import * as asn1js from 'asn1js';
-import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
 import {
+  arrayBufferFrom,
   expectAsn1ValuesToBeEqual,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
@@ -19,7 +19,7 @@ import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
 import { sign, verifySignature } from './signedData';
 
-const plaintext = bufferToArray(Buffer.from('Winter is coming'));
+const plaintext = arrayBufferFrom('Winter is coming');
 
 let privateKey: CryptoKey;
 let certificate: Certificate;
@@ -216,7 +216,7 @@ describe('sign', () => {
 
 describe('verifySignature', () => {
   test('A non-DER-encoded value should be refused', async () => {
-    const invalidSignature = bufferToArray(Buffer.from('nope.jpeg'));
+    const invalidSignature = arrayBufferFrom('nope.jpeg');
     await expectPromiseToReject(
       verifySignature(invalidSignature),
       new CMSError('Could not deserialize CMS ContentInfo: Value is not DER-encoded'),
@@ -226,7 +226,7 @@ describe('verifySignature', () => {
   test('Well-formed but invalid signatures should be rejected', async () => {
     // Let's tamper with the payload
     const signatureDer = await sign(plaintext, privateKey, certificate);
-    const differentPlaintext = bufferToArray(Buffer.from('Different'));
+    const differentPlaintext = arrayBufferFrom('Different');
     const cmsSignedData = deserializeSignedData(signatureDer);
     // tslint:disable-next-line:no-object-mutation
     cmsSignedData.encapContentInfo = new pkijs.EncapsulatedContentInfo({
@@ -276,7 +276,7 @@ describe('verifySignature', () => {
   });
 
   test('Large plaintexts chunked by PKI.js should be put back together', async () => {
-    const largePlaintext = bufferToArray(Buffer.from('a'.repeat(2 ** 20)));
+    const largePlaintext = arrayBufferFrom('a'.repeat(2 ** 20));
     const signatureDer = await sign(largePlaintext, privateKey, certificate);
 
     const signatureVerification = await verifySignature(signatureDer);

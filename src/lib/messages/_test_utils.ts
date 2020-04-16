@@ -1,7 +1,6 @@
 /* tslint:disable:no-let */
-import bufferToArray from 'buffer-to-arraybuffer';
 
-import { generateStubCert, getMockContext } from '../_test_utils';
+import { arrayBufferFrom, generateStubCert, getMockContext } from '../_test_utils';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import * as serialization from '../ramf/serialization';
 import Message from './Message';
@@ -34,7 +33,7 @@ export function describeMessage<M extends Message<any>>(
   });
 
   describe('serialize', () => {
-    const expectedSerialization = bufferToArray(Buffer.from('serialized'));
+    const expectedSerialization = arrayBufferFrom('serialized');
     const serializeSpy = jest.spyOn(serialization, 'serialize');
     beforeAll(() => {
       serializeSpy.mockResolvedValueOnce(expectedSerialization);
@@ -81,7 +80,7 @@ export function describeMessage<M extends Message<any>>(
   });
 
   describe('deserialize', () => {
-    const stubMessageSerialized = bufferToArray(Buffer.from('I am a message. I swear.'));
+    const stubMessageSerialized = arrayBufferFrom('I am a message. I swear.');
     const deserializeSpy = jest.spyOn(serialization, 'deserialize');
     beforeAll(() => {
       deserializeSpy.mockResolvedValueOnce(message);
