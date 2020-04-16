@@ -116,12 +116,10 @@ export function reSerializeCertificate(cert: Certificate): Certificate {
   return Certificate.deserialize(cert.serialize());
 }
 
-export async function convertAsyncIteratorToArray<T>(
-  iterator: AsyncIterableIterator<T>,
-): Promise<readonly T[]> {
+export async function asyncIterableToArray<T>(iterable: AsyncIterable<T>): Promise<readonly T[]> {
   // tslint:disable-next-line:readonly-array
   const values = [];
-  for await (const value of iterator) {
+  for await (const value of iterable) {
     values.push(value);
   }
   return values;

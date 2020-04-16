@@ -2,11 +2,7 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import {
-  convertAsyncIteratorToArray,
-  expectBuffersToEqual,
-  generateStubCert,
-} from '../../_test_utils';
+import { asyncIterableToArray, expectBuffersToEqual, generateStubCert } from '../../_test_utils';
 import { deserializeDer } from '../../crypto_wrappers/_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
@@ -156,7 +152,7 @@ describe('CargoMessageSet', () => {
       const parcelSerialization = Buffer.from(await parcel.serialize(privateKey));
       const cargoMessageSet = new CargoMessageSet(new Set([parcelSerialization]));
 
-      const messages = await convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages());
+      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
 
       expect(messages).toHaveLength(1);
       expect(messages[0]).toBeInstanceOf(Parcel);
@@ -167,7 +163,7 @@ describe('CargoMessageSet', () => {
       const cargoMessageSet = new CargoMessageSet(new Set([Buffer.from('Not RAMF')]));
 
       await expect(
-        convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
+        asyncIterableToArray(cargoMessageSet.deserializeMessages()),
       ).rejects.toMatchObject<Partial<InvalidMessageError>>({
         message: expect.stringMatching(
           /^Invalid message found: Serialization starts with invalid RAMF format signature/,
@@ -181,7 +177,7 @@ describe('CargoMessageSet', () => {
       const cargoMessageSet = new CargoMessageSet(new Set([cargoSerialization]));
 
       await expect(
-        convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
+        asyncIterableToArray(cargoMessageSet.deserializeMessages()),
       ).rejects.toMatchObject<Partial<InvalidMessageError>>({
         message: expect.stringMatching(/^Invalid message found: Expected concrete message type/),
       });
@@ -190,9 +186,9 @@ describe('CargoMessageSet', () => {
     test('An empty set should result in no yielded values', async () => {
       const cargoMessageSet = new CargoMessageSet(new Set([]));
 
-      await expect(
-        convertAsyncIteratorToArray(cargoMessageSet.deserializeMessages()),
-      ).resolves.toEqual([]);
+      await expect(asyncIterableToArray(cargoMessageSet.deserializeMessages())).resolves.toEqual(
+        [],
+      );
     });
   });
 });
