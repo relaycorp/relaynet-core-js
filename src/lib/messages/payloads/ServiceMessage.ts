@@ -2,7 +2,7 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { SmartBuffer } from 'smart-buffer';
 
-import RAMFError from '../ramf/RAMFError';
+import RAMFError from '../../ramf/RAMFError';
 import PayloadPlaintext from './PayloadPlaintext';
 
 const MAX_TYPE_LENGTH = 2 ** 8 - 1; // 8-bit

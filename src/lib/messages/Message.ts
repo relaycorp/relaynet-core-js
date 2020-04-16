@@ -10,7 +10,7 @@ import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyStore } from '../privateKeyStore';
 import InvalidMessageError from './InvalidMessageError';
-import PayloadPlaintext from './PayloadPlaintext';
+import PayloadPlaintext from './payloads/PayloadPlaintext';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 

@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
 import Message from '../messages/Message';
-import PayloadPlaintext from '../messages/PayloadPlaintext';
+import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 
 export class StubPayload implements PayloadPlaintext {
   constructor(public readonly content: ArrayBuffer) {}

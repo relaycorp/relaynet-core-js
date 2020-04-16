@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
-import PayloadPlaintext from '../PayloadPlaintext';
+import PayloadPlaintext from './PayloadPlaintext';
 
 /**
  * Plaintext representation of the payload in a cargo message.
