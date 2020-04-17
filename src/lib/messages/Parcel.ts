@@ -3,7 +3,7 @@
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
 import Message from './Message';
-import ServiceMessage from './ServiceMessage';
+import ServiceMessage from './payloads/ServiceMessage';
 
 const concreteMessageTypeOctet = 0x50;
 const concreteMessageVersionOctet = 0;

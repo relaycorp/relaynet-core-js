@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import { CryptoEngine } from 'pkijs';
 
-import { expectBuffersToEqual, sha256Hex } from '../_test_utils';
+import { arrayBufferFrom, expectBuffersToEqual, sha256Hex } from '../_test_utils';
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeECDHPublicKey,
@@ -171,7 +171,7 @@ describe('Key serializers', () => {
     stubKeyPair = await generateRSAKeyPair();
   });
 
-  const stubExportedKeyDer = bufferToArray(Buffer.from('Hey'));
+  const stubExportedKeyDer = arrayBufferFrom('Hey');
   const mockExportKey = jest.spyOn(CryptoEngine.prototype, 'exportKey');
   beforeEach(async () => {
     mockExportKey.mockReset();

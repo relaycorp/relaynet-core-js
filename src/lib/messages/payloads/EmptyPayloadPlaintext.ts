@@ -1,5 +1,5 @@
 import InvalidMessageError from '../InvalidMessageError';
-import PayloadPlaintext from '../PayloadPlaintext';
+import PayloadPlaintext from './PayloadPlaintext';
 
 export default class EmptyPayloadPlaintext implements PayloadPlaintext {
   public static deserialize(serialization: ArrayBuffer): EmptyPayloadPlaintext {

@@ -16,7 +16,7 @@ import {
   SessionEnvelopedData,
 } from '..';
 
-import { expectBuffersToEqual } from '../lib/_test_utils';
+import { arrayBufferFrom, expectBuffersToEqual } from '../lib/_test_utils';
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
@@ -58,14 +58,14 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   });
 
   // Run 1: Alice initiates contact with Bob. Bob decrypts message.
-  const plaintext1 = bufferToArray(Buffer.from('Hi. My name is Alice.'));
+  const plaintext1 = arrayBufferFrom('Hi. My name is Alice.');
   const encryptionResult1 = await SessionEnvelopedData.encrypt(plaintext1, bobDhCertificate);
   const decryptedPlaintext1 = await encryptionResult1.envelopedData.decrypt(bobKeyPair1.privateKey);
   expectBuffersToEqual(decryptedPlaintext1, plaintext1);
   checkRecipientInfo(encryptionResult1.envelopedData, bobDhCertificate);
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
-  const plaintext2 = bufferToArray(Buffer.from('Hi, Alice. My name is Bob.'));
+  const plaintext2 = arrayBufferFrom('Hi, Alice. My name is Bob.');
   const alicePublicKey1 = await encryptionResult1.envelopedData.getOriginatorKey();
   const encryptionResult2 = await SessionEnvelopedData.encrypt(plaintext2, alicePublicKey1);
   const decryptedPlaintext2 = await encryptionResult2.envelopedData.decrypt(
@@ -75,7 +75,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   checkRecipientInfo(encryptionResult2.envelopedData, alicePublicKey1);
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
-  const plaintext3 = bufferToArray(Buffer.from('Nice to meet you, Bob.'));
+  const plaintext3 = arrayBufferFrom('Nice to meet you, Bob.');
   const bobPublicKey2 = await encryptionResult2.envelopedData.getOriginatorKey();
   const encryptionResult3 = await SessionEnvelopedData.encrypt(plaintext3, bobPublicKey2);
   const decryptedPlaintext3 = await encryptionResult3.envelopedData.decrypt(
@@ -97,10 +97,7 @@ test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serializat
     validityEndDate: TOMORROW,
   });
 
-  const { envelopedData } = await SessionEnvelopedData.encrypt(
-    bufferToArray(Buffer.from('f')),
-    dhCertificate,
-  );
+  const { envelopedData } = await SessionEnvelopedData.encrypt(arrayBufferFrom('f'), dhCertificate);
 
   const envelopedDataDeserialized = EnvelopedData.deserialize(
     envelopedData.serialize(),
@@ -120,7 +117,7 @@ test('EnvelopedData should be decrypted after serialization', async () => {
     validityEndDate: TOMORROW,
   });
 
-  const plaintext = bufferToArray(Buffer.from('plaintext'));
+  const plaintext = arrayBufferFrom('plaintext');
   const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, dhCertificate);
 
   // Check it can be decrypted before serializing it:

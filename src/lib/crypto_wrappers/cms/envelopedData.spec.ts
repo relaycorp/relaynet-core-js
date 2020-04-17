@@ -1,9 +1,9 @@
 // tslint:disable:no-let no-object-mutation
 import * as asn1js from 'asn1js';
-import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import {
+  arrayBufferFrom,
   expectAsn1ValuesToBeEqual,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
@@ -33,7 +33,7 @@ const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
 const OID_ECDH_P256 = '1.2.840.10045.3.1.7';
 const OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
 
-const plaintext = bufferToArray(Buffer.from('Winter is coming'));
+const plaintext = arrayBufferFrom('Winter is coming');
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
@@ -86,7 +86,7 @@ describe('EnvelopedData', () => {
 
   describe('deserialize', () => {
     test('Non-DER-encoded values should be refused', () => {
-      const invalidDer = bufferToArray(Buffer.from('nope.jpeg'));
+      const invalidDer = arrayBufferFrom('nope.jpeg');
       expect(() => EnvelopedData.deserialize(invalidDer)).toThrowWithMessage(
         CMSError,
         'Could not deserialize CMS ContentInfo: Value is not DER-encoded',
