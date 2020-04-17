@@ -151,7 +151,7 @@ describe('CargoMessageSet', () => {
       ).rejects.toEqual(
         new InvalidMessageError(
           `Cargo messages must not exceed ${CargoMessageSet.MAX_MESSAGE_LENGTH} octets ` +
-          `(got one with ${messageSerialized.byteLength} octets)`,
+            `(got one with ${messageSerialized.byteLength} octets)`,
         ),
       );
     });

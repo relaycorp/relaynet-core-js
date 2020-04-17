@@ -35,7 +35,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
     return new CargoMessageSet(new Set(messages));
   }
 
-  public static async* batchMessagesSerialized(
+  public static async *batchMessagesSerialized(
     messagesSerialized: AsyncIterable<ArrayBuffer>,
   ): AsyncIterable<ArrayBuffer> {
     // tslint:disable-next-line:readonly-array no-let
@@ -47,7 +47,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
       if (CargoMessageSet.MAX_MESSAGE_LENGTH < messageSerialized.byteLength) {
         throw new InvalidMessageError(
           `Cargo messages must not exceed ${CargoMessageSet.MAX_MESSAGE_LENGTH} octets ` +
-          `(got one with ${messageSerialized.byteLength} octets)`,
+            `(got one with ${messageSerialized.byteLength} octets)`,
         );
       }
 
