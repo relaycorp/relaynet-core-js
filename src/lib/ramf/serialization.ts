@@ -13,6 +13,11 @@ const MAX_ID_LENGTH = 64;
 const MAX_TTL = 15552000;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
+/**
+ * Maximum length of any SDU to be encapsulated in a CMS EnvelopedData value, per the RAMF spec.
+ */
+export const MAX_SDU_PLAINTEXT_LENGTH = 8322048;
+
 const FORMAT_SIGNATURE_PARSER = new Parser()
   .endianess('little')
   .string('magic', { length: 8, assert: 'Relaynet' })
