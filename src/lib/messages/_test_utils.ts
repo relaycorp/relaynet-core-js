@@ -1,6 +1,6 @@
 /* tslint:disable:no-let */
 
-import { arrayBufferFrom, generateStubCert, getMockContext } from '../_test_utils';
+import { arrayBufferFrom, generateStubCert, getMockContext, mockSpy } from '../_test_utils';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import * as serialization from '../ramf/serialization';
 import Message from './Message';
@@ -81,13 +81,7 @@ export function describeMessage<M extends Message<any>>(
 
   describe('deserialize', () => {
     const stubMessageSerialized = arrayBufferFrom('I am a message. I swear.');
-    const deserializeSpy = jest.spyOn(serialization, 'deserialize');
-    beforeAll(() => {
-      deserializeSpy.mockResolvedValueOnce(message);
-    });
-    afterEach(() => {
-      deserializeSpy.mockReset();
-    });
+    const deserializeSpy = mockSpy(jest.spyOn(serialization, 'deserialize'), async () => message);
 
     test('Result should be the expected message', async () => {
       const messageDeserialized = await messageClass.deserialize(stubMessageSerialized);

@@ -2,7 +2,10 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import RAMFError from '../../ramf/RAMFError';
+import InvalidMessageError from '../InvalidMessageError';
 import ServiceMessage from './ServiceMessage';
+
+const TYPE = 'text/plain';
 
 describe('ServiceMessage', () => {
   describe('serialize', () => {
@@ -15,7 +18,7 @@ describe('ServiceMessage', () => {
 
     test('A type with a length longer than 8 bits should be refused', () => {
       const maxLength = 2 ** 8 - 1; // 8 bits
-      const message = new ServiceMessage('a'.repeat(maxLength + 1), Buffer.alloc(0));
+      const message = new ServiceMessage('a'.repeat(maxLength + 1), Buffer.allocUnsafe(0));
 
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
@@ -23,11 +26,9 @@ describe('ServiceMessage', () => {
       );
     });
 
-    test('A value with a length longer than 32 bits should be refused', () => {
-      const maxLength = 2 ** 32; // 32 bits
-      const value = Buffer.alloc(0);
-      jest.spyOn(value, 'length', 'get').mockReturnValueOnce(maxLength + 1);
-      const message = new ServiceMessage('text/plain', value);
+    test('A value with a length longer than 23 bits should be refused', () => {
+      const maxLength = 2 ** 23 - 1;
+      const message = new ServiceMessage('a', Buffer.allocUnsafe(maxLength + 1));
 
       expect(() => message.serialize()).toThrowWithMessage(
         RAMFError,
@@ -36,14 +37,13 @@ describe('ServiceMessage', () => {
     });
 
     test('Result should match structure defined in Relaynet Core', () => {
-      const type = 'text/plain';
       const value = Buffer.from('Hi');
-      const message = new ServiceMessage(type, value);
+      const message = new ServiceMessage(TYPE, value);
 
       const serialization = Buffer.from(message.serialize());
       const messageParts = serviceMessageParser.parse(serialization);
-      expect(messageParts).toHaveProperty('messageTypeLength', type.length);
-      expect(messageParts).toHaveProperty('messageType', type);
+      expect(messageParts).toHaveProperty('messageTypeLength', TYPE.length);
+      expect(messageParts).toHaveProperty('messageType', TYPE);
       expect(messageParts).toHaveProperty('messageLength', value.byteLength);
       expect(value.equals(messageParts.message)).toBeTrue();
     });
@@ -59,11 +59,33 @@ describe('ServiceMessage', () => {
 
     test('Value length prefix should be encoded in little-endian', () => {
       const valueLength = 0x0100; // Two *different* octets, so endianness matters
-      const message = new ServiceMessage('text/plain', Buffer.from('A'.repeat(valueLength)));
+      const message = new ServiceMessage(TYPE, Buffer.from('A'.repeat(valueLength)));
 
       const serialization = Buffer.from(message.serialize());
       const messageParts = serviceMessageParser.parse(serialization);
       expect(messageParts).toHaveProperty('messageLength', valueLength);
+    });
+
+    test('A type/value reaching maximum length for a service message should be accepted', () => {
+      const maxValueLength = ServiceMessage.MAX_LENGTH - 1 - TYPE.length - 4;
+      const value = Buffer.from('a'.repeat(maxValueLength));
+      const message = new ServiceMessage(TYPE, value);
+
+      const serialization = message.serialize();
+
+      expect(serialization.byteLength).toEqual(ServiceMessage.MAX_LENGTH);
+    });
+
+    test('A type/value exceeding maximum length for a service message should be refused', () => {
+      const maxValueLength = ServiceMessage.MAX_LENGTH - 1 - TYPE.length - 4;
+      const value = Buffer.from('a'.repeat(maxValueLength + 1));
+      const message = new ServiceMessage(TYPE, value);
+
+      expect(() => message.serialize()).toThrowWithMessage(
+        InvalidMessageError,
+        `Service message must not exceed ${ServiceMessage.MAX_LENGTH} octets ` +
+          `(got ${ServiceMessage.MAX_LENGTH + 1} octets)`,
+      );
     });
   });
 
@@ -77,7 +99,7 @@ describe('ServiceMessage', () => {
     });
 
     test('A valid serialization should result in a new ServiceMessage', () => {
-      const originalMessage = new ServiceMessage('text/plain', Buffer.from('Hey'));
+      const originalMessage = new ServiceMessage(TYPE, Buffer.from('Hey'));
       const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
 
       const finalMessage = ServiceMessage.deserialize(serialization);
@@ -87,10 +109,7 @@ describe('ServiceMessage', () => {
 
     test('Value length prefix should be decoded in little-endian', () => {
       const valueLength = 0x0100; // Two *different* octets, so endianness matters
-      const originalMessage = new ServiceMessage(
-        'text/plain',
-        Buffer.from('A'.repeat(valueLength)),
-      );
+      const originalMessage = new ServiceMessage(TYPE, Buffer.from('A'.repeat(valueLength)));
       const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
 
       const finalMessage = ServiceMessage.deserialize(serialization);
