@@ -51,7 +51,7 @@ class MockPrivateKeyStore extends PrivateKeyStore {
       recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
         await recipientCertificate.getPublicKey(),
       ),
-      type: 'session',
+      type: 'session-subsequent',
     };
   }
 
@@ -324,7 +324,7 @@ describe('PrivateKeyStore', () => {
             recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
               await stubRecipientCertificate.getPublicKey(),
             ),
-            type: 'session',
+            type: 'session-subsequent',
           };
           expect(store.keys[stubCertificate.getSerialNumberHex()]).toEqual(expectedKey);
         });

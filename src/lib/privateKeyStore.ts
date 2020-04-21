@@ -13,7 +13,7 @@ import RelaynetError from './RelaynetError';
 
 export interface BasePrivateKeyData {
   readonly keyDer: Buffer;
-  readonly type: 'node' | 'session-initial' | 'session'; // TODO: Rename "session" to "session-subsequent"
+  readonly type: 'node' | 'session-initial' | 'session-subsequent';
 }
 
 /**
@@ -32,7 +32,7 @@ export interface UnboundPrivateKeyData extends BasePrivateKeyData {
  * In other words, this is for subsequent session keys.
  */
 export interface BoundPrivateKeyData extends BasePrivateKeyData {
-  readonly type: 'session';
+  readonly type: 'session-subsequent';
   readonly recipientPublicKeyDigest: string;
 }
 
@@ -91,7 +91,7 @@ export abstract class PrivateKeyStore {
       throw new PrivateKeyStoreError('Key is not a session key');
     }
 
-    if (keyData.type === 'session') {
+    if (keyData.type === 'session-subsequent') {
       const recipientPublicKeyDigest = await getPublicKeyDigestHex(
         await recipientCertificate.getPublicKey(),
       );
@@ -136,7 +136,7 @@ export abstract class PrivateKeyStore {
       recipientPublicKeyDigest: await getPublicKeyDigestHex(
         await recipientCertificate.getPublicKey(),
       ),
-      type: 'session',
+      type: 'session-subsequent',
     };
     await this.saveKeyOrThrowError(privateKeyData, keyId);
   }
