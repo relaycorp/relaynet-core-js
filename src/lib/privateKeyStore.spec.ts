@@ -154,7 +154,7 @@ describe('PrivateKeyStore', () => {
       const keyPair = await keys.generateECDHKeyPair();
       stubPrivateKey = keyPair.privateKey;
 
-      stubCertificate = await generateStubCert(); // TODO: MOVE INTO INITIAL SESSION KEYS
+      stubCertificate = await generateStubCert();
     });
 
     let stubRecipientCertificate: Certificate;
