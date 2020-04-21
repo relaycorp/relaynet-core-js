@@ -244,7 +244,9 @@ describe('Message', () => {
       );
 
       const keyStore = castMock<PrivateKeyStore>({
-        fetchNodeKey: jest.fn().mockResolvedValue(recipientPrivateKey),
+        fetchNodeKey: jest
+          .fn()
+          .mockResolvedValue({ certificate: senderCertificate, privateKey: recipientPrivateKey }),
       });
 
       const stubMessage = new StubMessage(

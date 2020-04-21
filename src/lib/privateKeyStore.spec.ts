@@ -1,4 +1,5 @@
 // tslint:disable:no-let
+
 import { expectPromiseToReject, generateStubCert } from './_test_utils';
 import * as keys from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
@@ -87,7 +88,7 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore();
         await store.registerNodeKey(stubPrivateKey, stubCertificate);
 
-        const keyPair = await store.fetchNodeKey(stubCertificate.getSerialNumberHex());
+        const keyPair = await store.fetchNodeKey(stubCertificate.getSerialNumber());
 
         expect(keyPair).toHaveProperty('privateKey', stubPrivateKey);
         expect(stubCertificate.isEqual(keyPair.certificate)).toBeTrue();
@@ -98,8 +99,8 @@ describe('PrivateKeyStore', () => {
         await store.registerInitialSessionKey(stubPrivateKey, stubCertificate);
 
         await expectPromiseToReject(
-          store.fetchNodeKey(stubCertificate.getSerialNumberHex()),
-          new PrivateKeyStoreError(`Key ${stubCertificate.getSerialNumberHex()} is not a node key`),
+          store.fetchNodeKey(stubCertificate.getSerialNumber()),
+          new PrivateKeyStoreError('Key is not a node key'),
         );
       });
 
@@ -107,7 +108,7 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore();
 
         await expectPromiseToReject(
-          store.fetchNodeKey(stubCertificate.getSerialNumberHex()),
+          store.fetchNodeKey(stubCertificate.getSerialNumber()),
           new PrivateKeyStoreError(
             `Failed to retrieve key: Unknown key ${stubCertificate.getSerialNumberHex()}`,
           ),
@@ -171,7 +172,7 @@ describe('PrivateKeyStore', () => {
           const store = new MockPrivateKeyStore();
           await store.registerInitialSessionKey(stubPrivateKey, stubCertificate);
 
-          const keyPair = await store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex());
+          const keyPair = await store.fetchInitialSessionKey(stubCertificate.getSerialNumber());
 
           expect(await keys.derSerializePrivateKey(keyPair.privateKey)).toEqual(
             await keys.derSerializePrivateKey(stubPrivateKey),
@@ -184,12 +185,8 @@ describe('PrivateKeyStore', () => {
           await store.registerNodeKey(stubPrivateKey, stubCertificate);
 
           await expect(
-            store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex()),
-          ).rejects.toEqual(
-            new PrivateKeyStoreError(
-              `Key ${stubCertificate.getSerialNumberHex()} is not an initial session key`,
-            ),
-          );
+            store.fetchInitialSessionKey(stubCertificate.getSerialNumber()),
+          ).rejects.toEqual(new PrivateKeyStoreError('Key is not an initial session key'));
         });
 
         test('Subsequent session keys should not be returned', async () => {
@@ -201,19 +198,15 @@ describe('PrivateKeyStore', () => {
           );
 
           await expect(
-            store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex()),
-          ).rejects.toEqual(
-            new PrivateKeyStoreError(
-              `Key ${stubCertificate.getSerialNumberHex()} is not an initial session key`,
-            ),
-          );
+            store.fetchInitialSessionKey(stubCertificate.getSerialNumber()),
+          ).rejects.toEqual(new PrivateKeyStoreError('Key is not an initial session key'));
         });
 
         test('Errors should be wrapped', async () => {
           const store = new MockPrivateKeyStore();
 
           await expectPromiseToReject(
-            store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex()),
+            store.fetchInitialSessionKey(stubCertificate.getSerialNumber()),
             new PrivateKeyStoreError(
               `Failed to retrieve key: Unknown key ${stubCertificate.getSerialNumberHex()}`,
             ),
@@ -252,7 +245,7 @@ describe('PrivateKeyStore', () => {
         await store.registerInitialSessionKey(stubPrivateKey, stubCertificate);
 
         const privateKeyData = await store.fetchSessionKey(
-          stubCertificate.getSerialNumberHex(),
+          stubCertificate.getSerialNumber(),
           stubRecipientCertificate,
         );
 
@@ -270,7 +263,7 @@ describe('PrivateKeyStore', () => {
         );
 
         const privateKeyData = await store.fetchSessionKey(
-          stubCertificate.getSerialNumberHex(),
+          stubCertificate.getSerialNumber(),
           stubRecipientCertificate,
         );
 
@@ -289,10 +282,8 @@ describe('PrivateKeyStore', () => {
 
         const differentRecipientCert = await generateStubCert();
         await expectPromiseToReject(
-          store.fetchSessionKey(stubCertificate.getSerialNumberHex(), differentRecipientCert),
-          new PrivateKeyStoreError(
-            `Key ${stubCertificate.getSerialNumberHex()} is bound to another recipient`,
-          ),
+          store.fetchSessionKey(stubCertificate.getSerialNumber(), differentRecipientCert),
+          new PrivateKeyStoreError('Key is bound to another recipient'),
         );
       });
 
@@ -301,19 +292,15 @@ describe('PrivateKeyStore', () => {
         await store.registerNodeKey(stubPrivateKey, stubCertificate);
 
         await expect(
-          store.fetchSessionKey(stubCertificate.getSerialNumberHex(), stubRecipientCertificate),
-        ).rejects.toEqual(
-          new PrivateKeyStoreError(
-            `Key ${stubCertificate.getSerialNumberHex()} is not a session key`,
-          ),
-        );
+          store.fetchSessionKey(stubCertificate.getSerialNumber(), stubRecipientCertificate),
+        ).rejects.toEqual(new PrivateKeyStoreError('Key is not a session key'));
       });
 
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore();
 
         await expectPromiseToReject(
-          store.fetchSessionKey(stubCertificate.getSerialNumberHex(), stubRecipientCertificate),
+          store.fetchSessionKey(stubCertificate.getSerialNumber(), stubRecipientCertificate),
           new PrivateKeyStoreError(
             `Failed to retrieve key: Unknown key ${stubCertificate.getSerialNumberHex()}`,
           ),

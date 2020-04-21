@@ -46,12 +46,11 @@ export interface UnboundKeyPair {
 }
 
 export abstract class PrivateKeyStore {
-  // TODO: Do lookup by key id (as buffer)
-  public async fetchNodeKey(keyIdHex: string): Promise<UnboundKeyPair> {
-    const keyData = await this.fetchKeyOrThrowError(keyIdHex);
+  public async fetchNodeKey(keyId: Buffer): Promise<UnboundKeyPair> {
+    const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type !== 'node') {
-      throw new PrivateKeyStoreError(`Key ${keyIdHex} is not a node key`);
+      throw new PrivateKeyStoreError('Key is not a node key');
     }
 
     const privateKey = await derDeserializeRSAPrivateKey(keyData.keyDer, {
@@ -64,12 +63,11 @@ export abstract class PrivateKeyStore {
     };
   }
 
-  // TODO: Do lookup by key id (as buffer)
-  public async fetchInitialSessionKey(keyIdHex: string): Promise<UnboundKeyPair> {
-    const keyData = await this.fetchKeyOrThrowError(keyIdHex);
+  public async fetchInitialSessionKey(keyId: Buffer): Promise<UnboundKeyPair> {
+    const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type !== 'session-initial') {
-      throw new PrivateKeyStoreError(`Key ${keyIdHex} is not an initial session key`);
+      throw new PrivateKeyStoreError('Key is not an initial session key');
     }
 
     return {
@@ -80,17 +78,17 @@ export abstract class PrivateKeyStore {
 
   /**
    * Retrieve session key, regardless of whether it's an initial key or not.
-   * @param keyIdHex
+   * @param keyId
    * @param recipientCertificate
    */
   public async fetchSessionKey(
-    keyIdHex: string, // TODO: Do lookup by key id (as buffer)
+    keyId: Buffer,
     recipientCertificate: Certificate,
   ): Promise<CryptoKey> {
-    const keyData = await this.fetchKeyOrThrowError(keyIdHex);
+    const keyData = await this.fetchKeyOrThrowError(keyId);
 
     if (keyData.type === 'node') {
-      throw new PrivateKeyStoreError(`Key ${keyIdHex} is not a session key`);
+      throw new PrivateKeyStoreError('Key is not a session key');
     }
 
     if (keyData.type === 'session') {
@@ -98,7 +96,7 @@ export abstract class PrivateKeyStore {
         await recipientCertificate.getPublicKey(),
       );
       if (recipientPublicKeyDigest !== keyData.recipientPublicKeyDigest) {
-        throw new PrivateKeyStoreError(`Key ${keyIdHex} is bound to another recipient`);
+        throw new PrivateKeyStoreError('Key is bound to another recipient');
       }
     }
 
@@ -131,15 +129,13 @@ export abstract class PrivateKeyStore {
   public async saveSubsequentSessionKey(
     privateKey: CryptoKey,
     keyId: Buffer,
-    recipientCertificate?: Certificate,
+    recipientCertificate: Certificate,
   ): Promise<void> {
-    // TODO: FIX!
-    // @ts-ignore
-    const privateKeyData: PrivateKeyData = {
+    const privateKeyData: BoundPrivateKeyData = {
       keyDer: await derSerializePrivateKey(privateKey),
-      recipientPublicKeyDigest: recipientCertificate
-        ? await getPublicKeyDigestHex(await recipientCertificate.getPublicKey())
-        : undefined,
+      recipientPublicKeyDigest: await getPublicKeyDigestHex(
+        await recipientCertificate.getPublicKey(),
+      ),
       type: 'session',
     };
     await this.saveKeyOrThrowError(privateKeyData, keyId);
@@ -149,7 +145,8 @@ export abstract class PrivateKeyStore {
 
   protected abstract async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void>;
 
-  private async fetchKeyOrThrowError(keyIdHex: string): Promise<PrivateKeyData> {
+  private async fetchKeyOrThrowError(keyId: Buffer): Promise<PrivateKeyData> {
+    const keyIdHex = keyId.toString('hex');
     try {
       return await this.fetchKey(keyIdHex);
     } catch (error) {
