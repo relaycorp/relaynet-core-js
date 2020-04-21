@@ -184,9 +184,9 @@ describe('PrivateKeyStore', () => {
           const store = new MockPrivateKeyStore();
           await store.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
 
-          await expect(
-            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
-          ).rejects.toEqual(new PrivateKeyStoreError('Key is not an initial session key'));
+          await expect(store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
+            new PrivateKeyStoreError('Key is not an initial session key'),
+          );
         });
 
         test('Subsequent session keys should not be returned', async () => {
@@ -197,9 +197,9 @@ describe('PrivateKeyStore', () => {
             await generateStubCert(),
           );
 
-          await expect(
-            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
-          ).rejects.toEqual(new PrivateKeyStoreError('Key is not an initial session key'));
+          await expect(store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
+            new PrivateKeyStoreError('Key is not an initial session key'),
+          );
         });
 
         test('Errors should be wrapped', async () => {
