@@ -1,5 +1,5 @@
 // tslint:disable:no-let
-import { expectPromiseToReject, generateStubCert, sha256Hex } from './_test_utils';
+import { expectPromiseToReject, generateStubCert } from './_test_utils';
 import * as keys from './crypto_wrappers/keys';
 import Certificate from './crypto_wrappers/x509/Certificate';
 import {
@@ -10,8 +10,6 @@ import {
   UnboundPrivateKeyData,
 } from './privateKeyStore';
 
-// TODO: Replace base64 with hex encoding
-
 class MockPrivateKeyStore extends PrivateKeyStore {
   // tslint:disable-next-line:readonly-keyword
   public readonly keys: { [key: string]: PrivateKeyData } = {};
@@ -20,19 +18,13 @@ class MockPrivateKeyStore extends PrivateKeyStore {
     super();
   }
 
-  // TODO: REMOVE
-  public registerStubKey(keyId: Buffer, privateKeyData: PrivateKeyData): void {
-    // tslint:disable-next-line:no-object-mutation
-    this.keys[keyId.toString('base64')] = privateKeyData;
-  }
-
   public async registerNodeKey(privateKey: CryptoKey, certificate: Certificate): Promise<void> {
     // tslint:disable-next-line:no-object-mutation
     this.keys[certificate.getSerialNumberHex()] = {
       certificateDer: Buffer.from(certificate.serialize()),
       keyDer: await keys.derSerializePrivateKey(privateKey),
       type: 'node',
-    } as UnboundPrivateKeyData;
+    };
   }
 
   public async registerInitialSessionKey(
@@ -44,19 +36,22 @@ class MockPrivateKeyStore extends PrivateKeyStore {
       certificateDer: Buffer.from(certificate.serialize()),
       keyDer: await keys.derSerializePrivateKey(privateKey),
       type: 'session-initial',
-    } as UnboundPrivateKeyData;
+    };
   }
 
   public async registerSubsequentSessionKey(
     privateKey: CryptoKey,
-    certificate: Certificate,
+    keyId: string,
+    recipientCertificate: Certificate,
   ): Promise<void> {
     // tslint:disable-next-line:no-object-mutation
-    this.keys[certificate.getSerialNumberHex()] = {
+    this.keys[keyId] = {
       keyDer: await keys.derSerializePrivateKey(privateKey),
-      recipientPublicKeyDigest: await sha256Hex(await certificate.getPublicKey()),
+      recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
+        await recipientCertificate.getPublicKey(),
+      ),
       type: 'session',
-    } as BoundPrivateKeyData;
+    };
   }
 
   protected async fetchKey(keyId: string): Promise<PrivateKeyData> {
@@ -76,21 +71,8 @@ class MockPrivateKeyStore extends PrivateKeyStore {
 }
 
 describe('PrivateKeyStore', () => {
-  const stubKeyId = Buffer.from([1, 3, 5, 7, 9]); // TODO: DELETE
-  const stubKeyIdBase64 = stubKeyId.toString('base64'); // TODO: DELETE
-  const KEY_ID_HEX = 'abcdef012';
   let stubPrivateKey: CryptoKey;
   let stubCertificate: Certificate;
-
-  const stubPrivateKeyDer = Buffer.from('DER-encoded private key');
-  const mockDerSerialize = jest.spyOn(keys, 'derSerializePrivateKey');
-  beforeEach(() => {
-    mockDerSerialize.mockReset();
-    mockDerSerialize.mockResolvedValueOnce(stubPrivateKeyDer);
-  });
-  afterAll(() => {
-    mockDerSerialize.mockRestore();
-  });
 
   describe('Node keys', () => {
     beforeAll(async () => {
@@ -108,7 +90,6 @@ describe('PrivateKeyStore', () => {
         const keyPair = await store.fetchNodeKey(stubCertificate.getSerialNumberHex());
 
         expect(keyPair).toHaveProperty('privateKey', stubPrivateKey);
-
         expect(stubCertificate.isEqual(keyPair.certificate)).toBeTrue();
       });
 
@@ -127,7 +108,9 @@ describe('PrivateKeyStore', () => {
 
         await expectPromiseToReject(
           store.fetchNodeKey(stubCertificate.getSerialNumberHex()),
-          new PrivateKeyStoreError(`Failed to retrieve key: Unknown key ${stubKeyIdBase64}`),
+          new PrivateKeyStoreError(
+            `Failed to retrieve key: Unknown key ${stubCertificate.getSerialNumberHex()}`,
+          ),
         );
       });
     });
@@ -138,12 +121,12 @@ describe('PrivateKeyStore', () => {
 
         await store.saveNodeKey(stubPrivateKey, stubCertificate);
 
-        expect(store.keys).toHaveProperty(stubCertificate.getSerialNumberHex());
-        const keyDatum = store.keys[stubCertificate.getSerialNumberHex()];
-        expect(keyDatum).toHaveProperty('keyDer', stubPrivateKeyDer);
-        expect(keyDatum).toHaveProperty('certificateDer', Buffer.from(stubCertificate.serialize()));
-        expect(keyDatum).toHaveProperty('type', 'node');
-        expect(keyDatum).not.toHaveProperty('recipientPublicKeyDigest');
+        const expectedKey: UnboundPrivateKeyData = {
+          certificateDer: Buffer.from(stubCertificate.serialize()),
+          keyDer: await keys.derSerializePrivateKey(stubPrivateKey),
+          type: 'node',
+        };
+        expect(store.keys[stubCertificate.getSerialNumberHex()]).toEqual(expectedKey);
       });
 
       test('Key ids should be hex-encoded', async () => {
@@ -170,7 +153,7 @@ describe('PrivateKeyStore', () => {
       const keyPair = await keys.generateECDHKeyPair();
       stubPrivateKey = keyPair.privateKey;
 
-      stubCertificate = await generateStubCert();
+      stubCertificate = await generateStubCert(); // TODO: MOVE INTO INITIAL SESSION KEYS
     });
 
     let stubRecipientCertificate: Certificate;
@@ -182,73 +165,134 @@ describe('PrivateKeyStore', () => {
       });
     });
 
-    const mockDerDeserialize = jest.spyOn(keys, 'derDeserializeECDHPrivateKey');
-    beforeEach(() => {
-      mockDerDeserialize.mockResolvedValueOnce(stubPrivateKey);
-    });
-    afterAll(() => {
-      mockDerDeserialize.mockRestore();
-    });
+    describe('Initial session keys', () => {
+      describe('fetchInitialSessionKey', () => {
+        test('Existing key pair should be returned', async () => {
+          const store = new MockPrivateKeyStore();
+          await store.registerInitialSessionKey(stubPrivateKey, stubCertificate);
 
-    // TODO: REMOVE
-    const stubInitialSessionKeyData: UnboundPrivateKeyData = {
-      certificateDer: Buffer.from('cert'),
-      keyDer: Buffer.from('private key'),
-      type: 'session-initial' as const,
-    };
-    let stubSubsequentSessionKeyData: BoundPrivateKeyData;
-    beforeAll(async () => {
-      // TODO: REMOVE
-      stubSubsequentSessionKeyData = {
-        ...stubInitialSessionKeyData,
-        recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
-          await stubRecipientCertificate.getPublicKey(),
-        ),
-        type: 'session',
-      };
+          const keyPair = await store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex());
+
+          expect(await keys.derSerializePrivateKey(keyPair.privateKey)).toEqual(
+            await keys.derSerializePrivateKey(stubPrivateKey),
+          );
+          expect(stubCertificate.isEqual(keyPair.certificate)).toBeTrue();
+        });
+
+        test('Node keys should not be returned', async () => {
+          const store = new MockPrivateKeyStore();
+          await store.registerNodeKey(stubPrivateKey, stubCertificate);
+
+          await expect(
+            store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex()),
+          ).rejects.toEqual(
+            new PrivateKeyStoreError(
+              `Key ${stubCertificate.getSerialNumberHex()} is not an initial session key`,
+            ),
+          );
+        });
+
+        test('Subsequent session keys should not be returned', async () => {
+          const store = new MockPrivateKeyStore();
+          await store.registerSubsequentSessionKey(
+            stubPrivateKey,
+            stubCertificate.getSerialNumberHex(),
+            await generateStubCert(),
+          );
+
+          await expect(
+            store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex()),
+          ).rejects.toEqual(
+            new PrivateKeyStoreError(
+              `Key ${stubCertificate.getSerialNumberHex()} is not an initial session key`,
+            ),
+          );
+        });
+
+        test('Errors should be wrapped', async () => {
+          const store = new MockPrivateKeyStore();
+
+          await expectPromiseToReject(
+            store.fetchInitialSessionKey(stubCertificate.getSerialNumberHex()),
+            new PrivateKeyStoreError(
+              `Failed to retrieve key: Unknown key ${stubCertificate.getSerialNumberHex()}`,
+            ),
+          );
+        });
+      });
+
+      describe('saveInitialSessionKey', () => {
+        test('Unbound key should be stored', async () => {
+          const store = new MockPrivateKeyStore();
+
+          await store.saveInitialSessionKey(stubPrivateKey, stubCertificate);
+
+          const expectedKey: UnboundPrivateKeyData = {
+            certificateDer: Buffer.from(await stubCertificate.serialize()),
+            keyDer: await keys.derSerializePrivateKey(stubPrivateKey),
+            type: 'session-initial',
+          };
+          expect(store.keys[stubCertificate.getSerialNumberHex()]).toEqual(expectedKey);
+        });
+
+        test('Errors should be wrapped', async () => {
+          const store = new MockPrivateKeyStore(true);
+
+          await expectPromiseToReject(
+            store.saveInitialSessionKey(stubPrivateKey, stubCertificate),
+            new PrivateKeyStoreError(`Failed to save key: Denied`),
+          );
+        });
+      });
     });
 
     describe('fetchSessionKey', () => {
-      test('Existing, unbound key should be returned', async () => {
+      test('Initial session keys should be returned', async () => {
         const store = new MockPrivateKeyStore();
-        store.registerStubKey(stubKeyId, stubInitialSessionKeyData);
+        await store.registerInitialSessionKey(stubPrivateKey, stubCertificate);
 
-        const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientCertificate);
+        const privateKeyData = await store.fetchSessionKey(
+          stubCertificate.getSerialNumberHex(),
+          stubRecipientCertificate,
+        );
 
-        expect(privateKeyData).toBe(stubPrivateKey);
-
-        expect(mockDerDeserialize).toBeCalledTimes(1);
-        expect(mockDerDeserialize).toBeCalledWith(stubInitialSessionKeyData.keyDer, 'P-256');
+        expect(await keys.derSerializePrivateKey(privateKeyData)).toEqual(
+          await keys.derSerializePrivateKey(stubPrivateKey),
+        );
       });
 
-      test('Existing, bound key should be returned', async () => {
+      test('Subsequent session keys should be returned', async () => {
         const store = new MockPrivateKeyStore();
-        store.registerStubKey(stubKeyId, stubSubsequentSessionKeyData);
+        await store.registerSubsequentSessionKey(
+          stubPrivateKey,
+          stubCertificate.getSerialNumberHex(),
+          stubRecipientCertificate,
+        );
 
-        const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientCertificate);
+        const privateKeyData = await store.fetchSessionKey(
+          stubCertificate.getSerialNumberHex(),
+          stubRecipientCertificate,
+        );
 
-        expect(privateKeyData).toBe(stubPrivateKey);
-      });
-
-      test('Key ids should be base64-encoded', async () => {
-        const store = new MockPrivateKeyStore();
-        store.registerStubKey(stubKeyId, stubSubsequentSessionKeyData);
-
-        const privateKeyData = await store.fetchSessionKey(stubKeyId, stubRecipientCertificate);
-
-        expect(privateKeyData).toBe(stubPrivateKey);
+        expect(await keys.derSerializePrivateKey(privateKeyData)).toEqual(
+          await keys.derSerializePrivateKey(stubPrivateKey),
+        );
       });
 
       test('Keys bound to another recipient should not be returned', async () => {
         const store = new MockPrivateKeyStore();
-        store.registerStubKey(stubKeyId, {
-          ...stubSubsequentSessionKeyData,
-          recipientPublicKeyDigest: `not ${stubSubsequentSessionKeyData.recipientPublicKeyDigest}`,
-        });
+        await store.registerSubsequentSessionKey(
+          stubPrivateKey,
+          stubCertificate.getSerialNumberHex(),
+          stubRecipientCertificate,
+        );
 
+        const differentRecipientCert = await generateStubCert();
         await expectPromiseToReject(
-          store.fetchSessionKey(stubKeyId, stubRecipientCertificate),
-          new PrivateKeyStoreError(`Key ${stubKeyId} is bound to another recipient`),
+          store.fetchSessionKey(stubCertificate.getSerialNumberHex(), differentRecipientCert),
+          new PrivateKeyStoreError(
+            `Key ${stubCertificate.getSerialNumberHex()} is bound to another recipient`,
+          ),
         );
       });
 
@@ -256,9 +300,12 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore();
         await store.registerNodeKey(stubPrivateKey, stubCertificate);
 
-        await expectPromiseToReject(
-          store.fetchSessionKey(stubKeyId, stubRecipientCertificate),
-          new PrivateKeyStoreError(`Key ${stubKeyId} is not a session key`),
+        await expect(
+          store.fetchSessionKey(stubCertificate.getSerialNumberHex(), stubRecipientCertificate),
+        ).rejects.toEqual(
+          new PrivateKeyStoreError(
+            `Key ${stubCertificate.getSerialNumberHex()} is not a session key`,
+          ),
         );
       });
 
@@ -266,53 +313,47 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore();
 
         await expectPromiseToReject(
-          store.fetchSessionKey(stubKeyId, stubRecipientCertificate),
-          new PrivateKeyStoreError(`Failed to retrieve key: Unknown key ${stubKeyIdBase64}`),
+          store.fetchSessionKey(stubCertificate.getSerialNumberHex(), stubRecipientCertificate),
+          new PrivateKeyStoreError(
+            `Failed to retrieve key: Unknown key ${stubCertificate.getSerialNumberHex()}`,
+          ),
         );
       });
     });
 
-    describe('saveSessionKey', () => {
-      test('Unbound key should be stored', async () => {
-        const store = new MockPrivateKeyStore();
+    describe('Subsequent session keys', () => {
+      describe('saveSubsequentSessionKey', () => {
+        test('Bound key should be stored', async () => {
+          const store = new MockPrivateKeyStore();
 
-        await store.saveSessionKey(stubPrivateKey, stubKeyId);
+          await store.saveSubsequentSessionKey(
+            stubPrivateKey,
+            stubCertificate.getSerialNumber(),
+            stubRecipientCertificate,
+          );
 
-        expect(store.keys).toHaveProperty(stubKeyIdBase64);
-        expect(store.keys[stubKeyIdBase64]).toHaveProperty('keyDer', stubPrivateKeyDer);
-        expect(store.keys[stubKeyIdBase64]).toHaveProperty('type', 'session');
-        expect(store.keys[stubKeyIdBase64]).toHaveProperty('recipientPublicKeyDigest', undefined);
-      });
+          const expectedKey: BoundPrivateKeyData = {
+            keyDer: await keys.derSerializePrivateKey(stubPrivateKey),
+            recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
+              await stubRecipientCertificate.getPublicKey(),
+            ),
+            type: 'session',
+          };
+          expect(store.keys[stubCertificate.getSerialNumberHex()]).toEqual(expectedKey);
+        });
 
-      test('Bound key should be stored', async () => {
-        const store = new MockPrivateKeyStore();
+        test('Errors should be wrapped', async () => {
+          const store = new MockPrivateKeyStore(true);
 
-        await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientCertificate);
-
-        expect(store.keys).toHaveProperty(stubKeyIdBase64);
-        expect(store.keys[stubKeyIdBase64]).toHaveProperty('keyDer', stubPrivateKeyDer);
-        expect(store.keys[stubKeyIdBase64]).toHaveProperty('type', 'session');
-        expect(store.keys[stubKeyIdBase64]).toHaveProperty(
-          'recipientPublicKeyDigest',
-          await keys.getPublicKeyDigestHex(await stubRecipientCertificate.getPublicKey()),
-        );
-      });
-
-      test('Key ids should be base64-encoded', async () => {
-        const store = new MockPrivateKeyStore();
-
-        await store.saveSessionKey(stubPrivateKey, stubKeyId, stubRecipientCertificate);
-
-        expect(store.keys).toHaveProperty(stubKeyIdBase64);
-      });
-
-      test('Errors should be wrapped', async () => {
-        const store = new MockPrivateKeyStore(true);
-
-        await expectPromiseToReject(
-          store.saveSessionKey(stubPrivateKey, stubKeyId),
-          new PrivateKeyStoreError(`Failed to save key: Denied`),
-        );
+          await expectPromiseToReject(
+            store.saveSubsequentSessionKey(
+              stubPrivateKey,
+              stubCertificate.getSerialNumber(),
+              stubRecipientCertificate,
+            ),
+            new PrivateKeyStoreError(`Failed to save key: Denied`),
+          );
+        });
       });
     });
   });

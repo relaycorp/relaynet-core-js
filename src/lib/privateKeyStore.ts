@@ -1,4 +1,7 @@
 /* tslint:disable:max-classes-per-file */
+
+import bufferToArray from 'buffer-to-arraybuffer';
+
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeRSAPrivateKey,
@@ -43,6 +46,7 @@ export interface UnboundKeyPair {
 }
 
 export abstract class PrivateKeyStore {
+  // TODO: Do lookup by key id (as buffer)
   public async fetchNodeKey(keyIdHex: string): Promise<UnboundKeyPair> {
     const keyData = await this.fetchKeyOrThrowError(keyIdHex);
 
@@ -54,20 +58,42 @@ export abstract class PrivateKeyStore {
       hash: { name: 'SHA-256' },
       name: 'RSA-PSS',
     });
-    return { certificate: undefined as any, privateKey };
+    return {
+      certificate: Certificate.deserialize(bufferToArray(keyData.certificateDer)),
+      privateKey,
+    };
   }
 
+  // TODO: Do lookup by key id (as buffer)
+  public async fetchInitialSessionKey(keyIdHex: string): Promise<UnboundKeyPair> {
+    const keyData = await this.fetchKeyOrThrowError(keyIdHex);
+
+    if (keyData.type !== 'session-initial') {
+      throw new PrivateKeyStoreError(`Key ${keyIdHex} is not an initial session key`);
+    }
+
+    return {
+      certificate: Certificate.deserialize(bufferToArray(keyData.certificateDer)),
+      privateKey: await derDeserializeECDHPrivateKey(keyData.keyDer, 'P-256'),
+    };
+  }
+
+  /**
+   * Retrieve session key, regardless of whether it's an initial key or not.
+   * @param keyIdHex
+   * @param recipientCertificate
+   */
   public async fetchSessionKey(
-    keyIdHex: string,
+    keyIdHex: string, // TODO: Do lookup by key id (as buffer)
     recipientCertificate: Certificate,
   ): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyIdHex);
 
-    if (keyData.type !== 'session') {
+    if (keyData.type === 'node') {
       throw new PrivateKeyStoreError(`Key ${keyIdHex} is not a session key`);
     }
 
-    if (keyData.recipientPublicKeyDigest) {
+    if (keyData.type === 'session') {
       const recipientPublicKeyDigest = await getPublicKeyDigestHex(
         await recipientCertificate.getPublicKey(),
       );
@@ -89,7 +115,20 @@ export abstract class PrivateKeyStore {
     await this.saveKeyOrThrowError(privateKeyData, certificate.getSerialNumber());
   }
 
-  public async saveSessionKey(
+  public async saveInitialSessionKey(
+    privateKey: CryptoKey,
+    certificate: Certificate,
+  ): Promise<void> {
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    const privateKeyData: UnboundPrivateKeyData = {
+      certificateDer: Buffer.from(certificate.serialize()),
+      keyDer: privateKeyDer,
+      type: 'session-initial',
+    };
+    await this.saveKeyOrThrowError(privateKeyData, certificate.getSerialNumber());
+  }
+
+  public async saveSubsequentSessionKey(
     privateKey: CryptoKey,
     keyId: Buffer,
     recipientCertificate?: Certificate,

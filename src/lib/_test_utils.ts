@@ -56,6 +56,11 @@ export function sha256Hex(plaintext: ArrayBuffer | Buffer): string {
     .digest('hex');
 }
 
+/**
+ * @deprecated Use `await expect(promise).rejects.toEqual(value)` instead
+ * @param promise
+ * @param expectedError
+ */
 export async function expectPromiseToReject(
   promise: Promise<any>,
   expectedError: Error,
