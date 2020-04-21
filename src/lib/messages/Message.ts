@@ -112,7 +112,7 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
     const privateKey =
       payloadEnvelopedData instanceof SessionEnvelopedData
         ? await keyStore.fetchSessionKey(keyId, this.senderCertificate)
-        : await keyStore.fetchNodeKey(keyId);
+        : (await keyStore.fetchNodeKey(keyId)).privateKey;
     return payloadEnvelopedData.decrypt(privateKey);
   }
 
