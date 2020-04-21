@@ -25,7 +25,7 @@ export {
   generateECDHKeyPair,
   generateRSAKeyPair,
 } from './lib/crypto_wrappers/keys';
-export { PrivateKeyStore, PrivateKeyStoreError, PrivateKeyData } from './lib/privateKeyStore';
+export * from './lib/privateKeyStore';
 
 export * from './lib/cargoRelay';
 
