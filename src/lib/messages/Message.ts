@@ -8,7 +8,7 @@ import {
 } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { PrivateKeyStore } from '../privateKeyStore';
+import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import InvalidMessageError from './InvalidMessageError';
 import PayloadPlaintext from './payloads/PayloadPlaintext';
 

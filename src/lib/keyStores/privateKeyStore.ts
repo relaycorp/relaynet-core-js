@@ -7,9 +7,9 @@ import {
   derDeserializeRSAPrivateKey,
   derSerializePrivateKey,
   getPublicKeyDigestHex,
-} from './crypto_wrappers/keys';
-import Certificate from './crypto_wrappers/x509/Certificate';
-import RelaynetError from './RelaynetError';
+} from '../crypto_wrappers/keys';
+import Certificate from '../crypto_wrappers/x509/Certificate';
+import RelaynetError from '../RelaynetError';
 
 export interface BasePrivateKeyData {
   readonly keyDer: Buffer;

@@ -1,8 +1,8 @@
 // tslint:disable:no-let
 
-import { expectPromiseToReject, generateStubCert } from './_test_utils';
-import * as keys from './crypto_wrappers/keys';
-import Certificate from './crypto_wrappers/x509/Certificate';
+import { expectPromiseToReject, generateStubCert } from '../_test_utils';
+import * as keys from '../crypto_wrappers/keys';
+import Certificate from '../crypto_wrappers/x509/Certificate';
 import {
   BoundPrivateKeyData,
   PrivateKeyData,
