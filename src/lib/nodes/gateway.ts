@@ -31,10 +31,15 @@ export class Gateway extends BaseNode {
       const creationDate = new Date();
       creationDate.setMilliseconds(0);
       const ttl = Math.floor((expiryDate.getTime() - creationDate.getTime()) / 1_000);
-      const cargo = new Cargo('the-address', certificate, cargoPayload, {
-        date: creationDate,
-        ttl,
-      });
+      const cargo = new Cargo(
+        await recipientCertificate.calculateSubjectPrivateAddress(),
+        certificate,
+        cargoPayload,
+        {
+          date: creationDate,
+          ttl,
+        },
+      );
       yield Buffer.from(await cargo.serialize(privateKey, this.cryptoOptions.signature));
     }
   }

@@ -59,6 +59,23 @@ describe('Gateway', () => {
       });
     });
 
+    test('Cargo recipient should be private address', async () => {
+      const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+
+      const cargoesSerialized = await asyncIterableToArray(
+        gateway.generateCargoes(
+          arrayToAsyncIterable([{ message: MESSAGE, expiryDate: TOMORROW }]),
+          RECIPIENT_CERTIFICATE,
+          CERTIFICATE.getSerialNumber(),
+        ),
+      );
+
+      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
+      expect(cargo.recipientAddress).toEqual(
+        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
+      );
+    });
+
     test('Payload should be encrypted with recipient certificate if there is no existing session', async () => {
       const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
 
