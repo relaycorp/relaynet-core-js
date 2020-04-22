@@ -1,6 +1,7 @@
 import { EncryptionOptions } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import { PrivateKeyStore } from '../keyStores/privateKeyStore';
+import { PublicKeyStore } from '../keyStores/publicKeyStore';
 
 export interface CurrentNodeKeyIds {
   readonly longTermKeyId: Buffer;
@@ -14,7 +15,8 @@ export interface NodeOptions {
 
 export abstract class BaseNode {
   constructor(
-    protected keyStore: PrivateKeyStore,
+    protected privateKeyStore: PrivateKeyStore,
+    protected publicKeyStore: PublicKeyStore,
     protected cryptoOptions: Partial<NodeOptions> = {},
   ) {}
 }
