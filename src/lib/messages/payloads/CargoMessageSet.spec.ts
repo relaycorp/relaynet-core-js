@@ -16,7 +16,7 @@ import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
 import Cargo from '../Cargo';
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
-import CargoMessageSet from './CargoMessageSet';
+import CargoMessageSet, { MessageWithExpiryDate } from './CargoMessageSet';
 
 const STUB_MESSAGE = arrayBufferFrom('hiya');
 
@@ -91,6 +91,8 @@ describe('CargoMessageSet', () => {
   });
 
   describe('batchMessagesSerialized', () => {
+    const EXPIRY_DATE = new Date();
+
     test('Zero messages should result in zero batches', async () => {
       const messages = arrayToAsyncIterable([]);
 
@@ -100,51 +102,53 @@ describe('CargoMessageSet', () => {
     });
 
     test('A single message should result in one batch', async () => {
-      const messagesSerialized: readonly ArrayBuffer[] = [arrayBufferFrom('I am a parcel.')];
-      const messages = arrayToAsyncIterable(messagesSerialized);
+      const messageSerialized = arrayBufferFrom('I am a parcel.');
+      const messages = arrayToAsyncIterable([{ messageSerialized, expiryDate: EXPIRY_DATE }]);
 
       const batches = await asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages));
 
       expect(batches).toHaveLength(1);
-      const messageSet = CargoMessageSet.deserialize(batches[0]);
-      expect(messageSet.messages).toEqual(new Set(messagesSerialized));
+      const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
+      expect(messageSet.messages).toEqual(new Set([messageSerialized]));
     });
 
     test('Multiple small messages should be put in the same batch', async () => {
-      const messagesSerialized: readonly ArrayBuffer[] = [
-        arrayBufferFrom('I am a parcel.'),
-        arrayBufferFrom('And I am also a parcel.'),
+      const messagesSerialized: readonly MessageWithExpiryDate[] = [
+        { messageSerialized: arrayBufferFrom('I am a parcel.'), expiryDate: EXPIRY_DATE },
+        { messageSerialized: arrayBufferFrom('And I am also a parcel.'), expiryDate: EXPIRY_DATE },
       ];
       const messages = arrayToAsyncIterable(messagesSerialized);
 
       const batches = await asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages));
 
       expect(batches).toHaveLength(1);
-      const messageSet = CargoMessageSet.deserialize(batches[0]);
-      expect(messageSet.messages).toEqual(new Set(messagesSerialized));
+      const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
+      expect(messageSet.messages).toEqual(
+        new Set(messagesSerialized.map(m => m.messageSerialized)),
+      );
     });
 
     test('Messages should be put into as few batches as possible', async () => {
       const octetsIn3Mib = 3145728;
       const messageSerialized = arrayBufferFrom('a'.repeat(octetsIn3Mib));
       const messages = arrayToAsyncIterable([
-        messageSerialized,
-        messageSerialized,
-        messageSerialized,
+        { messageSerialized, expiryDate: EXPIRY_DATE },
+        { messageSerialized, expiryDate: EXPIRY_DATE },
+        { messageSerialized, expiryDate: EXPIRY_DATE },
       ]);
 
       const batches = await asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages));
 
       expect(batches).toHaveLength(2);
-      const messageSet1 = CargoMessageSet.deserialize(batches[0]);
+      const messageSet1 = CargoMessageSet.deserialize(batches[0].messageSerialized);
       expect(messageSet1.messages).toEqual(new Set([messageSerialized, messageSerialized]));
-      const messageSet2 = CargoMessageSet.deserialize(batches[1]);
+      const messageSet2 = CargoMessageSet.deserialize(batches[1].messageSerialized);
       expect(messageSet2.messages).toEqual(new Set([messageSerialized]));
     });
 
     test('Messages exceeding the max per-message size should be refused', async () => {
       const messageSerialized = arrayBufferFrom('a'.repeat(CargoMessageSet.MAX_MESSAGE_LENGTH + 1));
-      const messages = arrayToAsyncIterable([messageSerialized]);
+      const messages = arrayToAsyncIterable([{ messageSerialized, expiryDate: EXPIRY_DATE }]);
 
       await expect(
         asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages)),
@@ -158,13 +162,13 @@ describe('CargoMessageSet', () => {
 
     test('A message with the largest possible length should be included', async () => {
       const messageSerialized = arrayBufferFrom('a'.repeat(CargoMessageSet.MAX_MESSAGE_LENGTH));
-      const messages = arrayToAsyncIterable([messageSerialized]);
+      const messages = arrayToAsyncIterable([{ messageSerialized, expiryDate: EXPIRY_DATE }]);
 
       const batches = await asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages));
 
       expect(batches).toHaveLength(1);
-      expect(batches[0].byteLength).toEqual(MAX_SDU_PLAINTEXT_LENGTH);
-      const messageSet = CargoMessageSet.deserialize(batches[0]);
+      expect(batches[0].messageSerialized.byteLength).toEqual(MAX_SDU_PLAINTEXT_LENGTH);
+      const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
       expect(messageSet.messages).toEqual(new Set([messageSerialized]));
     });
 
@@ -175,14 +179,38 @@ describe('CargoMessageSet', () => {
       const messageSerialized2 = arrayBufferFrom(
         'a'.repeat(Math.ceil(CargoMessageSet.MAX_MESSAGE_LENGTH / 2) - 3),
       );
-      const messages = arrayToAsyncIterable([messageSerialized1, messageSerialized2]);
+      const messages = arrayToAsyncIterable([
+        { messageSerialized: messageSerialized1, expiryDate: EXPIRY_DATE },
+        { messageSerialized: messageSerialized2, expiryDate: EXPIRY_DATE },
+      ]);
 
       const batches = await asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages));
 
       expect(batches).toHaveLength(1);
-      expect(batches[0].byteLength).toEqual(MAX_SDU_PLAINTEXT_LENGTH);
-      const messageSet = CargoMessageSet.deserialize(batches[0]);
+      expect(batches[0].messageSerialized.byteLength).toEqual(MAX_SDU_PLAINTEXT_LENGTH);
+      const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
       expect(messageSet.messages).toEqual(new Set([messageSerialized1, messageSerialized2]));
+    });
+
+    test('Expiry date of batch should be that of its message with latest expiry', async () => {
+      const octetsIn3Mib = 3145728;
+      const messageSerialized = arrayBufferFrom('a'.repeat(octetsIn3Mib));
+      const message1ExpiryDate = new Date(2017, 2, 1);
+      const message2ExpiryDate = new Date(2017, 1, 2);
+      const message3ExpiryDate = new Date(2017, 1, 3);
+      const message4ExpiryDate = new Date(2017, 1, 4);
+      const messages = arrayToAsyncIterable([
+        { messageSerialized, expiryDate: message1ExpiryDate },
+        { messageSerialized, expiryDate: message2ExpiryDate },
+        { messageSerialized, expiryDate: message3ExpiryDate },
+        { messageSerialized, expiryDate: message4ExpiryDate },
+      ]);
+
+      const batches = await asyncIterableToArray(CargoMessageSet.batchMessagesSerialized(messages));
+
+      expect(batches).toHaveLength(2);
+      expect(batches[0].expiryDate).toEqual(message1ExpiryDate);
+      expect(batches[1].expiryDate).toEqual(message4ExpiryDate);
     });
   });
 

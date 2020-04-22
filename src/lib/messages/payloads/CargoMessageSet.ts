@@ -10,6 +10,11 @@ import PayloadPlaintext from './PayloadPlaintext';
  */
 const DER_TL_OVERHEAD_OCTETS = 5;
 
+export interface MessageWithExpiryDate {
+  readonly messageSerialized: ArrayBuffer;
+  readonly expiryDate: Date;
+}
+
 /**
  * Plaintext representation of the payload in a cargo message.
  *
@@ -36,14 +41,16 @@ export default class CargoMessageSet implements PayloadPlaintext {
   }
 
   public static async *batchMessagesSerialized(
-    messagesSerialized: AsyncIterable<ArrayBuffer>,
-  ): AsyncIterable<ArrayBuffer> {
+    messagesWithExpiryDate: AsyncIterable<MessageWithExpiryDate>,
+  ): AsyncIterable<MessageWithExpiryDate> {
     // tslint:disable-next-line:readonly-array no-let
     let currentBatch: Set<ArrayBuffer> = new Set([]);
+    // tslint:disable-next-line:no-let no-unnecessary-initializer
+    let currentBatchExpiryDate: Date | undefined = undefined;
     // tslint:disable-next-line:no-let
     let availableOctetsInCurrentBatch = MAX_SDU_PLAINTEXT_LENGTH - DER_TL_OVERHEAD_OCTETS;
 
-    for await (const messageSerialized of messagesSerialized) {
+    for await (const { messageSerialized, expiryDate } of messagesWithExpiryDate) {
       if (CargoMessageSet.MAX_MESSAGE_LENGTH < messageSerialized.byteLength) {
         throw new InvalidMessageError(
           `Cargo messages must not exceed ${CargoMessageSet.MAX_MESSAGE_LENGTH} octets ` +
@@ -51,23 +58,34 @@ export default class CargoMessageSet implements PayloadPlaintext {
         );
       }
 
+      currentBatchExpiryDate = currentBatchExpiryDate ?? expiryDate;
+
       const messageTlvLength = DER_TL_OVERHEAD_OCTETS + messageSerialized.byteLength;
       const messageFitsInCurrentBatch = messageTlvLength <= availableOctetsInCurrentBatch;
       if (messageFitsInCurrentBatch) {
         currentBatch.add(messageSerialized);
+        currentBatchExpiryDate =
+          currentBatchExpiryDate < expiryDate ? expiryDate : currentBatchExpiryDate;
         availableOctetsInCurrentBatch -= messageTlvLength;
       } else {
         const cargoMessageSet = new CargoMessageSet(currentBatch);
-        yield cargoMessageSet.serialize();
+        yield {
+          expiryDate: currentBatchExpiryDate,
+          messageSerialized: cargoMessageSet.serialize(),
+        };
 
         currentBatch = new Set([messageSerialized]);
+        currentBatchExpiryDate = expiryDate;
         availableOctetsInCurrentBatch = MAX_SDU_PLAINTEXT_LENGTH - messageTlvLength;
       }
     }
 
     if (currentBatch.size) {
       const cargoMessageSet = new CargoMessageSet(currentBatch);
-      yield cargoMessageSet.serialize();
+      yield {
+        expiryDate: currentBatchExpiryDate as Date,
+        messageSerialized: cargoMessageSet.serialize(),
+      };
     }
   }
 
