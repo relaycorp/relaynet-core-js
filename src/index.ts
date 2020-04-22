@@ -26,6 +26,8 @@ export {
   generateRSAKeyPair,
 } from './lib/crypto_wrappers/keys';
 export * from './lib/keyStores/privateKeyStore';
+export * from './lib/keyStores/publicKeyStore';
+export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
 
 export * from './lib/cargoRelay';
 
