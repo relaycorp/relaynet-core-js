@@ -1,12 +1,12 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { BaseNode, CurrentNodeKeyIds } from './baseNode';
+import { BaseNode } from './baseNode';
 
 export class Gateway extends BaseNode {
   public async *generateCargoes(
-    _messages: AsyncIterableIterator<Buffer>,
+    _messages: AsyncIterable<Buffer>,
     _recipientCertificate: Certificate,
-    _currentKeys: CurrentNodeKeyIds,
-  ): AsyncIterableIterator<Buffer> {
+    _currentKeyId: Buffer,
+  ): AsyncIterable<Buffer> {
     throw new Error('Implement!!');
   }
 }

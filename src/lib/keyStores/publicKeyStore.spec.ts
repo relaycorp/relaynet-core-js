@@ -3,35 +3,8 @@
 import { generateStubCert } from '../_test_utils';
 import { derSerializePublicKey, generateECDHKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { PublicKeyData, PublicKeyStore } from './publicKeyStore';
-
-class MockPublicKeyStore extends PublicKeyStore {
-  // tslint:disable-next-line:readonly-keyword
-  public readonly keys: { [key: string]: PublicKeyData } = {};
-
-  constructor(protected readonly failOnSave = false) {
-    super();
-  }
-
-  public registerKey(keyData: PublicKeyData, peerPrivateAddress: string): void {
-    this.keys[peerPrivateAddress] = keyData;
-  }
-
-  protected async fetchKey(peerPrivateAddress: string): Promise<PublicKeyData> {
-    const keyData = this.keys[peerPrivateAddress];
-    if (keyData === undefined) {
-      throw new Error(`Unknown key ${peerPrivateAddress}`);
-    }
-    return keyData;
-  }
-
-  protected async saveKey(keyData: PublicKeyData, peerPrivateAddress: string): Promise<void> {
-    if (this.failOnSave) {
-      throw new Error('Denied');
-    }
-    this.keys[peerPrivateAddress] = keyData;
-  }
-}
+import { MockPublicKeyStore } from './_testMocks';
+import { PublicKeyData } from './publicKeyStore';
 
 describe('PublicKeyStore', () => {
   const CREATION_DATE = new Date();

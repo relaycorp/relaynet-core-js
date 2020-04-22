@@ -3,11 +3,6 @@ import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import { PublicKeyStore } from '../keyStores/publicKeyStore';
 
-export interface CurrentNodeKeyIds {
-  readonly longTermKeyId: Buffer;
-  readonly initialSessionKeyId: Buffer;
-}
-
 export interface NodeOptions {
   readonly encryption: EncryptionOptions;
   readonly signature: SignatureOptions;
