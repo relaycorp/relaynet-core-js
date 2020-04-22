@@ -4,8 +4,8 @@ import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import { PublicKeyStore } from '../keyStores/publicKeyStore';
 
 export interface NodeOptions {
-  readonly encryption: EncryptionOptions;
-  readonly signature: SignatureOptions;
+  readonly encryption: Partial<EncryptionOptions>;
+  readonly signature: Partial<SignatureOptions>;
 }
 
 export abstract class BaseNode {
