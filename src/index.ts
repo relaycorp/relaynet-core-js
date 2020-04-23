@@ -25,7 +25,9 @@ export {
   generateECDHKeyPair,
   generateRSAKeyPair,
 } from './lib/crypto_wrappers/keys';
-export * from './lib/privateKeyStore';
+export * from './lib/keyStores/privateKeyStore';
+export * from './lib/keyStores/publicKeyStore';
+export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
 
 export * from './lib/cargoRelay';
 
@@ -50,5 +52,8 @@ export { CargoCollectionAuthorization } from './lib/messages/CargoCollectionAuth
 export { default as CargoMessageSet } from './lib/messages/payloads/CargoMessageSet';
 export { default as InvalidMessageError } from './lib/messages/InvalidMessageError';
 export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
+
+// Nodes
+export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 
 //endregion

@@ -14,8 +14,8 @@ import {
 } from '../crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import { issueInitialDHKeyCertificate } from '../pki';
-import { PrivateKeyStore } from '../privateKeyStore';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
 

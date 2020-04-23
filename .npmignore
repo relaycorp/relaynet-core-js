@@ -6,6 +6,7 @@ build/docs
 jest.*.js
 **/*.spec.*
 _test_utils.*
+_testMocks.*
 coverage/
 build/*/integration_tests/**
 

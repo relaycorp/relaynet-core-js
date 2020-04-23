@@ -7,9 +7,9 @@ import {
   derDeserializeRSAPrivateKey,
   derSerializePrivateKey,
   getPublicKeyDigestHex,
-} from './crypto_wrappers/keys';
-import Certificate from './crypto_wrappers/x509/Certificate';
-import RelaynetError from './RelaynetError';
+} from '../crypto_wrappers/keys';
+import Certificate from '../crypto_wrappers/x509/Certificate';
+import RelaynetError from '../RelaynetError';
 
 export interface BasePrivateKeyData {
   readonly keyDer: Buffer;
@@ -33,6 +33,8 @@ export interface UnboundPrivateKeyData extends BasePrivateKeyData {
  */
 export interface BoundPrivateKeyData extends BasePrivateKeyData {
   readonly type: 'session-subsequent';
+
+  // TODO: This should be the recipient address instead as it includes the type of public key
   readonly recipientPublicKeyDigest: string;
 }
 
@@ -77,7 +79,7 @@ export abstract class PrivateKeyStore {
   }
 
   /**
-   * Retrieve session key, regardless of whether it's an initial key or not.
+   * Retrieve private session key, regardless of whether it's an initial key or not.
    * @param keyId
    * @param recipientCertificate
    */

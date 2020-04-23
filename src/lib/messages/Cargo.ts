@@ -22,7 +22,7 @@ export default class Cargo extends Message<CargoMessageSet> {
 
   public async serialize(
     senderPrivateKey: CryptoKey,
-    signatureOptions?: SignatureOptions,
+    signatureOptions?: Partial<SignatureOptions>,
   ): Promise<ArrayBuffer> {
     return serialization.serialize(
       this,
