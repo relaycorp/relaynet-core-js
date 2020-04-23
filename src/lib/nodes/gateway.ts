@@ -27,17 +27,16 @@ export class Gateway extends BaseNode {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
-      const cargoPayload = await this.encryptPayload(messageSerialized, recipientCertificate);
       const creationDate = new Date();
       creationDate.setMilliseconds(0);
-      const ttl = Math.floor((expiryDate.getTime() - creationDate.getTime()) / 1_000);
       const cargo = new Cargo(
         await recipientCertificate.calculateSubjectPrivateAddress(),
         certificate,
-        cargoPayload,
-        { date: creationDate, ttl },
+        await this.encryptPayload(messageSerialized, recipientCertificate),
+        { date: creationDate, ttl: getSecondsBetweenDates(creationDate, expiryDate) },
       );
-      yield Buffer.from(await cargo.serialize(privateKey, this.cryptoOptions.signature));
+      const cargoSerialized = await cargo.serialize(privateKey, this.cryptoOptions.signature);
+      yield Buffer.from(cargoSerialized);
     }
   }
 
@@ -46,13 +45,7 @@ export class Gateway extends BaseNode {
     payloadPlaintext: ArrayBuffer,
     recipientCertificate: Certificate,
   ): Promise<Buffer> {
-    // tslint:disable-next-line:no-let
-    let sessionKey: OriginatorSessionKey | undefined;
-    try {
-      sessionKey = await this.publicKeyStore.fetchLastSessionKey(recipientCertificate);
-    } catch (_) {
-      sessionKey = undefined;
-    }
+    const sessionKey = await this.fetchSessionKeyForRecipient(recipientCertificate);
 
     // tslint:disable-next-line:no-let
     let envelopedData: EnvelopedData;
@@ -77,6 +70,16 @@ export class Gateway extends BaseNode {
     }
     return Buffer.from(envelopedData.serialize());
   }
+
+  private async fetchSessionKeyForRecipient(
+    recipientCertificate: Certificate,
+  ): Promise<OriginatorSessionKey | undefined> {
+    try {
+      return await this.publicKeyStore.fetchLastSessionKey(recipientCertificate);
+    } catch (_) {
+      return undefined;
+    }
+  }
 }
 
 async function* convertBufferMessagesToArrayBuffer(
@@ -85,4 +88,8 @@ async function* convertBufferMessagesToArrayBuffer(
   for await (const { message, expiryDate } of messages) {
     yield { expiryDate, messageSerialized: bufferToArray(message) };
   }
+}
+
+function getSecondsBetweenDates(date: Date, expiryDate: Date): number {
+  return Math.floor((expiryDate.getTime() - date.getTime()) / 1_000);
 }
