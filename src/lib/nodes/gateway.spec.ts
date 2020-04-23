@@ -15,6 +15,7 @@ import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/_testMocks';
 import Cargo from '../messages/Cargo';
 import Parcel from '../messages/Parcel';
+import CargoMessageSet from '../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../messages/payloads/ServiceMessage';
 import { issueGatewayCertificate } from '../pki';
 import { Gateway } from './gateway';
@@ -256,24 +257,15 @@ describe('Gateway', () => {
     });
 
     test('Messages should be encapsulated into as few cargoes as possible', async () => {
-      // TODO: REFACTOR
       const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
-      const mediumSizedServiceMessage = Buffer.from('the payload');
-      const serviceMessage = new ServiceMessage('a', mediumSizedServiceMessage);
-      const serviceMessageSerialized = await serviceMessage.serialize();
-      const serviceMessageEncrypted = await SessionlessEnvelopedData.encrypt(
-        serviceMessageSerialized,
-        RECIPIENT_CERTIFICATE,
-      );
-      const payloadSerialized = Buffer.from(serviceMessageEncrypted.serialize());
-      const dummyParcel = new Parcel('address', CERTIFICATE, payloadSerialized);
-      const dummyParcelSerialized = Buffer.from(await dummyParcel.serialize(PRIVATE_KEY));
+      const dummyParcel = await generateDummyParcel(RECIPIENT_CERTIFICATE, CERTIFICATE);
+      const dummyParcelSerialized = await dummyParcel.serialize(PRIVATE_KEY);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [
-          { message: dummyParcelSerialized, expiryDate: TOMORROW },
-          { message: dummyParcelSerialized, expiryDate: TOMORROW },
-          { message: dummyParcelSerialized, expiryDate: TOMORROW },
+          { message: Buffer.from(dummyParcelSerialized), expiryDate: TOMORROW },
+          { message: Buffer.from(dummyParcelSerialized), expiryDate: TOMORROW },
+          { message: Buffer.from(dummyParcelSerialized), expiryDate: TOMORROW },
         ],
         RECIPIENT_CERTIFICATE,
         CERTIFICATE.getSerialNumber(),
@@ -281,12 +273,13 @@ describe('Gateway', () => {
       );
 
       expect(cargoesSerialized).toHaveLength(1);
-      const messagesInCargo = await extractMessagesFromCargo(cargoesSerialized[0]);
-      expect(messagesInCargo).toHaveProperty('size', 3);
-      expect(await Parcel.deserialize(Array.from(messagesInCargo)[0])).toHaveProperty(
-        'payloadSerialized',
-        payloadSerialized,
-      );
+      const messageSet = await extractMessageSetFromCargo(cargoesSerialized[0]);
+      expect(messageSet.messages).toHaveProperty('size', 3);
+      expect(Array.from(messageSet.messages)).toEqual([
+        dummyParcelSerialized,
+        dummyParcelSerialized,
+        dummyParcelSerialized,
+      ]);
     });
 
     async function generateCargoesFromMessages(
@@ -300,13 +293,13 @@ describe('Gateway', () => {
       );
     }
 
-    async function extractMessagesFromCargo(cargoSerialized: Buffer): Promise<Set<ArrayBuffer>> {
+    async function extractMessageSetFromCargo(cargoSerialized: Buffer): Promise<CargoMessageSet> {
       const recipientPrivateKeyStore = new MockPrivateKeyStore();
       await recipientPrivateKeyStore.registerNodeKey(RECIPIENT_PRIVATE_KEY, RECIPIENT_CERTIFICATE);
 
       const cargo = await Cargo.deserialize(bufferToArray(cargoSerialized));
       const { payload } = await cargo.unwrapPayload(recipientPrivateKeyStore);
-      return payload.messages;
+      return payload;
     }
 
     async function getCargoPayloadEncryptionAlgorithmId(cargoSerialized: Buffer): Promise<string> {
@@ -317,3 +310,21 @@ describe('Gateway', () => {
     }
   });
 });
+
+async function generateDummyParcel(
+  recipientCertificate: Certificate,
+  senderCertificate: Certificate,
+): Promise<Parcel> {
+  const serviceMessage = new ServiceMessage('a', Buffer.from('the payload'));
+  const serviceMessageSerialized = await serviceMessage.serialize();
+  const serviceMessageEncrypted = await SessionlessEnvelopedData.encrypt(
+    serviceMessageSerialized,
+    recipientCertificate,
+  );
+  const payloadSerialized = Buffer.from(serviceMessageEncrypted.serialize());
+  return new Parcel(
+    await recipientCertificate.calculateSubjectPrivateAddress(),
+    senderCertificate,
+    payloadSerialized,
+  );
+}
