@@ -99,6 +99,7 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
    *   the message based on the trusted certificates.
    */
   public async validate(trustedCertificates?: readonly Certificate[]): Promise<void> {
+    this.validateValidityPeriod();
     if (trustedCertificates) {
       await this.validateAuthorization(trustedCertificates);
     }
@@ -118,9 +119,17 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
 
   protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;
 
-  protected async validateAuthorization(
-    trustedCertificates: readonly Certificate[],
-  ): Promise<void> {
+  private validateValidityPeriod(): void {
+    const now = new Date();
+    if (now < this.date) {
+      throw new InvalidMessageError('Message creation date should be in the past');
+    }
+    if (this.expiryDate < now) {
+      throw new InvalidMessageError('Message expiry date should be in the future');
+    }
+  }
+
+  private async validateAuthorization(trustedCertificates: readonly Certificate[]): Promise<void> {
     // tslint:disable-next-line:no-let
     let certificationPath: readonly Certificate[];
     try {
