@@ -52,8 +52,8 @@ describe('generateRsaKeyPair', () => {
       expect(keyPair.privateKey.algorithm.modulusLength).toBe(2048);
     });
 
-    test('Modulus > 2048 should be supported', async () => {
-      const modulus = 3072;
+    test('Modulus 4096 should be supported', async () => {
+      const modulus = 4096;
       const keyPair = await generateRSAKeyPair({ modulus });
       // @ts-ignore
       expect(keyPair.publicKey.algorithm.modulusLength).toBe(modulus);
