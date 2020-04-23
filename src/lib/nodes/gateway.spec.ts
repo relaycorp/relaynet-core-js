@@ -170,11 +170,9 @@ describe('Gateway', () => {
         gateway,
       );
 
-      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-      const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
-      expect(
-        cargoPayload.pkijsEnvelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId,
-      ).toEqual('2.16.840.1.101.3.4.1.26');
+      expect(await getCargoPayloadEncryptionAlgorithmId(cargoesSerialized[0])).toEqual(
+        '2.16.840.1.101.3.4.1.26',
+      );
     });
 
     test('Sessionless encryption options should be honored if present', async () => {
@@ -190,11 +188,9 @@ describe('Gateway', () => {
         gateway,
       );
 
-      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-      const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
-      expect(
-        cargoPayload.pkijsEnvelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId,
-      ).toEqual('2.16.840.1.101.3.4.1.26');
+      expect(await getCargoPayloadEncryptionAlgorithmId(cargoesSerialized[0])).toEqual(
+        '2.16.840.1.101.3.4.1.26',
+      );
     });
 
     test('Cargo should be signed with the specified key', async () => {
@@ -311,6 +307,13 @@ describe('Gateway', () => {
       const cargo = await Cargo.deserialize(bufferToArray(cargoSerialized));
       const { payload } = await cargo.unwrapPayload(recipientPrivateKeyStore);
       return payload.messages;
+    }
+
+    async function getCargoPayloadEncryptionAlgorithmId(cargoSerialized: Buffer): Promise<string> {
+      const cargo = await Cargo.deserialize(bufferToArray(cargoSerialized));
+      const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
+      const encryptedContentInfo = cargoPayload.pkijsEnvelopedData.encryptedContentInfo;
+      return encryptedContentInfo.contentEncryptionAlgorithm.algorithmId;
     }
   });
 });
