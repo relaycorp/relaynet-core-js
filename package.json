@@ -43,7 +43,7 @@
     "asn1js": "^2.0.26",
     "binary-parser": "^1.5.0",
     "buffer-to-arraybuffer": "0.0.5",
-    "node-webcrypto-ossl": "^1.0.49",
+    "node-webcrypto-ossl": "^2.0.6",
     "pkijs": "^2.1.88",
     "smart-buffer": "^4.1.0",
     "uuid4": "^1.1.4",

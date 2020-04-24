@@ -1,11 +1,11 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
-import WebCrypto from 'node-webcrypto-ossl';
+import { Crypto } from 'node-webcrypto-ossl';
 import * as pkijs from 'pkijs';
 
 import { deserializeDer, generateRandom64BitValue, getPkijsCrypto } from './_utils';
 
-const stubWebcrypto = new WebCrypto();
+const stubWebcrypto = new Crypto();
 
 jest.mock('pkijs');
 
