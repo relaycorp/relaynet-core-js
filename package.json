@@ -1,6 +1,6 @@
 {
   "name": "@relaycorp/relaynet-core",
-  "version": "1.0.3",
+  "version": "1.27.3",
   "author": {
     "email": "no-reply@relaycorp.tech",
     "name": "Relaycorp, Inc.",
@@ -67,7 +67,7 @@
     "ts-node": "^8.9.0",
     "tslint": "^5.20.1",
     "typedoc": "^0.16.11",
-    "typescript": "^3.7.4"
+    "typescript": "^3.8.3"
   },
   "prettier": "@relaycorp/shared-config/.prettierrc.json",
   "publishConfig": {
