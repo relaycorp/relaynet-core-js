@@ -13,7 +13,7 @@ import {
   getMockContext,
   getPromiseRejection,
 } from '../_test_utils';
-import { deserializeDer } from '../crypto_wrappers/_utils';
+import { derDeserialize } from '../crypto_wrappers/_utils';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -409,7 +409,7 @@ describe('MessageSerializer', () => {
 
         test('Payload can span up to 8 MiB', async () => {
           // This test is painfully slow: https://github.com/relaycorp/relaynet-core-js/issues/57
-          jest.setTimeout(8000);
+          jest.setTimeout(9000);
 
           const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH));
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, largePayload);
@@ -450,7 +450,7 @@ describe('MessageSerializer', () => {
         // Skip format signature
         const cmsSignedDataSerialized = messageSerialized.slice(10);
         const { plaintext } = await cmsSignedData.verifySignature(cmsSignedDataSerialized);
-        return deserializeDer(plaintext) as asn1js.Sequence;
+        return derDeserialize(plaintext) as asn1js.Sequence;
       }
     });
   });

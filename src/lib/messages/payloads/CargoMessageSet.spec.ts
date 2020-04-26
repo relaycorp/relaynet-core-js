@@ -9,7 +9,7 @@ import {
   expectBuffersToEqual,
   generateStubCert,
 } from '../../_test_utils';
-import { deserializeDer } from '../../crypto_wrappers/_utils';
+import { derDeserialize } from '../../crypto_wrappers/_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
@@ -220,7 +220,7 @@ describe('CargoMessageSet', () => {
 
       const serialization = payload.serialize();
 
-      const deserialization = deserializeDer(serialization);
+      const deserialization = derDeserialize(serialization);
       expect(deserialization).toBeInstanceOf(asn1js.Set);
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(0);
     });
@@ -230,7 +230,7 @@ describe('CargoMessageSet', () => {
 
       const serialization = payload.serialize();
 
-      const deserialization = deserializeDer(serialization);
+      const deserialization = derDeserialize(serialization);
       expect(deserialization).toBeInstanceOf(asn1js.Set);
 
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
@@ -245,7 +245,7 @@ describe('CargoMessageSet', () => {
 
       const serialization = payload.serialize();
 
-      const deserialization = deserializeDer(serialization);
+      const deserialization = derDeserialize(serialization);
       expect(deserialization).toBeInstanceOf(asn1js.Set);
 
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(stubMessages.length);

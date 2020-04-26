@@ -3,6 +3,7 @@ import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
+import { generateFormatSignature } from '../messages/formatSignature';
 import Message from '../messages/Message';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
@@ -72,12 +73,10 @@ export async function serialize(
   validatePayloadLength(message.payloadSerialized);
   //endregion
 
-  //region File format signature
-  const formatSignature = Buffer.allocUnsafe(10);
-  formatSignature.write('Relaynet');
-  formatSignature.writeUInt8(concreteMessageTypeOctet, 8);
-  formatSignature.writeUInt8(concreteMessageVersionOctet, 9);
-  //endregion
+  const formatSignature = generateFormatSignature(
+    concreteMessageTypeOctet,
+    concreteMessageVersionOctet,
+  );
 
   const serializationBeforeSignature = new asn1js.Sequence({
     // @ts-ignore
@@ -107,8 +106,11 @@ export async function serialize(
   // to make a copy of the signature (which already contains a copy of the payload). So by the end
   // of this function we'll need more than 3x the size of the payload in memory. This issue will
   // go away with https://github.com/relaynet/specs/issues/14
-  const serialization = Buffer.concat([formatSignature, new Uint8Array(signature)]);
-  return bufferToArray(serialization);
+  const serialization = new ArrayBuffer(formatSignature.byteLength + signature.byteLength);
+  const serializationView = new Uint8Array(serialization);
+  serializationView.set(formatSignature, 0);
+  serializationView.set(new Uint8Array(signature), formatSignature.byteLength);
+  return serialization;
 }
 
 function validateMessageLength(serialization: ArrayBuffer): void {
