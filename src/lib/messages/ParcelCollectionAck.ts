@@ -57,10 +57,10 @@ export class ParcelCollectionAckSet {
     ],
   } as any);
 
-  constructor(public readonly acks: ReadonlySet<ParcelCollectionAck>) {}
+  constructor(public readonly ackSet: ReadonlySet<ParcelCollectionAck>) {}
 
   public serialize(): ArrayBuffer {
-    const ackSequences = [...this.acks].map(
+    const ackSequences = [...this.ackSet].map(
       ack =>
         new asn1js.Sequence({
           value: [

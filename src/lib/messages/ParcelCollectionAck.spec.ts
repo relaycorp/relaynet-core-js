@@ -179,8 +179,8 @@ describe('ParcelCollectionAck', () => {
       ]);
 
       const pcaSet = ParcelCollectionAckSet.deserialize(invalidSerialization);
-      expect(pcaSet.acks).toHaveProperty('size', 1);
-      expect(Array.from(pcaSet.acks)[0]).toEqual(ACK);
+      expect(pcaSet.ackSet).toHaveProperty('size', 1);
+      expect(Array.from(pcaSet.ackSet)[0]).toEqual(ACK);
     });
 
     test('PCA set may be empty', () => {
@@ -190,7 +190,7 @@ describe('ParcelCollectionAck', () => {
       ]);
 
       const pcaSet = ParcelCollectionAckSet.deserialize(invalidSerialization);
-      expect(pcaSet.acks).toHaveProperty('size', 0);
+      expect(pcaSet.ackSet).toHaveProperty('size', 0);
     });
   });
 });
