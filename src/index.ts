@@ -54,7 +54,7 @@ export { default as InvalidMessageError } from './lib/messages/InvalidMessageErr
 export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 
 // Control messages
-export * from './lib/messages/ParcelCollectionAck'
+export * from './lib/messages/ParcelCollectionAck';
 
 // Nodes
 export { Gateway, CargoMessageStream } from './lib/nodes/gateway';

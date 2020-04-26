@@ -6,7 +6,6 @@ export function generateFormatSignature(
 ): Uint8Array {
   const formatSignature = new Uint8Array(10);
   formatSignature.set(SIGNATURE_PREFIX, 0);
-  formatSignature[8] = concreteMessageType;
-  formatSignature[9] = concreteMessageVersion;
+  formatSignature.set([concreteMessageType, concreteMessageVersion], 8);
   return formatSignature;
 }
