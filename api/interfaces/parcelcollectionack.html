@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>DeliveryAuthorizationIssuanceOptions | @relaycorp/relaynet-core</title>
+	<title>ParcelCollectionAck | @relaycorp/relaynet-core</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2366,22 +2366,16 @@ img {
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class="current tsd-kind-interface tsd-is-external">
-			<a href="deliveryauthorizationissuanceoptions.html" class="tsd-kind-icon">Delivery<wbr>Authorization<wbr>Issuance<wbr>Options</a>
+			<a href="parcelcollectionack.html" class="tsd-kind-icon">Parcel<wbr>Collection<wbr>Ack</a>
 			<ul>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="deliveryauthorizationissuanceoptions.html#issuercertificate" class="tsd-kind-icon">issuer<wbr>Certificate</a>
+					<a href="parcelcollectionack.html#parcelid" class="tsd-kind-icon">parcel<wbr>Id</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-					<a href="deliveryauthorizationissuanceoptions.html#issuerprivatekey" class="tsd-kind-icon">issuer<wbr>Private<wbr>Key</a>
+				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
+					<a href="parcelcollectionack.html#recipientendpointaddress" class="tsd-kind-icon">recipient<wbr>Endpoint<wbr>Address</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-					<a href="deliveryauthorizationissuanceoptions.html#subjectpublickey" class="tsd-kind-icon">subject<wbr>Public<wbr>Key</a>
-				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-					<a href="deliveryauthorizationissuanceoptions.html#validityenddate" class="tsd-kind-icon">validity<wbr>End<wbr>Date</a>
-				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-					<a href="deliveryauthorizationissuanceoptions.html#validitystartdate" class="tsd-kind-icon">validity<wbr>Start<wbr>Date</a>
+				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
+					<a href="parcelcollectionack.html#senderendpointprivateaddress" class="tsd-kind-icon">sender<wbr>Endpoint<wbr>Private<wbr>Address</a>
 				</li>
 			</ul>
 		</li>
@@ -2393,12 +2387,7 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<a href="basiccertificateissuanceoptions.html" class="tsd-signature-type">BasicCertificateIssuanceOptions</a>
-					<ul class="tsd-hierarchy">
-						<li>
-							<span class="target">DeliveryAuthorizationIssuanceOptions</span>
-						</li>
-					</ul>
+					<span class="target">ParcelCollectionAck</span>
 				</li>
 			</ul>
 		</section>
@@ -2409,11 +2398,9 @@ img {
 					<section class="tsd-index-section tsd-is-external">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="deliveryauthorizationissuanceoptions.html#issuercertificate" class="tsd-kind-icon">issuer<wbr>Certificate</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external"><a href="deliveryauthorizationissuanceoptions.html#issuerprivatekey" class="tsd-kind-icon">issuer<wbr>Private<wbr>Key</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external"><a href="deliveryauthorizationissuanceoptions.html#subjectpublickey" class="tsd-kind-icon">subject<wbr>Public<wbr>Key</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external"><a href="deliveryauthorizationissuanceoptions.html#validityenddate" class="tsd-kind-icon">validity<wbr>End<wbr>Date</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external"><a href="deliveryauthorizationissuanceoptions.html#validitystartdate" class="tsd-kind-icon">validity<wbr>Start<wbr>Date</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="parcelcollectionack.html#parcelid" class="tsd-kind-icon">parcel<wbr>Id</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="parcelcollectionack.html#recipientendpointaddress" class="tsd-kind-icon">recipient<wbr>Endpoint<wbr>Address</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="parcelcollectionack.html#senderendpointprivateaddress" class="tsd-kind-icon">sender<wbr>Endpoint<wbr>Private<wbr>Address</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2422,56 +2409,32 @@ img {
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="issuercertificate" class="tsd-anchor"></a>
-				<h3>issuer<wbr>Certificate</h3>
-				<div class="tsd-signature tsd-kind-icon">issuer<wbr>Certificate<span class="tsd-signature-symbol">:</span> <a href="../classes/certificate.html" class="tsd-signature-type">Certificate</a></div>
+				<a name="parcelid" class="tsd-anchor"></a>
+				<h3>parcel<wbr>Id</h3>
+				<div class="tsd-signature tsd-kind-icon">parcel<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/pki.ts#L47">src/lib/pki.ts:47</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/messages/ParcelCollectionAck.ts#L9">src/lib/messages/ParcelCollectionAck.ts:9</a></li>
 					</ul>
 				</aside>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-				<a name="issuerprivatekey" class="tsd-anchor"></a>
-				<h3>issuer<wbr>Private<wbr>Key</h3>
-				<div class="tsd-signature tsd-kind-icon">issuer<wbr>Private<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CryptoKey</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
+				<a name="recipientendpointaddress" class="tsd-anchor"></a>
+				<h3>recipient<wbr>Endpoint<wbr>Address</h3>
+				<div class="tsd-signature tsd-kind-icon">recipient<wbr>Endpoint<wbr>Address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
-					<p>Inherited from <a href="basiccertificateissuanceoptions.html">BasicCertificateIssuanceOptions</a>.<a href="basiccertificateissuanceoptions.html#issuerprivatekey">issuerPrivateKey</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts#L2">src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts:2</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/messages/ParcelCollectionAck.ts#L8">src/lib/messages/ParcelCollectionAck.ts:8</a></li>
 					</ul>
 				</aside>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-				<a name="subjectpublickey" class="tsd-anchor"></a>
-				<h3>subject<wbr>Public<wbr>Key</h3>
-				<div class="tsd-signature tsd-kind-icon">subject<wbr>Public<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CryptoKey</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
+				<a name="senderendpointprivateaddress" class="tsd-anchor"></a>
+				<h3>sender<wbr>Endpoint<wbr>Private<wbr>Address</h3>
+				<div class="tsd-signature tsd-kind-icon">sender<wbr>Endpoint<wbr>Private<wbr>Address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
-					<p>Inherited from <a href="basiccertificateissuanceoptions.html">BasicCertificateIssuanceOptions</a>.<a href="basiccertificateissuanceoptions.html#subjectpublickey">subjectPublicKey</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts#L3">src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts:3</a></li>
-					</ul>
-				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-				<a name="validityenddate" class="tsd-anchor"></a>
-				<h3>validity<wbr>End<wbr>Date</h3>
-				<div class="tsd-signature tsd-kind-icon">validity<wbr>End<wbr>Date<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span></div>
-				<aside class="tsd-sources">
-					<p>Inherited from <a href="basiccertificateissuanceoptions.html">BasicCertificateIssuanceOptions</a>.<a href="basiccertificateissuanceoptions.html#validityenddate">validityEndDate</a></p>
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts#L5">src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts:5</a></li>
-					</ul>
-				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-external">
-				<a name="validitystartdate" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagOptional">Optional</span> validity<wbr>Start<wbr>Date</h3>
-				<div class="tsd-signature tsd-kind-icon">validity<wbr>Start<wbr>Date<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span></div>
-				<aside class="tsd-sources">
-					<p>Inherited from <a href="basiccertificateissuanceoptions.html">BasicCertificateIssuanceOptions</a>.<a href="basiccertificateissuanceoptions.html#validitystartdate">validityStartDate</a></p>
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts#L4">src/lib/crypto_wrappers/x509/BasicCertificateIssuanceOptions.ts:4</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d4bd581/src/lib/messages/ParcelCollectionAck.ts#L7">src/lib/messages/ParcelCollectionAck.ts:7</a></li>
 					</ul>
 				</aside>
 			</section>
