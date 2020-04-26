@@ -9,7 +9,7 @@ export function getPkijsCrypto(): SubtleCrypto {
   return cryptoEngine;
 }
 
-export function deserializeDer(derValue: ArrayBuffer): asn1js.LocalBaseBlock {
+export function derDeserialize(derValue: ArrayBuffer): asn1js.LocalBaseBlock {
   const asn1Value = asn1js.fromBER(derValue);
   if (asn1Value.offset === -1) {
     throw new Error('Value is not DER-encoded');

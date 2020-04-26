@@ -2,7 +2,7 @@ import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { deserializeDer, generateRandom64BitValue } from '../_utils';
+import { derDeserialize, generateRandom64BitValue } from '../_utils';
 import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
 import CertificateError from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
@@ -23,7 +23,7 @@ export default class Certificate {
    * @throws {CertificateError}
    */
   public static deserialize(certDer: ArrayBuffer): Certificate {
-    const asn1Value = deserializeDer(certDer);
+    const asn1Value = derDeserialize(certDer);
     const pkijsCert = new pkijs.Certificate({ schema: asn1Value });
     const certificate = new Certificate(pkijsCert);
     certificate.validate();
@@ -238,7 +238,7 @@ function validateIssuerCertificate(issuerCertificate: Certificate): void {
     throw new CertificateError('Basic constraints extension is missing from issuer certificate');
   }
   const extension = matchingExtensions[0];
-  const basicConstraintsAsn1 = deserializeDer(extension.extnValue.valueBlock.valueHex);
+  const basicConstraintsAsn1 = derDeserialize(extension.extnValue.valueBlock.valueHex);
   const basicConstraints = new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
   if (!basicConstraints.cA) {
     throw new CertificateError('Issuer is not a CA');
@@ -253,5 +253,5 @@ interface Asn1jsSerializable {
 
 function cloneAsn1jsValue(value: Asn1jsSerializable): asn1js.LocalBaseBlock {
   const valueSerialized = value.toBER(false);
-  return deserializeDer(valueSerialized);
+  return derDeserialize(valueSerialized);
 }

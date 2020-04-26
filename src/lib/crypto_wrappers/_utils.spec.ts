@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import WebCrypto from 'node-webcrypto-ossl';
 import * as pkijs from 'pkijs';
 
-import { deserializeDer, generateRandom64BitValue, getPkijsCrypto } from './_utils';
+import { derDeserialize, generateRandom64BitValue, getPkijsCrypto } from './_utils';
 
 const stubWebcrypto = new WebCrypto();
 
@@ -31,7 +31,7 @@ describe('deserializeDer', () => {
     const asn1Value = new asn1js.Integer({ value: 3 });
     const derValue = asn1Value.toBER(false);
 
-    const deserializedValue = deserializeDer(derValue);
+    const deserializedValue = derDeserialize(derValue);
     expect(deserializedValue).toHaveProperty('idBlock.tagClass', asn1Value.idBlock.tagClass);
     expect(deserializedValue).toHaveProperty('idBlock.tagNumber', asn1Value.idBlock.tagNumber);
     expect(deserializedValue).toHaveProperty('valueBlock.valueDec', asn1Value.valueBlock.valueDec);
@@ -39,7 +39,7 @@ describe('deserializeDer', () => {
 
   test('should fail when passed a non-DER encoded value', () => {
     const invalidDerValue = bufferToArray(Buffer.from('hi'));
-    expect(() => deserializeDer(invalidDerValue)).toThrowError(
+    expect(() => derDeserialize(invalidDerValue)).toThrowError(
       new Error('Value is not DER-encoded'),
     );
   });
