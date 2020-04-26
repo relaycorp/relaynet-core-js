@@ -409,7 +409,7 @@ describe('MessageSerializer', () => {
 
         test('Payload can span up to 8 MiB', async () => {
           // This test is painfully slow: https://github.com/relaycorp/relaynet-core-js/issues/57
-          jest.setTimeout(8000);
+          jest.setTimeout(9000);
 
           const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH));
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, largePayload);

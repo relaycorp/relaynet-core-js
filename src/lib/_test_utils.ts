@@ -141,7 +141,7 @@ export function reSerializeCertificate(cert: Certificate): Certificate {
   return Certificate.deserialize(cert.serialize());
 }
 
-export function arrayBufferFrom(input: string): ArrayBuffer {
+export function arrayBufferFrom(input: any): ArrayBuffer {
   return bufferToArray(Buffer.from(input));
 }
 
