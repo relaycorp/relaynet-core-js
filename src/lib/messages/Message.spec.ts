@@ -185,64 +185,6 @@ describe('Message', () => {
   });
 
   describe('validate', () => {
-    describe('Validity period', () => {
-      const NOW = new Date();
-      NOW.setMilliseconds(0);
-      beforeEach(() => jestDateMock.advanceTo(NOW));
-
-      test('Creation date in the future should be refused', async () => {
-        const tomorrow = new Date(NOW);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const message = new StubMessage(
-          await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
-          reSerializeCertificate(senderCertificate),
-          STUB_PAYLOAD_PLAINTEXT,
-          { date: tomorrow },
-        );
-
-        await expect(message.validate()).rejects.toEqual(
-          new InvalidMessageError('Message creation date should be in the past'),
-        );
-      });
-
-      test('Expiry date in the past should be refused', async () => {
-        const yesterday = new Date(NOW);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const message = new StubMessage(
-          await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
-          reSerializeCertificate(senderCertificate),
-          STUB_PAYLOAD_PLAINTEXT,
-          { date: yesterday, ttl: 1 },
-        );
-
-        await expect(message.validate()).rejects.toEqual(
-          new InvalidMessageError('Message expiry date should be in the future'),
-        );
-      });
-
-      test('Creation date matching current time should be accepted', async () => {
-        const message = new StubMessage(
-          await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
-          reSerializeCertificate(senderCertificate),
-          STUB_PAYLOAD_PLAINTEXT,
-          { date: NOW, ttl: 1 },
-        );
-
-        await expect(message.validate()).toResolve();
-      });
-
-      test('Expiry date matching current time should be accepted', async () => {
-        const message = new StubMessage(
-          await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
-          reSerializeCertificate(senderCertificate),
-          STUB_PAYLOAD_PLAINTEXT,
-          { date: NOW, ttl: 0 },
-        );
-
-        await expect(message.validate()).toResolve();
-      });
-    });
-
     describe('Authorization', () => {
       test('Parcel should be refused if sender is not trusted', async () => {
         const message = new StubMessage(
