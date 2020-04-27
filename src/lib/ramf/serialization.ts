@@ -270,6 +270,7 @@ async function verifySignature(
   }
 }
 
+// TODO: Consider moving this into `Message.validate()` to make timing validation optional
 function validateMessageTiming(
   messageFields: MessageFieldSet,
   signatureVerification: cmsSignedData.SignatureVerification,
