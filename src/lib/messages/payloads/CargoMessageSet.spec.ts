@@ -16,6 +16,7 @@ import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
 import Cargo from '../Cargo';
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
+import { ParcelCollectionAck } from '../ParcelCollectionAck';
 import CargoMessageSet, { MessageWithExpiryDate } from './CargoMessageSet';
 
 const STUB_MESSAGE = arrayBufferFrom('hiya');
@@ -283,6 +284,18 @@ describe('CargoMessageSet', () => {
       expect(messages).toHaveLength(1);
       expect(messages[0]).toBeInstanceOf(Parcel);
       expect(messages[0]).toHaveProperty('recipientAddress', parcel.recipientAddress);
+    });
+
+    test('PCAs should be yielded', async () => {
+      const pca = new ParcelCollectionAck('https://sender.endpoint/', 'deadbeef', 'parcel-id');
+      const pcaSerialization = await pca.serialize();
+      const cargoMessageSet = new CargoMessageSet(new Set([pcaSerialization]));
+
+      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toBeInstanceOf(ParcelCollectionAck);
+      expect(messages[0]).toMatchObject(pca);
     });
 
     test('An error should be thrown when non-RAMF messages are found', async () => {

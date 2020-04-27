@@ -3,6 +3,7 @@ import * as asn1js from 'asn1js';
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
+import { ParcelCollectionAck } from '../ParcelCollectionAck';
 import PayloadPlaintext from './PayloadPlaintext';
 
 /**
@@ -113,10 +114,15 @@ export default class CargoMessageSet implements PayloadPlaintext {
     return set.toBER(false);
   }
 
-  public async *deserializeMessages(): AsyncIterableIterator<Parcel> {
-    for (const message of this.messages) {
+  public async *deserializeMessages(): AsyncIterable<Parcel | ParcelCollectionAck> {
+    for (const messageSerialized of this.messages) {
+      const messageFormatSignature = Buffer.from(messageSerialized.slice(0, 10));
+      const messageClass = messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)
+        ? ParcelCollectionAck
+        : Parcel;
+
       try {
-        yield Parcel.deserialize(message);
+        yield messageClass.deserialize(messageSerialized);
       } catch (error) {
         throw new InvalidMessageError(error, 'Invalid message found');
       }
