@@ -2,19 +2,14 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
-import {
-  castMock,
-  expectPromiseToReject,
-  generateStubCert,
-  reSerializeCertificate,
-} from '../_test_utils';
+import { expectPromiseToReject, generateStubCert, reSerializeCertificate } from '../_test_utils';
 import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { PrivateKeyStore } from '../keyStores/privateKeyStore';
+import { MockPrivateKeyStore } from '../keyStores/_testMocks';
 import { issueInitialDHKeyCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
@@ -243,11 +238,8 @@ describe('Message', () => {
         recipientCertificate,
       );
 
-      const keyStore = castMock<PrivateKeyStore>({
-        fetchNodeKey: jest
-          .fn()
-          .mockResolvedValue({ certificate: senderCertificate, privateKey: recipientPrivateKey }),
-      });
+      const recipientKeyStore = new MockPrivateKeyStore();
+      await recipientKeyStore.registerNodeKey(recipientPrivateKey, recipientCertificate);
 
       const stubMessage = new StubMessage(
         '0123',
@@ -255,11 +247,10 @@ describe('Message', () => {
         Buffer.from(envelopedData.serialize()),
       );
 
-      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(keyStore);
+      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(recipientKeyStore);
 
       expect(payload).toBeInstanceOf(StubPayload);
       expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
-      expect(keyStore.fetchNodeKey).toBeCalledWith(recipientCertificate.getSerialNumber());
 
       expect(senderSessionKey).toBeUndefined();
     });
@@ -279,9 +270,11 @@ describe('Message', () => {
         recipientDhCertificate,
       );
 
-      const keyStore = castMock<PrivateKeyStore>({
-        fetchSessionKey: jest.fn().mockResolvedValue(recipientDhKeyPair.privateKey),
-      });
+      const recipientKeyStore = new MockPrivateKeyStore();
+      await recipientKeyStore.registerInitialSessionKey(
+        recipientDhKeyPair.privateKey,
+        recipientDhCertificate,
+      );
 
       const stubMessage = new StubMessage(
         '0123',
@@ -289,16 +282,30 @@ describe('Message', () => {
         Buffer.from(envelopedData.serialize()),
       );
 
-      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(keyStore);
+      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(recipientKeyStore);
 
       expect(payload).toBeInstanceOf(StubPayload);
       expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
-      expect(keyStore.fetchSessionKey).toBeCalledWith(
-        recipientDhCertificate.getSerialNumber(),
-        senderCertificate,
-      );
 
       expect(senderSessionKey).toEqual(await envelopedData.getOriginatorKey());
+    });
+
+    test('Keystore lookup should be skipped if private key is provided', async () => {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(
+        STUB_PAYLOAD_PLAINTEXT,
+        recipientCertificate,
+      );
+
+      const stubMessage = new StubMessage(
+        '0123',
+        senderCertificate,
+        Buffer.from(envelopedData.serialize()),
+      );
+
+      const { payload } = await stubMessage.unwrapPayload(recipientPrivateKey);
+
+      expect(payload).toBeInstanceOf(StubPayload);
+      expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
     });
   });
 });

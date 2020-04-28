@@ -77,11 +77,11 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
   }
 
   public async unwrapPayload(
-    keyStore: PrivateKeyStore,
+    privateKeyOrStore: CryptoKey | PrivateKeyStore,
   ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: OriginatorSessionKey }> {
     const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
 
-    const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, keyStore);
+    const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, privateKeyOrStore);
     const payload = await this.deserializePayload(payloadPlaintext);
 
     const senderSessionKey =
@@ -106,14 +106,29 @@ export default abstract class Message<Payload extends PayloadPlaintext> {
 
   protected async decryptPayload(
     payloadEnvelopedData: EnvelopedData,
-    keyStore: PrivateKeyStore,
+    privateKeyOrStore: CryptoKey | PrivateKeyStore,
   ): Promise<ArrayBuffer> {
     const keyId = payloadEnvelopedData.getRecipientKeyId();
-    const privateKey =
-      payloadEnvelopedData instanceof SessionEnvelopedData
-        ? await keyStore.fetchSessionKey(keyId, this.senderCertificate)
-        : (await keyStore.fetchNodeKey(keyId)).privateKey;
+    const privateKey = await this.fetchPrivateKey(payloadEnvelopedData, privateKeyOrStore, keyId);
     return payloadEnvelopedData.decrypt(privateKey);
+  }
+
+  protected async fetchPrivateKey(
+    payloadEnvelopedData: EnvelopedData,
+    privateKeyOrStore: CryptoKey | PrivateKeyStore,
+    keyId: Buffer,
+  ): Promise<CryptoKey> {
+    // tslint:disable-next-line:no-let
+    let privateKey: CryptoKey;
+    if (privateKeyOrStore instanceof PrivateKeyStore) {
+      privateKey =
+        payloadEnvelopedData instanceof SessionEnvelopedData
+          ? await privateKeyOrStore.fetchSessionKey(keyId, this.senderCertificate)
+          : (await privateKeyOrStore.fetchNodeKey(keyId)).privateKey;
+    } else {
+      privateKey = privateKeyOrStore;
+    }
+    return privateKey;
   }
 
   protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;

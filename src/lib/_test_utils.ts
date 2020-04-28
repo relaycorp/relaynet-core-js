@@ -75,10 +75,6 @@ export async function expectPromiseToReject(
   throw new Error(`Expected promise to throw error ${expectedError}`);
 }
 
-export function castMock<T>(partialMock: Partial<T>): T {
-  return (partialMock as unknown) as T;
-}
-
 // tslint:disable-next-line:readonly-array
 export function mockSpy<T, Y extends any[]>(
   spy: jest.MockInstance<T, Y>,
