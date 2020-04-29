@@ -1,21 +1,21 @@
+import { Crypto } from '@peculiar/webcrypto';
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
-import WebCrypto from 'node-webcrypto-ossl';
 import * as pkijs from 'pkijs';
 
 import { derDeserialize, generateRandom64BitValue, getPkijsCrypto } from './_utils';
 
-const stubWebcrypto = new WebCrypto();
+const stubCrypto = new Crypto();
 
 jest.mock('pkijs');
 
 describe('getPkijsCrypto', () => {
   test('It should pass on the crypto object it got', () => {
     // @ts-ignore
-    pkijs.getCrypto.mockReturnValue(stubWebcrypto.subtle);
+    pkijs.getCrypto.mockReturnValue(stubCrypto.subtle);
     const crypto = getPkijsCrypto();
 
-    expect(crypto).toBe(stubWebcrypto.subtle);
+    expect(crypto).toBe(stubCrypto.subtle);
   });
 
   test('It should error out if there is no crypto object', () => {

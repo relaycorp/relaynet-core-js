@@ -40,10 +40,10 @@
     "node": ">=10"
   },
   "dependencies": {
+    "@peculiar/webcrypto": "^1.0.29",
     "asn1js": "^2.0.26",
     "binary-parser": "^1.5.0",
     "buffer-to-arraybuffer": "0.0.5",
-    "node-webcrypto-ossl": "^1.0.49",
     "pkijs": "^2.1.84",
     "smart-buffer": "^4.1.0",
     "uuid4": "^1.1.4",
