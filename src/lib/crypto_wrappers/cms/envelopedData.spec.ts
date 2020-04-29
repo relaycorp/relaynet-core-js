@@ -516,11 +516,8 @@ describe('SessionEnvelopedData', () => {
       );
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
 
-      await expectPromiseToReject(
-        envelopedData.decrypt(privateKey),
-        // Leaving the typos unchanged because they come from a dependency of PKI.js and I
-        // want to make sure this scenario fails for the expected reason.
-        new CMSError('Decryption failed: Named corves of EC keys are not equals'),
+      await expect(envelopedData.decrypt(privateKey)).rejects.toEqual(
+        new CMSError('Decryption failed: Private key is not valid for specified curve.'),
       );
     });
   });

@@ -1,14 +1,14 @@
 //region Configure PKI.js
-import WebCrypto from 'node-webcrypto-ossl';
+import { Crypto } from '@peculiar/webcrypto';
 import { CryptoEngine, setEngine } from 'pkijs';
 
-const webcrypto = new WebCrypto();
+const crypto = new Crypto();
 const cryptoEngine = new CryptoEngine({
-  crypto: webcrypto,
+  crypto,
   name: 'nodeEngine',
-  subtle: webcrypto.subtle,
+  subtle: crypto.subtle,
 });
-setEngine('nodeEngine', webcrypto, cryptoEngine);
+setEngine('nodeEngine', crypto, cryptoEngine);
 //endregion
 
 //region Exports

@@ -1,10 +1,10 @@
-const WebCrypto = require('node-webcrypto-ossl');
+const { Crypto } = require('@peculiar/webcrypto');
 const { CryptoEngine, setEngine } = require('pkijs');
 
-const webcrypto = new WebCrypto();
+const crypto = new Crypto();
 const cryptoEngine = new CryptoEngine({
-  crypto: webcrypto,
+  crypto,
   name: 'nodeEngine',
-  subtle: webcrypto.subtle,
+  subtle: crypto.subtle,
 });
-setEngine('nodeEngine', webcrypto, cryptoEngine);
+setEngine('nodeEngine', crypto, cryptoEngine);
