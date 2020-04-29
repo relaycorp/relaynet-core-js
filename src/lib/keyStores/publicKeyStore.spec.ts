@@ -3,8 +3,9 @@
 import { generateStubCert } from '../_test_utils';
 import { derSerializePublicKey, generateECDHKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockPublicKeyStore } from './_testMocks';
 import { SessionPublicKeyData } from './publicKeyStore';
+import PublicKeyStoreError from './PublicKeyStoreError';
+import { MockPublicKeyStore } from './testMocks';
 
 describe('PublicKeyStore', () => {
   const CREATION_DATE = new Date();
@@ -111,6 +112,14 @@ describe('PublicKeyStore', () => {
 
       const keyData = store.keys[await CERTIFICATE.calculateSubjectPrivateAddress()];
       expect(keyData).toEqual(currentKeyData);
+    });
+
+    test('Any error should be propagated', async () => {
+      const store = new MockPublicKeyStore(true);
+
+      await expect(
+        store.saveSessionKey({ keyId: KEY_ID, publicKey: PUBLIC_KEY }, CERTIFICATE, CREATION_DATE),
+      ).rejects.toEqual(new PublicKeyStoreError('Failed to save public session key: Denied'));
     });
   });
 });

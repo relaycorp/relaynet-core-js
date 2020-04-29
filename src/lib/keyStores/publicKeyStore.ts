@@ -32,13 +32,19 @@ export abstract class PublicKeyStore {
       priorKeyData = undefined;
     }
 
-    if (priorKeyData === undefined || priorKeyData.publicKeyCreationTime < creationTime) {
-      const keyData: SessionPublicKeyData = {
-        publicKeyCreationTime: creationTime,
-        publicKeyDer: await derSerializePublicKey(key.publicKey),
-        publicKeyId: key.keyId,
-      };
+    if (priorKeyData && creationTime <= priorKeyData.publicKeyCreationTime) {
+      return;
+    }
+
+    const keyData: SessionPublicKeyData = {
+      publicKeyCreationTime: creationTime,
+      publicKeyDer: await derSerializePublicKey(key.publicKey),
+      publicKeyId: key.keyId,
+    };
+    try {
       await this.saveKey(keyData, peerPrivateAddress);
+    } catch (error) {
+      throw new PublicKeyStoreError(error, 'Failed to save public session key');
     }
   }
 

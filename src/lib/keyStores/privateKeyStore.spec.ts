@@ -3,12 +3,12 @@
 import { expectPromiseToReject, generateStubCert } from '../_test_utils';
 import * as keys from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockPrivateKeyStore } from './_testMocks';
 import {
   BoundPrivateKeyData,
   PrivateKeyStoreError,
   UnboundPrivateKeyData,
 } from './privateKeyStore';
+import { MockPrivateKeyStore } from './testMocks';
 
 describe('PrivateKeyStore', () => {
   let PRIVATE_KEY: CryptoKey;

@@ -12,7 +12,7 @@ import {
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/_testMocks';
+import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
 import Cargo from '../messages/Cargo';
 import Parcel from '../messages/Parcel';
 import CargoMessageSet from '../messages/payloads/CargoMessageSet';
@@ -85,7 +85,7 @@ describe('Gateway', () => {
       );
     });
 
-    test('Payload should be encrypted with recipient certificate if there is no existing session', async () => {
+    test('Payload should be encrypted with recipient certificate if there is no session', async () => {
       const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
 
       const cargoesSerialized = await generateCargoesFromMessages(
@@ -101,7 +101,7 @@ describe('Gateway', () => {
       expect(cargoPayload.getRecipientKeyId()).toEqual(RECIPIENT_CERTIFICATE.getSerialNumber());
     });
 
-    test('Payload should be encrypted with session key if there is an existing session', async () => {
+    test('Payload should be encrypted with session key if there is a session', async () => {
       const publicKeyStore = new MockPublicKeyStore();
       await publicKeyStore.saveSessionKey(
         { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },

@@ -9,7 +9,7 @@ import {
 } from '../crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockPrivateKeyStore } from '../keyStores/_testMocks';
+import { MockPrivateKeyStore } from '../keyStores/testMocks';
 import { issueInitialDHKeyCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
