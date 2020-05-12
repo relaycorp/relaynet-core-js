@@ -6,6 +6,7 @@ import * as jestDateMock from 'jest-date-mock';
 import { SmartBuffer } from 'smart-buffer';
 
 import {
+  arrayBufferFrom,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
@@ -214,7 +215,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Recipient address', () => {
-        test('Address should be a VisibleString', async () => {
+        test('Address should be the first item', async () => {
           const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
 
           const messageSerialized = await serialize(
@@ -225,9 +226,8 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const addressDeserialized = getAsn1SequenceItem(fields, 0);
-          expect(addressDeserialized).toBeInstanceOf(asn1js.VisibleString);
-          expect((addressDeserialized as asn1js.VisibleString).valueBlock.value).toEqual(
-            RECIPIENT_ADDRESS,
+          expect(addressDeserialized.valueBlock.valueHex).toEqual(
+            arrayBufferFrom(RECIPIENT_ADDRESS),
           );
         });
 
@@ -250,7 +250,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Message id', () => {
-        test('Id should be a VisibleString', async () => {
+        test('Id should be the second item', async () => {
           const idLength = 64;
           const id = 'a'.repeat(idLength);
           const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
@@ -265,7 +265,7 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const idField = getAsn1SequenceItem(fields, 1);
-          expect((idField as asn1js.VisibleString).valueBlock.value).toEqual(stubMessage.id);
+          expect(idField.valueBlock.valueHex).toEqual(arrayBufferFrom(stubMessage.id));
         });
 
         test('Ids longer than 64 characters should be refused', async () => {
@@ -287,7 +287,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Date', () => {
-        test('Date should be serialized as an ASN.1 DATE-TIME', async () => {
+        test('Date should be the third item', async () => {
           const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
 
           const messageSerialized = await serialize(
@@ -298,9 +298,10 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const datetimeBlock = getAsn1SequenceItem(fields, 2);
-          expect(datetimeBlock).toBeInstanceOf(asn1js.DateTime);
-          // @ts-ignore
-          const dateString = (datetimeBlock as asn1js.DateTime).valueBlock.value;
+          const dateBlock = new asn1js.DateTime({
+            valueHex: (datetimeBlock as asn1js.Primitive).valueBlock.valueHex,
+          } as any);
+          const dateString = new TextDecoder().decode(dateBlock.valueBlock.valueHex);
           expect(new Date(dateString)).toEqual(CURRENT_DATE);
         });
 
@@ -335,8 +336,10 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const ttlBlock = getAsn1SequenceItem(fields, 3);
-          expect(ttlBlock).toBeInstanceOf(asn1js.Integer);
-          expect((ttlBlock as asn1js.Integer).valueBlock.valueDec).toEqual(message.ttl);
+          const ttlIntegerBlock = new asn1js.Integer({
+            valueHex: ttlBlock.valueBlock.valueHex,
+          } as any);
+          expect(ttlIntegerBlock.valueBlock.valueDec).toEqual(message.ttl);
         });
 
         test('TTL of zero should be accepted', async () => {
@@ -353,7 +356,10 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const ttlBlock = getAsn1SequenceItem(fields, 3);
-          expect((ttlBlock as asn1js.Integer).valueBlock.valueDec).toEqual(0);
+          const ttlIntegerBlock = new asn1js.Integer({
+            valueHex: ttlBlock.valueBlock.valueHex,
+          } as any);
+          expect(ttlIntegerBlock.valueBlock.valueDec).toEqual(0);
         });
 
         test('TTL should not be negative', async () => {
@@ -400,11 +406,7 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const payloadBlock = getAsn1SequenceItem(fields, 4);
-          expect(payloadBlock).toBeInstanceOf(asn1js.OctetString);
-          expectBuffersToEqual(
-            Buffer.from((payloadBlock as asn1js.OctetString).valueBlock.valueHex),
-            PAYLOAD,
-          );
+          expect(payloadBlock.valueBlock.valueHex).toEqual(bufferToArray(PAYLOAD));
         });
 
         test('Payload can span up to 8 MiB', async () => {
@@ -1116,6 +1118,10 @@ function parseFormatSignature(messageSerialized: ArrayBuffer): MessageFormatSign
   };
 }
 
-function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js.LocalBaseBlock {
-  return fields.valueBlock.value[itemIndex];
+function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js.Primitive {
+  const itemBlock = fields.valueBlock.value[itemIndex] as asn1js.Primitive;
+  expect(itemBlock).toBeInstanceOf(asn1js.Primitive);
+  expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
+  expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
+  return itemBlock as any;
 }
