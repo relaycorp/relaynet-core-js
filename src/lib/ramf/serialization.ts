@@ -81,20 +81,21 @@ export async function serialize(
 
   const utcDateString = moment.utc(message.date).format('YYYYMMDDHHmmss');
   const ttlBlock = new asn1js.Integer({ value: message.ttl });
+  const textEncoder = new TextEncoder();
   const fieldSetSerialized = new asn1js.Sequence({
     // @ts-ignore
     value: [
       new asn1js.Primitive({
         idBlock: { tagClass: 3, tagNumber: 0 },
-        valueHex: new TextEncoder().encode(message.recipientAddress),
+        valueHex: textEncoder.encode(message.recipientAddress),
       } as any),
       new asn1js.Primitive({
         idBlock: { tagClass: 3, tagNumber: 1 },
-        valueHex: new TextEncoder().encode(message.id),
+        valueHex: textEncoder.encode(message.id),
       } as any),
       new asn1js.Primitive({
         idBlock: { tagClass: 3, tagNumber: 2 },
-        valueHex: new TextEncoder().encode(utcDateString),
+        valueHex: textEncoder.encode(utcDateString),
       } as any),
       new asn1js.Primitive({
         idBlock: { tagClass: 3, tagNumber: 3 },
