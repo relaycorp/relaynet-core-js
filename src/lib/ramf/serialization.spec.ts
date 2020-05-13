@@ -3,9 +3,12 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
+import moment from 'moment';
 import { SmartBuffer } from 'smart-buffer';
+import { TextDecoder } from 'util';
 
 import {
+  arrayBufferFrom,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
@@ -26,9 +29,9 @@ const PAYLOAD = Buffer.from('Hi');
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1;
 const MAX_TTL = 15552000;
 
-const CURRENT_DATE = new Date(2014, 1, 19, 3, 5, 12);
+const NOW = new Date();
 // There should be tests covering rounding when there are milliseconds
-CURRENT_DATE.setMilliseconds(0);
+NOW.setMilliseconds(0);
 
 const stubConcreteMessageTypeOctet = 0x44;
 const stubConcreteMessageVersionOctet = 0x2;
@@ -52,9 +55,9 @@ describe('MessageSerializer', () => {
   let SENDER_PRIVATE_KEY: CryptoKey;
   let SENDER_CERTIFICATE: Certificate;
   beforeAll(async () => {
-    const yesterday = new Date(CURRENT_DATE);
+    const yesterday = new Date(NOW);
     yesterday.setDate(yesterday.getDate() - 1);
-    const tomorrow = new Date(CURRENT_DATE);
+    const tomorrow = new Date(NOW);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const certificateAttributes = { validityStartDate: yesterday, validityEndDate: tomorrow };
 
@@ -67,7 +70,7 @@ describe('MessageSerializer', () => {
   });
 
   beforeEach(() => {
-    jestDateMock.advanceTo(CURRENT_DATE);
+    jestDateMock.advanceTo(NOW);
   });
 
   describe('serialize', () => {
@@ -214,7 +217,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Recipient address', () => {
-        test('Address should be a VisibleString', async () => {
+        test('Address should be the first item', async () => {
           const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
 
           const messageSerialized = await serialize(
@@ -225,9 +228,8 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const addressDeserialized = getAsn1SequenceItem(fields, 0);
-          expect(addressDeserialized).toBeInstanceOf(asn1js.VisibleString);
-          expect((addressDeserialized as asn1js.VisibleString).valueBlock.value).toEqual(
-            RECIPIENT_ADDRESS,
+          expect(addressDeserialized.valueBlock.valueHex).toEqual(
+            arrayBufferFrom(RECIPIENT_ADDRESS),
           );
         });
 
@@ -250,7 +252,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Message id', () => {
-        test('Id should be a VisibleString', async () => {
+        test('Id should be the second item', async () => {
           const idLength = 64;
           const id = 'a'.repeat(idLength);
           const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
@@ -265,7 +267,7 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const idField = getAsn1SequenceItem(fields, 1);
-          expect((idField as asn1js.VisibleString).valueBlock.value).toEqual(stubMessage.id);
+          expect(idField.valueBlock.valueHex).toEqual(arrayBufferFrom(stubMessage.id));
         });
 
         test('Ids longer than 64 characters should be refused', async () => {
@@ -287,26 +289,11 @@ describe('MessageSerializer', () => {
       });
 
       describe('Date', () => {
-        test('Date should be serialized as an ASN.1 DATE-TIME', async () => {
-          const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
-
-          const messageSerialized = await serialize(
-            stubMessage,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            SENDER_PRIVATE_KEY,
-          );
-          const fields = await deserializeFields(messageSerialized);
-          const datetimeBlock = getAsn1SequenceItem(fields, 2);
-          expect(datetimeBlock).toBeInstanceOf(asn1js.DateTime);
-          // @ts-ignore
-          const dateString = (datetimeBlock as asn1js.DateTime).valueBlock.value;
-          expect(new Date(dateString)).toEqual(CURRENT_DATE);
-        });
-
-        test('Date should be serialized as UTC', async () => {
-          const date = new Date('01 Jan 2019 12:00:00 GMT+11:00');
-          const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, { date });
+        test('Date should be serialized with UTC and second-level precision', async () => {
+          const nonUtcDate = new Date('01 Jan 2019 12:00:00 GMT+11:00');
+          const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
+            date: nonUtcDate,
+          });
 
           const messageSerialized = await serialize(
             message,
@@ -317,9 +304,9 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const datetimeBlock = getAsn1SequenceItem(fields, 2);
-          // @ts-ignore
-          const dateString = (datetimeBlock as asn1js.DateTime).valueBlock.value;
-          expect(new Date(dateString).getTime()).toEqual(new Date(dateString).getTime());
+          expect(new TextDecoder().decode(datetimeBlock.valueBlock.valueHex)).toEqual(
+            formatASN1DateTimeWithUTC(nonUtcDate),
+          );
         });
       });
 
@@ -335,8 +322,10 @@ describe('MessageSerializer', () => {
           );
           const fields = await deserializeFields(messageSerialized);
           const ttlBlock = getAsn1SequenceItem(fields, 3);
-          expect(ttlBlock).toBeInstanceOf(asn1js.Integer);
-          expect((ttlBlock as asn1js.Integer).valueBlock.valueDec).toEqual(message.ttl);
+          const ttlIntegerBlock = new asn1js.Integer({
+            valueHex: ttlBlock.valueBlock.valueHex,
+          } as any);
+          expect(ttlIntegerBlock.valueBlock.valueDec).toEqual(message.ttl);
         });
 
         test('TTL of zero should be accepted', async () => {
@@ -353,7 +342,10 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const ttlBlock = getAsn1SequenceItem(fields, 3);
-          expect((ttlBlock as asn1js.Integer).valueBlock.valueDec).toEqual(0);
+          const ttlIntegerBlock = new asn1js.Integer({
+            valueHex: ttlBlock.valueBlock.valueHex,
+          } as any);
+          expect(ttlIntegerBlock.valueBlock.valueDec).toEqual(0);
         });
 
         test('TTL should not be negative', async () => {
@@ -400,11 +392,7 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const payloadBlock = getAsn1SequenceItem(fields, 4);
-          expect(payloadBlock).toBeInstanceOf(asn1js.OctetString);
-          expectBuffersToEqual(
-            Buffer.from((payloadBlock as asn1js.OctetString).valueBlock.valueHex),
-            PAYLOAD,
-          );
+          expect(payloadBlock.valueBlock.valueHex).toEqual(bufferToArray(PAYLOAD));
         });
 
         test('Payload can span up to 8 MiB', async () => {
@@ -709,14 +697,12 @@ describe('MessageSerializer', () => {
         ).rejects.toEqual(new RAMFSyntaxError('Invalid RAMF fields'));
       });
 
-      test('Fields sequence should not have more than 5 items', async () => {
+      test('Fields sequence should not have fewer than 5 items', async () => {
         const serialization = await serializeRamfWithoutValidation([
-          new asn1js.Null(),
-          new asn1js.Null(),
-          new asn1js.Null(),
-          new asn1js.Null(),
-          new asn1js.Null(),
-          new asn1js.Null(),
+          new asn1js.VisibleString({ value: 'address' }),
+          new asn1js.VisibleString({ value: 'the-id' }),
+          new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+          new asn1js.Integer({ value: 1_000 }),
         ]);
 
         await expect(
@@ -730,7 +716,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Recipient address', () => {
-        test('Address should be serialized as a VisibleString', async () => {
+        test('Address should be extracted', async () => {
           const address = 'a'.repeat(1024);
           const message = new StubMessage(address, SENDER_CERTIFICATE, PAYLOAD);
           const serialization = await serialize(
@@ -754,7 +740,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: address }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: new Date() } as any),
+            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -774,7 +760,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Message id', () => {
-        test('Id should be serialized as a VisibleString', async () => {
+        test('Id should be deserialized', async () => {
           const id = 'a'.repeat(64);
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, { id });
           const serialization = await serialize(
@@ -797,7 +783,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: 'the-address' }),
             new asn1js.VisibleString({ value: id }),
-            new asn1js.DateTime({ value: new Date() } as any),
+            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -815,23 +801,65 @@ describe('MessageSerializer', () => {
       });
 
       describe('Date', () => {
-        test('Date should be serialized as an ASN.1 DATE-TIME', async () => {
-          const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
-          const serialization = await serialize(
-            message,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            SENDER_PRIVATE_KEY,
-          );
+        test('Date with second-level precision should be accepted', async () => {
+          const date = moment.utc(NOW).format('YYYYMMDDHHmmss');
+          const messageSerialized = await serializeRamfWithoutValidation([
+            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: 'id' }),
+            new asn1js.DateTime({ value: date }),
+            new asn1js.Integer({ value: 1_000 }),
+            new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
+          ]);
 
-          const deserialization = await deserialize(
-            serialization,
+          const message = await deserialize(
+            messageSerialized,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             StubMessage,
           );
 
-          expect(deserialization.date).toEqual(CURRENT_DATE);
+          expect(message.date).toEqual(NOW);
+        });
+
+        test('Date with date-level precision should be accepted', async () => {
+          const messageSerialized = await serializeRamfWithoutValidation([
+            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: 'id' }),
+            new asn1js.DateTime({ value: moment.utc(NOW).format('YYYYMMDD') }),
+            new asn1js.Integer({ value: 86_400 }),
+            new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
+          ]);
+
+          const message = await deserialize(
+            messageSerialized,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            StubMessage,
+          );
+
+          const expectedDate = new Date(moment.utc(NOW).format('YYYY-MM-DD'));
+          expect(message.date).toEqual(expectedDate);
+        });
+
+        test('Date not serialized as an ASN.1 DATE-TIME should be refused', async () => {
+          const messageSerialized = await serializeRamfWithoutValidation([
+            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: 'id' }),
+            new asn1js.DateTime({ value: '42' }),
+            new asn1js.Integer({ value: 1_000 }),
+            new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
+          ]);
+
+          await expect(
+            deserialize(
+              messageSerialized,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              StubMessage,
+            ),
+          ).rejects.toMatchObject({
+            message: /^Message date is not serialized as an ASN.1 DATE-TIME:/,
+          });
         });
 
         test('Date equal to the current date should be accepted', async () => {
@@ -862,7 +890,7 @@ describe('MessageSerializer', () => {
 
         test('Date should not be in the future', async () => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: new Date(CURRENT_DATE.getTime() + 1_000),
+            date: new Date(NOW.getTime() + 1_000),
           });
           const serialization = await serialize(
             message,
@@ -871,7 +899,7 @@ describe('MessageSerializer', () => {
             SENDER_PRIVATE_KEY,
           );
 
-          jestDateMock.advanceTo(CURRENT_DATE);
+          jestDateMock.advanceTo(NOW);
           await expect(
             deserialize(
               serialization,
@@ -977,14 +1005,13 @@ describe('MessageSerializer', () => {
           currentDate.setSeconds(currentDate.getSeconds() + message.ttl);
           currentDate.setMilliseconds(1); // Should be greater than zero so we can test rounding too
           jestDateMock.advanceTo(currentDate);
-          await expect(
-            deserialize(
-              serialization,
-              stubConcreteMessageTypeOctet,
-              stubConcreteMessageVersionOctet,
-              StubMessage,
-            ),
-          ).toResolve();
+          const messageDeserialized = await deserialize(
+            serialization,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            StubMessage,
+          );
+          await expect(messageDeserialized).toHaveProperty('ttl', message.ttl);
         });
 
         test('TTL in the past should not be accepted', async () => {
@@ -1011,11 +1038,30 @@ describe('MessageSerializer', () => {
           });
         });
 
+        test('TTL of exactly 180 days should be accepted', async () => {
+          const messageSerialized = await serializeRamfWithoutValidation([
+            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: 'the-id' }),
+            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            new asn1js.Integer({ value: MAX_TTL }),
+            new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
+          ]);
+
+          await expect(
+            deserialize(
+              messageSerialized,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              StubMessage,
+            ),
+          ).resolves.toHaveProperty('ttl', MAX_TTL);
+        });
+
         test('TTL greater than 180 days should not be accepted', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: 'the-address' }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: new Date() } as any),
+            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: MAX_TTL + 1 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -1033,7 +1079,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Payload', () => {
-        test('Payload should be serialized as an OCTET STRING', async () => {
+        test('Payload should be extracted', async () => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
           const messageSerialized = await serialize(
             message,
@@ -1057,7 +1103,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: 'the-address' }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: new Date() } as any),
+            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: bufferToArray(largePayload) }),
           ]);
@@ -1077,7 +1123,7 @@ describe('MessageSerializer', () => {
     });
 
     async function serializeRamfWithoutValidation(
-      sequenceItems: readonly asn1js.LocalBaseBlock[],
+      sequenceItems: ReadonlyArray<asn1js.BaseBlock<any>>,
       senderCertificate?: Certificate,
     ): Promise<ArrayBuffer> {
       const serializer = new SmartBuffer();
@@ -1087,16 +1133,27 @@ describe('MessageSerializer', () => {
       serializer.writeBuffer(
         Buffer.from(
           await cmsSignedData.sign(
-            new asn1js.Sequence({
-              // @ts-ignore
-              value: sequenceItems,
-            }).toBER(false),
+            serializeFieldSet(sequenceItems),
             SENDER_PRIVATE_KEY,
             senderCertificate ?? SENDER_CERTIFICATE,
           ),
         ),
       );
       return bufferToArray(serializer.toBuffer());
+    }
+
+    function serializeFieldSet(sequenceItems: ReadonlyArray<asn1js.BaseBlock<any>>): ArrayBuffer {
+      const fieldSet = new asn1js.Sequence({
+        value: sequenceItems.map(
+          (item, index) =>
+            new asn1js.Primitive({
+              idBlock: { tagClass: 3, tagNumber: index },
+              ...(item.valueBlock.valueHex && { valueHex: item.valueBlock.valueHex }),
+            } as any),
+        ),
+      } as any);
+
+      return fieldSet.toBER(false);
     }
   });
 });
@@ -1116,6 +1173,14 @@ function parseFormatSignature(messageSerialized: ArrayBuffer): MessageFormatSign
   };
 }
 
-function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js.LocalBaseBlock {
-  return fields.valueBlock.value[itemIndex];
+function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js.Primitive {
+  const itemBlock = fields.valueBlock.value[itemIndex] as asn1js.Primitive;
+  expect(itemBlock).toBeInstanceOf(asn1js.Primitive);
+  expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
+  expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
+  return itemBlock as any;
+}
+
+function formatASN1DateTimeWithUTC(date: Date): string {
+  return moment.utc(date).format('YYYYMMDDHHmmss');
 }
