@@ -3,6 +3,7 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
+import moment from 'moment';
 import { SmartBuffer } from 'smart-buffer';
 
 import {
@@ -287,7 +288,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Date', () => {
-        test('Date should be the third item', async () => {
+        test('Date should be formatted as a DATE-TIME with second-level precision', async () => {
           const stubMessage = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
 
           const messageSerialized = await serialize(
@@ -299,10 +300,11 @@ describe('MessageSerializer', () => {
           const fields = await deserializeFields(messageSerialized);
           const datetimeBlock = getAsn1SequenceItem(fields, 2);
           const dateBlock = new asn1js.DateTime({
-            valueHex: (datetimeBlock as asn1js.Primitive).valueBlock.valueHex,
+            valueHex: datetimeBlock.valueBlock.valueHex,
           } as any);
           const dateString = new TextDecoder().decode(dateBlock.valueBlock.valueHex);
-          expect(new Date(dateString)).toEqual(CURRENT_DATE);
+          const expectedDateString = moment(stubMessage.date).format('YYYYMMDDHHmmss');
+          expect(dateString).toEqual(expectedDateString);
         });
 
         test('Date should be serialized as UTC', async () => {

@@ -78,7 +78,7 @@ export async function serialize(
     concreteMessageVersionOctet,
   );
 
-  const dateBlock = new asn1js.DateTime({ value: message.date } as any);
+  const dateBlock = new asn1js.GeneralizedTime({ valueDate: message.date } as any);
   const ttlBlock = new asn1js.Integer({ value: message.ttl });
   const fieldSetSerialized = new asn1js.Sequence({
     // @ts-ignore
@@ -93,7 +93,7 @@ export async function serialize(
       } as any),
       new asn1js.Primitive({
         idBlock: { tagClass: 3, tagNumber: 2 },
-        valueHex: dateBlock.valueBlock.valueHex,
+        valueHex: dateBlock.valueBlock.valueHex.slice(0, -1), // Remove trailing "Z" for UTC
       } as any),
       new asn1js.Primitive({
         idBlock: { tagClass: 3, tagNumber: 3 },
