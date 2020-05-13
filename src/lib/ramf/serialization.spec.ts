@@ -5,6 +5,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 import moment from 'moment';
 import { SmartBuffer } from 'smart-buffer';
+import { TextDecoder } from 'util';
 
 import {
   arrayBufferFrom,

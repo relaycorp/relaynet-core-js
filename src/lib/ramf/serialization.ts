@@ -2,6 +2,7 @@ import * as asn1js from 'asn1js';
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import moment from 'moment';
+import { TextDecoder, TextEncoder } from 'util';
 
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
