@@ -206,11 +206,12 @@ export class SessionEnvelopedData extends EnvelopedData {
     pkijsEnvelopedData.addRecipientByCertificate(pkijsCertificate, {}, 2);
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
-    const [pkijsEncryptionResult] = await pkijsEnvelopedData.encrypt(
-      // @ts-ignore
-      { name: 'AES-GCM', length: aesKeySize },
+    const [pkijsEncryptionResult]: ReadonlyArray<{
+      readonly ecdhPrivateKey: CryptoKey;
+    }> = await pkijsEnvelopedData.encrypt(
+      { name: 'AES-GCM', length: aesKeySize } as any,
       plaintext,
-    );
+    ) as any;
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
 
     // pkijs.EnvelopedData.encrypt() deleted the algorithm params so we should reinstate them:
