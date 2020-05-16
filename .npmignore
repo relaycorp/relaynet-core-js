@@ -20,3 +20,4 @@ tslint.json
 
 .github/
 .circleci/
+.dependabot/
