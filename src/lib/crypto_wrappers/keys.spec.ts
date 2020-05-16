@@ -77,7 +77,7 @@ describe('generateRsaKeyPair', () => {
       expect(keyPair.privateKey.algorithm.hash.name).toBe('SHA-256');
     });
 
-    ['SHA-384', 'SHA-512'].forEach(hashingAlgorithm => {
+    ['SHA-384', 'SHA-512'].forEach((hashingAlgorithm) => {
       test(`${hashingAlgorithm} should be supported`, async () => {
         const keyPair = await generateRSAKeyPair({ hashingAlgorithm });
         // @ts-ignore
@@ -137,7 +137,7 @@ describe('generateDHKeyPair', () => {
     expect(algorithm).toHaveProperty('namedCurve', 'P-256');
   });
 
-  test.each([['P-384', 'P-521']])('%s should also be supported', async curveName => {
+  test.each([['P-384', 'P-521']])('%s should also be supported', async (curveName) => {
     await generateECDHKeyPair(curveName as ECDHCurveName);
 
     const generateKeyCallArgs = mockGenerateKey.mock.calls[0];

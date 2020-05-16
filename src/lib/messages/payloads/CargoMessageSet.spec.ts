@@ -83,7 +83,7 @@ describe('CargoMessageSet', () => {
     test('A multi-item set should be accepted', () => {
       const messages: readonly ArrayBuffer[] = [STUB_MESSAGE, arrayBufferFrom('another message')];
       const asn1Set = new asn1js.Set();
-      asn1Set.valueBlock.value = messages.map(m => new asn1js.BitString({ valueHex: m }));
+      asn1Set.valueBlock.value = messages.map((m) => new asn1js.BitString({ valueHex: m }));
       const serialization = asn1Set.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
@@ -125,7 +125,7 @@ describe('CargoMessageSet', () => {
       expect(batches).toHaveLength(1);
       const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
       expect(messageSet.messages).toEqual(
-        new Set(messagesSerialized.map(m => m.messageSerialized)),
+        new Set(messagesSerialized.map((m) => m.messageSerialized)),
       );
     });
 

@@ -309,7 +309,7 @@ function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): Buffer {
   }
 
   const matchingAttrs = unprotectedAttrs.filter(
-    a => a.type === oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+    (a) => a.type === oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
   );
   if (matchingAttrs.length === 0) {
     throw new CMSError('unprotectedAttrs does not contain originator key id');
