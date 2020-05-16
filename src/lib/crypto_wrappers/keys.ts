@@ -35,7 +35,13 @@ export async function generateRSAKeyPair({
   // tslint:disable-next-line:no-object-mutation
   algorithm.algorithm.modulusLength = modulus;
 
-  return cryptoEngine.generateKey(algorithm.algorithm, true, algorithm.usages);
+  const keyPair = await cryptoEngine.generateKey(
+    algorithm.algorithm,
+    true,
+    // tslint:disable-next-line:readonly-array
+    algorithm.usages as KeyUsage[],
+  );
+  return keyPair as CryptoKeyPair;
 }
 
 /**
