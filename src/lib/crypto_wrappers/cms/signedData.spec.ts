@@ -165,7 +165,7 @@ describe('sign', () => {
       ).toEqual(sha256Hex(plaintext));
     });
 
-    test.each([['SHA-384', 'SHA-512']])('%s should be supported', async hashingAlgorithmName => {
+    test.each([['SHA-384', 'SHA-512']])('%s should be supported', async (hashingAlgorithmName) => {
       jest.spyOn(pkijs.SignedData.prototype, 'sign');
       const contentInfoDer = await sign(plaintext, privateKey, certificate, [], {
         hashingAlgorithmName,
@@ -350,7 +350,7 @@ function deserializeSignerInfoAttribute(
 ): pkijs.Attribute {
   const signerInfo = deserializeSignerInfo(contentInfoDer);
   const attributes = (signerInfo.signedAttrs as pkijs.SignedAndUnsignedAttributes).attributes;
-  const matchingAttrs = attributes.filter(a => a.type === attributeOid);
+  const matchingAttrs = attributes.filter((a) => a.type === attributeOid);
   expect(matchingAttrs).toHaveLength(1);
   return matchingAttrs[0];
 }

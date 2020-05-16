@@ -51,9 +51,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
 }
 
 export function sha256Hex(plaintext: ArrayBuffer | Buffer): string {
-  return createHash('sha256')
-    .update(Buffer.from(plaintext))
-    .digest('hex');
+  return createHash('sha256').update(Buffer.from(plaintext)).digest('hex');
 }
 
 /**

@@ -48,7 +48,7 @@ export async function sign(
   const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
   const signerInfo = initSignerInfo(signerCertificate, digest);
   const signedData = new pkijs.SignedData({
-    certificates: [signerCertificate, ...caCertificates].map(c => c.pkijsCertificate),
+    certificates: [signerCertificate, ...caCertificates].map((c) => c.pkijsCertificate),
     encapContentInfo: new pkijs.EncapsulatedContentInfo({
       eContent: new asn1js.OctetString({ valueHex: plaintext }),
       eContentType: oids.CMS_DATA,
@@ -127,7 +127,7 @@ export async function verifySignature(
 
   return {
     attachedCertificates: (signedData.certificates as readonly pkijs.Certificate[]).map(
-      c => new Certificate(c),
+      (c) => new Certificate(c),
     ),
     plaintext,
     signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
@@ -141,9 +141,9 @@ function extractSignedDataContent(encapContentInfo: pkijs.EncapsulatedContentInf
   // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
   const contentOctetStringChunks = encapContentInfo.eContent.valueBlock.value;
   const contentChunks = contentOctetStringChunks.map(
-    os => (os as asn1js.OctetString).valueBlock.valueHex,
+    (os) => (os as asn1js.OctetString).valueBlock.valueHex,
   );
-  const content = Buffer.concat(contentChunks.map(c => new Uint8Array(c)));
+  const content = Buffer.concat(contentChunks.map((c) => new Uint8Array(c)));
 
   // tslint:disable-next-line:no-delete
   delete encapContentInfo.eContent;

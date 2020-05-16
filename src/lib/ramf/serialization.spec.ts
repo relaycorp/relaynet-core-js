@@ -167,7 +167,7 @@ describe('MessageSerializer', () => {
 
       test.each([['SHA-384', 'SHA-512']])(
         '%s should also be supported',
-        async hashingAlgorithmName => {
+        async (hashingAlgorithmName) => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
 
           jest.spyOn(cmsSignedData, 'sign');

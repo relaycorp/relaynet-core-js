@@ -37,7 +37,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
       throw new InvalidMessageError('Serialization is not a valid CargoMessageSet');
     }
     const messageSet: readonly asn1js.BitString[] = (result.result as any).message_set || [];
-    const messages = messageSet.map(v => v.valueBlock.valueHex);
+    const messages = messageSet.map((v) => v.valueBlock.valueHex);
     return new CargoMessageSet(new Set(messages));
   }
 
@@ -106,7 +106,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
 
   public serialize(): ArrayBuffer {
     const messagesSerialized = Array.from(this.messages).map(
-      m => new asn1js.BitString({ valueHex: m }),
+      (m) => new asn1js.BitString({ valueHex: m }),
     );
     const set = new asn1js.Set();
     // tslint:disable-next-line:no-object-mutation

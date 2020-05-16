@@ -285,7 +285,7 @@ describe('issue()', () => {
     // tslint:disable-next-line:no-object-mutation
     issuerCert.pkijsCertificate.extensions = (issuerCert.pkijsCertificate
       .extensions as ReadonlyArray<pkijs.Extension>).filter(
-      e => e.extnID !== oids.BASIC_CONSTRAINTS,
+      (e) => e.extnID !== oids.BASIC_CONSTRAINTS,
     );
 
     await expectPromiseToReject(
@@ -352,7 +352,7 @@ describe('issue()', () => {
       });
 
       const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
-      const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
+      const matchingExtensions = extensions.filter((e) => e.extnID === oids.BASIC_CONSTRAINTS);
       expect(matchingExtensions).toHaveLength(1);
       expect(matchingExtensions[0]).toHaveProperty('critical', true);
     });
@@ -437,7 +437,7 @@ describe('issue()', () => {
       });
 
       const extensions = cert.pkijsCertificate.extensions || [];
-      const matchingExtensions = extensions.filter(e => e.extnID === oids.AUTHORITY_KEY);
+      const matchingExtensions = extensions.filter((e) => e.extnID === oids.AUTHORITY_KEY);
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
@@ -467,7 +467,7 @@ describe('issue()', () => {
       });
 
       const extensions = subjectCert.pkijsCertificate.extensions || [];
-      const matchingExtensions = extensions.filter(e => e.extnID === oids.AUTHORITY_KEY);
+      const matchingExtensions = extensions.filter((e) => e.extnID === oids.AUTHORITY_KEY);
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
@@ -500,7 +500,7 @@ describe('issue()', () => {
     });
 
     const extensions = subjectCert.pkijsCertificate.extensions || [];
-    const matchingExtensions = extensions.filter(e => e.extnID === oids.SUBJECT_KEY);
+    const matchingExtensions = extensions.filter((e) => e.extnID === oids.SUBJECT_KEY);
     expect(matchingExtensions).toHaveLength(1);
     const skiExtension = matchingExtensions[0];
     expect(skiExtension.critical).toBe(false);
@@ -736,7 +736,7 @@ test('getPublicKey should return the subject public key', async () => {
 
 function getBasicConstraintsExtension(cert: Certificate): pkijs.BasicConstraints {
   const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
-  const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
+  const matchingExtensions = extensions.filter((e) => e.extnID === oids.BASIC_CONSTRAINTS);
   const extension = matchingExtensions[0];
   const basicConstraintsAsn1 = utils.derDeserialize(extension.extnValue.valueBlock.valueHex);
   return new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });

@@ -81,7 +81,7 @@ export default class Certificate {
       : pkijsCert.subject.typesAndValues;
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.issuer.typesAndValues = issuerDn.map(
-      attribute =>
+      (attribute) =>
         new pkijs.AttributeTypeAndValue({
           type: attribute.type,
           value: cloneAsn1jsValue(attribute.value),
@@ -126,7 +126,7 @@ export default class Certificate {
 
   public getCommonName(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
-      a => ((a.type as unknown) as string) === oids.COMMON_NAME,
+      (a) => ((a.type as unknown) as string) === oids.COMMON_NAME,
     );
     if (matchingDnAttr.length === 0) {
       throw new CertificateError('Distinguished Name does not contain Common Name');
@@ -177,8 +177,8 @@ export default class Certificate {
     trustedCertificates: readonly Certificate[],
   ): Promise<readonly Certificate[]> {
     const chainValidator = new pkijs.CertificateChainValidationEngine({
-      certs: [...intermediateCaCertificates.map(c => c.pkijsCertificate), this.pkijsCertificate],
-      trustedCerts: trustedCertificates.map(c => c.pkijsCertificate),
+      certs: [...intermediateCaCertificates.map((c) => c.pkijsCertificate), this.pkijsCertificate],
+      trustedCerts: trustedCertificates.map((c) => c.pkijsCertificate),
     });
     const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
 
@@ -233,7 +233,7 @@ async function makeSubjectKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Ex
 
 function validateIssuerCertificate(issuerCertificate: Certificate): void {
   const extensions = issuerCertificate.pkijsCertificate.extensions || [];
-  const matchingExtensions = extensions.filter(e => e.extnID === oids.BASIC_CONSTRAINTS);
+  const matchingExtensions = extensions.filter((e) => e.extnID === oids.BASIC_CONSTRAINTS);
   if (matchingExtensions.length === 0) {
     throw new CertificateError('Basic constraints extension is missing from issuer certificate');
   }

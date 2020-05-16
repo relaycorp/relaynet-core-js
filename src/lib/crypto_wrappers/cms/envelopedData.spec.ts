@@ -200,7 +200,7 @@ describe('EnvelopedData', () => {
 
       jest
         .spyOn(pkijs.RecipientInfo.prototype, 'fromSchema')
-        .mockImplementationOnce(function(this: pkijs.RecipientInfo): void {
+        .mockImplementationOnce(function (this: pkijs.RecipientInfo): void {
           this.variant = 3;
         });
       expect(() =>
