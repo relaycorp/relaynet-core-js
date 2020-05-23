@@ -1,10 +1,13 @@
 version: 1
 update_configs:
-  - package_manager: "javascript"
-    directory: "/"
-    update_schedule: "live"
+  - package_manager: javascript
+    directory: /
+    update_schedule: live
     ignored_updates:
       - match:
           # https://github.com/relaycorp/relaynet-core-js/issues/73
-          dependency_name: "pkijs"
+          dependency_name: pkijs
     version_requirement_updates: increase_versions
+  - package_manager: ruby:bundler
+    directory: /docs
+    update_schedule: live
