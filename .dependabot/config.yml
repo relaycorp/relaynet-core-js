@@ -7,3 +7,4 @@ update_configs:
       - match:
           # https://github.com/relaycorp/relaynet-core-js/issues/73
           dependency_name: "pkijs"
+    version_requirement_updates: increase_versions
