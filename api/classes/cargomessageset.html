@@ -2815,7 +2815,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L103">src/lib/messages/payloads/CargoMessageSet.ts:103</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L105">src/lib/messages/payloads/CargoMessageSet.ts:105</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2837,7 +2837,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">messages<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L105">src/lib/messages/payloads/CargoMessageSet.ts:105</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L107">src/lib/messages/payloads/CargoMessageSet.ts:107</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2847,7 +2847,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">MAX_<wbr>MESSAGE_<wbr>LENGTH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = MAX_SDU_PLAINTEXT_LENGTH - DER_TL_OVERHEAD_OCTETS * 2 - 1</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L31">src/lib/messages/payloads/CargoMessageSet.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L33">src/lib/messages/payloads/CargoMessageSet.ts:33</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2865,16 +2865,22 @@ img {
 				<a name="deserializemessages" class="tsd-anchor"></a>
 				<h3>deserialize<wbr>Messages</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<li class="tsd-signature tsd-kind-icon">deserialize<wbr>Messages<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="parcel.html" class="tsd-signature-type">Parcel</a><span class="tsd-signature-symbol"> | </span><a href="parcelcollectionack.html" class="tsd-signature-type">ParcelCollectionAck</a><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">deserialize<wbr>Messages<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../globals.html#cargomessagesetitem" class="tsd-signature-type">CargoMessageSetItem</a><span class="tsd-signature-symbol"> | </span><a href="invalidmessageerror.html" class="tsd-signature-type">InvalidMessageError</a><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L117">src/lib/messages/payloads/CargoMessageSet.ts:117</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L124">src/lib/messages/payloads/CargoMessageSet.ts:124</a></li>
 							</ul>
 						</aside>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="parcel.html" class="tsd-signature-type">Parcel</a><span class="tsd-signature-symbol"> | </span><a href="parcelcollectionack.html" class="tsd-signature-type">ParcelCollectionAck</a><span class="tsd-signature-symbol">&gt;</span></h4>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Deserialize and yield each message encapsulated in the cargo message set.</p>
+							</div>
+							<p>When a message failed to be deserialized, an <code>InvalidMessageError</code> is yielded in its place.</p>
+						</div>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../globals.html#cargomessagesetitem" class="tsd-signature-type">CargoMessageSetItem</a><span class="tsd-signature-symbol"> | </span><a href="invalidmessageerror.html" class="tsd-signature-type">InvalidMessageError</a><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -2888,7 +2894,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L107">src/lib/messages/payloads/CargoMessageSet.ts:107</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L109">src/lib/messages/payloads/CargoMessageSet.ts:109</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ArrayBuffer</span></h4>
@@ -2905,7 +2911,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L44">src/lib/messages/payloads/CargoMessageSet.ts:44</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L46">src/lib/messages/payloads/CargoMessageSet.ts:46</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2928,7 +2934,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b133466/src/lib/messages/payloads/CargoMessageSet.ts#L34">src/lib/messages/payloads/CargoMessageSet.ts:34</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94b608/src/lib/messages/payloads/CargoMessageSet.ts#L36">src/lib/messages/payloads/CargoMessageSet.ts:36</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
