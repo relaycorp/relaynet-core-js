@@ -16,6 +16,8 @@ export interface MessageWithExpiryDate {
   readonly expiryDate: Date;
 }
 
+export type CargoMessageSetItem = Parcel | ParcelCollectionAck;
+
 /**
  * Plaintext representation of the payload in a cargo message.
  *
@@ -114,7 +116,12 @@ export default class CargoMessageSet implements PayloadPlaintext {
     return set.toBER(false);
   }
 
-  public async *deserializeMessages(): AsyncIterable<Parcel | ParcelCollectionAck> {
+  /**
+   * Deserialize and yield each message encapsulated in the cargo message set.
+   *
+   * When a message failed to be deserialized, an `InvalidMessageError` is yielded in its place.
+   */
+  public async *deserializeMessages(): AsyncIterable<CargoMessageSetItem | InvalidMessageError> {
     for (const messageSerialized of this.messages) {
       const messageFormatSignature = Buffer.from(messageSerialized.slice(0, 10));
       const messageClass = messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)
@@ -124,7 +131,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
       try {
         yield messageClass.deserialize(messageSerialized);
       } catch (error) {
-        throw new InvalidMessageError(error, 'Invalid message found');
+        yield new InvalidMessageError(error, 'Invalid item in cargo message set');
       }
     }
   }

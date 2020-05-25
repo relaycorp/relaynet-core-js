@@ -265,6 +265,8 @@ describe('CargoMessageSet', () => {
     let privateKey: CryptoKey;
     let certificate: Certificate;
 
+    const PCA = new ParcelCollectionAck('https://sender.endpoint/', 'deadbeef', 'parcel-id');
+
     beforeAll(async () => {
       const senderKeyPair = await generateRSAKeyPair();
       privateKey = senderKeyPair.privateKey;
@@ -287,39 +289,40 @@ describe('CargoMessageSet', () => {
     });
 
     test('PCAs should be yielded', async () => {
-      const pca = new ParcelCollectionAck('https://sender.endpoint/', 'deadbeef', 'parcel-id');
-      const pcaSerialization = await pca.serialize();
-      const cargoMessageSet = new CargoMessageSet(new Set([pcaSerialization]));
+      const cargoMessageSet = new CargoMessageSet(new Set([await PCA.serialize()]));
 
       const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
 
       expect(messages).toHaveLength(1);
       expect(messages[0]).toBeInstanceOf(ParcelCollectionAck);
-      expect(messages[0]).toMatchObject(pca);
+      expect(messages[0]).toMatchObject(PCA);
     });
 
-    test('An error should be thrown when non-RAMF messages are found', async () => {
-      const cargoMessageSet = new CargoMessageSet(new Set([arrayBufferFrom('Not RAMF')]));
+    test('An error should be yielded when non-RAMF message is found', async () => {
+      const cargoMessageSet = new CargoMessageSet(
+        new Set([await PCA.serialize(), arrayBufferFrom('Not RAMF')]),
+      );
 
-      await expect(
-        asyncIterableToArray(cargoMessageSet.deserializeMessages()),
-      ).rejects.toMatchObject<Partial<InvalidMessageError>>({
-        message: expect.stringMatching(
-          /^Invalid message found: Serialization starts with invalid RAMF format signature/,
-        ),
-      });
+      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0]).toBeInstanceOf(ParcelCollectionAck);
+      expect(messages[1]).toBeInstanceOf(InvalidMessageError);
+      expect(messages[1]).toMatchObject({ message: /^Invalid item in cargo message set:/ });
     });
 
-    test('An error should be thrown when unsupported RAMF messages are found', async () => {
+    test('An error should be yielded when unsupported RAMF message is found', async () => {
       const innerCargo = new Cargo('address', certificate, Buffer.from('hi'));
       const cargoSerialization = await innerCargo.serialize(privateKey);
-      const cargoMessageSet = new CargoMessageSet(new Set([cargoSerialization]));
+      const cargoMessageSet = new CargoMessageSet(
+        new Set([await PCA.serialize(), cargoSerialization]),
+      );
 
-      await expect(
-        asyncIterableToArray(cargoMessageSet.deserializeMessages()),
-      ).rejects.toMatchObject<Partial<InvalidMessageError>>({
-        message: expect.stringMatching(/^Invalid message found: Expected concrete message type/),
-      });
+      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
+
+      expect(messages).toHaveLength(2);
+      expect(messages[1]).toBeInstanceOf(InvalidMessageError);
+      expect(messages[1]).toMatchObject({ message: /^Invalid item in cargo message set:/ });
     });
 
     test('An empty set should result in no yielded values', async () => {
