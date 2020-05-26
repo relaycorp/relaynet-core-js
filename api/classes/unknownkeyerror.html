@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>CargoRelayClient | @relaycorp/relaynet-core</title>
+	<title>UnknownKeyError | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2722,17 +2722,47 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-interface tsd-is-external">
-			<a href="cargorelayclient.html" class="tsd-kind-icon">Cargo<wbr>Relay<wbr>Client</a>
+		<li class="current tsd-kind-class tsd-is-external">
+			<a href="unknownkeyerror.html" class="tsd-kind-icon">Unknown<wbr>Key<wbr>Error</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="cargorelayclient.html#close" class="tsd-kind-icon">close</a>
+				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<a href="unknownkeyerror.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="cargorelayclient.html#collectcargo" class="tsd-kind-icon">collect<wbr>Cargo</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<a href="unknownkeyerror.html#message" class="tsd-kind-icon">message</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="cargorelayclient.html#delivercargo" class="tsd-kind-icon">deliver<wbr>Cargo</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<a href="unknownkeyerror.html#stack" class="tsd-kind-icon">stack</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#verror" class="tsd-kind-icon">VError</a>
+				</li>
+				<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
+					<a href="unknownkeyerror.html#name" class="tsd-kind-icon">name</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<a href="unknownkeyerror.html#cause" class="tsd-kind-icon">cause</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#cause-1" class="tsd-kind-icon">cause</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#errorforeach" class="tsd-kind-icon">error<wbr>For<wbr>Each</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#errorfromlist" class="tsd-kind-icon">error<wbr>From<wbr>List</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#findcausebyname" class="tsd-kind-icon">find<wbr>Cause<wbr>ByName</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#fullstack" class="tsd-kind-icon">full<wbr>Stack</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#hascausewithname" class="tsd-kind-icon">has<wbr>Cause<wbr>With<wbr>Name</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<a href="unknownkeyerror.html#info" class="tsd-kind-icon">info</a>
 				</li>
 			</ul>
 		</li>
@@ -2740,18 +2770,16 @@ img {
 </nav>
 <div class="container container-main">
 	<div class="content-wrap">
-		<section class="tsd-panel tsd-comment">
-			<div class="tsd-comment tsd-typography">
-				<div class="lead">
-					<p>Interface for cargo relay clients</p>
-				</div>
-			</div>
-		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">CargoRelayClient</span>
+					<a href="relayneterror.html" class="tsd-signature-type">RelaynetError</a>
+					<ul class="tsd-hierarchy">
+						<li>
+							<span class="target">UnknownKeyError</span>
+						</li>
+					</ul>
 				</li>
 			</ul>
 		</section>
@@ -2759,115 +2787,372 @@ img {
 			<h2>Index</h2>
 			<section class="tsd-panel tsd-index-panel">
 				<div class="tsd-index-content">
-					<section class="tsd-index-section tsd-is-external">
+					<section class="tsd-index-section tsd-is-inherited tsd-is-external">
+						<h3>Constructors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="unknownkeyerror.html#constructor" class="tsd-kind-icon">constructor</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="cargorelayclient.html#close" class="tsd-kind-icon">close</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="cargorelayclient.html#collectcargo" class="tsd-kind-icon">collect<wbr>Cargo</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="cargorelayclient.html#delivercargo" class="tsd-kind-icon">deliver<wbr>Cargo</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="unknownkeyerror.html#message" class="tsd-kind-icon">message</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="unknownkeyerror.html#stack" class="tsd-kind-icon">stack</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#verror" class="tsd-kind-icon">VError</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-inherited tsd-is-external">
+						<h3>Accessors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="unknownkeyerror.html#name" class="tsd-kind-icon">name</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-inherited tsd-is-external">
+						<h3>Methods</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="unknownkeyerror.html#cause" class="tsd-kind-icon">cause</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#cause-1" class="tsd-kind-icon">cause</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#errorforeach" class="tsd-kind-icon">error<wbr>For<wbr>Each</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#errorfromlist" class="tsd-kind-icon">error<wbr>From<wbr>List</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#findcausebyname" class="tsd-kind-icon">find<wbr>Cause<wbr>ByName</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#fullstack" class="tsd-kind-icon">full<wbr>Stack</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#hascausewithname" class="tsd-kind-icon">has<wbr>Cause<wbr>With<wbr>Name</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="unknownkeyerror.html#info" class="tsd-kind-icon">info</a></li>
 						</ul>
 					</section>
 				</div>
 			</section>
 		</section>
-		<section class="tsd-panel-group tsd-member-group tsd-is-external">
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
+			<h2>Constructors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+				<a name="constructor" class="tsd-anchor"></a>
+				<h3>constructor</h3>
+				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Unknown<wbr>Key<wbr>Error<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><a href="../interfaces/relayneterror.options.html" class="tsd-signature-type">Options</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span>, message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, <span class="tsd-signature-symbol">...</span>params<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="unknownkeyerror.html" class="tsd-signature-type">UnknownKeyError</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Unknown<wbr>Key<wbr>Error<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span>, <span class="tsd-signature-symbol">...</span>params<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="unknownkeyerror.html" class="tsd-signature-type">UnknownKeyError</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#constructor">constructor</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:31</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>options: <a href="../interfaces/relayneterror.options.html" class="tsd-signature-type">Options</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h5>
+							</li>
+							<li>
+								<h5>message: <span class="tsd-signature-type">string</span></h5>
+							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>params: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="unknownkeyerror.html" class="tsd-signature-type">UnknownKeyError</a></h4>
+					</li>
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#constructor">constructor</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:32</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> message: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></h5>
+							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>params: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="unknownkeyerror.html" class="tsd-signature-type">UnknownKeyError</a></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="close" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> close</h3>
-				<div class="tsd-signature tsd-kind-icon">close<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+				<a name="message" class="tsd-anchor"></a>
+				<h3>message</h3>
+				<div class="tsd-signature tsd-kind-icon">message<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
+					<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#message">message</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/23973ea/src/lib/cargoRelay.ts#L19">src/lib/cargoRelay.ts:19</a></li>
+						<li>Defined in node_modules/typescript/lib/lib.es5.d.ts:974</li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Close the underlying connection, if applicable</p>
-					</div>
-				</div>
-				<div class="tsd-type-declaration">
-					<h4>Type declaration</h4>
-					<ul class="tsd-parameters">
-						<li class="tsd-parameter-signature">
-							<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property">
-								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-							</ul>
-							<ul class="tsd-descriptions">
-								<li class="tsd-description">
-									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-								</li>
-							</ul>
-						</li>
-					</ul>
-				</div>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="collectcargo" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> collect<wbr>Cargo</h3>
-				<div class="tsd-signature tsd-kind-icon">collect<wbr>Cargo<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-symbol">keyof </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">[]</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+				<a name="stack" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> stack</h3>
+				<div class="tsd-signature tsd-kind-icon">stack<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
+					<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#stack">stack</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/23973ea/src/lib/cargoRelay.ts#L30">src/lib/cargoRelay.ts:30</a></li>
+						<li>Defined in node_modules/typescript/lib/lib.es5.d.ts:975</li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Collect and return cargo</p>
-					</div>
-				</div>
-				<div class="tsd-type-declaration">
-					<h4>Type declaration</h4>
-					<ul class="tsd-parameters">
-						<li class="tsd-parameter-signature">
-							<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property">
-								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">keyof </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">[]</span></li>
-							</ul>
-							<ul class="tsd-descriptions">
-								<li class="tsd-description">
-									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">keyof </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">[]</span></h4>
-								</li>
-							</ul>
-						</li>
-					</ul>
-				</div>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="delivercargo" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> deliver<wbr>Cargo</h3>
-				<div class="tsd-signature tsd-kind-icon">deliver<wbr>Cargo<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>cargo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><a href="cargodeliveryrequest.html" class="tsd-signature-type">CargoDeliveryRequest</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><a href="../globals.html#localcargoid" class="tsd-signature-type">LocalCargoId</a><span class="tsd-signature-symbol">&gt;</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="verror" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> VError</h3>
+				<div class="tsd-signature tsd-kind-icon">VError<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">VError</span></div>
 				<aside class="tsd-sources">
+					<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#verror">VError</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/23973ea/src/lib/cargoRelay.ts#L25">src/lib/cargoRelay.ts:25</a></li>
+						<li>Defined in node_modules/@types/verror/index.d.ts:21</li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p> Deliver the cargo yielded by the input iterator and return the local ids of the acknowledged
-						deliveries</p>
-					</div>
-				</div>
-				<div class="tsd-type-declaration">
-					<h4>Type declaration</h4>
-					<ul class="tsd-parameters">
-						<li class="tsd-parameter-signature">
-							<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property">
-								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>cargo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><a href="cargodeliveryrequest.html" class="tsd-signature-type">CargoDeliveryRequest</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><a href="../globals.html#localcargoid" class="tsd-signature-type">LocalCargoId</a><span class="tsd-signature-symbol">&gt;</span></li>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
+			<h2>Accessors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
+				<a name="name" class="tsd-anchor"></a>
+				<h3>name</h3>
+				<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> name<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#name">name</a></p>
+							<p>Overrides Error.name</p>
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/23973ea/src/lib/RelaynetError.ts#L4">src/lib/RelaynetError.ts:4</a></li>
 							</ul>
-							<ul class="tsd-descriptions">
-								<li class="tsd-description">
-									<h4 class="tsd-parameters-title">Parameters</h4>
-									<ul class="tsd-parameters">
-										<li>
-											<h5>cargo: <span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><a href="cargodeliveryrequest.html" class="tsd-signature-type">CargoDeliveryRequest</a><span class="tsd-signature-symbol">&gt;</span></h5>
-										</li>
-									</ul>
-									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><a href="../globals.html#localcargoid" class="tsd-signature-type">LocalCargoId</a><span class="tsd-signature-symbol">&gt;</span></h4>
-								</li>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
+			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+				<a name="cause" class="tsd-anchor"></a>
+				<h3>cause</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">cause<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#cause-1">cause</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:31</li>
 							</ul>
-						</li>
-					</ul>
-				</div>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="cause-1" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> cause</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">cause<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#cause-1">cause</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:23</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>err: <span class="tsd-signature-type">Error</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="errorforeach" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> error<wbr>For<wbr>Each</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">error<wbr>For<wbr>Each<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span>, func<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#errorforeach">errorForEach</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:29</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>err: <span class="tsd-signature-type">Error</span></h5>
+							</li>
+							<li>
+								<h5>func: <span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter-signature">
+										<ul class="tsd-signatures tsd-kind-type-literal">
+											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+										</ul>
+										<ul class="tsd-descriptions">
+											<li class="tsd-description">
+												<h4 class="tsd-parameters-title">Parameters</h4>
+												<ul class="tsd-parameters">
+													<li>
+														<h5>err: <span class="tsd-signature-type">Error</span></h5>
+													</li>
+												</ul>
+												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+											</li>
+										</ul>
+									</li>
+								</ul>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="errorfromlist" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> error<wbr>From<wbr>List</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">error<wbr>From<wbr>List&lt;T&gt;<span class="tsd-signature-symbol">(</span>errors<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><a href="relayneterror.multierror.html" class="tsd-signature-type">MultiError</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#errorfromlist">errorFromList</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:28</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-type-parameters-title">Type parameters</h4>
+						<ul class="tsd-type-parameters">
+							<li>
+								<h4>T<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span></h4>
+							</li>
+						</ul>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>errors: <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><a href="relayneterror.multierror.html" class="tsd-signature-type">MultiError</a></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="findcausebyname" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> find<wbr>Cause<wbr>ByName</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">find<wbr>Cause<wbr>ByName<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span>, name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#findcausebyname">findCauseByName</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:26</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>err: <span class="tsd-signature-type">Error</span></h5>
+							</li>
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="fullstack" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> full<wbr>Stack</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">full<wbr>Stack<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#fullstack">fullStack</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:25</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>err: <span class="tsd-signature-type">Error</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="hascausewithname" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> has<wbr>Cause<wbr>With<wbr>Name</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">has<wbr>Cause<wbr>With<wbr>Name<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span>, name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#hascausewithname">hasCauseWithName</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:27</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>err: <span class="tsd-signature-type">Error</span></h5>
+							</li>
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+				<a name="info" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> info</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">info<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/relayneterror.info.html" class="tsd-signature-type">Info</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="relayneterror.html">RelaynetError</a>.<a href="relayneterror.html#info-1">info</a></p>
+							<ul>
+								<li>Defined in node_modules/@types/verror/index.d.ts:24</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>err: <span class="tsd-signature-type">Error</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="../interfaces/relayneterror.info.html" class="tsd-signature-type">Info</a></h4>
+					</li>
+				</ul>
 			</section>
 		</section>
 		<footer class="with-border-bottom">
