@@ -29,6 +29,7 @@ export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/publicKeyStore';
 export * from './lib/keyStores/testMocks';
 export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
+export { default as UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 export * from './lib/cargoRelay';
 

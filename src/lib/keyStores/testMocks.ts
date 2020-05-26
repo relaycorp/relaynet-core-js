@@ -9,7 +9,7 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
   // tslint:disable-next-line:readonly-keyword
   public readonly keys: { [key: string]: PrivateKeyData } = {};
 
-  constructor(protected readonly failOnSave = false) {
+  constructor(protected readonly failOnSave = false, protected readonly failOnFetch = false) {
     super();
   }
 
@@ -49,11 +49,11 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     };
   }
 
-  protected async fetchKey(keyId: string): Promise<PrivateKeyData> {
-    if (keyId in this.keys) {
-      return this.keys[keyId];
+  protected async fetchKey(keyId: string): Promise<PrivateKeyData | null> {
+    if (this.failOnFetch) {
+      throw new Error('Denied');
     }
-    throw new Error(`Unknown key ${keyId}`);
+    return this.keys[keyId] ?? null;
   }
 
   protected async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void> {

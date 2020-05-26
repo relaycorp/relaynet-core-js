@@ -9,6 +9,7 @@ import {
   UnboundPrivateKeyData,
 } from './privateKeyStore';
 import { MockPrivateKeyStore } from './testMocks';
+import UnknownKeyError from './UnknownKeyError';
 
 describe('PrivateKeyStore', () => {
   let PRIVATE_KEY: CryptoKey;
@@ -33,6 +34,14 @@ describe('PrivateKeyStore', () => {
         expect(CERTIFICATE.isEqual(keyPair.certificate)).toBeTrue();
       });
 
+      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
+        const store = new MockPrivateKeyStore();
+
+        await expect(store.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
+          UnknownKeyError,
+        );
+      });
+
       test('Session keys should not be returned', async () => {
         const store = new MockPrivateKeyStore();
         await store.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
@@ -44,13 +53,11 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Errors should be wrapped', async () => {
-        const store = new MockPrivateKeyStore();
+        const store = new MockPrivateKeyStore(false, true);
 
         await expectPromiseToReject(
           store.fetchNodeKey(CERTIFICATE.getSerialNumber()),
-          new PrivateKeyStoreError(
-            `Failed to retrieve key: Unknown key ${CERTIFICATE.getSerialNumberHex()}`,
-          ),
+          new PrivateKeyStoreError('Failed to retrieve key: Denied'),
         );
       });
     });
@@ -119,6 +126,14 @@ describe('PrivateKeyStore', () => {
           expect(CERTIFICATE.isEqual(keyPair.certificate)).toBeTrue();
         });
 
+        test('UnknownKeyError should be thrown if key pair does not exist', async () => {
+          const store = new MockPrivateKeyStore();
+
+          await expect(
+            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+          ).rejects.toBeInstanceOf(UnknownKeyError);
+        });
+
         test('Node keys should not be returned', async () => {
           const store = new MockPrivateKeyStore();
           await store.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
@@ -142,13 +157,11 @@ describe('PrivateKeyStore', () => {
         });
 
         test('Errors should be wrapped', async () => {
-          const store = new MockPrivateKeyStore();
+          const store = new MockPrivateKeyStore(false, true);
 
           await expectPromiseToReject(
             store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
-            new PrivateKeyStoreError(
-              `Failed to retrieve key: Unknown key ${CERTIFICATE.getSerialNumberHex()}`,
-            ),
+            new PrivateKeyStoreError('Failed to retrieve key: Denied'),
           );
         });
       });
@@ -183,12 +196,12 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore();
         await store.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
-        const privateKeyData = await store.fetchSessionKey(
+        const privateKey = await store.fetchSessionKey(
           CERTIFICATE.getSerialNumber(),
           stubRecipientCertificate,
         );
 
-        expect(await keys.derSerializePrivateKey(privateKeyData)).toEqual(
+        expect(await keys.derSerializePrivateKey(privateKey)).toEqual(
           await keys.derSerializePrivateKey(PRIVATE_KEY),
         );
       });
@@ -201,14 +214,22 @@ describe('PrivateKeyStore', () => {
           stubRecipientCertificate,
         );
 
-        const privateKeyData = await store.fetchSessionKey(
+        const privateKey = await store.fetchSessionKey(
           CERTIFICATE.getSerialNumber(),
           stubRecipientCertificate,
         );
 
-        expect(await keys.derSerializePrivateKey(privateKeyData)).toEqual(
+        expect(await keys.derSerializePrivateKey(privateKey)).toEqual(
           await keys.derSerializePrivateKey(PRIVATE_KEY),
         );
+      });
+
+      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
+        const store = new MockPrivateKeyStore();
+
+        await expect(
+          store.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
+        ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
       test('Keys bound to another recipient should not be returned', async () => {
@@ -236,13 +257,11 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Errors should be wrapped', async () => {
-        const store = new MockPrivateKeyStore();
+        const store = new MockPrivateKeyStore(false, true);
 
         await expectPromiseToReject(
           store.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
-          new PrivateKeyStoreError(
-            `Failed to retrieve key: Unknown key ${CERTIFICATE.getSerialNumberHex()}`,
-          ),
+          new PrivateKeyStoreError('Failed to retrieve key: Denied'),
         );
       });
     });
