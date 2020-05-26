@@ -41,6 +41,9 @@ export interface BoundPrivateKeyData extends BasePrivateKeyData {
 
 export type PrivateKeyData = UnboundPrivateKeyData | BoundPrivateKeyData;
 
+/**
+ * Error thrown when there was a failure in the communication with the backing service.
+ */
 export class PrivateKeyStoreError extends RelaynetError {}
 
 export interface UnboundKeyPair {
