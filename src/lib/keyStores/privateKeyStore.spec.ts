@@ -247,39 +247,37 @@ describe('PrivateKeyStore', () => {
       });
     });
 
-    describe('Subsequent session keys', () => {
-      describe('saveSubsequentSessionKey', () => {
-        test('Bound key should be stored', async () => {
-          const store = new MockPrivateKeyStore();
+    describe('saveSubsequentSessionKey', () => {
+      test('Bound key should be stored', async () => {
+        const store = new MockPrivateKeyStore();
 
-          await store.saveSubsequentSessionKey(
+        await store.saveSubsequentSessionKey(
+          PRIVATE_KEY,
+          CERTIFICATE.getSerialNumber(),
+          stubRecipientCertificate,
+        );
+
+        const expectedKey: BoundPrivateKeyData = {
+          keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
+          recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
+            await stubRecipientCertificate.getPublicKey(),
+          ),
+          type: 'session-subsequent',
+        };
+        expect(store.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
+      });
+
+      test('Errors should be wrapped', async () => {
+        const store = new MockPrivateKeyStore(true);
+
+        await expectPromiseToReject(
+          store.saveSubsequentSessionKey(
             PRIVATE_KEY,
             CERTIFICATE.getSerialNumber(),
             stubRecipientCertificate,
-          );
-
-          const expectedKey: BoundPrivateKeyData = {
-            keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
-            recipientPublicKeyDigest: await keys.getPublicKeyDigestHex(
-              await stubRecipientCertificate.getPublicKey(),
-            ),
-            type: 'session-subsequent',
-          };
-          expect(store.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
-        });
-
-        test('Errors should be wrapped', async () => {
-          const store = new MockPrivateKeyStore(true);
-
-          await expectPromiseToReject(
-            store.saveSubsequentSessionKey(
-              PRIVATE_KEY,
-              CERTIFICATE.getSerialNumber(),
-              stubRecipientCertificate,
-            ),
-            new PrivateKeyStoreError(`Failed to save key: Denied`),
-          );
-        });
+          ),
+          new PrivateKeyStoreError(`Failed to save key: Denied`),
+        );
       });
     });
   });
