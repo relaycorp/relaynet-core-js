@@ -16,7 +16,7 @@ const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
 interface MessageOptions {
   readonly id: string;
-  readonly date: Date;
+  readonly creationDate: Date;
   readonly ttl: number;
   readonly senderCaCertificateChain: readonly Certificate[];
 }
@@ -26,7 +26,7 @@ interface MessageOptions {
  */
 export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   public readonly id: string;
-  public readonly date: Date;
+  public readonly creationDate: Date;
   public readonly ttl: number;
   public readonly senderCaCertificateChain: readonly Certificate[];
 
@@ -37,14 +37,14 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
-    this.date = options.date || new Date();
+    this.creationDate = options.creationDate || new Date();
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
     this.senderCaCertificateChain = options.senderCaCertificateChain ?? [];
   }
 
   get expiryDate(): Date {
-    const creationDateTimestamp = this.date.getTime();
+    const creationDateTimestamp = this.creationDate.getTime();
     return new Date(creationDateTimestamp + this.ttl * 1_000);
   }
 

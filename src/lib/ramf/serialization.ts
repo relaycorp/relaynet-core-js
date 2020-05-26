@@ -80,7 +80,7 @@ export async function serialize(
     concreteMessageVersionOctet,
   );
 
-  const utcDateString = moment.utc(message.date).format('YYYYMMDDHHmmss');
+  const utcDateString = moment.utc(message.creationDate).format('YYYYMMDDHHmmss');
   const ttlBlock = new asn1js.Integer({ value: message.ttl });
   const textEncoder = new TextEncoder();
   const fieldSetSerialized = new asn1js.Sequence({
@@ -167,7 +167,7 @@ export async function deserialize<M extends RAMFMessage<any>>(
     signatureVerification.signerCertificate,
     messageFields.payload,
     {
-      date: messageFields.date,
+      creationDate: messageFields.date,
       id: messageFields.id,
       senderCaCertificateChain: signatureVerification.attachedCertificates,
       ttl: messageFields.ttl,
