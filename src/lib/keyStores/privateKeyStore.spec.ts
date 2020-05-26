@@ -46,9 +46,8 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore();
         await store.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
-        await expectPromiseToReject(
-          store.fetchNodeKey(CERTIFICATE.getSerialNumber()),
-          new PrivateKeyStoreError('Key is not a node key'),
+        await expect(store.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
+          UnknownKeyError,
         );
       });
 
@@ -138,9 +137,9 @@ describe('PrivateKeyStore', () => {
           const store = new MockPrivateKeyStore();
           await store.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
 
-          await expect(store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
-            new PrivateKeyStoreError('Key is not an initial session key'),
-          );
+          await expect(
+            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+          ).rejects.toBeInstanceOf(UnknownKeyError);
         });
 
         test('Subsequent session keys should not be returned', async () => {
@@ -151,9 +150,9 @@ describe('PrivateKeyStore', () => {
             await generateStubCert(),
           );
 
-          await expect(store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
-            new PrivateKeyStoreError('Key is not an initial session key'),
-          );
+          await expect(
+            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+          ).rejects.toBeInstanceOf(UnknownKeyError);
         });
 
         test('Errors should be wrapped', async () => {
@@ -241,10 +240,9 @@ describe('PrivateKeyStore', () => {
         );
 
         const differentRecipientCert = await generateStubCert();
-        await expectPromiseToReject(
+        await expect(
           store.fetchSessionKey(CERTIFICATE.getSerialNumber(), differentRecipientCert),
-          new PrivateKeyStoreError('Key is bound to another recipient'),
-        );
+        ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
       test('Node keys should not be returned', async () => {
@@ -253,7 +251,7 @@ describe('PrivateKeyStore', () => {
 
         await expect(
           store.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
-        ).rejects.toEqual(new PrivateKeyStoreError('Key is not a session key'));
+        ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
       test('Errors should be wrapped', async () => {
