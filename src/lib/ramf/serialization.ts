@@ -6,7 +6,7 @@ import { TextDecoder, TextEncoder } from 'util';
 
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
-import Message from '../messages/Message';
+import RAMFMessage from '../messages/RAMFMessage';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 
@@ -62,7 +62,7 @@ const ASN1_SCHEMA = new asn1js.Sequence({
  * @param signatureOptions Any signature options.
  */
 export async function serialize(
-  message: Message<any>,
+  message: RAMFMessage<any>,
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,
   senderPrivateKey: CryptoKey,
@@ -138,7 +138,7 @@ function validateMessageLength(serialization: ArrayBuffer): void {
   }
 }
 
-export async function deserialize<M extends Message<any>>(
+export async function deserialize<M extends RAMFMessage<any>>(
   serialization: ArrayBuffer,
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,

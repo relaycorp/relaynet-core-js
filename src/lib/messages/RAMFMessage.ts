@@ -24,7 +24,7 @@ interface MessageOptions {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class Message<Payload extends PayloadPlaintext> {
+export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   public readonly id: string;
   public readonly date: Date;
   public readonly ttl: number;

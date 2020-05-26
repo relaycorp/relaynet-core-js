@@ -3,15 +3,15 @@
 import { arrayBufferFrom, generateStubCert, getMockContext, mockSpy } from '../_test_utils';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import * as serialization from '../ramf/serialization';
-import Message from './Message';
+import RAMFMessage from './RAMFMessage';
 
-interface MessageClass<M extends Message<any>> {
+interface MessageClass<M extends RAMFMessage<any>> {
   readonly deserialize: (serialization: ArrayBuffer) => Promise<M>;
   // tslint:disable-next-line:no-mixed-interface
   new (...args: readonly any[]): M;
 }
 
-export function describeMessage<M extends Message<any>>(
+export function describeMessage<M extends RAMFMessage<any>>(
   messageClass: MessageClass<M>,
   messageType: number,
   messageVersion: number,

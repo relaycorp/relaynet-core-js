@@ -3,14 +3,14 @@
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
 import InvalidMessageError from './InvalidMessageError';
-import Message from './Message';
 import CargoMessageSet from './payloads/CargoMessageSet';
 import ServiceMessage from './payloads/ServiceMessage';
+import RAMFMessage from './RAMFMessage';
 
 const concreteMessageTypeOctet = 0x50;
 const concreteMessageVersionOctet = 0;
 
-export default class Parcel extends Message<ServiceMessage> {
+export default class Parcel extends RAMFMessage<ServiceMessage> {
   public static async deserialize(parcelSerialized: ArrayBuffer): Promise<Parcel> {
     if (CargoMessageSet.MAX_MESSAGE_LENGTH < parcelSerialized.byteLength) {
       throw new InvalidMessageError(

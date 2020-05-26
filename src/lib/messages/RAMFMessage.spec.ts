@@ -29,7 +29,7 @@ afterEach(() => {
   jestDateMock.clear();
 });
 
-describe('Message', () => {
+describe('RAMFMessage', () => {
   let recipientAddress: string;
   let recipientCertificate: Certificate;
   let recipientPrivateKey: CryptoKey;
