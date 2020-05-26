@@ -10,6 +10,7 @@ import {
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import RelaynetError from '../RelaynetError';
+import UnknownKeyError from './UnknownKeyError';
 
 export interface BasePrivateKeyData {
   readonly keyDer: Buffer;
@@ -48,6 +49,13 @@ export interface UnboundKeyPair {
 }
 
 export abstract class PrivateKeyStore {
+  /**
+   * Return the private component of a node key pair.
+   *
+   * @param keyId The key pair id (typically the serial number)
+   * @throws UnknownKeyError when the key does not exist
+   * @throws PrivateKeyStoreError when the look up could not be done
+   */
   public async fetchNodeKey(keyId: Buffer): Promise<UnboundKeyPair> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
@@ -65,6 +73,13 @@ export abstract class PrivateKeyStore {
     };
   }
 
+  /**
+   * Return the private component of an initial session key pair.
+   *
+   * @param keyId The key pair id (typically the serial number)
+   * @throws UnknownKeyError when the key does not exist
+   * @throws PrivateKeyStoreError when the look up could not be done
+   */
   public async fetchInitialSessionKey(keyId: Buffer): Promise<UnboundKeyPair> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
 
@@ -80,8 +95,12 @@ export abstract class PrivateKeyStore {
 
   /**
    * Retrieve private session key, regardless of whether it's an initial key or not.
-   * @param keyId
-   * @param recipientCertificate
+   *
+   * @param keyId The key pair id (typically the serial number)
+   * @param recipientCertificate The certificate of the recipient, in case the key is bound to
+   *    a recipient
+   * @throws UnknownKeyError when the key does not exist
+   * @throws PrivateKeyStoreError when the look up could not be done
    */
   public async fetchSessionKey(
     keyId: Buffer,
@@ -143,17 +162,23 @@ export abstract class PrivateKeyStore {
     await this.saveKeyOrThrowError(privateKeyData, keyId);
   }
 
-  protected abstract async fetchKey(keyId: string): Promise<PrivateKeyData>;
+  protected abstract async fetchKey(keyId: string): Promise<PrivateKeyData | null>;
 
   protected abstract async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void>;
 
   private async fetchKeyOrThrowError(keyId: Buffer): Promise<PrivateKeyData> {
     const keyIdHex = keyId.toString('hex');
+    // tslint:disable-next-line:no-let
+    let key: PrivateKeyData | null;
     try {
-      return await this.fetchKey(keyIdHex);
+      key = await this.fetchKey(keyIdHex);
     } catch (error) {
       throw new PrivateKeyStoreError(error, `Failed to retrieve key`);
     }
+    if (key === null) {
+      throw new UnknownKeyError(`Key ${keyIdHex} does not exist`);
+    }
+    return key;
   }
 
   private async saveKeyOrThrowError(privateKeyData: PrivateKeyData, keyId: Buffer): Promise<void> {
