@@ -46,7 +46,7 @@ export { SignatureOptions } from './lib/crypto_wrappers/cms/signedData';
 export { default as Payload } from './lib/messages/payloads/PayloadPlaintext';
 export { default as RAMFError } from './lib/ramf/RAMFError';
 export { default as RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';
-export { default as Message } from './lib/messages/Message';
+export { default as RAMFMessage } from './lib/messages/RAMFMessage';
 export { default as Parcel } from './lib/messages/Parcel';
 export { default as ServiceMessage } from './lib/messages/payloads/ServiceMessage';
 export { default as Cargo } from './lib/messages/Cargo';

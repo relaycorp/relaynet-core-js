@@ -2,8 +2,8 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
-import Message from '../messages/Message';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
+import RAMFMessage from '../messages/RAMFMessage';
 
 export class StubPayload implements PayloadPlaintext {
   constructor(public readonly content: ArrayBuffer) {}
@@ -13,7 +13,7 @@ export class StubPayload implements PayloadPlaintext {
   }
 }
 
-export class StubMessage extends Message<StubPayload> {
+export class StubMessage extends RAMFMessage<StubPayload> {
   public async serialize(
     // tslint:disable-next-line:variable-name
     _senderPrivateKey: CryptoKey,

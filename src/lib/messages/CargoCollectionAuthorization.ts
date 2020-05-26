@@ -2,13 +2,13 @@
 
 import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import * as serialization from '../ramf/serialization';
-import Message from './Message';
 import EmptyPayloadPlaintext from './payloads/EmptyPayloadPlaintext';
+import RAMFMessage from './RAMFMessage';
 
 const concreteMessageTypeOctet = 0x44;
 const concreteMessageVersionOctet = 0;
 
-export class CargoCollectionAuthorization extends Message<EmptyPayloadPlaintext> {
+export class CargoCollectionAuthorization extends RAMFMessage<EmptyPayloadPlaintext> {
   public static async deserialize(
     cargoSerialized: ArrayBuffer,
   ): Promise<CargoCollectionAuthorization> {
