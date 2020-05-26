@@ -33,7 +33,7 @@ export class Gateway extends BaseNode {
         await recipientCertificate.calculateSubjectPrivateAddress(),
         certificate,
         await this.encryptPayload(messageSerialized, recipientCertificate),
-        { date: creationDate, ttl: getSecondsBetweenDates(creationDate, expiryDate) },
+        { creationDate, ttl: getSecondsBetweenDates(creationDate, expiryDate) },
       );
       const cargoSerialized = await cargo.serialize(privateKey, this.cryptoOptions.signature);
       yield Buffer.from(cargoSerialized);

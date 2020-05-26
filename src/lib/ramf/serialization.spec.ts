@@ -292,7 +292,7 @@ describe('MessageSerializer', () => {
         test('Date should be serialized with UTC and second-level precision', async () => {
           const nonUtcDate = new Date('01 Jan 2019 12:00:00 GMT+11:00');
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: nonUtcDate,
+            creationDate: nonUtcDate,
           });
 
           const messageSerialized = await serialize(
@@ -818,7 +818,7 @@ describe('MessageSerializer', () => {
             StubMessage,
           );
 
-          expect(message.date).toEqual(NOW);
+          expect(message.creationDate).toEqual(NOW);
         });
 
         test('Date with date-level precision should be accepted', async () => {
@@ -838,7 +838,7 @@ describe('MessageSerializer', () => {
           );
 
           const expectedDate = new Date(moment.utc(NOW).format('YYYY-MM-DD'));
-          expect(message.date).toEqual(expectedDate);
+          expect(message.creationDate).toEqual(expectedDate);
         });
 
         test('Date not serialized as an ASN.1 DATE-TIME should be refused', async () => {
@@ -868,7 +868,7 @@ describe('MessageSerializer', () => {
           );
           stubDate.setSeconds(0, 0);
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: stubDate,
+            creationDate: stubDate,
           });
           const serialization = await serialize(
             message,
@@ -885,12 +885,12 @@ describe('MessageSerializer', () => {
             StubMessage,
           );
 
-          expect(deserialization.date).toEqual(stubDate);
+          expect(deserialization.creationDate).toEqual(stubDate);
         });
 
         test('Date should not be in the future', async () => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: new Date(NOW.getTime() + 1_000),
+            creationDate: new Date(NOW.getTime() + 1_000),
           });
           const serialization = await serialize(
             message,
@@ -915,7 +915,7 @@ describe('MessageSerializer', () => {
         test('Date should not be before start date of sender certificate', async () => {
           const certStartDate = SENDER_CERTIFICATE.pkijsCertificate.notBefore.value;
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: new Date(certStartDate.getTime() - 1_000),
+            creationDate: new Date(certStartDate.getTime() - 1_000),
           });
           const serialization = await serialize(
             message,
@@ -940,7 +940,7 @@ describe('MessageSerializer', () => {
         test('Date may be at the expiry date of sender certificate', async () => {
           const certEndDate = SENDER_CERTIFICATE.pkijsCertificate.notAfter.value;
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: certEndDate,
+            creationDate: certEndDate,
           });
           const serialization = await serialize(
             message,
@@ -949,7 +949,7 @@ describe('MessageSerializer', () => {
             SENDER_PRIVATE_KEY,
           );
 
-          jestDateMock.advanceTo(message.date);
+          jestDateMock.advanceTo(message.creationDate);
           const deserialization = await deserialize(
             serialization,
             stubConcreteMessageTypeOctet,
@@ -959,13 +959,13 @@ describe('MessageSerializer', () => {
 
           const expectedDate = new Date(certEndDate);
           expectedDate.setMilliseconds(0);
-          expect(deserialization.date).toEqual(expectedDate);
+          expect(deserialization.creationDate).toEqual(expectedDate);
         });
 
         test('Date should not be after expiry date of sender certificate', async () => {
           const certEndDate = SENDER_CERTIFICATE.pkijsCertificate.notAfter.value;
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: new Date(certEndDate.getTime() + 1_000),
+            creationDate: new Date(certEndDate.getTime() + 1_000),
           });
           const serialization = await serialize(
             message,
@@ -974,7 +974,7 @@ describe('MessageSerializer', () => {
             SENDER_PRIVATE_KEY,
           );
 
-          jestDateMock.advanceTo(message.date);
+          jestDateMock.advanceTo(message.creationDate);
           await expect(
             deserialize(
               serialization,
@@ -991,7 +991,7 @@ describe('MessageSerializer', () => {
       describe('TTL', () => {
         test('TTL matching current time should be accepted', async () => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
-            date: SENDER_CERTIFICATE.pkijsCertificate.notBefore.value,
+            creationDate: SENDER_CERTIFICATE.pkijsCertificate.notBefore.value,
             ttl: 1,
           });
           const serialization = await serialize(
@@ -1001,7 +1001,7 @@ describe('MessageSerializer', () => {
             SENDER_PRIVATE_KEY,
           );
 
-          const currentDate = new Date(message.date);
+          const currentDate = new Date(message.creationDate);
           currentDate.setSeconds(currentDate.getSeconds() + message.ttl);
           currentDate.setMilliseconds(1); // Should be greater than zero so we can test rounding too
           jestDateMock.advanceTo(currentDate);
@@ -1025,7 +1025,7 @@ describe('MessageSerializer', () => {
             SENDER_PRIVATE_KEY,
           );
 
-          jestDateMock.advanceTo(message.date.getTime() + (message.ttl + 1) * 1_000);
+          jestDateMock.advanceTo(message.creationDate.getTime() + (message.ttl + 1) * 1_000);
           await expect(
             deserialize(
               serialization,

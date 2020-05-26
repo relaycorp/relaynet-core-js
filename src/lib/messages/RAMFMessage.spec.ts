@@ -29,7 +29,7 @@ afterEach(() => {
   jestDateMock.clear();
 });
 
-describe('Message', () => {
+describe('RAMFMessage', () => {
   let recipientAddress: string;
   let recipientCertificate: Certificate;
   let recipientPrivateKey: CryptoKey;
@@ -78,7 +78,7 @@ describe('Message', () => {
           STUB_PAYLOAD_PLAINTEXT,
         );
 
-        expect(message.date).toEqual(now);
+        expect(message.creationDate).toEqual(now);
       });
 
       test('A custom date should be accepted', () => {
@@ -88,10 +88,10 @@ describe('Message', () => {
           recipientAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
-          { date },
+          { creationDate: date },
         );
 
-        expect(message.date).toEqual(date);
+        expect(message.creationDate).toEqual(date);
       });
     });
 
@@ -169,12 +169,12 @@ describe('Message', () => {
       stubSenderChain.senderCert,
       STUB_PAYLOAD_PLAINTEXT,
       {
-        date: new Date('2020-04-07T21:00:00Z'),
+        creationDate: new Date('2020-04-07T21:00:00Z'),
         ttl: 5,
       },
     );
 
-    const expectedExpiryDate = new Date(message.date.getTime());
+    const expectedExpiryDate = new Date(message.creationDate.getTime());
     expectedExpiryDate.setSeconds(expectedExpiryDate.getSeconds() + message.ttl);
     expect(message.expiryDate).toEqual(expectedExpiryDate);
   });
