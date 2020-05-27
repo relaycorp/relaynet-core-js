@@ -43,6 +43,12 @@ export default class CargoMessageSet implements PayloadPlaintext {
     return new CargoMessageSet(new Set(messages));
   }
 
+  /**
+   * Deserialize a value if it's a legal item in a cargo message set.
+   *
+   * @param itemSerialized The parcel or PCA to be deserialized
+   * @throws InvalidMessageError If `itemSerialized` is not a legal item in a cargo message set
+   */
   public static async deserializeItem(itemSerialized: ArrayBuffer): Promise<CargoMessageSetItem> {
     const messageFormatSignature = Buffer.from(itemSerialized.slice(0, 10));
     const messageClass = messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)
