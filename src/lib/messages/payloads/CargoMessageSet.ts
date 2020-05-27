@@ -43,6 +43,25 @@ export default class CargoMessageSet implements PayloadPlaintext {
     return new CargoMessageSet(new Set(messages));
   }
 
+  /**
+   * Deserialize a value if it's a legal item in a cargo message set.
+   *
+   * @param itemSerialized The parcel or PCA to be deserialized
+   * @throws InvalidMessageError If `itemSerialized` is not a legal item in a cargo message set
+   */
+  public static async deserializeItem(itemSerialized: ArrayBuffer): Promise<CargoMessageSetItem> {
+    const messageFormatSignature = Buffer.from(itemSerialized.slice(0, 10));
+    const messageClass = messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)
+      ? ParcelCollectionAck
+      : Parcel;
+
+    try {
+      return await messageClass.deserialize(itemSerialized);
+    } catch (error) {
+      throw new InvalidMessageError(error, 'Value is not a valid Cargo Message Set item');
+    }
+  }
+
   public static async *batchMessagesSerialized(
     messagesWithExpiryDate: AsyncIterable<MessageWithExpiryDate>,
   ): AsyncIterable<MessageWithExpiryDate> {
@@ -114,25 +133,5 @@ export default class CargoMessageSet implements PayloadPlaintext {
     // tslint:disable-next-line:no-object-mutation
     set.valueBlock.value = messagesSerialized;
     return set.toBER(false);
-  }
-
-  /**
-   * Deserialize and yield each message encapsulated in the cargo message set.
-   *
-   * When a message failed to be deserialized, an `InvalidMessageError` is yielded in its place.
-   */
-  public async *deserializeMessages(): AsyncIterable<CargoMessageSetItem | InvalidMessageError> {
-    for (const messageSerialized of this.messages) {
-      const messageFormatSignature = Buffer.from(messageSerialized.slice(0, 10));
-      const messageClass = messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)
-        ? ParcelCollectionAck
-        : Parcel;
-
-      try {
-        yield messageClass.deserialize(messageSerialized);
-      } catch (error) {
-        yield new InvalidMessageError(error, 'Invalid item in cargo message set');
-      }
-    }
   }
 }
