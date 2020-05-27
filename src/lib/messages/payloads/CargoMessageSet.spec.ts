@@ -91,6 +91,56 @@ describe('CargoMessageSet', () => {
     });
   });
 
+  describe('deserializeItem', () => {
+    let privateKey: CryptoKey;
+    let certificate: Certificate;
+
+    const PCA = new ParcelCollectionAck('https://sender.endpoint/', 'deadbeef', 'parcel-id');
+
+    beforeAll(async () => {
+      const senderKeyPair = await generateRSAKeyPair();
+      privateKey = senderKeyPair.privateKey;
+      certificate = await generateStubCert({
+        issuerPrivateKey: privateKey,
+        subjectPublicKey: senderKeyPair.publicKey,
+      });
+    });
+
+    test('Parcels should be returned', async () => {
+      const parcel = new Parcel('address', certificate, Buffer.from('hi'));
+      const parcelSerialization = await parcel.serialize(privateKey);
+
+      const item = await CargoMessageSet.deserializeItem(parcelSerialization);
+
+      expect(item).toBeInstanceOf(Parcel);
+      expect(item).toHaveProperty('id', parcel.id);
+    });
+
+    test('PCAs should be returned', async () => {
+      const item = await CargoMessageSet.deserializeItem(await PCA.serialize());
+
+      expect(item).toBeInstanceOf(ParcelCollectionAck);
+      expect(item).toMatchObject(PCA);
+    });
+
+    test('An error should be thrown when non-RAMF message is found', async () => {
+      const invalidItemSerialized = arrayBufferFrom('Not RAMF');
+
+      await expect(CargoMessageSet.deserializeItem(invalidItemSerialized)).rejects.toThrow(
+        /Value is not a valid Cargo Message Set item/,
+      );
+    });
+
+    test('An error should be yielded when unsupported RAMF message is found', async () => {
+      const innerCargo = new Cargo('address', certificate, Buffer.from('hi'));
+      const cargoSerialization = await innerCargo.serialize(privateKey);
+
+      await expect(CargoMessageSet.deserializeItem(cargoSerialization)).rejects.toThrow(
+        /Value is not a valid Cargo Message Set item/,
+      );
+    });
+  });
+
   describe('batchMessagesSerialized', () => {
     const EXPIRY_DATE = new Date();
 
@@ -258,79 +308,6 @@ describe('CargoMessageSet', () => {
           stubMessages[index],
         );
       }
-    });
-  });
-
-  describe('deserializeMessages', () => {
-    let privateKey: CryptoKey;
-    let certificate: Certificate;
-
-    const PCA = new ParcelCollectionAck('https://sender.endpoint/', 'deadbeef', 'parcel-id');
-
-    beforeAll(async () => {
-      const senderKeyPair = await generateRSAKeyPair();
-      privateKey = senderKeyPair.privateKey;
-      certificate = await generateStubCert({
-        issuerPrivateKey: privateKey,
-        subjectPublicKey: senderKeyPair.publicKey,
-      });
-    });
-
-    test('Parcels should be yielded', async () => {
-      const parcel = new Parcel('address', certificate, Buffer.from('hi'));
-      const parcelSerialization = await parcel.serialize(privateKey);
-      const cargoMessageSet = new CargoMessageSet(new Set([parcelSerialization]));
-
-      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
-
-      expect(messages).toHaveLength(1);
-      expect(messages[0]).toBeInstanceOf(Parcel);
-      expect(messages[0]).toHaveProperty('recipientAddress', parcel.recipientAddress);
-    });
-
-    test('PCAs should be yielded', async () => {
-      const cargoMessageSet = new CargoMessageSet(new Set([await PCA.serialize()]));
-
-      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
-
-      expect(messages).toHaveLength(1);
-      expect(messages[0]).toBeInstanceOf(ParcelCollectionAck);
-      expect(messages[0]).toMatchObject(PCA);
-    });
-
-    test('An error should be yielded when non-RAMF message is found', async () => {
-      const cargoMessageSet = new CargoMessageSet(
-        new Set([await PCA.serialize(), arrayBufferFrom('Not RAMF')]),
-      );
-
-      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
-
-      expect(messages).toHaveLength(2);
-      expect(messages[0]).toBeInstanceOf(ParcelCollectionAck);
-      expect(messages[1]).toBeInstanceOf(InvalidMessageError);
-      expect(messages[1]).toMatchObject({ message: /^Invalid item in cargo message set:/ });
-    });
-
-    test('An error should be yielded when unsupported RAMF message is found', async () => {
-      const innerCargo = new Cargo('address', certificate, Buffer.from('hi'));
-      const cargoSerialization = await innerCargo.serialize(privateKey);
-      const cargoMessageSet = new CargoMessageSet(
-        new Set([await PCA.serialize(), cargoSerialization]),
-      );
-
-      const messages = await asyncIterableToArray(cargoMessageSet.deserializeMessages());
-
-      expect(messages).toHaveLength(2);
-      expect(messages[1]).toBeInstanceOf(InvalidMessageError);
-      expect(messages[1]).toMatchObject({ message: /^Invalid item in cargo message set:/ });
-    });
-
-    test('An empty set should result in no yielded values', async () => {
-      const cargoMessageSet = new CargoMessageSet(new Set([]));
-
-      await expect(asyncIterableToArray(cargoMessageSet.deserializeMessages())).resolves.toEqual(
-        [],
-      );
     });
   });
 });
