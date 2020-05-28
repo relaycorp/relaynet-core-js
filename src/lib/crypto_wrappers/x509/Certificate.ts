@@ -9,6 +9,11 @@ import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
 
 const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 
+type FindIssuerSignature = (
+  cert: pkijs.Certificate,
+  engine: pkijs.CertificateChainValidationEngine,
+) => Promise<readonly pkijs.Certificate[]>;
+
 /**
  * X.509 Certificate.
  *
@@ -176,8 +181,25 @@ export default class Certificate {
     intermediateCaCertificates: readonly Certificate[],
     trustedCertificates: readonly Certificate[],
   ): Promise<readonly Certificate[]> {
+    async function findIssuer(
+      pkijsCertificate: pkijs.Certificate,
+      validationEngine: { readonly defaultFindIssuer: FindIssuerSignature },
+    ): Promise<readonly pkijs.Certificate[]> {
+      const issuers = await validationEngine.defaultFindIssuer(
+        pkijsCertificate,
+        validationEngine as any,
+      );
+      if (issuers.length !== 0) {
+        return issuers;
+      }
+      // If the certificate is actually an intermediate certificate but it's passed as a trusted
+      // certificate, accepted it.
+      const certificate = new Certificate(pkijsCertificate);
+      return isCertificateInArray(certificate, trustedCertificates) ? [pkijsCertificate] : [];
+    }
     const chainValidator = new pkijs.CertificateChainValidationEngine({
       certs: [...intermediateCaCertificates.map((c) => c.pkijsCertificate), this.pkijsCertificate],
+      findIssuer,
       trustedCerts: trustedCertificates.map((c) => c.pkijsCertificate),
     });
     const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
@@ -254,4 +276,13 @@ interface Asn1jsSerializable {
 function cloneAsn1jsValue(value: Asn1jsSerializable): asn1js.LocalBaseBlock {
   const valueSerialized = value.toBER(false);
   return derDeserialize(valueSerialized);
+}
+
+function isCertificateInArray(certificate: Certificate, array: readonly Certificate[]): boolean {
+  for (const certInArray of array) {
+    if (certInArray.isEqual(certificate)) {
+      return true;
+    }
+  }
+  return false;
 }
