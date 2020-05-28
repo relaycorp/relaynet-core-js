@@ -638,9 +638,8 @@ describe('MessageSerializer', () => {
           StubMessage,
         );
 
-        expect(senderCaCertificateChain).toHaveLength(2);
-        expect(senderCaCertificateChain[0].isEqual(SENDER_CERTIFICATE)).toBeTrue();
-        expect(senderCaCertificateChain[1].isEqual(caCertificate)).toBeTrue();
+        expect(senderCaCertificateChain).toHaveLength(1);
+        expect(senderCaCertificateChain[0].isEqual(caCertificate)).toBeTrue();
       });
     });
 
