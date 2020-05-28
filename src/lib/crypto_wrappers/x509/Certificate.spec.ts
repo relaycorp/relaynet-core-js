@@ -617,7 +617,7 @@ describe('validate()', () => {
   });
 });
 
-describe('validateTrust', () => {
+describe('getCertificationPath', () => {
   let stubTrustedCaPrivateKey: CryptoKey;
   let stubTrustedCa: Certificate;
   beforeAll(async () => {
@@ -676,6 +676,30 @@ describe('validateTrust', () => {
     await expect(
       cert.getCertificationPath([intermediateCaCert], [stubTrustedCa]),
     ).resolves.toEqual([cert, intermediateCaCert, stubTrustedCa]);
+  });
+
+  test('Cert issued by intermediate CA should be trusted without root CA', async () => {
+    const intermediateCaKeyPair = await generateRSAKeyPair();
+    const intermediateCaCert = reSerializeCertificate(
+      await generateStubCert({
+        attributes: { isCA: true },
+        issuerCertificate: stubTrustedCa,
+        issuerPrivateKey: stubTrustedCaPrivateKey,
+        subjectPublicKey: intermediateCaKeyPair.publicKey,
+      }),
+    );
+
+    const cert = reSerializeCertificate(
+      await generateStubCert({
+        issuerCertificate: intermediateCaCert,
+        issuerPrivateKey: intermediateCaKeyPair.privateKey,
+      }),
+    );
+
+    await expect(cert.getCertificationPath([], [intermediateCaCert])).resolves.toEqual([
+      cert,
+      intermediateCaCert,
+    ]);
   });
 
   test('Cert issued by untrusted intermediate CA should not be trusted', async () => {
