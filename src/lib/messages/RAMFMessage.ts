@@ -40,7 +40,8 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     this.creationDate = options.creationDate || new Date();
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
-    this.senderCaCertificateChain = options.senderCaCertificateChain ?? [];
+    this.senderCaCertificateChain =
+      options.senderCaCertificateChain?.filter((c) => !c.isEqual(senderCertificate)) ?? [];
   }
 
   get expiryDate(): Date {

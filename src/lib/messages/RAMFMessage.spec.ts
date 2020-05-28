@@ -131,13 +131,25 @@ describe('RAMFMessage', () => {
       });
 
       test('A custom sender certificate chain should be accepted', async () => {
-        const chain: readonly Certificate[] = [await generateStubCert(), senderCertificate];
+        const chain: readonly Certificate[] = [await generateStubCert(), await generateStubCert()];
+        const message = new StubMessage(
+          recipientAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { senderCaCertificateChain: chain },
+        );
+
+        expect(message.senderCaCertificateChain).toEqual(chain);
+      });
+
+      test('Sender certificate should be excluded from chain if included', async () => {
+        const chain: readonly Certificate[] = [await generateStubCert()];
         const message = new StubMessage(
           recipientAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
           {
-            senderCaCertificateChain: chain,
+            senderCaCertificateChain: [...chain, senderCertificate],
           },
         );
 
