@@ -192,8 +192,8 @@ export default class Certificate {
       if (issuers.length !== 0) {
         return issuers;
       }
-      // If the certificate is an intermediate certificate AND it's amongst the trusted
-      // certificates, accepted it.
+      // If the certificate is actually an intermediate certificate but it's passed as a trusted
+      // certificate, accepted it.
       const certificate = new Certificate(pkijsCertificate);
       return isCertificateInArray(certificate, trustedCertificates) ? [pkijsCertificate] : [];
     }
