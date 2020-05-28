@@ -145,10 +145,24 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
       throw new InvalidMessageError(error, 'Sender is not authorized');
     }
 
+    if (isNodeAddressPublic(this.recipientAddress)) {
+      return;
+    }
+
     const recipientCertificate = certificationPath[1];
     const recipientPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
     if (recipientPrivateAddress !== this.recipientAddress) {
       throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
     }
   }
+}
+
+function isNodeAddressPublic(nodeAddress: string): boolean {
+  try {
+    // tslint:disable-next-line:no-unused-expression
+    new URL(nodeAddress);
+  } catch (_) {
+    return false;
+  }
+  return true;
 }

@@ -219,7 +219,7 @@ describe('RAMFMessage', () => {
         await expect(message.validate([stubSenderChain.rootCert])).toResolve();
       });
 
-      test('Parcel should be refused if recipient is not issuer of sender', async () => {
+      test('Parcel should be refused if recipient is private and did not issue PDA', async () => {
         const message = new StubMessage(
           '0deadbeef',
           stubSenderChain.senderCert,
@@ -233,6 +233,19 @@ describe('RAMFMessage', () => {
           message.validate([stubSenderChain.rootCert]),
           new InvalidMessageError(`Sender is not authorized to reach ${message.recipientAddress}`),
         );
+      });
+
+      test('Parcel should be accepted if recipient address is public', async () => {
+        const message = new StubMessage(
+          'https://example.com',
+          stubSenderChain.senderCert,
+          STUB_PAYLOAD_PLAINTEXT,
+          {
+            senderCaCertificateChain: [stubSenderChain.recipientCert],
+          },
+        );
+
+        await expect(message.validate([stubSenderChain.rootCert])).toResolve();
       });
 
       test('Authorization enforcement should be skipped if trusted certs are absent', async () => {
