@@ -49,6 +49,16 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     return new Date(creationDateTimestamp + this.ttl * 1_000);
   }
 
+  get isRecipientAddressPrivate(): boolean {
+    try {
+      // tslint:disable-next-line:no-unused-expression
+      new URL(this.recipientAddress);
+    } catch (_) {
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Return RAMF serialization of message.
    *
@@ -145,7 +155,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
       throw new InvalidMessageError(error, 'Sender is not authorized');
     }
 
-    if (isNodeAddressPublic(this.recipientAddress)) {
+    if (!this.isRecipientAddressPrivate) {
       return;
     }
 
@@ -155,14 +165,4 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
       throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
     }
   }
-}
-
-function isNodeAddressPublic(nodeAddress: string): boolean {
-  try {
-    // tslint:disable-next-line:no-unused-expression
-    new URL(nodeAddress);
-  } catch (_) {
-    return false;
-  }
-  return true;
 }

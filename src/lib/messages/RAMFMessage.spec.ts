@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe('RAMFMessage', () => {
-  let recipientAddress: string;
+  let recipientPrivateAddress: string;
   let recipientCertificate: Certificate;
   let recipientPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
@@ -41,7 +41,7 @@ describe('RAMFMessage', () => {
       subjectPublicKey: recipientKeyPair.publicKey,
     });
     recipientPrivateKey = recipientKeyPair.privateKey;
-    recipientAddress = recipientCertificate.getCommonName();
+    recipientPrivateAddress = recipientCertificate.getCommonName();
 
     const senderKeyPair = await generateRSAKeyPair();
     senderCertificate = await generateStubCert({
@@ -58,7 +58,7 @@ describe('RAMFMessage', () => {
     describe('Id', () => {
       test('Id should fall back to UUID4 when left unspecified', () => {
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
         );
@@ -73,7 +73,7 @@ describe('RAMFMessage', () => {
         jestDateMock.advanceTo(now);
 
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
         );
@@ -85,7 +85,7 @@ describe('RAMFMessage', () => {
         const date = new Date(2020, 1, 1, 1, 1, 1, 1);
 
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
           { creationDate: date },
@@ -98,7 +98,7 @@ describe('RAMFMessage', () => {
     describe('TTL', () => {
       test('TTL should be 5 minutes by default', () => {
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
         );
@@ -109,7 +109,7 @@ describe('RAMFMessage', () => {
       test('A custom TTL under 2^24 should be accepted', () => {
         const ttl = 2 ** 24 - 1;
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
           { ttl },
@@ -122,7 +122,7 @@ describe('RAMFMessage', () => {
     describe('Sender CA certificate chain', () => {
       test('CA certificate chain should be empty by default', () => {
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
         );
@@ -133,7 +133,7 @@ describe('RAMFMessage', () => {
       test('A custom sender certificate chain should be accepted', async () => {
         const chain: readonly Certificate[] = [await generateStubCert(), await generateStubCert()];
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
           { senderCaCertificateChain: chain },
@@ -145,7 +145,7 @@ describe('RAMFMessage', () => {
       test('Sender certificate should be excluded from chain if included', async () => {
         const chain: readonly Certificate[] = [await generateStubCert()];
         const message = new StubMessage(
-          recipientAddress,
+          recipientPrivateAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
           {
@@ -331,6 +331,28 @@ describe('RAMFMessage', () => {
 
       expect(payload).toBeInstanceOf(StubPayload);
       expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
+    });
+  });
+
+  describe('isRecipientAddressPrivate', () => {
+    test('True should be returned when address is private', () => {
+      const message = new StubMessage(
+        recipientPrivateAddress,
+        senderCertificate,
+        STUB_PAYLOAD_PLAINTEXT,
+      );
+
+      expect(message.isRecipientAddressPrivate).toBeTrue();
+    });
+
+    test('False should be returned when address is public', () => {
+      const message = new StubMessage(
+        'https://example.com',
+        senderCertificate,
+        STUB_PAYLOAD_PLAINTEXT,
+      );
+
+      expect(message.isRecipientAddressPrivate).toBeFalse();
     });
   });
 });
