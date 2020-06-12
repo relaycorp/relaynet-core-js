@@ -107,7 +107,7 @@ describe('CargoMessageSet', () => {
     });
 
     test('Parcels should be returned', async () => {
-      const parcel = new Parcel('address', certificate, Buffer.from('hi'));
+      const parcel = new Parcel('0deadbeef', certificate, Buffer.from('hi'));
       const parcelSerialization = await parcel.serialize(privateKey);
 
       const item = await CargoMessageSet.deserializeItem(parcelSerialization);

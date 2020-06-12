@@ -756,6 +756,68 @@ describe('MessageSerializer', () => {
             ),
           );
         });
+
+        test('Private addresses should be accepted', async () => {
+          const address = '0deadbeef';
+          const message = new StubMessage(address, SENDER_CERTIFICATE, PAYLOAD);
+          const serialization = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            SENDER_PRIVATE_KEY,
+          );
+
+          const deserialization = await deserialize(
+            serialization,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            StubMessage,
+          );
+          expect(deserialization.recipientAddress).toEqual(address);
+        });
+
+        test('Public addresses should be accepted', async () => {
+          const address = 'https://example.com';
+          const message = new StubMessage(address, SENDER_CERTIFICATE, PAYLOAD);
+          const serialization = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            SENDER_PRIVATE_KEY,
+          );
+
+          const deserialization = await deserialize(
+            serialization,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            StubMessage,
+          );
+          expect(deserialization.recipientAddress).toEqual(address);
+        });
+
+        test('Invalid addresses should be refused', async () => {
+          const invalidAddress = 'not valid';
+          const message = new StubMessage(invalidAddress, SENDER_CERTIFICATE, PAYLOAD);
+          const serialization = await serialize(
+            message,
+            stubConcreteMessageTypeOctet,
+            stubConcreteMessageVersionOctet,
+            SENDER_PRIVATE_KEY,
+          );
+
+          await expect(
+            deserialize(
+              serialization,
+              stubConcreteMessageTypeOctet,
+              stubConcreteMessageVersionOctet,
+              StubMessage,
+            ),
+          ).rejects.toEqual(
+            new RAMFSyntaxError(
+              `Recipient address should be a valid node address (got: "${invalidAddress}")`,
+            ),
+          );
+        });
       });
 
       describe('Message id', () => {
@@ -780,7 +842,7 @@ describe('MessageSerializer', () => {
         test('Id should not exceed 64 characters', async () => {
           const id = 'a'.repeat(65);
           const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: id }),
             new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: 1_000 }),
@@ -803,7 +865,7 @@ describe('MessageSerializer', () => {
         test('Date with second-level precision should be accepted', async () => {
           const date = moment.utc(NOW).format('YYYYMMDDHHmmss');
           const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'id' }),
             new asn1js.DateTime({ value: date }),
             new asn1js.Integer({ value: 1_000 }),
@@ -822,7 +884,7 @@ describe('MessageSerializer', () => {
 
         test('Date with date-level precision should be accepted', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'id' }),
             new asn1js.DateTime({ value: moment.utc(NOW).format('YYYYMMDD') }),
             new asn1js.Integer({ value: 86_400 }),
@@ -1039,7 +1101,7 @@ describe('MessageSerializer', () => {
 
         test('TTL of exactly 180 days should be accepted', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
             new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: MAX_TTL }),
@@ -1058,7 +1120,7 @@ describe('MessageSerializer', () => {
 
         test('TTL greater than 180 days should not be accepted', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
             new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: MAX_TTL + 1 }),
@@ -1100,7 +1162,7 @@ describe('MessageSerializer', () => {
         test('Payload size should not exceed 8 MiB', async () => {
           const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH + 1));
           const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: 'the-address' }),
+            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
             new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
             new asn1js.Integer({ value: 1_000 }),

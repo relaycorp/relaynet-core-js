@@ -16,6 +16,8 @@ const MAX_ID_LENGTH = 64;
 const MAX_TTL = 15552000;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
+const PRIVATE_ADDRESS_REGEX = /^[a-f0-9]+$/;
+
 /**
  * Maximum length of any SDU to be encapsulated in a CMS EnvelopedData value, per the RAMF spec.
  */
@@ -156,6 +158,7 @@ export async function deserialize<M extends RAMFMessage<any>>(
 
   const messageFields = parseMessageFields(signatureVerification.plaintext);
   validateRecipientAddressLength(messageFields.recipientAddress);
+  validateRecipientAddress(messageFields.recipientAddress);
   validateMessageIdLength(messageFields.id);
   validateTtl(messageFields.ttl);
   validatePayloadLength(messageFields.payload);
@@ -205,6 +208,20 @@ function validateFileFormatSignature(
     );
   }
   //endregion
+}
+
+function validateRecipientAddress(recipientAddress: string): void {
+  try {
+    // tslint:disable-next-line:no-unused-expression
+    new URL(recipientAddress);
+  } catch (_) {
+    // The address isn't public. Check if it's private:
+    if (!recipientAddress.match(PRIVATE_ADDRESS_REGEX)) {
+      throw new RAMFValidationError(
+        `Recipient address should be a valid node address (got: "${recipientAddress}")`,
+      );
+    }
+  }
 }
 
 function validateRecipientAddressLength(recipientAddress: string): void {
