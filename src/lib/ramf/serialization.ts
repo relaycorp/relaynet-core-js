@@ -163,8 +163,6 @@ export async function deserialize<M extends RAMFMessage<any>>(
   validateTtl(messageFields.ttl);
   validatePayloadLength(messageFields.payload);
 
-  validateMessageTiming(messageFields, signatureVerification);
-
   return new messageClass(
     messageFields.recipientAddress,
     signatureVerification.signerCertificate,
@@ -313,34 +311,6 @@ async function verifySignature(
     return await cmsSignedData.verifySignature(cmsSignedDataSerialized);
   } catch (error) {
     throw new RAMFValidationError(error, 'Invalid RAMF message signature');
-  }
-}
-
-// TODO: Consider moving this into `Message.validate()` to make timing validation optional
-function validateMessageTiming(
-  messageFields: MessageFieldSet,
-  signatureVerification: cmsSignedData.SignatureVerification,
-): void {
-  const currentDate = new Date();
-  currentDate.setMilliseconds(0); // Round down to match precision of date field
-
-  if (currentDate < messageFields.date) {
-    throw new RAMFValidationError('Message date is in the future');
-  }
-
-  const pkijsCertificate = signatureVerification.signerCertificate.pkijsCertificate;
-  if (messageFields.date < pkijsCertificate.notBefore.value) {
-    throw new RAMFValidationError('Message was created before the sender certificate was valid');
-  }
-
-  if (pkijsCertificate.notAfter.value < messageFields.date) {
-    throw new RAMFValidationError('Message was created after the sender certificate expired');
-  }
-
-  const expiryDate = new Date(messageFields.date);
-  expiryDate.setSeconds(expiryDate.getSeconds() + messageFields.ttl);
-  if (expiryDate < currentDate) {
-    throw new RAMFValidationError('Message already expired');
   }
 }
 

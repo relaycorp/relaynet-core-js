@@ -200,6 +200,8 @@ describe('RAMFMessage', () => {
           STUB_PAYLOAD_PLAINTEXT,
         );
 
+        jestDateMock.advanceBy(1_000);
+
         await expectPromiseToReject(
           message.validate([stubSenderChain.rootCert]),
           new InvalidMessageError('Sender is not authorized: No valid certificate paths found'),
@@ -216,6 +218,8 @@ describe('RAMFMessage', () => {
           },
         );
 
+        jestDateMock.advanceBy(1_000);
+
         await expect(message.validate([stubSenderChain.rootCert])).toResolve();
       });
 
@@ -228,6 +232,8 @@ describe('RAMFMessage', () => {
             senderCaCertificateChain: [stubSenderChain.recipientCert],
           },
         );
+
+        jestDateMock.advanceBy(1_000);
 
         await expectPromiseToReject(
           message.validate([stubSenderChain.rootCert]),
@@ -245,13 +251,131 @@ describe('RAMFMessage', () => {
           },
         );
 
+        jestDateMock.advanceBy(1_000);
+
         await expect(message.validate([stubSenderChain.rootCert])).toResolve();
       });
 
       test('Authorization enforcement should be skipped if trusted certs are absent', async () => {
         const message = new StubMessage('0deadbeef', senderCertificate, STUB_PAYLOAD_PLAINTEXT);
 
+        jestDateMock.advanceBy(1_000);
+
         await expect(message.validate()).toResolve();
+      });
+    });
+
+    describe('Validity period', () => {
+      const recipientPublicAddress = 'https://example.com';
+
+      test('Date equal to the current date should be accepted', async () => {
+        const stubDate = new Date(
+          senderCertificate.pkijsCertificate.notAfter.value.getTime() - 1_000,
+        );
+        stubDate.setSeconds(0, 0);
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { creationDate: stubDate },
+        );
+        jestDateMock.advanceTo(stubDate);
+
+        await message.validate();
+      });
+
+      test('Date should not be in the future', async () => {
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
+        message.creationDate.setMilliseconds(0);
+
+        const oneSecondAgo = new Date(message.creationDate);
+        oneSecondAgo.setDate(oneSecondAgo.getDate() - 1_000);
+        jestDateMock.advanceTo(oneSecondAgo);
+
+        await expect(message.validate()).rejects.toEqual(
+          new InvalidMessageError('Message date is in the future'),
+        );
+      });
+
+      test('Date should not be before start date of sender certificate', async () => {
+        const certStartDate = senderCertificate.pkijsCertificate.notBefore.value;
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { creationDate: new Date(certStartDate.getTime() - 1_000) },
+        );
+
+        jestDateMock.advanceTo(certStartDate);
+        await expect(message.validate()).rejects.toEqual(
+          new InvalidMessageError('Message was created before the sender certificate was valid'),
+        );
+      });
+
+      test('Date may be at the expiry date of sender certificate', async () => {
+        const certEndDate = senderCertificate.pkijsCertificate.notAfter.value;
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { creationDate: certEndDate },
+        );
+
+        jestDateMock.advanceTo(message.creationDate);
+
+        await message.validate();
+      });
+
+      test('Date should not be after expiry date of sender certificate', async () => {
+        const certEndDate = senderCertificate.pkijsCertificate.notAfter.value;
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { creationDate: new Date(certEndDate.getTime() + 1_000) },
+        );
+
+        jestDateMock.advanceTo(message.creationDate);
+        await expect(message.validate()).rejects.toEqual(
+          new InvalidMessageError('Message was created after the sender certificate expired'),
+        );
+      });
+
+      test('TTL matching current time should be accepted', async () => {
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          {
+            creationDate: senderCertificate.pkijsCertificate.notBefore.value,
+            ttl: 1,
+          },
+        );
+
+        const currentDate = new Date(message.creationDate);
+        currentDate.setSeconds(currentDate.getSeconds() + message.ttl);
+        currentDate.setMilliseconds(1); // Should be greater than zero so we can test rounding too
+        jestDateMock.advanceTo(currentDate);
+
+        await message.validate();
+      });
+
+      test('TTL in the past should not be accepted', async () => {
+        const message = new StubMessage(
+          recipientPublicAddress,
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+          { ttl: 1 },
+        );
+
+        jestDateMock.advanceTo(message.creationDate.getTime() + (message.ttl + 1) * 1_000);
+        await expect(message.validate()).rejects.toEqual(
+          new InvalidMessageError('Message already expired'),
+        );
       });
     });
   });

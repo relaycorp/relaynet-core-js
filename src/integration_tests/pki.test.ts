@@ -8,7 +8,10 @@ import {
   issueGatewayCertificate,
   Parcel,
 } from '..';
-import { generateStubCert, reSerializeCertificate } from '../lib/_test_utils';
+import { reSerializeCertificate } from '../lib/_test_utils';
+
+const ONE_SECOND_AGO = new Date();
+ONE_SECOND_AGO.setSeconds(ONE_SECOND_AGO.getSeconds() - 1, 0);
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
@@ -16,7 +19,7 @@ TOMORROW.setDate(TOMORROW.getDate() + 1);
 let publicGatewayCert: Certificate;
 let privateGatewayCert: Certificate;
 let peerEndpointCert: Certificate;
-let endpointPdaCert: Certificate;
+let unauthorizedSenderCert: Certificate;
 beforeAll(async () => {
   const publicGatewayKeyPair = await generateRSAKeyPair();
   publicGatewayCert = reSerializeCertificate(
@@ -24,6 +27,7 @@ beforeAll(async () => {
       issuerPrivateKey: publicGatewayKeyPair.privateKey,
       subjectPublicKey: publicGatewayKeyPair.publicKey,
       validityEndDate: TOMORROW,
+      validityStartDate: ONE_SECOND_AGO,
     }),
   );
 
@@ -34,6 +38,7 @@ beforeAll(async () => {
       issuerPrivateKey: publicGatewayKeyPair.privateKey,
       subjectPublicKey: localGatewayKeyPair.publicKey,
       validityEndDate: TOMORROW,
+      validityStartDate: ONE_SECOND_AGO,
     }),
   );
 
@@ -44,16 +49,18 @@ beforeAll(async () => {
       issuerPrivateKey: localGatewayKeyPair.privateKey,
       subjectPublicKey: peerEndpointKeyPair.publicKey,
       validityEndDate: TOMORROW,
+      validityStartDate: ONE_SECOND_AGO,
     }),
   );
 
   const endpointKeyPair = await generateRSAKeyPair();
-  endpointPdaCert = reSerializeCertificate(
+  unauthorizedSenderCert = reSerializeCertificate(
     await issueDeliveryAuthorization({
       issuerCertificate: peerEndpointCert,
       issuerPrivateKey: peerEndpointKeyPair.privateKey,
       subjectPublicKey: endpointKeyPair.publicKey,
       validityEndDate: TOMORROW,
+      validityStartDate: ONE_SECOND_AGO,
     }),
   );
 });
@@ -61,9 +68,12 @@ beforeAll(async () => {
 test('Messages by authorized senders should be accepted', async () => {
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
-    endpointPdaCert,
+    unauthorizedSenderCert,
     Buffer.from('hey'),
-    { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
+    {
+      creationDate: ONE_SECOND_AGO,
+      senderCaCertificateChain: [peerEndpointCert, privateGatewayCert],
+    },
   );
 
   await parcel.validate([publicGatewayCert]);
@@ -72,13 +82,13 @@ test('Messages by authorized senders should be accepted', async () => {
 test('Certificate chain should be computed corrected', async () => {
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
-    endpointPdaCert,
+    unauthorizedSenderCert,
     Buffer.from('hey'),
     { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
   );
 
   await expect(parcel.getSenderCertificationPath([publicGatewayCert])).resolves.toEqual([
-    endpointPdaCert,
+    unauthorizedSenderCert,
     peerEndpointCert,
     privateGatewayCert,
     publicGatewayCert,
@@ -86,11 +96,23 @@ test('Certificate chain should be computed corrected', async () => {
 });
 
 test('Messages by unauthorized senders should be refused', async () => {
+  const keyPair = await generateRSAKeyPair();
+  unauthorizedSenderCert = reSerializeCertificate(
+    await issueEndpointCertificate({
+      issuerPrivateKey: keyPair.privateKey,
+      subjectPublicKey: keyPair.publicKey,
+      validityEndDate: TOMORROW,
+      validityStartDate: ONE_SECOND_AGO,
+    }),
+  );
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
-    await generateStubCert(),
+    unauthorizedSenderCert,
     Buffer.from('hey'),
-    { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
+    {
+      creationDate: ONE_SECOND_AGO,
+      senderCaCertificateChain: [peerEndpointCert, privateGatewayCert],
+    },
   );
 
   await expect(parcel.validate([publicGatewayCert])).rejects.toHaveProperty(

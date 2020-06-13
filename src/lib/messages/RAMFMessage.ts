@@ -110,6 +110,8 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
    *   the message based on the trusted certificates.
    */
   public async validate(trustedCertificates?: readonly Certificate[]): Promise<void> {
+    await this.validateTiming();
+
     if (trustedCertificates) {
       await this.validateAuthorization(trustedCertificates);
     }
@@ -144,9 +146,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
 
   protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;
 
-  protected async validateAuthorization(
-    trustedCertificates: readonly Certificate[],
-  ): Promise<void> {
+  private async validateAuthorization(trustedCertificates: readonly Certificate[]): Promise<void> {
     // tslint:disable-next-line:no-let
     let certificationPath: readonly Certificate[];
     try {
@@ -163,6 +163,30 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     const recipientPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
     if (recipientPrivateAddress !== this.recipientAddress) {
       throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
+    }
+  }
+
+  private async validateTiming(): Promise<void> {
+    const currentDate = new Date();
+    currentDate.setMilliseconds(0); // Round down to match precision of date field
+
+    if (currentDate < this.creationDate) {
+      throw new InvalidMessageError('Message date is in the future');
+    }
+
+    const pkijsCertificate = this.senderCertificate.pkijsCertificate;
+    if (this.creationDate < pkijsCertificate.notBefore.value) {
+      throw new InvalidMessageError('Message was created before the sender certificate was valid');
+    }
+
+    if (pkijsCertificate.notAfter.value < this.creationDate) {
+      throw new InvalidMessageError('Message was created after the sender certificate expired');
+    }
+
+    const expiryDate = new Date(this.creationDate);
+    expiryDate.setSeconds(expiryDate.getSeconds() + this.ttl);
+    if (expiryDate < currentDate) {
+      throw new InvalidMessageError('Message already expired');
     }
   }
 }
