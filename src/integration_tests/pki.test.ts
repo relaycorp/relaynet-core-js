@@ -19,7 +19,7 @@ TOMORROW.setDate(TOMORROW.getDate() + 1);
 let publicGatewayCert: Certificate;
 let privateGatewayCert: Certificate;
 let peerEndpointCert: Certificate;
-let unauthorizedSenderCert: Certificate;
+let endpointPdaCert: Certificate;
 beforeAll(async () => {
   const publicGatewayKeyPair = await generateRSAKeyPair();
   publicGatewayCert = reSerializeCertificate(
@@ -54,7 +54,7 @@ beforeAll(async () => {
   );
 
   const endpointKeyPair = await generateRSAKeyPair();
-  unauthorizedSenderCert = reSerializeCertificate(
+  endpointPdaCert = reSerializeCertificate(
     await issueDeliveryAuthorization({
       issuerCertificate: peerEndpointCert,
       issuerPrivateKey: peerEndpointKeyPair.privateKey,
@@ -68,7 +68,7 @@ beforeAll(async () => {
 test('Messages by authorized senders should be accepted', async () => {
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
-    unauthorizedSenderCert,
+    endpointPdaCert,
     Buffer.from('hey'),
     {
       creationDate: ONE_SECOND_AGO,
@@ -82,13 +82,13 @@ test('Messages by authorized senders should be accepted', async () => {
 test('Certificate chain should be computed corrected', async () => {
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
-    unauthorizedSenderCert,
+    endpointPdaCert,
     Buffer.from('hey'),
     { senderCaCertificateChain: [peerEndpointCert, privateGatewayCert] },
   );
 
   await expect(parcel.getSenderCertificationPath([publicGatewayCert])).resolves.toEqual([
-    unauthorizedSenderCert,
+    endpointPdaCert,
     peerEndpointCert,
     privateGatewayCert,
     publicGatewayCert,
@@ -97,7 +97,7 @@ test('Certificate chain should be computed corrected', async () => {
 
 test('Messages by unauthorized senders should be refused', async () => {
   const keyPair = await generateRSAKeyPair();
-  unauthorizedSenderCert = reSerializeCertificate(
+  const unauthorizedSenderCertificate = reSerializeCertificate(
     await issueEndpointCertificate({
       issuerPrivateKey: keyPair.privateKey,
       subjectPublicKey: keyPair.publicKey,
@@ -107,7 +107,7 @@ test('Messages by unauthorized senders should be refused', async () => {
   );
   const parcel = new Parcel(
     await peerEndpointCert.calculateSubjectPrivateAddress(),
-    unauthorizedSenderCert,
+    unauthorizedSenderCertificate,
     Buffer.from('hey'),
     {
       creationDate: ONE_SECOND_AGO,
