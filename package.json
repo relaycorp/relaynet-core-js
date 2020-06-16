@@ -55,7 +55,7 @@
     "@types/asn1js": "0.0.2",
     "@types/binary-parser": "^1.5.0",
     "@types/jest": "^26.0.0",
-    "@types/pkijs": "0.0.3",
+    "@types/pkijs": "0.0.4",
     "@types/verror": "^1.10.3",
     "del-cli": "^3.0.0",
     "gh-pages": "^3.0.0",
