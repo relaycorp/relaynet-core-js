@@ -47,7 +47,7 @@
     "moment": "^2.25.3",
     "pkijs": "2.1.84",
     "smart-buffer": "^4.1.0",
-    "uuid4": "^1.1.4",
+    "uuid4": "^2.0.2",
     "verror": "^1.10.0"
   },
   "devDependencies": {
