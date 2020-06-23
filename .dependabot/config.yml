@@ -2,7 +2,7 @@ version: 1
 update_configs:
   - package_manager: javascript
     directory: /
-    update_schedule: live
+    update_schedule: weekly
     ignored_updates:
       - match:
           # https://github.com/relaycorp/relaynet-core-js/issues/73
@@ -10,4 +10,4 @@ update_configs:
     version_requirement_updates: increase_versions
   - package_manager: ruby:bundler
     directory: /docs
-    update_schedule: live
+    update_schedule: weekly
