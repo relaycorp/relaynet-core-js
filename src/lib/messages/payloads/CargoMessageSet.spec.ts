@@ -42,7 +42,7 @@ describe('CargoMessageSet', () => {
       );
     });
 
-    test('Inner value should be an ASN.1 BIT STRING', () => {
+    test('Inner value should be an ASN.1 OCTET STRING', () => {
       const asn1Sequence = new asn1js.Sequence();
       // tslint:disable-next-line:no-object-mutation
       asn1Sequence.valueBlock.value = [new asn1js.Integer({ value: 1 })];
