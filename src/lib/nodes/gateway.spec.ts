@@ -274,7 +274,7 @@ describe('Gateway', () => {
 
       expect(cargoesSerialized).toHaveLength(1);
       const messageSet = await extractMessageSetFromCargo(cargoesSerialized[0]);
-      expect(messageSet.messages).toHaveProperty('size', 3);
+      expect(messageSet.messages.length).toEqual(3);
       expect(Array.from(messageSet.messages)).toEqual([
         dummyParcelSerialized,
         dummyParcelSerialized,
