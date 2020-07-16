@@ -32,7 +32,7 @@ describe('CargoMessageSet', () => {
       );
     });
 
-    test('Outer value should be an ASN.1 SET', () => {
+    test('Outer value should be an ASN.1 SEQUENCE', () => {
       const asn1Integer = new asn1js.Integer({ value: 1 });
       const invalidSerialization = asn1Integer.toBER(false);
 
@@ -43,10 +43,10 @@ describe('CargoMessageSet', () => {
     });
 
     test('Inner value should be an ASN.1 BIT STRING', () => {
-      const asn1Set = new asn1js.Set();
+      const asn1Sequence = new asn1js.Sequence();
       // tslint:disable-next-line:no-object-mutation
-      asn1Set.valueBlock.value = [new asn1js.Integer({ value: 1 })];
-      const invalidSerialization = asn1Set.toBER(false);
+      asn1Sequence.valueBlock.value = [new asn1js.Integer({ value: 1 })];
+      const invalidSerialization = asn1Sequence.toBER(false);
 
       expect(() => CargoMessageSet.deserialize(invalidSerialization)).toThrowWithMessage(
         InvalidMessageError,
@@ -54,40 +54,40 @@ describe('CargoMessageSet', () => {
       );
     });
 
-    test('A set without values should be treated as an empty set', () => {
-      const asn1Set = new asn1js.Set();
-      const serialization = asn1Set.toBER(false);
+    test('A sequence without values should be treated as an empty array', () => {
+      const asn1Sequence = new asn1js.Sequence();
+      const serialization = asn1Sequence.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
-      expect(cargoMessages.messages).toEqual(new Set());
+      expect(cargoMessages.messages).toEqual([]);
     });
 
-    test('An empty set should be accepted', () => {
-      const asn1Set = new asn1js.Set();
-      asn1Set.valueBlock.value = [];
-      const serialization = asn1Set.toBER(false);
+    test('An empty sequence should be accepted', () => {
+      const asn1Sequence = new asn1js.Sequence();
+      asn1Sequence.valueBlock.value = [];
+      const serialization = asn1Sequence.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
-      expect(cargoMessages.messages).toEqual(new Set());
+      expect(cargoMessages.messages).toEqual([]);
     });
 
-    test('A single-item set should be accepted', () => {
-      const asn1Set = new asn1js.Set();
-      asn1Set.valueBlock.value = [new asn1js.BitString({ valueHex: STUB_MESSAGE })];
-      const serialization = asn1Set.toBER(false);
+    test('A single-item sequence should be accepted', () => {
+      const asn1Sequence = new asn1js.Sequence();
+      asn1Sequence.valueBlock.value = [new asn1js.BitString({ valueHex: STUB_MESSAGE })];
+      const serialization = asn1Sequence.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
-      expect(cargoMessages.messages).toEqual(new Set([STUB_MESSAGE]));
+      expect(cargoMessages.messages).toEqual([STUB_MESSAGE]);
     });
 
-    test('A multi-item set should be accepted', () => {
+    test('A multi-item sequence should be accepted', () => {
       const messages: readonly ArrayBuffer[] = [STUB_MESSAGE, arrayBufferFrom('another message')];
-      const asn1Set = new asn1js.Set();
-      asn1Set.valueBlock.value = messages.map((m) => new asn1js.BitString({ valueHex: m }));
-      const serialization = asn1Set.toBER(false);
+      const asn1Sequence = new asn1js.Sequence();
+      asn1Sequence.valueBlock.value = messages.map((m) => new asn1js.BitString({ valueHex: m }));
+      const serialization = asn1Sequence.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
-      expect(cargoMessages.messages).toEqual(new Set(messages));
+      expect(cargoMessages.messages).toEqual(messages);
     });
   });
 
@@ -160,7 +160,7 @@ describe('CargoMessageSet', () => {
 
       expect(batches).toHaveLength(1);
       const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
-      expect(messageSet.messages).toEqual(new Set([messageSerialized]));
+      expect(messageSet.messages).toEqual([messageSerialized]);
     });
 
     test('Multiple small messages should be put in the same batch', async () => {
@@ -174,9 +174,7 @@ describe('CargoMessageSet', () => {
 
       expect(batches).toHaveLength(1);
       const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
-      expect(messageSet.messages).toEqual(
-        new Set(messagesSerialized.map((m) => m.messageSerialized)),
-      );
+      expect(messageSet.messages).toEqual(messagesSerialized.map((m) => m.messageSerialized));
     });
 
     test('Messages should be put into as few batches as possible', async () => {
@@ -192,9 +190,9 @@ describe('CargoMessageSet', () => {
 
       expect(batches).toHaveLength(2);
       const messageSet1 = CargoMessageSet.deserialize(batches[0].messageSerialized);
-      expect(messageSet1.messages).toEqual(new Set([messageSerialized, messageSerialized]));
+      expect(messageSet1.messages).toEqual([messageSerialized, messageSerialized]);
       const messageSet2 = CargoMessageSet.deserialize(batches[1].messageSerialized);
-      expect(messageSet2.messages).toEqual(new Set([messageSerialized]));
+      expect(messageSet2.messages).toEqual([messageSerialized]);
     });
 
     test('Messages exceeding the max per-message size should be refused', async () => {
@@ -220,7 +218,7 @@ describe('CargoMessageSet', () => {
       expect(batches).toHaveLength(1);
       expect(batches[0].messageSerialized.byteLength).toEqual(MAX_SDU_PLAINTEXT_LENGTH);
       const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
-      expect(messageSet.messages).toEqual(new Set([messageSerialized]));
+      expect(messageSet.messages).toEqual([messageSerialized]);
     });
 
     test('Messages collectively reaching max length should be placed together', async () => {
@@ -240,7 +238,7 @@ describe('CargoMessageSet', () => {
       expect(batches).toHaveLength(1);
       expect(batches[0].messageSerialized.byteLength).toEqual(MAX_SDU_PLAINTEXT_LENGTH);
       const messageSet = CargoMessageSet.deserialize(batches[0].messageSerialized);
-      expect(messageSet.messages).toEqual(new Set([messageSerialized1, messageSerialized2]));
+      expect(messageSet.messages).toEqual([messageSerialized1, messageSerialized2]);
     });
 
     test('Expiry date of batch should be that of its message with latest expiry', async () => {
@@ -266,42 +264,44 @@ describe('CargoMessageSet', () => {
   });
 
   describe('serialize', () => {
-    test('An empty set should serialized as such', () => {
-      const payload = new CargoMessageSet(new Set([]));
+    test('An empty array should serialized as such', () => {
+      const payload = new CargoMessageSet([]);
 
       const serialization = payload.serialize();
 
       const deserialization = derDeserialize(serialization);
-      expect(deserialization).toBeInstanceOf(asn1js.Set);
+      expect(deserialization).toBeInstanceOf(asn1js.Sequence);
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(0);
     });
 
-    test('A one-item set should serialized as such', () => {
-      const payload = new CargoMessageSet(new Set([STUB_MESSAGE]));
+    test('A one-item array should serialized as such', () => {
+      const payload = new CargoMessageSet([STUB_MESSAGE]);
 
       const serialization = payload.serialize();
 
       const deserialization = derDeserialize(serialization);
-      expect(deserialization).toBeInstanceOf(asn1js.Set);
+      expect(deserialization).toBeInstanceOf(asn1js.Sequence);
 
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
-      const stubMessageAsn1 = (deserialization as asn1js.Set).valueBlock.value[0];
+      const stubMessageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[0];
       expect(stubMessageAsn1).toBeInstanceOf(asn1js.BitString);
       expectBuffersToEqual((stubMessageAsn1 as asn1js.BitString).valueBlock.valueHex, STUB_MESSAGE);
     });
 
-    test('A multi-item set should serialized as such', () => {
+    test('A multi-item array should serialized as such', () => {
       const stubMessages: readonly ArrayBuffer[] = [STUB_MESSAGE, arrayBufferFrom('bye')];
-      const payload = new CargoMessageSet(new Set(stubMessages));
+      const payload = new CargoMessageSet(stubMessages);
 
       const serialization = payload.serialize();
 
       const deserialization = derDeserialize(serialization);
-      expect(deserialization).toBeInstanceOf(asn1js.Set);
+      expect(deserialization).toBeInstanceOf(asn1js.Sequence);
 
-      expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(stubMessages.length);
+      expect((deserialization as asn1js.Sequence).valueBlock.value).toHaveLength(
+        stubMessages.length,
+      );
       for (let index = 0; index < stubMessages.length; index++) {
-        const messageAsn1 = (deserialization as asn1js.Set).valueBlock.value[index];
+        const messageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[index];
         expect(messageAsn1).toBeInstanceOf(asn1js.BitString);
         expectBuffersToEqual(
           (messageAsn1 as asn1js.BitString).valueBlock.valueHex,
