@@ -73,7 +73,7 @@ describe('CargoMessageSet', () => {
 
     test('A single-item sequence should be accepted', () => {
       const asn1Sequence = new asn1js.Sequence();
-      asn1Sequence.valueBlock.value = [new asn1js.BitString({ valueHex: STUB_MESSAGE })];
+      asn1Sequence.valueBlock.value = [new asn1js.OctetString({ valueHex: STUB_MESSAGE })];
       const serialization = asn1Sequence.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
@@ -83,7 +83,7 @@ describe('CargoMessageSet', () => {
     test('A multi-item sequence should be accepted', () => {
       const messages: readonly ArrayBuffer[] = [STUB_MESSAGE, arrayBufferFrom('another message')];
       const asn1Sequence = new asn1js.Sequence();
-      asn1Sequence.valueBlock.value = messages.map((m) => new asn1js.BitString({ valueHex: m }));
+      asn1Sequence.valueBlock.value = messages.map((m) => new asn1js.OctetString({ valueHex: m }));
       const serialization = asn1Sequence.toBER(false);
 
       const cargoMessages = CargoMessageSet.deserialize(serialization);
@@ -223,10 +223,10 @@ describe('CargoMessageSet', () => {
 
     test('Messages collectively reaching max length should be placed together', async () => {
       const messageSerialized1 = arrayBufferFrom(
-        'a'.repeat(Math.floor(CargoMessageSet.MAX_MESSAGE_LENGTH / 2) - 3),
+        'a'.repeat(CargoMessageSet.MAX_MESSAGE_LENGTH / 2 - 3),
       );
       const messageSerialized2 = arrayBufferFrom(
-        'a'.repeat(Math.ceil(CargoMessageSet.MAX_MESSAGE_LENGTH / 2) - 3),
+        'a'.repeat(CargoMessageSet.MAX_MESSAGE_LENGTH / 2 - 2),
       );
       const messages = arrayToAsyncIterable([
         { messageSerialized: messageSerialized1, expiryDate: EXPIRY_DATE },
@@ -284,8 +284,11 @@ describe('CargoMessageSet', () => {
 
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
       const stubMessageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[0];
-      expect(stubMessageAsn1).toBeInstanceOf(asn1js.BitString);
-      expectBuffersToEqual((stubMessageAsn1 as asn1js.BitString).valueBlock.valueHex, STUB_MESSAGE);
+      expect(stubMessageAsn1).toBeInstanceOf(asn1js.OctetString);
+      expectBuffersToEqual(
+        (stubMessageAsn1 as asn1js.OctetString).valueBlock.valueHex,
+        STUB_MESSAGE,
+      );
     });
 
     test('A multi-item array should serialized as such', () => {
@@ -302,9 +305,9 @@ describe('CargoMessageSet', () => {
       );
       for (let index = 0; index < stubMessages.length; index++) {
         const messageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[index];
-        expect(messageAsn1).toBeInstanceOf(asn1js.BitString);
+        expect(messageAsn1).toBeInstanceOf(asn1js.OctetString);
         expectBuffersToEqual(
-          (messageAsn1 as asn1js.BitString).valueBlock.valueHex,
+          (messageAsn1 as asn1js.OctetString).valueBlock.valueHex,
           stubMessages[index],
         );
       }

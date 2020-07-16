@@ -31,7 +31,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
    * size of an SDU to be encrypted.
    */
   public static readonly MAX_MESSAGE_LENGTH =
-    MAX_SDU_PLAINTEXT_LENGTH - DER_TL_OVERHEAD_OCTETS * 2 - 1;
+    MAX_SDU_PLAINTEXT_LENGTH - DER_TL_OVERHEAD_OCTETS * 2;
 
   public static deserialize(serialization: ArrayBuffer): CargoMessageSet {
     const result = asn1js.verifySchema(serialization, CargoMessageSet.ASN1_SCHEMA);
@@ -118,7 +118,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
       new asn1js.Repeated({
         name: 'message_set',
         // @ts-ignore
-        value: new asn1js.BitString({ name: 'message' }),
+        value: new asn1js.OctetString({ name: 'message' }),
       }),
     ],
   });
@@ -127,7 +127,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
 
   public serialize(): ArrayBuffer {
     const messagesSerialized = Array.from(this.messages).map(
-      (m) => new asn1js.BitString({ valueHex: m }),
+      (m) => new asn1js.OctetString({ valueHex: m }),
     );
     const set = new asn1js.Sequence();
     // tslint:disable-next-line:no-object-mutation
