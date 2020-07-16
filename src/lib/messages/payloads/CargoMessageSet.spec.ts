@@ -301,7 +301,7 @@ describe('CargoMessageSet', () => {
         stubMessages.length,
       );
       for (let index = 0; index < stubMessages.length; index++) {
-        const messageAsn1 = (deserialization as asn1js.Set).valueBlock.value[index];
+        const messageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[index];
         expect(messageAsn1).toBeInstanceOf(asn1js.BitString);
         expectBuffersToEqual(
           (messageAsn1 as asn1js.BitString).valueBlock.valueHex,
