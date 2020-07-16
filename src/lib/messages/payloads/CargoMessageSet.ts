@@ -40,7 +40,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
     }
     const messageSet: readonly asn1js.BitString[] = (result.result as any).message_set || [];
     const messages = messageSet.map((v) => v.valueBlock.valueHex);
-    return new CargoMessageSet(new Set(messages));
+    return new CargoMessageSet(messages);
   }
 
   /**
@@ -66,7 +66,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
     messagesWithExpiryDate: AsyncIterable<MessageWithExpiryDate>,
   ): AsyncIterable<MessageWithExpiryDate> {
     // tslint:disable-next-line:readonly-array no-let
-    let currentBatch: Set<ArrayBuffer> = new Set([]);
+    let currentBatch: ArrayBuffer[] = [];
     // tslint:disable-next-line:no-let no-unnecessary-initializer
     let currentBatchExpiryDate: Date | undefined = undefined;
     // tslint:disable-next-line:no-let
@@ -85,7 +85,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
       const messageTlvLength = DER_TL_OVERHEAD_OCTETS + messageSerialized.byteLength;
       const messageFitsInCurrentBatch = messageTlvLength <= availableOctetsInCurrentBatch;
       if (messageFitsInCurrentBatch) {
-        currentBatch.add(messageSerialized);
+        currentBatch.push(messageSerialized);
         currentBatchExpiryDate =
           currentBatchExpiryDate < expiryDate ? expiryDate : currentBatchExpiryDate;
         availableOctetsInCurrentBatch -= messageTlvLength;
@@ -96,13 +96,13 @@ export default class CargoMessageSet implements PayloadPlaintext {
           messageSerialized: cargoMessageSet.serialize(),
         };
 
-        currentBatch = new Set([messageSerialized]);
+        currentBatch = [messageSerialized];
         currentBatchExpiryDate = expiryDate;
         availableOctetsInCurrentBatch = MAX_SDU_PLAINTEXT_LENGTH - messageTlvLength;
       }
     }
 
-    if (currentBatch.size) {
+    if (currentBatch.length) {
       const cargoMessageSet = new CargoMessageSet(currentBatch);
       yield {
         expiryDate: currentBatchExpiryDate as Date,
@@ -111,7 +111,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
     }
   }
 
-  protected static readonly ASN1_SCHEMA = new asn1js.Set({
+  protected static readonly ASN1_SCHEMA = new asn1js.Sequence({
     name: 'CargoMessages',
     // @ts-ignore
     value: [
@@ -123,13 +123,13 @@ export default class CargoMessageSet implements PayloadPlaintext {
     ],
   });
 
-  constructor(public readonly messages: Set<ArrayBuffer>) {}
+  constructor(public readonly messages: readonly ArrayBuffer[]) {}
 
   public serialize(): ArrayBuffer {
     const messagesSerialized = Array.from(this.messages).map(
       (m) => new asn1js.BitString({ valueHex: m }),
     );
-    const set = new asn1js.Set();
+    const set = new asn1js.Sequence();
     // tslint:disable-next-line:no-object-mutation
     set.valueBlock.value = messagesSerialized;
     return set.toBER(false);
