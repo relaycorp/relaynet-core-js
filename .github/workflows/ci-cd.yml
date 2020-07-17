@@ -9,6 +9,7 @@ jobs:
       matrix:
         node: [10, 12]
     runs-on: ubuntu-latest
+    name: "ci-nodejs${{ matrix.node }}"
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
