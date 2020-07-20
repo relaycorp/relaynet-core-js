@@ -27,8 +27,8 @@ export default class CargoMessageSet implements PayloadPlaintext {
   /**
    * Maximum number of octets for any serialized message to be included in a cargo.
    *
-   * This is the result of subtracting the TLVs for the SET and BIT STRING values from the maximum
-   * size of an SDU to be encrypted.
+   * This is the result of subtracting the TLVs for the SET and OCTET STRING values from the
+   * maximum size of an SDU to be encrypted.
    */
   public static readonly MAX_MESSAGE_LENGTH = MAX_SDU_PLAINTEXT_LENGTH - DER_TL_OVERHEAD_OCTETS * 2;
 
