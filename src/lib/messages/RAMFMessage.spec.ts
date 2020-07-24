@@ -193,7 +193,7 @@ describe('RAMFMessage', () => {
 
   describe('validate', () => {
     describe('Authorization', () => {
-      test('Parcel should be refused if sender is not trusted', async () => {
+      test('Message should be refused if sender is not trusted', async () => {
         const message = new StubMessage(
           await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
           reSerializeCertificate(senderCertificate),
@@ -208,7 +208,7 @@ describe('RAMFMessage', () => {
         );
       });
 
-      test('Parcel should be accepted if sender is trusted', async () => {
+      test('Message should be accepted if sender is trusted', async () => {
         const message = new StubMessage(
           await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
           stubSenderChain.senderCert,
@@ -223,7 +223,7 @@ describe('RAMFMessage', () => {
         await expect(message.validate([stubSenderChain.rootCert])).toResolve();
       });
 
-      test('Parcel should be refused if recipient is private and did not issue PDA', async () => {
+      test('Message should be refused if recipient is private and did not authorize', async () => {
         const message = new StubMessage(
           '0deadbeef',
           stubSenderChain.senderCert,
@@ -241,7 +241,7 @@ describe('RAMFMessage', () => {
         );
       });
 
-      test('Parcel should be accepted if recipient address is public', async () => {
+      test('Message should be accepted if recipient address is public', async () => {
         const message = new StubMessage(
           'https://example.com',
           stubSenderChain.senderCert,

@@ -619,11 +619,11 @@ describe('validate()', () => {
 
 describe('getCertificationPath', () => {
   let stubTrustedCaPrivateKey: CryptoKey;
-  let stubTrustedCa: Certificate;
+  let stubRootCa: Certificate;
   beforeAll(async () => {
     const trustedCaKeyPair = await generateRSAKeyPair();
     stubTrustedCaPrivateKey = trustedCaKeyPair.privateKey;
-    stubTrustedCa = reSerializeCertificate(
+    stubRootCa = reSerializeCertificate(
       await generateStubCert({
         attributes: { isCA: true },
         issuerPrivateKey: trustedCaKeyPair.privateKey,
@@ -635,32 +635,29 @@ describe('getCertificationPath', () => {
   test('Cert issued by trusted cert should be trusted', async () => {
     const cert = reSerializeCertificate(
       await generateStubCert({
-        issuerCertificate: stubTrustedCa,
+        issuerCertificate: stubRootCa,
         issuerPrivateKey: stubTrustedCaPrivateKey,
       }),
     );
 
-    await expect(cert.getCertificationPath([], [stubTrustedCa])).resolves.toEqual([
-      cert,
-      stubTrustedCa,
-    ]);
+    await expect(cert.getCertificationPath([], [stubRootCa])).resolves.toEqual([cert, stubRootCa]);
   });
 
   test('Cert not issued by trusted cert should not be trusted', async () => {
     const cert = await generateStubCert();
 
     await expectPromiseToReject(
-      cert.getCertificationPath([], [stubTrustedCa]),
+      cert.getCertificationPath([], [stubRootCa]),
       new CertificateError('No valid certificate paths found'),
     );
   });
 
-  test('Cert issued by intermediate CA should be trusted', async () => {
+  test('Cert issued by untrusted intermediate should be trusted if root is trusted', async () => {
     const intermediateCaKeyPair = await generateRSAKeyPair();
     const intermediateCaCert = reSerializeCertificate(
       await generateStubCert({
         attributes: { isCA: true },
-        issuerCertificate: stubTrustedCa,
+        issuerCertificate: stubRootCa,
         issuerPrivateKey: stubTrustedCaPrivateKey,
         subjectPublicKey: intermediateCaKeyPair.publicKey,
       }),
@@ -673,17 +670,19 @@ describe('getCertificationPath', () => {
       }),
     );
 
-    await expect(
-      cert.getCertificationPath([intermediateCaCert], [stubTrustedCa]),
-    ).resolves.toEqual([cert, intermediateCaCert, stubTrustedCa]);
+    await expect(cert.getCertificationPath([intermediateCaCert], [stubRootCa])).resolves.toEqual([
+      cert,
+      intermediateCaCert,
+      stubRootCa,
+    ]);
   });
 
-  test('Cert issued by intermediate CA should be trusted without root CA', async () => {
+  test('Cert issued by trusted intermediate CA should be trusted', async () => {
     const intermediateCaKeyPair = await generateRSAKeyPair();
     const intermediateCaCert = reSerializeCertificate(
       await generateStubCert({
         attributes: { isCA: true },
-        issuerCertificate: stubTrustedCa,
+        issuerCertificate: stubRootCa,
         issuerPrivateKey: stubTrustedCaPrivateKey,
         subjectPublicKey: intermediateCaKeyPair.publicKey,
       }),
@@ -720,7 +719,7 @@ describe('getCertificationPath', () => {
     await expectPromiseToReject(
       cert.getCertificationPath(
         [reSerializeCertificate(untrustedIntermediateCaCert)],
-        [stubTrustedCa],
+        [stubRootCa],
       ),
       new CertificateError('No valid certificate paths found'),
     );
@@ -737,7 +736,7 @@ describe('getCertificationPath', () => {
     const cert = await generateStubCert();
 
     await expectPromiseToReject(
-      cert.getCertificationPath([trustedIntermediateCaCert], [stubTrustedCa]),
+      cert.getCertificationPath([trustedIntermediateCaCert], [stubRootCa]),
       new CertificateError('No valid certificate paths found'),
     );
   });
