@@ -40,6 +40,7 @@ export * from './lib/pki';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData';
+export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
 
 // RAMF
 export { default as Payload } from './lib/messages/payloads/PayloadPlaintext';
@@ -61,4 +62,3 @@ export * from './lib/messages/ParcelCollectionAck';
 export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 
 //endregion
-export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
