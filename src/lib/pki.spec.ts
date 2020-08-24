@@ -3,7 +3,7 @@
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
-import { expectPromiseToReject, generateStubCert } from './_test_utils';
+import { generateStubCert } from './_test_utils';
 import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
 import BasicCertificateIssuanceOptions from './crypto_wrappers/x509/BasicCertificateIssuanceOptions';
 import Certificate from './crypto_wrappers/x509/Certificate';
@@ -324,7 +324,7 @@ describe('issueInitialDHKeyCertificate', () => {
       startDate.setDate(stubFutureDate.getDate() - MAX_VALIDITY_DAYS);
       startDate.setMilliseconds(stubFutureDate.getMilliseconds() - 1);
 
-      await expectPromiseToReject(
+      await expect(
         issueInitialDHKeyCertificate({
           issuerCertificate: stubNodeCertificate,
           issuerPrivateKey: stubNodeKeyPair.privateKey,
@@ -332,6 +332,7 @@ describe('issueInitialDHKeyCertificate', () => {
           validityEndDate: stubFutureDate,
           validityStartDate: startDate,
         }),
+      ).rejects.toEqual(
         new DHCertificateError(`DH key may not be valid for more than ${MAX_VALIDITY_DAYS} days`),
       );
     });

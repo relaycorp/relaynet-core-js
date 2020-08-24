@@ -11,7 +11,6 @@ import {
   arrayBufferFrom,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
-  expectPromiseToReject,
   generateStubCert,
   getPromiseRejection,
 } from '../_test_utils';
@@ -236,13 +235,14 @@ describe('MessageSerializer', () => {
           const invalidAddress = 'a'.repeat(1025);
           const stubMessage = new StubMessage(invalidAddress, SENDER_CERTIFICATE, PAYLOAD);
 
-          await expectPromiseToReject(
+          await expect(
             serialize(
               stubMessage,
               stubConcreteMessageTypeOctet,
               stubConcreteMessageVersionOctet,
               SENDER_PRIVATE_KEY,
             ),
+          ).rejects.toEqual(
             new RAMFSyntaxError(
               'Recipient address should not span more than 1024 characters (got 1025)',
             ),
@@ -275,13 +275,14 @@ describe('MessageSerializer', () => {
             id,
           });
 
-          await expectPromiseToReject(
+          await expect(
             serialize(
               stubMessage,
               stubConcreteMessageTypeOctet,
               stubConcreteMessageVersionOctet,
               SENDER_PRIVATE_KEY,
             ),
+          ).rejects.toEqual(
             new RAMFSyntaxError('Id should not span more than 64 characters (got 65)'),
           );
         });
@@ -351,28 +352,28 @@ describe('MessageSerializer', () => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
             ttl: -1,
           });
-          await expectPromiseToReject(
+          await expect(
             serialize(
               message,
               stubConcreteMessageTypeOctet,
               stubConcreteMessageVersionOctet,
               SENDER_PRIVATE_KEY,
             ),
-            new RAMFSyntaxError('TTL cannot be negative'),
-          );
+          ).rejects.toEqual(new RAMFSyntaxError('TTL cannot be negative'));
         });
 
         test('TTL should not be more than 180 days', async () => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD, {
             ttl: MAX_TTL + 1,
           });
-          await expectPromiseToReject(
+          await expect(
             serialize(
               message,
               stubConcreteMessageTypeOctet,
               stubConcreteMessageVersionOctet,
               SENDER_PRIVATE_KEY,
             ),
+          ).rejects.toEqual(
             new RAMFSyntaxError(`TTL must be less than ${MAX_TTL} (got ${MAX_TTL + 1})`),
           );
         });
@@ -416,13 +417,14 @@ describe('MessageSerializer', () => {
         test('Payload size should not exceed 8 MiB', async () => {
           const largePayload = Buffer.from('a'.repeat(MAX_PAYLOAD_LENGTH + 1));
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, largePayload);
-          await expectPromiseToReject(
+          await expect(
             serialize(
               message,
               stubConcreteMessageTypeOctet,
               stubConcreteMessageVersionOctet,
               SENDER_PRIVATE_KEY,
             ),
+          ).rejects.toEqual(
             new RAMFSyntaxError(
               `Payload size must not exceed 8 MiB (got ${largePayload.byteLength} octets)`,
             ),
@@ -477,13 +479,14 @@ describe('MessageSerializer', () => {
     describe('Format signature', () => {
       test('Input should be long enough to contain format signature', async () => {
         const serialization = bufferToArray(Buffer.from('Relay'));
-        await expectPromiseToReject(
+        await expect(
           deserialize(
             serialization,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
+        ).rejects.toEqual(
           new RAMFSyntaxError(
             'Serialization starts with invalid RAMF format signature: Relaynet is not defined',
           ),
@@ -492,13 +495,14 @@ describe('MessageSerializer', () => {
 
       test('Input should be refused if it does not start with "Relaynet"', async () => {
         const serialization = bufferToArray(Buffer.from('Relaycorp00'));
-        await expectPromiseToReject(
+        await expect(
           deserialize(
             serialization,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
+        ).rejects.toEqual(
           new RAMFSyntaxError(
             'Serialization starts with invalid RAMF format signature: Relaynet is not defined',
           ),
@@ -514,15 +518,14 @@ describe('MessageSerializer', () => {
           SENDER_PRIVATE_KEY,
         );
 
-        await expectPromiseToReject(
+        await expect(
           deserialize(
             serialization,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
-          new RAMFSyntaxError('Expected concrete message type 0x44 but got 0x45'),
-        );
+        ).rejects.toEqual(new RAMFSyntaxError('Expected concrete message type 0x44 but got 0x45'));
       });
 
       test('A non-matching concrete message version should be refused', async () => {
@@ -534,15 +537,14 @@ describe('MessageSerializer', () => {
           SENDER_PRIVATE_KEY,
         );
 
-        await expectPromiseToReject(
+        await expect(
           deserialize(
             serialization,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
-          new RAMFSyntaxError('Expected concrete message version 0x2 but got 0x3'),
-        );
+        ).rejects.toEqual(new RAMFSyntaxError('Expected concrete message version 0x2 but got 0x3'));
       });
     });
 

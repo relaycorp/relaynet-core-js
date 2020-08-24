@@ -59,25 +59,6 @@ export function sha256Hex(plaintext: ArrayBuffer | Buffer): string {
   return calculateDigestHex('sha256', plaintext);
 }
 
-/**
- * @deprecated Use `await expect(promise).rejects.toEqual(value)` instead
- * @param promise
- * @param expectedError
- */
-export async function expectPromiseToReject(
-  promise: Promise<any>,
-  expectedError: Error,
-): Promise<void> {
-  try {
-    await promise;
-  } catch (error) {
-    expect(error).toBeInstanceOf(expectedError.constructor);
-    expect(error).toHaveProperty('message', expectedError.message);
-    return;
-  }
-  throw new Error(`Expected promise to throw error ${expectedError}`);
-}
-
 // tslint:disable-next-line:readonly-array
 export function mockSpy<T, Y extends any[]>(
   spy: jest.MockInstance<T, Y>,

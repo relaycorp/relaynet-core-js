@@ -8,7 +8,6 @@ import {
   expectAsn1ValuesToBeEqual,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
-  expectPromiseToReject,
   generateStubCert,
   sha256Hex,
 } from '../../_test_utils';
@@ -226,8 +225,7 @@ describe('serialize', () => {
 describe('verifySignature', () => {
   test('A non-DER-encoded value should be refused', async () => {
     const invalidSignature = arrayBufferFrom('nope.jpeg');
-    await expectPromiseToReject(
-      verifySignature(invalidSignature),
+    await expect(verifySignature(invalidSignature)).rejects.toEqual(
       new CMSError('Could not deserialize CMS ContentInfo: Value is not DER-encoded'),
     );
   });
@@ -247,8 +245,7 @@ describe('verifySignature', () => {
       oids.CMS_SIGNED_DATA,
     );
 
-    await expectPromiseToReject(
-      verifySignature(invalidCmsSignedDataSerialized),
+    await expect(verifySignature(invalidCmsSignedDataSerialized)).rejects.toEqual(
       new CMSError('Invalid signature:  (PKI.js code: 14)'),
     );
   });

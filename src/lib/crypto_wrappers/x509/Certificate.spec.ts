@@ -7,7 +7,6 @@ import * as pkijs from 'pkijs';
 
 import {
   expectBuffersToEqual,
-  expectPromiseToReject,
   generateStubCert,
   reSerializeCertificate,
   sha256Hex,
@@ -241,13 +240,14 @@ describe('issue()', () => {
     // tslint:disable-next-line:no-object-mutation
     issuerCert.pkijsCertificate.extensions = undefined;
 
-    await expectPromiseToReject(
+    await expect(
       Certificate.issue({
         ...baseCertificateOptions,
         issuerCertificate: issuerCert,
         issuerPrivateKey: issuerKeyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
       }),
+    ).rejects.toEqual(
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
@@ -263,13 +263,14 @@ describe('issue()', () => {
     // tslint:disable-next-line:no-object-mutation
     issuerCert.pkijsCertificate.extensions = [];
 
-    await expectPromiseToReject(
+    await expect(
       Certificate.issue({
         ...baseCertificateOptions,
         issuerCertificate: issuerCert,
         issuerPrivateKey: keyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
       }),
+    ).rejects.toEqual(
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
@@ -288,13 +289,14 @@ describe('issue()', () => {
       (e) => e.extnID !== oids.BASIC_CONSTRAINTS,
     );
 
-    await expectPromiseToReject(
+    await expect(
       Certificate.issue({
         ...baseCertificateOptions,
         issuerCertificate: issuerCert,
         issuerPrivateKey: keyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
       }),
+    ).rejects.toEqual(
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
     );
   });
@@ -308,15 +310,14 @@ describe('issue()', () => {
       subjectPublicKey: issuerKeyPair.publicKey,
     });
 
-    await expectPromiseToReject(
+    await expect(
       Certificate.issue({
         ...baseCertificateOptions,
         issuerCertificate: issuerCert,
         issuerPrivateKey: keyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
       }),
-      new CertificateError('Issuer is not a CA'),
-    );
+    ).rejects.toEqual(new CertificateError('Issuer is not a CA'));
   });
 
   test('should set issuer DN to that of CA', async () => {
@@ -404,27 +405,25 @@ describe('issue()', () => {
     });
 
     test('pathLenConstraint should not be greater than 2', async () => {
-      await expectPromiseToReject(
+      await expect(
         Certificate.issue({
           ...baseCertificateOptions,
           issuerPrivateKey: keyPair.privateKey,
           pathLenConstraint: 3,
           subjectPublicKey: keyPair.publicKey,
         }),
-        new CertificateError('pathLenConstraint must be between 0 and 2 (got 3)'),
-      );
+      ).rejects.toEqual(new CertificateError('pathLenConstraint must be between 0 and 2 (got 3)'));
     });
 
     test('pathLenConstraint should not be negative', async () => {
-      await expectPromiseToReject(
+      await expect(
         Certificate.issue({
           ...baseCertificateOptions,
           issuerPrivateKey: keyPair.privateKey,
           pathLenConstraint: -1,
           subjectPublicKey: keyPair.publicKey,
         }),
-        new CertificateError('pathLenConstraint must be between 0 and 2 (got -1)'),
-      );
+      ).rejects.toEqual(new CertificateError('pathLenConstraint must be between 0 and 2 (got -1)'));
     });
   });
 
@@ -646,8 +645,7 @@ describe('getCertificationPath', () => {
   test('Cert not issued by trusted cert should not be trusted', async () => {
     const cert = await generateStubCert();
 
-    await expectPromiseToReject(
-      cert.getCertificationPath([], [stubRootCa]),
+    await expect(cert.getCertificationPath([], [stubRootCa])).rejects.toEqual(
       new CertificateError('No valid certificate paths found'),
     );
   });
@@ -716,13 +714,12 @@ describe('getCertificationPath', () => {
       }),
     );
 
-    await expectPromiseToReject(
+    await expect(
       cert.getCertificationPath(
         [reSerializeCertificate(untrustedIntermediateCaCert)],
         [stubRootCa],
       ),
-      new CertificateError('No valid certificate paths found'),
-    );
+    ).rejects.toEqual(new CertificateError('No valid certificate paths found'));
   });
 
   test('Including trusted intermediate CA should not make certificate trusted', async () => {
@@ -735,10 +732,9 @@ describe('getCertificationPath', () => {
 
     const cert = await generateStubCert();
 
-    await expectPromiseToReject(
+    await expect(
       cert.getCertificationPath([trustedIntermediateCaCert], [stubRootCa]),
-      new CertificateError('No valid certificate paths found'),
-    );
+    ).rejects.toEqual(new CertificateError('No valid certificate paths found'));
   });
 });
 
