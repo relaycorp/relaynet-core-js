@@ -20,6 +20,52 @@ export interface SignatureVerification {
 }
 
 export class SignedData {
+  /**
+   * The signed plaintext, if it was encapsulated.
+   *
+   * TODO: Cache output because computation can be relatively expensive
+   */
+  get plaintext(): ArrayBuffer | null {
+    if (this.pkijsSignedData.encapContentInfo.eContent === undefined) {
+      return null;
+    }
+    // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
+    const contentOctetStringChunks = this.pkijsSignedData.encapContentInfo.eContent.valueBlock
+      .value;
+    const contentChunks = contentOctetStringChunks.map(
+      (os) => (os as asn1js.OctetString).valueBlock.valueHex,
+    );
+    const content = Buffer.concat(contentChunks.map((c) => new Uint8Array(c)));
+
+    return bufferToArray(content);
+  }
+
+  /**
+   * The signer's certificate, if it was encapsulated.
+   */
+  get signerCertificate(): Certificate | null {
+    if (this.pkijsSignedData.signerInfos.length === 0) {
+      return null;
+    }
+    const signerInfo = this.pkijsSignedData.signerInfos[0];
+    const matches = Array.from(this.certificates).filter(
+      (c) =>
+        c.pkijsCertificate.issuer.isEqual(signerInfo.sid.issuer) &&
+        c.pkijsCertificate.serialNumber.isEqual(signerInfo.sid.serialNumber),
+    );
+    return matches[0] ?? null;
+  }
+
+  /**
+   * Set of encapsulated certificates.
+   */
+  get certificates(): Set<Certificate> {
+    const certificates = (this.pkijsSignedData.certificates as readonly pkijs.Certificate[]).map(
+      (c) => new Certificate(c),
+    );
+    return new Set(certificates);
+  }
+
   public static async sign(
     plaintext: ArrayBuffer,
     privateKey: CryptoKey,
@@ -46,7 +92,30 @@ export class SignedData {
     });
     await pkijsSignedData.sign(privateKey, 0, hashingAlgorithmName);
 
+    return SignedData.reDeserialize(pkijsSignedData);
+  }
+
+  public static deserialize(signedDataSerialized: ArrayBuffer): SignedData {
+    const contentInfo = deserializeContentInfo(signedDataSerialized);
+    // tslint:disable-next-line:no-let
+    let pkijsSignedData: pkijs.SignedData;
+    try {
+      pkijsSignedData = new pkijs.SignedData({ schema: contentInfo.content });
+    } catch (exc) {
+      throw new CMSError('SignedData value is malformed', exc);
+    }
     return new SignedData(pkijsSignedData);
+  }
+
+  /**
+   *
+   * @param pkijsSignedData
+   * @private
+   */
+  private static reDeserialize(pkijsSignedData: pkijs.SignedData): SignedData {
+    const signedData = new SignedData(pkijsSignedData);
+    const serialization = signedData.serialize();
+    return SignedData.deserialize(serialization);
   }
 
   constructor(public readonly pkijsSignedData: pkijs.SignedData) {}
@@ -57,6 +126,27 @@ export class SignedData {
       contentType: oids.CMS_SIGNED_DATA,
     });
     return contentInfo.toSchema().toBER(false);
+  }
+
+  public async verify(): Promise<void> {
+    if (this.pkijsSignedData.encapContentInfo.eContent === undefined) {
+      throw new CMSError('CMS SignedData value should encapsulate content');
+    }
+
+    // tslint:disable-next-line:no-let
+    let verificationResult;
+    try {
+      verificationResult = await this.pkijsSignedData.verify({
+        extendedMode: true,
+        signer: 0,
+      });
+
+      if (!verificationResult.signatureVerified) {
+        throw verificationResult;
+      }
+    } catch (e) {
+      throw new CMSError(`Invalid signature: ${e.message} (PKI.js code: ${e.code})`);
+    }
   }
 }
 
@@ -123,52 +213,12 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
 export async function verifySignature(
   cmsSignedDataSerialized: ArrayBuffer,
 ): Promise<SignatureVerification> {
-  const contentInfo = deserializeContentInfo(cmsSignedDataSerialized);
-
-  const signedData = new pkijs.SignedData({ schema: contentInfo.content });
-
-  // PKI.js is too slow at verifying the signature if the content is embedded (around 700ms for a
-  // 8 MiB content), but passing the content explicitly halves the time.
-  const plaintext = extractSignedDataContent(signedData.encapContentInfo);
-
-  // tslint:disable-next-line:no-let
-  let verificationResult;
-  try {
-    verificationResult = await signedData.verify({
-      data: plaintext,
-      extendedMode: true,
-      signer: 0,
-    });
-
-    if (!verificationResult.signatureVerified) {
-      throw verificationResult;
-    }
-  } catch (e) {
-    throw new CMSError(`Invalid signature: ${e.message} (PKI.js code: ${e.code})`);
-  }
+  const signedData = SignedData.deserialize(cmsSignedDataSerialized);
+  await signedData.verify();
 
   return {
-    attachedCertificates: (signedData.certificates as readonly pkijs.Certificate[]).map(
-      (c) => new Certificate(c),
-    ),
-    plaintext,
-    signerCertificate: new Certificate(verificationResult.signerCertificate as pkijs.Certificate),
+    attachedCertificates: Array.from(signedData.certificates),
+    plaintext: signedData.plaintext as ArrayBuffer,
+    signerCertificate: signedData.signerCertificate as Certificate,
   };
-}
-
-function extractSignedDataContent(encapContentInfo: pkijs.EncapsulatedContentInfo): ArrayBuffer {
-  if (encapContentInfo.eContent === undefined) {
-    throw new CMSError('CMS SignedData value should encapsulate content');
-  }
-  // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
-  const contentOctetStringChunks = encapContentInfo.eContent.valueBlock.value;
-  const contentChunks = contentOctetStringChunks.map(
-    (os) => (os as asn1js.OctetString).valueBlock.valueHex,
-  );
-  const content = Buffer.concat(contentChunks.map((c) => new Uint8Array(c)));
-
-  // tslint:disable-next-line:no-delete
-  delete encapContentInfo.eContent;
-
-  return bufferToArray(content);
 }

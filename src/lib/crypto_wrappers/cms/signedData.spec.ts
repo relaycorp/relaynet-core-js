@@ -16,17 +16,16 @@ import { generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
-import { sign, SignedData, verifySignature } from './signedData';
+import { SignedData } from './signedData';
 
 const plaintext = arrayBufferFrom('Winter is coming');
 
-let privateKey: CryptoKey;
+let keyPair: CryptoKeyPair;
 let certificate: Certificate;
 beforeAll(async () => {
-  const keyPair = await generateRSAKeyPair();
-  privateKey = keyPair.privateKey;
+  keyPair = await generateRSAKeyPair();
   certificate = await generateStubCert({
-    issuerPrivateKey: privateKey,
+    issuerPrivateKey: keyPair.privateKey,
     subjectPublicKey: keyPair.publicKey,
   });
 });
@@ -37,27 +36,27 @@ afterEach(() => {
 
 describe('sign', () => {
   test('SignedData version should be 1', async () => {
-    const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
     expect(signedData.pkijsSignedData).toHaveProperty('version', 1);
   });
 
   describe('SignerInfo', () => {
     test('There should only be one SignerInfo', async () => {
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
       expect(signedData.pkijsSignedData.signerInfos).toHaveLength(1);
       expect(signedData.pkijsSignedData.signerInfos[0]).toBeInstanceOf(pkijs.SignerInfo);
     });
 
     test('Version should be 1', async () => {
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
       expect(signedData.pkijsSignedData.signerInfos[0]).toHaveProperty('version', 1);
     });
 
     test('SignerIdentifier should be IssuerAndSerialNumber', async () => {
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
       const signerInfo = signedData.pkijsSignedData.signerInfos[0];
       expect(signerInfo.sid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
@@ -70,7 +69,7 @@ describe('sign', () => {
 
     describe('SignedAttributes', () => {
       test('Signed attributes should be present', async () => {
-        const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+        const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
         const signerInfo = signedData.pkijsSignedData.signerInfos[0];
         expect(signerInfo.signedAttrs).toBeInstanceOf(pkijs.SignedAndUnsignedAttributes);
@@ -78,7 +77,7 @@ describe('sign', () => {
       });
 
       test('Content type attribute should be set to CMS Data', async () => {
-        const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+        const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
         const contentTypeAttribute = getSignerInfoAttribute(
           signedData.pkijsSignedData.signerInfos[0],
@@ -93,7 +92,7 @@ describe('sign', () => {
       });
 
       test('Plaintext digest should be present', async () => {
-        const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+        const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
         const digestAttribute = getSignerInfoAttribute(
           signedData.pkijsSignedData.signerInfos[0],
@@ -111,7 +110,7 @@ describe('sign', () => {
 
   describe('Attached certificates', () => {
     test('The signer certificate should be attached', async () => {
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
       expect(signedData.pkijsSignedData.certificates).toHaveLength(1);
       expectPkijsValuesToBeEqual(
@@ -123,7 +122,7 @@ describe('sign', () => {
     test('CA certificate chain should optionally be attached', async () => {
       const rootCaCertificate = await generateStubCert();
       const intermediateCaCertificate = await generateStubCert();
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate, [
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate, [
         intermediateCaCertificate,
         rootCaCertificate,
       ]);
@@ -142,7 +141,7 @@ describe('sign', () => {
 
   describe('Hashing', () => {
     test('SHA-256 should be used by default', async () => {
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
       const digestAttribute = getSignerInfoAttribute(
         signedData.pkijsSignedData.signerInfos[0],
@@ -155,7 +154,7 @@ describe('sign', () => {
     });
 
     test.each([['SHA-384', 'SHA-512']])('%s should be supported', async (hashingAlgorithmName) => {
-      const signedData = await SignedData.sign(plaintext, privateKey, certificate, [], {
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate, [], {
         hashingAlgorithmName,
       });
 
@@ -174,7 +173,7 @@ describe('sign', () => {
       expect.hasAssertions();
 
       try {
-        await SignedData.sign(plaintext, privateKey, certificate, [], {
+        await SignedData.sign(plaintext, keyPair.privateKey, certificate, [], {
           hashingAlgorithmName: 'SHA-1',
         });
       } catch (error) {
@@ -186,7 +185,7 @@ describe('sign', () => {
 
   test('Content should be attached', async () => {
     jest.spyOn(pkijs.SignedData.prototype, 'sign');
-    const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
     const encapContentInfo = signedData.pkijsSignedData.encapContentInfo;
     expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
@@ -202,7 +201,7 @@ describe('sign', () => {
 
 describe('serialize', () => {
   test('SignedData value should be wrapped in ContentInfo', async () => {
-    const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
     const signedDataSerialized = signedData.serialize();
 
@@ -213,7 +212,7 @@ describe('serialize', () => {
   });
 
   test('ContentInfo OID should match that of SignedData values', async () => {
-    const signedData = await SignedData.sign(plaintext, privateKey, certificate);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
     const signedDataSerialized = signedData.serialize();
 
@@ -222,83 +221,146 @@ describe('serialize', () => {
   });
 });
 
-describe('verifySignature', () => {
+describe('deserialize', () => {
   test('A non-DER-encoded value should be refused', async () => {
     const invalidSignature = arrayBufferFrom('nope.jpeg');
-    await expect(verifySignature(invalidSignature)).rejects.toEqual(
-      new CMSError('Could not deserialize CMS ContentInfo: Value is not DER-encoded'),
+    expect(() => SignedData.deserialize(invalidSignature)).toThrowWithMessage(
+      CMSError,
+      'Could not deserialize CMS ContentInfo: Value is not DER-encoded',
     );
   });
 
-  test('Well-formed but invalid signatures should be rejected', async () => {
+  test('ContentInfo wrapper should be required', async () => {
+    const invalidSignature = new asn1js.Sequence().toBER(false);
+    expect(() => SignedData.deserialize(invalidSignature)).toThrowWithMessage(
+      CMSError,
+      'Could not deserialize CMS ContentInfo: ' +
+        "Object's schema was not verified against input data for ContentInfo",
+    );
+  });
+
+  test('Malformed SignedData values should be refused', async () => {
+    const invalidSignature = serializeContentInfo(new asn1js.Sequence(), '1.2.3.4');
+    await expect(() => SignedData.deserialize(invalidSignature)).toThrowWithMessage(
+      CMSError,
+      'SignedData value is malformed',
+    );
+  });
+
+  test('Well-formed SignedData values should be deserialized', async () => {
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+    const signedDataSerialized = signedData.serialize();
+
+    const signedDataDeserialized = SignedData.deserialize(signedDataSerialized);
+
+    expect(signedDataDeserialized.serialize()).toEqual(signedData.serialize());
+  });
+});
+
+describe('verify', () => {
+  test('Invalid signatures should be rejected', async () => {
     // Let's tamper with the payload
-    const signatureDer = await sign(plaintext, privateKey, certificate);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
     const differentPlaintext = arrayBufferFrom('Different');
-    const cmsSignedData = deserializeSignedData(signatureDer);
     // tslint:disable-next-line:no-object-mutation
-    cmsSignedData.encapContentInfo = new pkijs.EncapsulatedContentInfo({
+    signedData.pkijsSignedData.encapContentInfo = new pkijs.EncapsulatedContentInfo({
       eContent: new asn1js.OctetString({ valueHex: differentPlaintext }),
       eContentType: oids.CMS_DATA,
     });
-    const invalidCmsSignedDataSerialized = serializeContentInfo(
-      cmsSignedData.toSchema(true),
-      oids.CMS_SIGNED_DATA,
-    );
 
-    await expect(verifySignature(invalidCmsSignedDataSerialized)).rejects.toEqual(
+    await expect(signedData.verify()).rejects.toEqual(
       new CMSError('Invalid signature:  (PKI.js code: 14)'),
     );
   });
 
   test('Value should be refused if content is not encapsulated', async () => {
-    const validSignedDataSerialized = await sign(plaintext, privateKey, certificate);
-    const signedData = deserializeSignedData(validSignedDataSerialized);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
     // tslint:disable-next-line:no-delete
-    delete signedData.encapContentInfo.eContent;
-    const invalidSignedData = new pkijs.ContentInfo({
-      content: signedData.toSchema(true),
-      contentType: oids.CMS_SIGNED_DATA,
-    });
-    const invalidSignedDataSerialized = invalidSignedData.toSchema().toBER(false);
+    delete signedData.pkijsSignedData.encapContentInfo.eContent;
 
-    await expect(verifySignature(invalidSignedDataSerialized)).rejects.toMatchObject<
-      Partial<CMSError>
-    >({
+    await expect(signedData.verify()).rejects.toMatchObject<Partial<CMSError>>({
       message: 'CMS SignedData value should encapsulate content',
     });
   });
 
   test('Valid signatures should be accepted', async () => {
-    const signatureDer = await sign(plaintext, privateKey, certificate);
-    await verifySignature(signatureDer);
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+    await signedData.verify();
+  });
+});
+
+describe('plaintext', () => {
+  test('Nothing should be output if plaintext is absent', async () => {
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+    // tslint:disable-next-line:no-delete
+    delete signedData.pkijsSignedData.encapContentInfo.eContent;
+
+    await expect(signedData.plaintext).toBeNull();
   });
 
-  test('Plaintext should be output when verification passes', async () => {
-    const signatureDer = await sign(plaintext, privateKey, certificate);
+  test('Plaintext should be output if present', async () => {
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
-    const signatureVerification = await verifySignature(signatureDer);
-
-    expectBuffersToEqual(signatureVerification.plaintext, plaintext);
+    expect(signedData.plaintext).toEqual(plaintext);
   });
 
   test('Large plaintexts chunked by PKI.js should be put back together', async () => {
     const largePlaintext = arrayBufferFrom('a'.repeat(2 ** 20));
-    const signatureDer = await sign(largePlaintext, privateKey, certificate);
+    const signedData = await SignedData.sign(largePlaintext, keyPair.privateKey, certificate);
 
-    const signatureVerification = await verifySignature(signatureDer);
+    expect(signedData.plaintext).toEqual(largePlaintext);
+  });
+});
 
-    expectBuffersToEqual(signatureVerification.plaintext, largePlaintext);
+describe('signerCertificate', () => {
+  test('Nothing should be output if there are no SignerInfo values', async () => {
+    const signerCertificate = await generateStubCert({
+      issuerPrivateKey: keyPair.privateKey,
+      subjectPublicKey: keyPair.publicKey,
+    });
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, signerCertificate);
+    signedData.pkijsSignedData.signerInfos.pop();
+
+    expect(signedData.signerCertificate).toBeNull();
   });
 
-  test('Signer certificate should be output when verification passes', async () => {
-    const signatureDer = await sign(plaintext, privateKey, certificate);
+  test('Certificate with same issuer but different SN should be ignored', async () => {
+    const signerCertificate = await generateStubCert({
+      issuerPrivateKey: keyPair.privateKey,
+      subjectPublicKey: keyPair.publicKey,
+    });
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, signerCertificate);
+    signedData.pkijsSignedData.signerInfos.forEach((signerInfo) => {
+      (signerInfo.sid as pkijs.IssuerAndSerialNumber).serialNumber = new asn1js.Integer({
+        value: -1,
+      });
+    });
 
-    const { signerCertificate } = await verifySignature(signatureDer);
-
-    expectPkijsValuesToBeEqual(signerCertificate.pkijsCertificate, certificate.pkijsCertificate);
+    expect(signedData.signerCertificate).toBeNull();
   });
 
-  test('Attached CA certificates should be output when verification passes', async () => {
+  test('Certificate with same SN but different issuer should be ignored', async () => {
+    const signerCertificate = await generateStubCert({
+      issuerPrivateKey: keyPair.privateKey,
+      subjectPublicKey: keyPair.publicKey,
+    });
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, signerCertificate);
+    signedData.pkijsSignedData.signerInfos.forEach((si) => {
+      (si.sid as pkijs.IssuerAndSerialNumber).issuer = new pkijs.RelativeDistinguishedNames();
+    });
+
+    expect(signedData.signerCertificate).toBeNull();
+  });
+
+  test('Certificate with same SN and issuer should be output', async () => {
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+
+    expect(signedData.signerCertificate?.isEqual(certificate)).toBeTrue();
+  });
+});
+
+describe('certificates', () => {
+  test('Attached CA certificates should be output', async () => {
     const rootCaKeyPair = await generateRSAKeyPair();
     const rootCaCertificate = await generateStubCert({
       attributes: { isCA: true },
@@ -317,33 +379,19 @@ describe('verifySignature', () => {
       issuerPrivateKey: intermediateCaKeyPair.privateKey,
       subjectPublicKey: signerKeyPair.publicKey,
     });
-    const signatureDer = await sign(plaintext, signerKeyPair.privateKey, signerCertificate, [
-      intermediateCaCertificate,
-      rootCaCertificate,
-    ]);
+    const signedData = await SignedData.sign(
+      plaintext,
+      signerKeyPair.privateKey,
+      signerCertificate,
+      [intermediateCaCertificate, rootCaCertificate],
+    );
 
-    const { attachedCertificates } = await verifySignature(signatureDer);
-
-    expect(attachedCertificates).toHaveLength(3);
-    expectPkijsValuesToBeEqual(
-      attachedCertificates[2].pkijsCertificate,
-      rootCaCertificate.pkijsCertificate,
-    );
-    expectPkijsValuesToBeEqual(
-      attachedCertificates[1].pkijsCertificate,
-      intermediateCaCertificate.pkijsCertificate,
-    );
-    expectPkijsValuesToBeEqual(
-      attachedCertificates[0].pkijsCertificate,
-      signerCertificate.pkijsCertificate,
-    );
+    const certificates = Array.from(signedData.certificates);
+    expect(certificates.filter((c) => c.isEqual(rootCaCertificate))).toHaveLength(1);
+    expect(certificates.filter((c) => c.isEqual(intermediateCaCertificate))).toHaveLength(1);
+    expect(certificates.filter((c) => c.isEqual(signerCertificate))).toHaveLength(1);
   });
 });
-
-function deserializeSignedData(signedDataDer: ArrayBuffer): pkijs.SignedData {
-  const contentInfo = deserializeContentInfo(signedDataDer);
-  return new pkijs.SignedData({ schema: contentInfo.content });
-}
 
 function getSignerInfoAttribute(
   signerInfo: pkijs.SignerInfo,
