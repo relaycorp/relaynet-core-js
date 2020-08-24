@@ -4,6 +4,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import moment from 'moment';
 import { TextDecoder, TextEncoder } from 'util';
 
+import { SignatureOptions } from '../..';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -68,7 +69,7 @@ export async function serialize(
   concreteMessageTypeOctet: number,
   concreteMessageVersionOctet: number,
   senderPrivateKey: CryptoKey,
-  signatureOptions?: Partial<cmsSignedData.SignatureOptions>,
+  signatureOptions?: Partial<SignatureOptions>,
 ): Promise<ArrayBuffer> {
   //region Validation
   validateRecipientAddressLength(message.recipientAddress);

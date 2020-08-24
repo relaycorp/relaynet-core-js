@@ -1,5 +1,5 @@
+import { SignatureOptions } from '../..';
 import { EncryptionOptions } from '../crypto_wrappers/cms/envelopedData';
-import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import { PublicKeyStore } from '../keyStores/publicKeyStore';
 

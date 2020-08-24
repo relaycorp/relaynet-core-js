@@ -9,6 +9,7 @@ import { getPkijsCrypto } from '../_utils';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
 import CMSError from './CMSError';
+import { SignatureOptions } from './SignatureOptions';
 
 const pkijsCrypto = getPkijsCrypto();
 
@@ -18,8 +19,45 @@ export interface SignatureVerification {
   readonly attachedCertificates: readonly Certificate[];
 }
 
-export interface SignatureOptions {
-  readonly hashingAlgorithmName: string;
+export class SignedData {
+  public static async sign(
+    plaintext: ArrayBuffer,
+    privateKey: CryptoKey,
+    signerCertificate: Certificate,
+    caCertificates: readonly Certificate[] = [],
+    options: Partial<SignatureOptions> = {},
+  ): Promise<SignedData> {
+    // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
+    if (options.hashingAlgorithmName === 'SHA-1') {
+      throw new CMSError('SHA-1 is disallowed by RS-018');
+    }
+
+    const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
+    const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
+    const signerInfo = initSignerInfo(signerCertificate, digest);
+    const pkijsSignedData = new pkijs.SignedData({
+      certificates: [signerCertificate, ...caCertificates].map((c) => c.pkijsCertificate),
+      encapContentInfo: new pkijs.EncapsulatedContentInfo({
+        eContent: new asn1js.OctetString({ valueHex: plaintext }),
+        eContentType: oids.CMS_DATA,
+      }),
+      signerInfos: [signerInfo],
+      version: 1,
+    });
+    await pkijsSignedData.sign(privateKey, 0, hashingAlgorithmName);
+
+    return new SignedData(pkijsSignedData);
+  }
+
+  constructor(public readonly pkijsSignedData: pkijs.SignedData) {}
+
+  public serialize(): ArrayBuffer {
+    const contentInfo = new pkijs.ContentInfo({
+      content: this.pkijsSignedData.toSchema(true),
+      contentType: oids.CMS_SIGNED_DATA,
+    });
+    return contentInfo.toSchema().toBER(false);
+  }
 }
 
 /**
@@ -39,30 +77,14 @@ export async function sign(
   caCertificates: readonly Certificate[] = [],
   options: Partial<SignatureOptions> = {},
 ): Promise<ArrayBuffer> {
-  // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
-  if (options.hashingAlgorithmName === 'SHA-1') {
-    throw new CMSError('SHA-1 is disallowed by RS-018');
-  }
-
-  const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
-  const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
-  const signerInfo = initSignerInfo(signerCertificate, digest);
-  const signedData = new pkijs.SignedData({
-    certificates: [signerCertificate, ...caCertificates].map((c) => c.pkijsCertificate),
-    encapContentInfo: new pkijs.EncapsulatedContentInfo({
-      eContent: new asn1js.OctetString({ valueHex: plaintext }),
-      eContentType: oids.CMS_DATA,
-    }),
-    signerInfos: [signerInfo],
-    version: 1,
-  });
-  await signedData.sign(privateKey, 0, hashingAlgorithmName);
-
-  const contentInfo = new pkijs.ContentInfo({
-    content: signedData.toSchema(true),
-    contentType: oids.CMS_SIGNED_DATA,
-  });
-  return contentInfo.toSchema().toBER(false);
+  const signedData = await SignedData.sign(
+    plaintext,
+    privateKey,
+    signerCertificate,
+    caCertificates,
+    options,
+  );
+  return signedData.serialize();
 }
 
 function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pkijs.SignerInfo {

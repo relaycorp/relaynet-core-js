@@ -13,7 +13,6 @@ import {
   expectPkijsValuesToBeEqual,
   expectPromiseToReject,
   generateStubCert,
-  getMockContext,
   getPromiseRejection,
 } from '../_test_utils';
 import { derDeserialize } from '../crypto_wrappers/_utils';
@@ -548,29 +547,6 @@ describe('MessageSerializer', () => {
     });
 
     describe('SignedData', () => {
-      test('Signature should be accepted if valid', async () => {
-        const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
-        jest.spyOn(cmsSignedData, 'sign');
-        const messageSerialized = await serialize(
-          message,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          SENDER_PRIVATE_KEY,
-        );
-
-        jest.spyOn(cmsSignedData, 'verifySignature');
-        await deserialize(
-          messageSerialized,
-          stubConcreteMessageTypeOctet,
-          stubConcreteMessageVersionOctet,
-          StubMessage,
-        );
-
-        const signatureCiphertext = await getMockContext(cmsSignedData.sign).results[0].value;
-        expect(cmsSignedData.verifySignature).toBeCalledTimes(1);
-        expect(cmsSignedData.verifySignature).toBeCalledWith(signatureCiphertext);
-      });
-
       test('Signature should not be accepted if invalid', async () => {
         const differentSignerKeyPair = await generateRSAKeyPair();
         const differentSignerCertificate = await generateStubCert({
@@ -1007,6 +983,28 @@ describe('MessageSerializer', () => {
           });
         });
       });
+    });
+
+    test('Valid messages should be successfully deserialized', async () => {
+      const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
+      const messageSerialized = await serialize(
+        message,
+        stubConcreteMessageTypeOctet,
+        stubConcreteMessageVersionOctet,
+        SENDER_PRIVATE_KEY,
+      );
+
+      jest.spyOn(cmsSignedData, 'verifySignature');
+      const messageDeserialized = await deserialize(
+        messageSerialized,
+        stubConcreteMessageTypeOctet,
+        stubConcreteMessageVersionOctet,
+        StubMessage,
+      );
+
+      expect(messageDeserialized.recipientAddress).toEqual(message.recipientAddress);
+      expect(messageDeserialized.senderCertificate.isEqual(message.senderCertificate)).toBeTrue();
+      expect(messageDeserialized.payloadSerialized).toEqual(message.payloadSerialized);
     });
 
     async function serializeRamfWithoutValidation(

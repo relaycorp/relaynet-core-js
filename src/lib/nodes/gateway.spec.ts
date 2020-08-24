@@ -2,6 +2,7 @@
 
 import bufferToArray from 'buffer-to-arraybuffer';
 
+import { SignatureOptions } from '../..';
 import { arrayToAsyncIterable, asyncIterableToArray } from '../_test_utils';
 import { generateRandom64BitValue } from '../crypto_wrappers/_utils';
 import {
@@ -9,7 +10,6 @@ import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
-import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
