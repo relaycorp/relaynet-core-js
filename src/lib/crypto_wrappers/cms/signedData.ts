@@ -153,6 +153,8 @@ export class SignedData {
 /**
  * Generate DER-encoded CMS SignedData signature for `plaintext`.
  *
+ * TODO: REMOVE
+ *
  * @param plaintext
  * @param privateKey
  * @param signerCertificate
@@ -209,6 +211,8 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
  * @param cmsSignedDataSerialized The CMS SignedData signature, DER-encoded.
  * @return Signer's certificate chain, starting with the signer's certificate
  * @throws {CMSError} If `signature` could not be decoded or verified.
+ *
+ * TODO: Remove
  */
 export async function verifySignature(
   cmsSignedDataSerialized: ArrayBuffer,
