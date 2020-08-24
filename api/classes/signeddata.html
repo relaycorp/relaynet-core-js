@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>SessionEncryptionResult | @relaycorp/relaynet-core</title>
+	<title>SignedData | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2722,17 +2722,35 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-interface tsd-is-external">
-			<a href="sessionencryptionresult.html" class="tsd-kind-icon">Session<wbr>Encryption<wbr>Result</a>
+		<li class="current tsd-kind-class tsd-is-external">
+			<a href="signeddata.html" class="tsd-kind-icon">Signed<wbr>Data</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="sessionencryptionresult.html#dhkeyid" class="tsd-kind-icon">dh<wbr>Key<wbr>Id</a>
+				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="sessionencryptionresult.html#dhprivatekey" class="tsd-kind-icon">dh<wbr>Private<wbr>Key</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#pkijssigneddata" class="tsd-kind-icon">pkijs<wbr>Signed<wbr>Data</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="sessionencryptionresult.html#envelopeddata" class="tsd-kind-icon">enveloped<wbr>Data</a>
+				<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#certificates" class="tsd-kind-icon">certificates</a>
+				</li>
+				<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#plaintext" class="tsd-kind-icon">plaintext</a>
+				</li>
+				<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#signercertificate" class="tsd-kind-icon">signer<wbr>Certificate</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#serialize" class="tsd-kind-icon">serialize</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="signeddata.html#verify" class="tsd-kind-icon">verify</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+					<a href="signeddata.html#deserialize" class="tsd-kind-icon">deserialize</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+					<a href="signeddata.html#sign" class="tsd-kind-icon">sign</a>
 				</li>
 			</ul>
 		</li>
@@ -2740,18 +2758,11 @@ img {
 </nav>
 <div class="container container-main">
 	<div class="content-wrap">
-		<section class="tsd-panel tsd-comment">
-			<div class="tsd-comment tsd-typography">
-				<div class="lead">
-					<p>Result of producing an EnvelopedData value with the Channel Session Protocol.</p>
-				</div>
-			</div>
-		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">SessionEncryptionResult</span>
+					<span class="target">SignedData</span>
 				</li>
 			</ul>
 		</section>
@@ -2760,62 +2771,239 @@ img {
 			<section class="tsd-panel tsd-index-panel">
 				<div class="tsd-index-content">
 					<section class="tsd-index-section tsd-is-external">
+						<h3>Constructors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#constructor" class="tsd-kind-icon">constructor</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-external">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="sessionencryptionresult.html#dhkeyid" class="tsd-kind-icon">dh<wbr>Key<wbr>Id</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="sessionencryptionresult.html#dhprivatekey" class="tsd-kind-icon">dh<wbr>Private<wbr>Key</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="sessionencryptionresult.html#envelopeddata" class="tsd-kind-icon">enveloped<wbr>Data</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#pkijssigneddata" class="tsd-kind-icon">pkijs<wbr>Signed<wbr>Data</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-external">
+						<h3>Accessors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#certificates" class="tsd-kind-icon">certificates</a></li>
+							<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#plaintext" class="tsd-kind-icon">plaintext</a></li>
+							<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#signercertificate" class="tsd-kind-icon">signer<wbr>Certificate</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-external">
+						<h3>Methods</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="signeddata.html#verify" class="tsd-kind-icon">verify</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="signeddata.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="signeddata.html#sign" class="tsd-kind-icon">sign</a></li>
 						</ul>
 					</section>
 				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<h2>Constructors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+				<a name="constructor" class="tsd-anchor"></a>
+				<h3>constructor</h3>
+				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Signed<wbr>Data<span class="tsd-signature-symbol">(</span>pkijsSignedData<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">pkijs.SignedData</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="signeddata.html" class="tsd-signature-type">SignedData</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L119">src/lib/crypto_wrappers/cms/signedData.ts:119</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>pkijsSignedData: <span class="tsd-signature-type">pkijs.SignedData</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="signeddata.html" class="tsd-signature-type">SignedData</a></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-external">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="dhkeyid" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> dh<wbr>Key<wbr>Id</h3>
-				<div class="tsd-signature tsd-kind-icon">dh<wbr>Key<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ArrayBuffer</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
+				<a name="pkijssigneddata" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> pkijs<wbr>Signed<wbr>Data</h3>
+				<div class="tsd-signature tsd-kind-icon">pkijs<wbr>Signed<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">pkijs.SignedData</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/envelopedData.ts#L27">src/lib/crypto_wrappers/cms/envelopedData.ts:27</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L121">src/lib/crypto_wrappers/cms/signedData.ts:121</a></li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Id of ECDH key pair.</p>
-					</div>
-				</div>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="dhprivatekey" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> dh<wbr>Private<wbr>Key</h3>
-				<div class="tsd-signature tsd-kind-icon">dh<wbr>Private<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CryptoKey</span></div>
-				<aside class="tsd-sources">
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/envelopedData.ts#L30">src/lib/crypto_wrappers/cms/envelopedData.ts:30</a></li>
-					</ul>
-				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Private key of the ECDH key pair</p>
-					</div>
-				</div>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<h2>Accessors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+				<a name="certificates" class="tsd-anchor"></a>
+				<h3>certificates</h3>
+				<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> certificates<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L62">src/lib/crypto_wrappers/cms/signedData.ts:62</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Set of encapsulated certificates.</p>
+							</div>
+						</div>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="envelopeddata" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> enveloped<wbr>Data</h3>
-				<div class="tsd-signature tsd-kind-icon">enveloped<wbr>Data<span class="tsd-signature-symbol">:</span> <a href="../classes/sessionenvelopeddata.html" class="tsd-signature-type">SessionEnvelopedData</a></div>
-				<aside class="tsd-sources">
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/envelopedData.ts#L33">src/lib/crypto_wrappers/cms/envelopedData.ts:33</a></li>
-					</ul>
-				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>EnvelopedData value using the Channel Session Protocol.</p>
-					</div>
-				</div>
+			<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+				<a name="plaintext" class="tsd-anchor"></a>
+				<h3>plaintext</h3>
+				<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> plaintext<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L28">src/lib/crypto_wrappers/cms/signedData.ts:28</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>The signed plaintext, if it was encapsulated.</p>
+							</div>
+							<p>TODO: Cache output because computation can be relatively expensive</p>
+						</div>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+				<a name="signercertificate" class="tsd-anchor"></a>
+				<h3>signer<wbr>Certificate</h3>
+				<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> signerCertificate<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L46">src/lib/crypto_wrappers/cms/signedData.ts:46</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>The signer&#39;s certificate, if it was encapsulated.</p>
+							</div>
+						</div>
+						<h4 class="tsd-returns-title">Returns <a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="serialize" class="tsd-anchor"></a>
+				<h3>serialize</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L123">src/lib/crypto_wrappers/cms/signedData.ts:123</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ArrayBuffer</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="verify" class="tsd-anchor"></a>
+				<h3>verify</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">verify<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L131">src/lib/crypto_wrappers/cms/signedData.ts:131</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+				<a name="deserialize" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> deserialize</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">deserialize<span class="tsd-signature-symbol">(</span>signedDataSerialized<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="signeddata.html" class="tsd-signature-type">SignedData</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L98">src/lib/crypto_wrappers/cms/signedData.ts:98</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>signedDataSerialized: <span class="tsd-signature-type">ArrayBuffer</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="signeddata.html" class="tsd-signature-type">SignedData</a></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+				<a name="sign" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> sign</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">sign<span class="tsd-signature-symbol">(</span>plaintext<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span>, signerCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a>, caCertificates<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">keyof </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">[]</span>, options<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/signatureoptions.html" class="tsd-signature-type">SignatureOptions</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="signeddata.html" class="tsd-signature-type">SignedData</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/db1466a/src/lib/crypto_wrappers/cms/signedData.ts#L69">src/lib/crypto_wrappers/cms/signedData.ts:69</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>plaintext: <span class="tsd-signature-type">ArrayBuffer</span></h5>
+							</li>
+							<li>
+								<h5>privateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+							</li>
+							<li>
+								<h5>signerCertificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
+							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> caCertificates: <span class="tsd-signature-symbol">keyof </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></h5>
+							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/signatureoptions.html" class="tsd-signature-type">SignatureOptions</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = {}</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="signeddata.html" class="tsd-signature-type">SignedData</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
 			</section>
 		</section>
 		<footer class="with-border-bottom">
