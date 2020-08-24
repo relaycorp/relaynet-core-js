@@ -1,12 +1,12 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import uuid4 from 'uuid4';
 
+import { SignatureOptions } from '../..';
 import {
   EnvelopedData,
   OriginatorSessionKey,
   SessionEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
-import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import InvalidMessageError from './InvalidMessageError';

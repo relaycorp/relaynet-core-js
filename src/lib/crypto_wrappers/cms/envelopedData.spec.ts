@@ -7,7 +7,6 @@ import {
   expectAsn1ValuesToBeEqual,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
-  expectPromiseToReject,
   generateStubCert,
   getMockContext,
 } from '../../_test_utils';
@@ -385,8 +384,7 @@ describe('SessionEnvelopedData', () => {
       test('Call should fail if unprotectedAttrs is missing', async () => {
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = undefined;
 
-        await expectPromiseToReject(
-          envelopedData.getOriginatorKey(),
+        await expect(envelopedData.getOriginatorKey()).rejects.toEqual(
           new CMSError('unprotectedAttrs must be present when using channel session'),
         );
       });
@@ -394,8 +392,7 @@ describe('SessionEnvelopedData', () => {
       test('Call should fail if unprotectedAttrs is present but empty', async () => {
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [];
 
-        await expectPromiseToReject(
-          envelopedData.getOriginatorKey(),
+        await expect(envelopedData.getOriginatorKey()).rejects.toEqual(
           new CMSError('unprotectedAttrs must be present when using channel session'),
         );
       });
@@ -407,8 +404,7 @@ describe('SessionEnvelopedData', () => {
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [otherAttribute];
 
-        await expectPromiseToReject(
-          envelopedData.getOriginatorKey(),
+        await expect(envelopedData.getOriginatorKey()).rejects.toEqual(
           new CMSError('unprotectedAttrs does not contain originator key id'),
         );
       });
@@ -420,8 +416,7 @@ describe('SessionEnvelopedData', () => {
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
 
-        await expectPromiseToReject(
-          envelopedData.getOriginatorKey(),
+        await expect(envelopedData.getOriginatorKey()).rejects.toEqual(
           new CMSError('Originator key id attribute must have exactly one value (got 0)'),
         );
       });
@@ -433,8 +428,7 @@ describe('SessionEnvelopedData', () => {
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
 
-        await expectPromiseToReject(
-          envelopedData.getOriginatorKey(),
+        await expect(envelopedData.getOriginatorKey()).rejects.toEqual(
           new CMSError('Originator key id attribute must have exactly one value (got 2)'),
         );
       });
@@ -455,8 +449,7 @@ describe('SessionEnvelopedData', () => {
       test('Call should fail if RecipientInfo is not KeyAgreeRecipientInfo', async () => {
         envelopedData.pkijsEnvelopedData.recipientInfos[0].variant = 3;
 
-        await expectPromiseToReject(
-          envelopedData.getOriginatorKey(),
+        await expect(envelopedData.getOriginatorKey()).rejects.toEqual(
           new CMSError('Expected KeyAgreeRecipientInfo (got variant: 3)'),
         );
       });
@@ -549,8 +542,7 @@ function describeEncryptedContentInfoEncryption(
     });
 
     test('Key sizes other than 128, 192 and 256 should be refused', async () => {
-      await expectPromiseToReject(
-        encryptFunc({ aesKeySize: 512 }),
+      await expect(encryptFunc({ aesKeySize: 512 })).rejects.toEqual(
         new CMSError('Invalid AES key size (512)'),
       );
     });

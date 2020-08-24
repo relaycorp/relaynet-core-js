@@ -1,6 +1,6 @@
 // This module wouldn't duplicate Parcel.ts if TypeScript supported static+abstract members
 
-import { SignatureOptions } from '../crypto_wrappers/cms/signedData';
+import { SignatureOptions } from '../..';
 import * as serialization from '../ramf/serialization';
 import EmptyPayloadPlaintext from './payloads/EmptyPayloadPlaintext';
 import RAMFMessage from './RAMFMessage';

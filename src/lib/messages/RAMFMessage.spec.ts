@@ -2,7 +2,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
-import { expectPromiseToReject, generateStubCert, reSerializeCertificate } from '../_test_utils';
+import { generateStubCert, reSerializeCertificate } from '../_test_utils';
 import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
@@ -202,8 +202,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expectPromiseToReject(
-          message.validate([stubSenderChain.rootCert]),
+        await expect(message.validate([stubSenderChain.rootCert])).rejects.toEqual(
           new InvalidMessageError('Sender is not authorized: No valid certificate paths found'),
         );
       });
@@ -235,8 +234,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expectPromiseToReject(
-          message.validate([stubSenderChain.rootCert]),
+        await expect(message.validate([stubSenderChain.rootCert])).rejects.toEqual(
           new InvalidMessageError(`Sender is not authorized to reach ${message.recipientAddress}`),
         );
       });

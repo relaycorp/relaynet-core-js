@@ -1,6 +1,6 @@
 // tslint:disable:no-let
 
-import { expectPromiseToReject, generateStubCert } from '../_test_utils';
+import { generateStubCert } from '../_test_utils';
 import * as keys from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import {
@@ -54,8 +54,7 @@ describe('PrivateKeyStore', () => {
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(false, true);
 
-        await expectPromiseToReject(
-          store.fetchNodeKey(CERTIFICATE.getSerialNumber()),
+        await expect(store.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
           new PrivateKeyStoreError('Failed to retrieve key: Denied'),
         );
       });
@@ -86,8 +85,7 @@ describe('PrivateKeyStore', () => {
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(true);
 
-        await expectPromiseToReject(
-          store.saveNodeKey(PRIVATE_KEY, CERTIFICATE),
+        await expect(store.saveNodeKey(PRIVATE_KEY, CERTIFICATE)).rejects.toEqual(
           new PrivateKeyStoreError(`Failed to save key: Denied`),
         );
       });
@@ -158,8 +156,7 @@ describe('PrivateKeyStore', () => {
         test('Errors should be wrapped', async () => {
           const store = new MockPrivateKeyStore(false, true);
 
-          await expectPromiseToReject(
-            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+          await expect(store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
             new PrivateKeyStoreError('Failed to retrieve key: Denied'),
           );
         });
@@ -182,8 +179,7 @@ describe('PrivateKeyStore', () => {
         test('Errors should be wrapped', async () => {
           const store = new MockPrivateKeyStore(true);
 
-          await expectPromiseToReject(
-            store.saveInitialSessionKey(PRIVATE_KEY, CERTIFICATE),
+          await expect(store.saveInitialSessionKey(PRIVATE_KEY, CERTIFICATE)).rejects.toEqual(
             new PrivateKeyStoreError(`Failed to save key: Denied`),
           );
         });
@@ -257,10 +253,9 @@ describe('PrivateKeyStore', () => {
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(false, true);
 
-        await expectPromiseToReject(
+        await expect(
           store.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
-          new PrivateKeyStoreError('Failed to retrieve key: Denied'),
-        );
+        ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
       });
     });
 
@@ -287,14 +282,13 @@ describe('PrivateKeyStore', () => {
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(true);
 
-        await expectPromiseToReject(
+        await expect(
           store.saveSubsequentSessionKey(
             PRIVATE_KEY,
             CERTIFICATE.getSerialNumber(),
             stubRecipientCertificate,
           ),
-          new PrivateKeyStoreError(`Failed to save key: Denied`),
-        );
+        ).rejects.toEqual(new PrivateKeyStoreError(`Failed to save key: Denied`));
       });
     });
   });
