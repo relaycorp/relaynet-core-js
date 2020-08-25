@@ -2,9 +2,10 @@ import * as asn1js from 'asn1js';
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import moment from 'moment';
-import { TextDecoder, TextEncoder } from 'util';
+import { TextDecoder } from 'util';
 
 import { SignatureOptions } from '../..';
+import { makeSequence } from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -84,33 +85,13 @@ export async function serialize(
   );
 
   const utcDateString = moment.utc(message.creationDate).format('YYYYMMDDHHmmss');
-  const ttlBlock = new asn1js.Integer({ value: message.ttl });
-  const textEncoder = new TextEncoder();
-  const fieldSetSerialized = new asn1js.Sequence({
-    // @ts-ignore
-    value: [
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 0 },
-        valueHex: textEncoder.encode(message.recipientAddress),
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 1 },
-        valueHex: textEncoder.encode(message.id),
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 2 },
-        valueHex: textEncoder.encode(utcDateString),
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 3 },
-        valueHex: ttlBlock.valueBlock.valueHex,
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 4 },
-        valueHex: bufferToArray(message.payloadSerialized),
-      } as any),
-    ],
-  }).toBER(false);
+  const fieldSetSerialized = makeSequence(
+    new asn1js.VisibleString({ value: message.recipientAddress }),
+    new asn1js.VisibleString({ value: message.id }),
+    new asn1js.DateTime({ value: utcDateString }),
+    new asn1js.Integer({ value: message.ttl }),
+    new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
+  );
 
   //region Signature
   const signature = await cmsSignedData.sign(
