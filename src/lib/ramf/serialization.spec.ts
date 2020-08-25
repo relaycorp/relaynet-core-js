@@ -653,15 +653,14 @@ describe('MessageSerializer', () => {
         serializer.writeString('Relaynet');
         serializer.writeUInt8(stubConcreteMessageTypeOctet);
         serializer.writeUInt8(stubConcreteMessageVersionOctet);
-        serializer.writeBuffer(
-          Buffer.from(
-            await cmsSignedData.sign(
-              new asn1js.Null().toBER(false),
-              SENDER_PRIVATE_KEY,
-              SENDER_CERTIFICATE,
-            ),
-          ),
+
+        const signedData = await cmsSignedData.SignedData.sign(
+          new asn1js.Null().toBER(false),
+          SENDER_PRIVATE_KEY,
+          SENDER_CERTIFICATE,
         );
+        serializer.writeBuffer(Buffer.from(signedData.serialize()));
+
         const serialization = serializer.toBuffer();
 
         await expect(
@@ -1017,15 +1016,14 @@ describe('MessageSerializer', () => {
       serializer.writeString('Relaynet');
       serializer.writeUInt8(stubConcreteMessageTypeOctet);
       serializer.writeUInt8(stubConcreteMessageVersionOctet);
-      serializer.writeBuffer(
-        Buffer.from(
-          await cmsSignedData.sign(
-            serializeFieldSet(sequenceItems),
-            SENDER_PRIVATE_KEY,
-            senderCertificate ?? SENDER_CERTIFICATE,
-          ),
-        ),
+
+      const signedData = await cmsSignedData.SignedData.sign(
+        serializeFieldSet(sequenceItems),
+        SENDER_PRIVATE_KEY,
+        senderCertificate ?? SENDER_CERTIFICATE,
       );
+      serializer.writeBuffer(Buffer.from(signedData.serialize()));
+
       return bufferToArray(serializer.toBuffer());
     }
 
