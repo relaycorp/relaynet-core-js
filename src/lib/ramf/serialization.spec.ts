@@ -839,7 +839,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Date', () => {
-        test('Date with second-level precision should be accepted', async () => {
+        test('Valid date should be accepted', async () => {
           const date = moment.utc(NOW).format('YYYYMMDDHHmmss');
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
@@ -859,26 +859,6 @@ describe('MessageSerializer', () => {
           expect(message.creationDate).toEqual(NOW);
         });
 
-        test('Date with date-level precision should be accepted', async () => {
-          const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
-            new asn1js.VisibleString({ value: 'id' }),
-            new asn1js.DateTime({ value: moment.utc(NOW).format('YYYYMMDD') }),
-            new asn1js.Integer({ value: 86_400 }),
-            new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
-          ]);
-
-          const message = await deserialize(
-            messageSerialized,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            StubMessage,
-          );
-
-          const expectedDate = new Date(moment.utc(NOW).format('YYYY-MM-DD'));
-          expect(message.creationDate).toEqual(expectedDate);
-        });
-
         test('Date not serialized as an ASN.1 DATE-TIME should be refused', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: 'the-address' }),
@@ -896,7 +876,7 @@ describe('MessageSerializer', () => {
               StubMessage,
             ),
           ).rejects.toMatchObject({
-            message: /^Message date is not serialized as an ASN.1 DATE-TIME:/,
+            message: /^Message date is invalid:/,
           });
         });
       });

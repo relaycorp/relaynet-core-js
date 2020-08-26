@@ -4,7 +4,12 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { TextDecoder } from 'util';
 
 import { SignatureOptions } from '../..';
-import { dateToASN1DateTimeInUTC, makeSequenceSchema, serializeSequence } from '../asn1';
+import {
+  asn1DateTimeToDate,
+  dateToASN1DateTimeInUTC,
+  makeSequenceSchema,
+  serializeSequence,
+} from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -262,12 +267,10 @@ function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
 }
 
 function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
-  const dateString = new TextDecoder().decode(block.valueBlock.valueHex) + 'Z';
   try {
-    const generalizedTimeBlock = new asn1js.GeneralizedTime({ value: dateString });
-    return generalizedTimeBlock.toDate();
-  } catch (error) {
-    throw new RAMFValidationError(error, 'Message date is not serialized as an ASN.1 DATE-TIME');
+    return asn1DateTimeToDate(block);
+  } catch (exc) {
+    throw new RAMFValidationError(exc, 'Message date is invalid');
   }
 }
 

@@ -1,5 +1,8 @@
-import { BaseBlock, DateTime, Primitive, Sequence } from 'asn1js';
+import { BaseBlock, DateTime, GeneralizedTime, Primitive, Sequence } from 'asn1js';
 import moment from 'moment';
+import { TextDecoder } from 'util';
+
+import InvalidMessageError from './messages/InvalidMessageError';
 
 export function serializeSequence(...items: ReadonlyArray<BaseBlock<any>>): ArrayBuffer {
   const asn1Items = items.map(
@@ -35,4 +38,14 @@ export function makeSequenceSchema(name: string, itemNames: readonly string[]): 
 export function dateToASN1DateTimeInUTC(date: Date): DateTime {
   const utcDateString = moment.utc(date).format('YYYYMMDDHHmmss');
   return new DateTime({ value: utcDateString });
+}
+
+export function asn1DateTimeToDate(dateASN1: Primitive): Date {
+  const dateString = new TextDecoder().decode(dateASN1.valueBlock.valueHex) + 'Z';
+  try {
+    const generalizedTimeBlock = new GeneralizedTime({ value: dateString });
+    return generalizedTimeBlock.toDate();
+  } catch (error) {
+    throw new InvalidMessageError(error, 'Date is not serialized as an ASN.1 DATE-TIME');
+  }
 }

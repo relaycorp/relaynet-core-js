@@ -1,8 +1,10 @@
 import { OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
+import moment from 'moment';
 import { TextDecoder } from 'util';
 
 import { arrayBufferFrom } from './_test_utils';
-import { dateToASN1DateTimeInUTC, serializeSequence } from './asn1';
+import { asn1DateTimeToDate, dateToASN1DateTimeInUTC, serializeSequence } from './asn1';
+import InvalidMessageError from './messages/InvalidMessageError';
 
 describe('serializeSequence', () => {
   test('An empty input should result in an empty sequence', () => {
@@ -59,10 +61,52 @@ describe('dateToASN1DateTimeInUTC', () => {
     expect(textDecoder.decode(datetimeBlock.valueBlock.valueHex)).toEqual('20190101010000');
   });
 
-  test('Date should lose microsecond precision', () => {
+  test('Date should lose millisecond precision', () => {
     const nonUtcDate = new Date('01 Jan 2019 12:00:00.345 GMT+11:00');
 
     const datetimeBlock = dateToASN1DateTimeInUTC(nonUtcDate);
     expect(textDecoder.decode(datetimeBlock.valueBlock.valueHex)).toEqual('20190101010000');
+  });
+});
+
+describe('asn1DateTimeToDate', () => {
+  const NOW = new Date();
+  NOW.setMilliseconds(0);
+
+  test('Date with second-level precision should be accepted', async () => {
+    const dateTimeASN1 = dateToASN1DateTimeInUTC(NOW);
+    const datePrimitive = new Primitive({
+      idBlock: { tagClass: 3, tagNumber: 0 },
+      valueHex: dateTimeASN1.valueBlock.toBER(),
+    } as any);
+
+    const dateDeserialized = asn1DateTimeToDate(datePrimitive);
+
+    expect(dateDeserialized).toEqual(NOW);
+  });
+
+  test('Date with date-level precision should be accepted', async () => {
+    const dateString = moment.utc(NOW).format('YYYYMMDD');
+    const datePrimitive = new Primitive({
+      idBlock: { tagClass: 3, tagNumber: 0 },
+      valueHex: arrayBufferFrom(dateString),
+    } as any);
+
+    const dateDeserialized = asn1DateTimeToDate(datePrimitive);
+
+    const expectedDate = new Date(moment.utc(NOW).format('YYYY-MM-DD'));
+    expect(dateDeserialized).toEqual(expectedDate);
+  });
+
+  test('Date not serialized as an ASN.1 DATE-TIME should be refused', async () => {
+    const invalidDateTimeASN1 = new Primitive({
+      idBlock: { tagClass: 3, tagNumber: 0 },
+      valueHex: arrayBufferFrom('invalid date'),
+    } as any);
+
+    expect(() => asn1DateTimeToDate(invalidDateTimeASN1)).toThrowWithMessage(
+      InvalidMessageError,
+      /^Date is not serialized as an ASN.1 DATE-TIME/,
+    );
   });
 });
