@@ -5,7 +5,7 @@ import moment from 'moment';
 import { TextDecoder } from 'util';
 
 import { SignatureOptions } from '../..';
-import { makeSequence } from '../asn1';
+import { makeSequenceSchema, serializeSequence } from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -44,17 +44,13 @@ interface MessageFieldSet {
   readonly payload: Buffer;
 }
 
-const ASN1_SCHEMA = new asn1js.Sequence({
-  name: 'RAMFMessage',
-  value: ['recipientAddress', 'id', 'date', 'ttl', 'payload'].map(
-    (name, tagNumber) =>
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber },
-        name,
-        optional: false,
-      } as any),
-  ),
-} as any);
+const ASN1_SCHEMA = makeSequenceSchema('RAMFMessage', [
+  'recipientAddress',
+  'id',
+  'date',
+  'ttl',
+  'payload',
+]);
 
 /**
  * Sign and encode the current message.
@@ -85,7 +81,7 @@ export async function serialize(
   );
 
   const utcDateString = moment.utc(message.creationDate).format('YYYYMMDDHHmmss');
-  const fieldSetSerialized = makeSequence(
+  const fieldSetSerialized = serializeSequence(
     new asn1js.VisibleString({ value: message.recipientAddress }),
     new asn1js.VisibleString({ value: message.id }),
     new asn1js.DateTime({ value: utcDateString }),

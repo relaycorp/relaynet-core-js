@@ -1,10 +1,10 @@
 import { OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
 import { arrayBufferFrom } from './_test_utils';
-import { makeSequence } from './asn1';
+import { serializeSequence } from './asn1';
 
-describe('makeSequence', () => {
+describe('serializeSequence', () => {
   test('An empty input should result in an empty sequence', () => {
-    const serialization = makeSequence();
+    const serialization = serializeSequence();
 
     const schema = new Sequence();
     const schemaVerification = verifySchema(serialization, schema);
@@ -16,7 +16,7 @@ describe('makeSequence', () => {
   test('Values should be implicitly tagged', () => {
     const item1 = new VisibleString({ value: 'foo' });
     const item2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
-    const serialization = makeSequence(item1, item2);
+    const serialization = serializeSequence(item1, item2);
 
     const schema = new Sequence({
       name: 'Dummy',
