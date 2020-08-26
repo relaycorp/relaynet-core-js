@@ -5,7 +5,6 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 import moment from 'moment';
 import { SmartBuffer } from 'smart-buffer';
-import { TextDecoder } from 'util';
 
 import {
   arrayBufferFrom,
@@ -14,6 +13,7 @@ import {
   generateStubCert,
   getPromiseRejection,
 } from '../_test_utils';
+import { dateToASN1DateTimeInUTC } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
@@ -304,8 +304,8 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const datetimeBlock = getAsn1SequenceItem(fields, 2);
-          expect(new TextDecoder().decode(datetimeBlock.valueBlock.valueHex)).toEqual(
-            formatASN1DateTimeWithUTC(nonUtcDate),
+          expect(datetimeBlock.valueBlock.valueHex).toEqual(
+            dateToASN1DateTimeInUTC(nonUtcDate).valueBlock.valueHex,
           );
         });
       });
@@ -677,7 +677,7 @@ describe('MessageSerializer', () => {
         const serialization = await serializeRamfWithoutValidation([
           new asn1js.VisibleString({ value: 'address' }),
           new asn1js.VisibleString({ value: 'the-id' }),
-          new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+          dateToASN1DateTimeInUTC(NOW),
           new asn1js.Integer({ value: 1_000 }),
         ]);
 
@@ -716,7 +716,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: address }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -821,7 +821,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: id }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -906,7 +906,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: MAX_TTL }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -925,7 +925,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: MAX_TTL + 1 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -967,7 +967,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: bufferToArray(largePayload) }),
           ]);
@@ -1064,8 +1064,4 @@ function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js
   expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
   expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
   return itemBlock as any;
-}
-
-function formatASN1DateTimeWithUTC(date: Date): string {
-  return moment.utc(date).format('YYYYMMDDHHmmss');
 }

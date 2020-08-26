@@ -1,11 +1,12 @@
-import { BaseBlock, Primitive, Sequence } from 'asn1js';
+import { BaseBlock, DateTime, Primitive, Sequence } from 'asn1js';
+import moment from 'moment';
 
 export function serializeSequence(...items: ReadonlyArray<BaseBlock<any>>): ArrayBuffer {
   const asn1Items = items.map(
     (item, index) =>
       new Primitive({
         idBlock: { tagClass: 3, tagNumber: index },
-        valueHex: item.valueBlock.valueHex,
+        valueHex: item.valueBlock.toBER(),
       } as any),
   );
   return new Sequence({ value: asn1Items } as any).toBER(false);
@@ -29,4 +30,9 @@ export function makeSequenceSchema(name: string, itemNames: readonly string[]): 
         } as any),
     ),
   } as any);
+}
+
+export function dateToASN1DateTimeInUTC(date: Date): DateTime {
+  const utcDateString = moment.utc(date).format('YYYYMMDDHHmmss');
+  return new DateTime({ value: utcDateString });
 }

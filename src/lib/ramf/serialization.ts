@@ -1,11 +1,10 @@
 import * as asn1js from 'asn1js';
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
-import moment from 'moment';
 import { TextDecoder } from 'util';
 
 import { SignatureOptions } from '../..';
-import { makeSequenceSchema, serializeSequence } from '../asn1';
+import { dateToASN1DateTimeInUTC, makeSequenceSchema, serializeSequence } from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -80,11 +79,10 @@ export async function serialize(
     concreteMessageVersionOctet,
   );
 
-  const utcDateString = moment.utc(message.creationDate).format('YYYYMMDDHHmmss');
   const fieldSetSerialized = serializeSequence(
     new asn1js.VisibleString({ value: message.recipientAddress }),
     new asn1js.VisibleString({ value: message.id }),
-    new asn1js.DateTime({ value: utcDateString }),
+    dateToASN1DateTimeInUTC(message.creationDate),
     new asn1js.Integer({ value: message.ttl }),
     new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
   );
