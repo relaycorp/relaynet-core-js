@@ -1,11 +1,12 @@
 /* tslint:disable:no-let */
 
-import { OctetString, VisibleString } from 'asn1js';
+import { ObjectIdentifier, OctetString, VisibleString } from 'asn1js';
 import { ClientRegistrationRequest, derSerializePublicKey, generateRSAKeyPair } from '../../../..';
 import { arrayBufferFrom, getAsn1SequenceItem } from '../../../_test_utils';
 import { serializeSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import { verify } from '../../../crypto_wrappers/rsaSigning';
+import { CRA_COUNTERSIGNATURE } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 
 const craSerialized = arrayBufferFrom('The CRA');
@@ -43,7 +44,13 @@ describe('serialize', () => {
 
     const sequence = derDeserialize(serialization);
     const signature = getAsn1SequenceItem(sequence, 2).valueBlock.valueHex;
-    await expect(verify(signature, clientKeyPair.publicKey, craSerialized)).resolves.toBeTrue();
+    const expectedCRACountersignature = serializeSequence(
+      new ObjectIdentifier({ value: CRA_COUNTERSIGNATURE }),
+      new OctetString({ valueHex: craSerialized }),
+    );
+    await expect(
+      verify(signature, clientKeyPair.publicKey, expectedCRACountersignature),
+    ).resolves.toBeTrue();
   });
 });
 
