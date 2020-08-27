@@ -11,6 +11,7 @@ import {
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
+  getAsn1SequenceItem,
   getPromiseRejection,
 } from '../_test_utils';
 import { dateToASN1DateTimeInUTC } from '../asn1';
@@ -1036,12 +1037,4 @@ function parseFormatSignature(messageSerialized: ArrayBuffer): MessageFormatSign
     concreteMessageVersion: buffer.readUInt8(9),
     magic: buffer.slice(0, 8).toString(),
   };
-}
-
-function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js.Primitive {
-  const itemBlock = fields.valueBlock.value[itemIndex] as asn1js.Primitive;
-  expect(itemBlock).toBeInstanceOf(asn1js.Primitive);
-  expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
-  expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
-  return itemBlock as any;
 }

@@ -1,3 +1,4 @@
+import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
@@ -138,4 +139,16 @@ export async function asyncIterableToArray<T>(iterable: AsyncIterable<T>): Promi
     values.push(value);
   }
   return values;
+}
+
+export function getAsn1SequenceItem(
+  fields: asn1js.Sequence | asn1js.LocalBaseBlock,
+  itemIndex: number,
+): asn1js.Primitive {
+  expect(fields).toBeInstanceOf(asn1js.Sequence);
+  const itemBlock = (fields as asn1js.Sequence).valueBlock.value[itemIndex] as asn1js.Primitive;
+  expect(itemBlock).toBeInstanceOf(asn1js.Primitive);
+  expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
+  expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
+  return itemBlock as any;
 }

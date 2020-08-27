@@ -1,4 +1,5 @@
 // tslint:disable:no-let
+
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import { CryptoEngine } from 'pkijs';
@@ -237,10 +238,55 @@ describe('Key deserializers', () => {
     );
   });
 
+  test('derDeserializeRSAPublicKey should default to RSA-PSS with SHA-256', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.publicKey);
+
+    const publicKey = await derDeserializeRSAPublicKey(stubKeyDer);
+
+    expect(publicKey).toBe(stubKeyPair.publicKey);
+    expect(mockImportKey).toBeCalledTimes(1);
+    expect(mockImportKey).toBeCalledWith(
+      'spki',
+      bufferToArray(stubKeyDer),
+      rsaAlgorithmOptions,
+      true,
+      ['verify'],
+    );
+  });
+
+  test('derDeserializeRSAPublicKey should accept an ArrayBuffer serialization', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.publicKey);
+
+    const keyDerArrayBuffer = arrayBufferFrom(stubKeyDer);
+    const publicKey = await derDeserializeRSAPublicKey(keyDerArrayBuffer, rsaAlgorithmOptions);
+
+    expect(publicKey).toBe(stubKeyPair.publicKey);
+    expect(mockImportKey).toBeCalledTimes(1);
+    expect(mockImportKey).toBeCalledWith('spki', keyDerArrayBuffer, rsaAlgorithmOptions, true, [
+      'verify',
+    ]);
+  });
+
   test('derDeserializeRSAPrivateKey should convert DER private key to RSA key', async () => {
     mockImportKey.mockResolvedValueOnce(stubKeyPair.privateKey);
 
     const privateKey = await derDeserializeRSAPrivateKey(stubKeyDer, rsaAlgorithmOptions);
+
+    expect(privateKey).toBe(stubKeyPair.privateKey);
+    expect(mockImportKey).toBeCalledTimes(1);
+    expect(mockImportKey).toBeCalledWith(
+      'pkcs8',
+      bufferToArray(stubKeyDer),
+      rsaAlgorithmOptions,
+      true,
+      ['sign'],
+    );
+  });
+
+  test('derDeserializeRSAPrivateKey should default to RSA-PSS with SHA-256', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.privateKey);
+
+    const privateKey = await derDeserializeRSAPrivateKey(stubKeyDer);
 
     expect(privateKey).toBe(stubKeyPair.privateKey);
     expect(mockImportKey).toBeCalledTimes(1);
