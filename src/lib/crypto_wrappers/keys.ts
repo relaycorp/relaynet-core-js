@@ -7,6 +7,11 @@ const cryptoEngine = getPkijsCrypto();
 
 export type ECDHCurveName = 'P-256' | 'P-384' | 'P-521';
 
+const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
+  hash: { name: 'SHA-256' },
+  name: 'RSA-PSS',
+};
+
 //region Key generators
 
 /**
@@ -93,12 +98,11 @@ export async function derSerializePrivateKey(privateKey: CryptoKey): Promise<Buf
  * @param algorithmOptions
  */
 export async function derDeserializeRSAPublicKey(
-  publicKeyDer: Buffer,
-  algorithmOptions: RsaHashedImportParams,
+  publicKeyDer: Buffer | ArrayBuffer,
+  algorithmOptions: RsaHashedImportParams = DEFAULT_RSA_KEY_PARAMS,
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey('spki', bufferToArray(publicKeyDer), algorithmOptions, true, [
-    'verify',
-  ]);
+  const keyData = publicKeyDer instanceof Buffer ? bufferToArray(publicKeyDer) : publicKeyDer;
+  return cryptoEngine.importKey('spki', keyData, algorithmOptions, true, ['verify']);
 }
 
 /**
@@ -128,7 +132,7 @@ export async function derDeserializeECDHPublicKey(
  */
 export async function derDeserializeRSAPrivateKey(
   privateKeyDer: Buffer,
-  algorithmOptions: RsaHashedImportParams,
+  algorithmOptions: RsaHashedImportParams = DEFAULT_RSA_KEY_PARAMS,
 ): Promise<CryptoKey> {
   return cryptoEngine.importKey('pkcs8', bufferToArray(privateKeyDer), algorithmOptions, true, [
     'sign',

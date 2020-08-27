@@ -1,10 +1,15 @@
 import * as asn1js from 'asn1js';
 import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
-import moment from 'moment';
-import { TextDecoder, TextEncoder } from 'util';
+import { TextDecoder } from 'util';
 
 import { SignatureOptions } from '../..';
+import {
+  asn1DateTimeToDate,
+  dateToASN1DateTimeInUTC,
+  makeSequenceSchema,
+  serializeSequence,
+} from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -43,17 +48,13 @@ interface MessageFieldSet {
   readonly payload: Buffer;
 }
 
-const ASN1_SCHEMA = new asn1js.Sequence({
-  name: 'RAMFMessage',
-  value: ['recipientAddress', 'id', 'date', 'ttl', 'payload'].map(
-    (name, tagNumber) =>
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber },
-        name,
-        optional: false,
-      } as any),
-  ),
-} as any);
+const ASN1_SCHEMA = makeSequenceSchema('RAMFMessage', [
+  'recipientAddress',
+  'id',
+  'date',
+  'ttl',
+  'payload',
+]);
 
 /**
  * Sign and encode the current message.
@@ -83,34 +84,13 @@ export async function serialize(
     concreteMessageVersionOctet,
   );
 
-  const utcDateString = moment.utc(message.creationDate).format('YYYYMMDDHHmmss');
-  const ttlBlock = new asn1js.Integer({ value: message.ttl });
-  const textEncoder = new TextEncoder();
-  const fieldSetSerialized = new asn1js.Sequence({
-    // @ts-ignore
-    value: [
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 0 },
-        valueHex: textEncoder.encode(message.recipientAddress),
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 1 },
-        valueHex: textEncoder.encode(message.id),
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 2 },
-        valueHex: textEncoder.encode(utcDateString),
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 3 },
-        valueHex: ttlBlock.valueBlock.valueHex,
-      } as any),
-      new asn1js.Primitive({
-        idBlock: { tagClass: 3, tagNumber: 4 },
-        valueHex: bufferToArray(message.payloadSerialized),
-      } as any),
-    ],
-  }).toBER(false);
+  const fieldSetSerialized = serializeSequence(
+    new asn1js.VisibleString({ value: message.recipientAddress }),
+    new asn1js.VisibleString({ value: message.id }),
+    dateToASN1DateTimeInUTC(message.creationDate),
+    new asn1js.Integer({ value: message.ttl }),
+    new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
+  );
 
   //region Signature
   const signature = await cmsSignedData.sign(
@@ -287,12 +267,10 @@ function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
 }
 
 function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
-  const dateString = new TextDecoder().decode(block.valueBlock.valueHex) + 'Z';
   try {
-    const generalizedTimeBlock = new asn1js.GeneralizedTime({ value: dateString });
-    return generalizedTimeBlock.toDate();
-  } catch (error) {
-    throw new RAMFValidationError(error, 'Message date is not serialized as an ASN.1 DATE-TIME');
+    return asn1DateTimeToDate(block);
+  } catch (exc) {
+    throw new RAMFValidationError(exc, 'Message date is invalid');
   }
 }
 

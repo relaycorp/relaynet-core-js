@@ -5,15 +5,16 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 import moment from 'moment';
 import { SmartBuffer } from 'smart-buffer';
-import { TextDecoder } from 'util';
 
 import {
   arrayBufferFrom,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
+  getAsn1SequenceItem,
   getPromiseRejection,
 } from '../_test_utils';
+import { dateToASN1DateTimeInUTC } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
@@ -304,8 +305,8 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const datetimeBlock = getAsn1SequenceItem(fields, 2);
-          expect(new TextDecoder().decode(datetimeBlock.valueBlock.valueHex)).toEqual(
-            formatASN1DateTimeWithUTC(nonUtcDate),
+          expect(datetimeBlock.valueBlock.valueHex).toEqual(
+            dateToASN1DateTimeInUTC(nonUtcDate).valueBlock.valueHex,
           );
         });
       });
@@ -653,15 +654,14 @@ describe('MessageSerializer', () => {
         serializer.writeString('Relaynet');
         serializer.writeUInt8(stubConcreteMessageTypeOctet);
         serializer.writeUInt8(stubConcreteMessageVersionOctet);
-        serializer.writeBuffer(
-          Buffer.from(
-            await cmsSignedData.sign(
-              new asn1js.Null().toBER(false),
-              SENDER_PRIVATE_KEY,
-              SENDER_CERTIFICATE,
-            ),
-          ),
+
+        const signedData = await cmsSignedData.SignedData.sign(
+          new asn1js.Null().toBER(false),
+          SENDER_PRIVATE_KEY,
+          SENDER_CERTIFICATE,
         );
+        serializer.writeBuffer(Buffer.from(signedData.serialize()));
+
         const serialization = serializer.toBuffer();
 
         await expect(
@@ -678,7 +678,7 @@ describe('MessageSerializer', () => {
         const serialization = await serializeRamfWithoutValidation([
           new asn1js.VisibleString({ value: 'address' }),
           new asn1js.VisibleString({ value: 'the-id' }),
-          new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+          dateToASN1DateTimeInUTC(NOW),
           new asn1js.Integer({ value: 1_000 }),
         ]);
 
@@ -717,7 +717,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: address }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -822,7 +822,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: id }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -840,7 +840,7 @@ describe('MessageSerializer', () => {
       });
 
       describe('Date', () => {
-        test('Date with second-level precision should be accepted', async () => {
+        test('Valid date should be accepted', async () => {
           const date = moment.utc(NOW).format('YYYYMMDDHHmmss');
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
@@ -860,26 +860,6 @@ describe('MessageSerializer', () => {
           expect(message.creationDate).toEqual(NOW);
         });
 
-        test('Date with date-level precision should be accepted', async () => {
-          const messageSerialized = await serializeRamfWithoutValidation([
-            new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
-            new asn1js.VisibleString({ value: 'id' }),
-            new asn1js.DateTime({ value: moment.utc(NOW).format('YYYYMMDD') }),
-            new asn1js.Integer({ value: 86_400 }),
-            new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
-          ]);
-
-          const message = await deserialize(
-            messageSerialized,
-            stubConcreteMessageTypeOctet,
-            stubConcreteMessageVersionOctet,
-            StubMessage,
-          );
-
-          const expectedDate = new Date(moment.utc(NOW).format('YYYY-MM-DD'));
-          expect(message.creationDate).toEqual(expectedDate);
-        });
-
         test('Date not serialized as an ASN.1 DATE-TIME should be refused', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: 'the-address' }),
@@ -897,7 +877,7 @@ describe('MessageSerializer', () => {
               StubMessage,
             ),
           ).rejects.toMatchObject({
-            message: /^Message date is not serialized as an ASN.1 DATE-TIME:/,
+            message: /^Message date is invalid:/,
           });
         });
       });
@@ -907,7 +887,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: MAX_TTL }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -926,7 +906,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: MAX_TTL + 1 }),
             new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
           ]);
@@ -968,7 +948,7 @@ describe('MessageSerializer', () => {
           const messageSerialized = await serializeRamfWithoutValidation([
             new asn1js.VisibleString({ value: RECIPIENT_ADDRESS }),
             new asn1js.VisibleString({ value: 'the-id' }),
-            new asn1js.DateTime({ value: formatASN1DateTimeWithUTC(NOW) }),
+            dateToASN1DateTimeInUTC(NOW),
             new asn1js.Integer({ value: 1_000 }),
             new asn1js.OctetString({ valueHex: bufferToArray(largePayload) }),
           ]);
@@ -1017,15 +997,14 @@ describe('MessageSerializer', () => {
       serializer.writeString('Relaynet');
       serializer.writeUInt8(stubConcreteMessageTypeOctet);
       serializer.writeUInt8(stubConcreteMessageVersionOctet);
-      serializer.writeBuffer(
-        Buffer.from(
-          await cmsSignedData.sign(
-            serializeFieldSet(sequenceItems),
-            SENDER_PRIVATE_KEY,
-            senderCertificate ?? SENDER_CERTIFICATE,
-          ),
-        ),
+
+      const signedData = await cmsSignedData.SignedData.sign(
+        serializeFieldSet(sequenceItems),
+        SENDER_PRIVATE_KEY,
+        senderCertificate ?? SENDER_CERTIFICATE,
       );
+      serializer.writeBuffer(Buffer.from(signedData.serialize()));
+
       return bufferToArray(serializer.toBuffer());
     }
 
@@ -1058,16 +1037,4 @@ function parseFormatSignature(messageSerialized: ArrayBuffer): MessageFormatSign
     concreteMessageVersion: buffer.readUInt8(9),
     magic: buffer.slice(0, 8).toString(),
   };
-}
-
-function getAsn1SequenceItem(fields: asn1js.Sequence, itemIndex: number): asn1js.Primitive {
-  const itemBlock = fields.valueBlock.value[itemIndex] as asn1js.Primitive;
-  expect(itemBlock).toBeInstanceOf(asn1js.Primitive);
-  expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
-  expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
-  return itemBlock as any;
-}
-
-function formatASN1DateTimeWithUTC(date: Date): string {
-  return moment.utc(date).format('YYYYMMDDHHmmss');
 }

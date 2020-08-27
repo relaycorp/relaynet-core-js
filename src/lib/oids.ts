@@ -19,6 +19,13 @@ export const CMS_ATTR_DIGEST = '1.2.840.113549.1.9.4';
 //endregion
 
 //region Relaynet
-// Relaycorp's OID is 0.4.0.127.0.17 and Relaynet's is 0.4.0.127.0.17.0
-export const RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
+// Relaycorp's OID is 0.4.0.127.0.17
+const RELAYCORP = '0.4.0.127.0.17';
+const RELAYNET = `${RELAYCORP}.0`;
+
+export const RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = `${RELAYNET}.1.0`;
+
+const CLIENT_REGISTRATION_PREFIX = `${RELAYNET}.2`;
+export const CRA = `${CLIENT_REGISTRATION_PREFIX}.0`;
+export const CRA_COUNTERSIGNATURE = `${CLIENT_REGISTRATION_PREFIX}.1`;
 //endregion

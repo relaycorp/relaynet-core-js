@@ -1,4 +1,6 @@
 import * as asn1js from 'asn1js';
+import { TextDecoder } from 'util';
+import { makeSequenceSchema, serializeSequence } from '../asn1';
 
 import { generateFormatSignature } from './formatSignature';
 import InvalidMessageError from './InvalidMessageError';
@@ -20,22 +22,20 @@ export class ParcelCollectionAck {
       throw new InvalidMessageError('PCA did not meet required structure');
     }
 
+    const textDecoder = new TextDecoder();
     const pcaBlock: any = (result.result as any).ParcelCollectionAck;
     return new ParcelCollectionAck(
-      (pcaBlock.senderEndpointPrivateAddress as asn1js.VisibleString).valueBlock.value,
-      (pcaBlock.recipientEndpointAddress as asn1js.VisibleString).valueBlock.value,
-      (pcaBlock.parcelId as asn1js.VisibleString).valueBlock.value,
+      textDecoder.decode(pcaBlock.senderEndpointPrivateAddress.valueBlock.valueHex),
+      textDecoder.decode(pcaBlock.recipientEndpointAddress.valueBlock.valueHex),
+      textDecoder.decode(pcaBlock.parcelId.valueBlock.valueHex),
     );
   }
 
-  private static readonly SCHEMA = new asn1js.Sequence({
-    name: 'ParcelCollectionAck',
-    value: [
-      new asn1js.VisibleString({ name: 'senderEndpointPrivateAddress', optional: false } as any),
-      new asn1js.VisibleString({ name: 'recipientEndpointAddress', optional: false } as any),
-      new asn1js.VisibleString({ name: 'parcelId', optional: false } as any),
-    ],
-  } as any);
+  private static readonly SCHEMA = makeSequenceSchema('ParcelCollectionAck', [
+    'senderEndpointPrivateAddress',
+    'recipientEndpointAddress',
+    'parcelId',
+  ]);
 
   constructor(
     public readonly senderEndpointPrivateAddress: string,
@@ -44,14 +44,11 @@ export class ParcelCollectionAck {
   ) {}
 
   public serialize(): ArrayBuffer {
-    const ackBlock = new asn1js.Sequence({
-      value: [
-        new asn1js.VisibleString({ value: this.senderEndpointPrivateAddress }),
-        new asn1js.VisibleString({ value: this.recipientEndpointAddress }),
-        new asn1js.VisibleString({ value: this.parcelId }),
-      ],
-    } as any);
-    const ackSerialized = ackBlock.toBER(false);
+    const ackSerialized = serializeSequence(
+      new asn1js.VisibleString({ value: this.senderEndpointPrivateAddress }),
+      new asn1js.VisibleString({ value: this.recipientEndpointAddress }),
+      new asn1js.VisibleString({ value: this.parcelId }),
+    );
     const serialization = new ArrayBuffer(
       ParcelCollectionAck.FORMAT_SIGNATURE.byteLength + ackSerialized.byteLength,
     );
