@@ -57,7 +57,8 @@ export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 
 // Control messages
 export * from './lib/messages/ParcelCollectionAck';
-
+export { ClientRegistrationAuthorization } from './lib/messages/bindings/pdc/ClientRegistrationAuthorization';
+export { ClientRegistration } from './lib/messages/bindings/pdc/ClientRegistration';
 // Nodes
 export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 
