@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>CargoDeliveryRequest | @relaycorp/relaynet-core</title>
+	<title>ClientRegistration | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2722,14 +2722,23 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-interface tsd-is-external">
-			<a href="cargodeliveryrequest.html" class="tsd-kind-icon">Cargo<wbr>Delivery<wbr>Request</a>
+		<li class="current tsd-kind-class tsd-is-external">
+			<a href="clientregistration.html" class="tsd-kind-icon">Client<wbr>Registration</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="cargodeliveryrequest.html#cargo" class="tsd-kind-icon">cargo</a>
+				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+					<a href="clientregistration.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a href="cargodeliveryrequest.html#localid" class="tsd-kind-icon">local<wbr>Id</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
+					<a href="clientregistration.html#clientcertificate" class="tsd-kind-icon">client<wbr>Certificate</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
+					<a href="clientregistration.html#servercertificate" class="tsd-kind-icon">server<wbr>Certificate</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a href="clientregistration.html#serialize" class="tsd-kind-icon">serialize</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+					<a href="clientregistration.html#deserialize" class="tsd-kind-icon">deserialize</a>
 				</li>
 			</ul>
 		</li>
@@ -2737,18 +2746,11 @@ img {
 </nav>
 <div class="container container-main">
 	<div class="content-wrap">
-		<section class="tsd-panel tsd-comment">
-			<div class="tsd-comment tsd-typography">
-				<div class="lead">
-					<p>Request to deliver a cargo.</p>
-				</div>
-			</div>
-		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">CargoDeliveryRequest</span>
+					<span class="target">ClientRegistration</span>
 				</li>
 			</ul>
 		</section>
@@ -2757,36 +2759,121 @@ img {
 			<section class="tsd-panel tsd-index-panel">
 				<div class="tsd-index-content">
 					<section class="tsd-index-section tsd-is-external">
+						<h3>Constructors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#constructor" class="tsd-kind-icon">constructor</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-external">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="cargodeliveryrequest.html#cargo" class="tsd-kind-icon">cargo</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="cargodeliveryrequest.html#localid" class="tsd-kind-icon">local<wbr>Id</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#clientcertificate" class="tsd-kind-icon">client<wbr>Certificate</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#servercertificate" class="tsd-kind-icon">server<wbr>Certificate</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-external">
+						<h3>Methods</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="clientregistration.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
 						</ul>
 					</section>
 				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<h2>Constructors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+				<a name="constructor" class="tsd-anchor"></a>
+				<h3>constructor</h3>
+				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Client<wbr>Registration<span class="tsd-signature-symbol">(</span>clientCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a>, serverCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L40">src/lib/messages/bindings/pdc/ClientRegistration.ts:40</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>clientCertificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
+							</li>
+							<li>
+								<h5>serverCertificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-external">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="cargo" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> cargo</h3>
-				<div class="tsd-signature tsd-kind-icon">cargo<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
+				<a name="clientcertificate" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> client<wbr>Certificate</h3>
+				<div class="tsd-signature tsd-kind-icon">client<wbr>Certificate<span class="tsd-signature-symbol">:</span> <a href="certificate.html" class="tsd-signature-type">Certificate</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/cargoRelay.ts#L13">src/lib/cargoRelay.ts:13</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L43">src/lib/messages/bindings/pdc/ClientRegistration.ts:43</a></li>
 					</ul>
 				</aside>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-				<a name="localid" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> local<wbr>Id</h3>
-				<div class="tsd-signature tsd-kind-icon">local<wbr>Id<span class="tsd-signature-symbol">:</span> <a href="../globals.html#localcargoid" class="tsd-signature-type">LocalCargoId</a></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
+				<a name="servercertificate" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> server<wbr>Certificate</h3>
+				<div class="tsd-signature tsd-kind-icon">server<wbr>Certificate<span class="tsd-signature-symbol">:</span> <a href="certificate.html" class="tsd-signature-type">Certificate</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/cargoRelay.ts#L12">src/lib/cargoRelay.ts:12</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L44">src/lib/messages/bindings/pdc/ClientRegistration.ts:44</a></li>
 					</ul>
 				</aside>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+				<a name="serialize" class="tsd-anchor"></a>
+				<h3>serialize</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L47">src/lib/messages/bindings/pdc/ClientRegistration.ts:47</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ArrayBuffer</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+				<a name="deserialize" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> deserialize</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
+					<li class="tsd-signature tsd-kind-icon">deserialize<span class="tsd-signature-symbol">(</span>serialization<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L7">src/lib/messages/bindings/pdc/ClientRegistration.ts:7</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>serialization: <span class="tsd-signature-type">ArrayBuffer</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></h4>
+					</li>
+				</ul>
 			</section>
 		</section>
 		<footer class="with-border-bottom">
