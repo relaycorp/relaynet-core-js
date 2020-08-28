@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ClientRegistration | @relaycorp/relaynet-core</title>
+	<title>PrivateNodeRegistrationAuthorization | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2723,22 +2723,22 @@ img {
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class="current tsd-kind-class tsd-is-external">
-			<a href="clientregistration.html" class="tsd-kind-icon">Client<wbr>Registration</a>
+			<a href="privatenoderegistrationauthorization.html" class="tsd-kind-icon">Private<wbr>Node<wbr>Registration<wbr>Authorization</a>
 			<ul>
 				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
-					<a href="clientregistration.html#constructor" class="tsd-kind-icon">constructor</a>
+					<a href="privatenoderegistrationauthorization.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
-					<a href="clientregistration.html#clientcertificate" class="tsd-kind-icon">client<wbr>Certificate</a>
+					<a href="privatenoderegistrationauthorization.html#expirydate" class="tsd-kind-icon">expiry<wbr>Date</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
-					<a href="clientregistration.html#servercertificate" class="tsd-kind-icon">server<wbr>Certificate</a>
+					<a href="privatenoderegistrationauthorization.html#gatewaydata" class="tsd-kind-icon">gateway<wbr>Data</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a href="clientregistration.html#serialize" class="tsd-kind-icon">serialize</a>
+					<a href="privatenoderegistrationauthorization.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
-					<a href="clientregistration.html#deserialize" class="tsd-kind-icon">deserialize</a>
+					<a href="privatenoderegistrationauthorization.html#deserialize" class="tsd-kind-icon">deserialize</a>
 				</li>
 			</ul>
 		</li>
@@ -2750,7 +2750,7 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">ClientRegistration</span>
+					<span class="target">PrivateNodeRegistrationAuthorization</span>
 				</li>
 			</ul>
 		</section>
@@ -2761,21 +2761,21 @@ img {
 					<section class="tsd-index-section tsd-is-external">
 						<h3>Constructors</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-external"><a href="privatenoderegistrationauthorization.html#constructor" class="tsd-kind-icon">constructor</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section tsd-is-external">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#clientcertificate" class="tsd-kind-icon">client<wbr>Certificate</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#servercertificate" class="tsd-kind-icon">server<wbr>Certificate</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="privatenoderegistrationauthorization.html#expirydate" class="tsd-kind-icon">expiry<wbr>Date</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="privatenoderegistrationauthorization.html#gatewaydata" class="tsd-kind-icon">gateway<wbr>Data</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section tsd-is-external">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="clientregistration.html#serialize" class="tsd-kind-icon">serialize</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="clientregistration.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="privatenoderegistrationauthorization.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="privatenoderegistrationauthorization.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2787,25 +2787,25 @@ img {
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Client<wbr>Registration<span class="tsd-signature-symbol">(</span>clientCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a>, serverCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Private<wbr>Node<wbr>Registration<wbr>Authorization<span class="tsd-signature-symbol">(</span>expiryDate<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, gatewayData<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="privatenoderegistrationauthorization.html" class="tsd-signature-type">PrivateNodeRegistrationAuthorization</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L40">src/lib/messages/bindings/pdc/ClientRegistration.ts:40</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/08d3800/src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts#L64">src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts:64</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5>clientCertificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
+								<h5>expiryDate: <span class="tsd-signature-type">Date</span></h5>
 							</li>
 							<li>
-								<h5>serverCertificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
+								<h5>gatewayData: <span class="tsd-signature-type">ArrayBuffer</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></h4>
+						<h4 class="tsd-returns-title">Returns <a href="privatenoderegistrationauthorization.html" class="tsd-signature-type">PrivateNodeRegistrationAuthorization</a></h4>
 					</li>
 				</ul>
 			</section>
@@ -2813,22 +2813,22 @@ img {
 		<section class="tsd-panel-group tsd-member-group tsd-is-external">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
-				<a name="clientcertificate" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> client<wbr>Certificate</h3>
-				<div class="tsd-signature tsd-kind-icon">client<wbr>Certificate<span class="tsd-signature-symbol">:</span> <a href="certificate.html" class="tsd-signature-type">Certificate</a></div>
+				<a name="expirydate" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> expiry<wbr>Date</h3>
+				<div class="tsd-signature tsd-kind-icon">expiry<wbr>Date<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L43">src/lib/messages/bindings/pdc/ClientRegistration.ts:43</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/08d3800/src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts#L66">src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts:66</a></li>
 					</ul>
 				</aside>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
-				<a name="servercertificate" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> server<wbr>Certificate</h3>
-				<div class="tsd-signature tsd-kind-icon">server<wbr>Certificate<span class="tsd-signature-symbol">:</span> <a href="certificate.html" class="tsd-signature-type">Certificate</a></div>
+				<a name="gatewaydata" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> gateway<wbr>Data</h3>
+				<div class="tsd-signature tsd-kind-icon">gateway<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ArrayBuffer</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L44">src/lib/messages/bindings/pdc/ClientRegistration.ts:44</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/08d3800/src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts#L66">src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts:66</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2839,16 +2839,22 @@ img {
 				<a name="serialize" class="tsd-anchor"></a>
 				<h3>serialize</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span></li>
+					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span>gatewayPrivateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L47">src/lib/messages/bindings/pdc/ClientRegistration.ts:47</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/08d3800/src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts#L68">src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts:68</a></li>
 							</ul>
 						</aside>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ArrayBuffer</span></h4>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>gatewayPrivateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -2856,13 +2862,13 @@ img {
 				<a name="deserialize" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagStatic">Static</span> deserialize</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
-					<li class="tsd-signature tsd-kind-icon">deserialize<span class="tsd-signature-symbol">(</span>serialization<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></li>
+					<li class="tsd-signature tsd-kind-icon">deserialize<span class="tsd-signature-symbol">(</span>serialization<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, gatewayPublicKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="privatenoderegistrationauthorization.html" class="tsd-signature-type">PrivateNodeRegistrationAuthorization</a><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/a4b9c5f/src/lib/messages/bindings/pdc/ClientRegistration.ts#L7">src/lib/messages/bindings/pdc/ClientRegistration.ts:7</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/08d3800/src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts#L14">src/lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization.ts:14</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2870,8 +2876,11 @@ img {
 							<li>
 								<h5>serialization: <span class="tsd-signature-type">ArrayBuffer</span></h5>
 							</li>
+							<li>
+								<h5>gatewayPublicKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="clientregistration.html" class="tsd-signature-type">ClientRegistration</a></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="privatenoderegistrationauthorization.html" class="tsd-signature-type">PrivateNodeRegistrationAuthorization</a><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
