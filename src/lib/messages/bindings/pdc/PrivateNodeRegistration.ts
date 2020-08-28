@@ -42,8 +42,7 @@ export class PrivateNodeRegistration {
   constructor(
     public readonly privateNodeCertificate: Certificate,
     public readonly gatewayCertificate: Certificate,
-  ) {
-  }
+  ) {}
 
   public serialize(): ArrayBuffer {
     return serializeSequence(

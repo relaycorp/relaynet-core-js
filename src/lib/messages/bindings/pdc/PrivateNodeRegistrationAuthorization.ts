@@ -63,8 +63,7 @@ export class PrivateNodeRegistrationAuthorization {
     );
   }
 
-  constructor(public readonly expiryDate: Date, public readonly gatewayData: ArrayBuffer) {
-  }
+  constructor(public readonly expiryDate: Date, public readonly gatewayData: ArrayBuffer) {}
 
   public async serialize(gatewayPrivateKey: CryptoKey): Promise<ArrayBuffer> {
     const expiryDateASN1 = dateToASN1DateTimeInUTC(this.expiryDate);

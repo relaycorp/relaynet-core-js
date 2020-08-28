@@ -54,8 +54,7 @@ export class PrivateNodeRegistrationRequest {
   constructor(
     public readonly privateNodePublicKey: CryptoKey,
     public readonly pnraSerialized: ArrayBuffer,
-  ) {
-  }
+  ) {}
 
   public async serialize(privateNodePrivateKey: CryptoKey): Promise<ArrayBuffer> {
     const privateNodePublicKeySerialized = await derSerializePublicKey(this.privateNodePublicKey);
