@@ -6,32 +6,32 @@ import { arrayBufferFrom } from '../../../_test_utils';
 import { dateToASN1DateTimeInUTC, serializeSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import { verify } from '../../../crypto_wrappers/rsaSigning';
-import { CRA } from '../../../oids';
+import { PNRA } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
-import { ClientRegistrationAuthorization } from './ClientRegistrationAuthorization';
+import { PrivateNodeRegistrationAuthorization } from './PrivateNodeRegistrationAuthorization';
 
-describe('ClientRegistrationAuthorization', () => {
+describe('PrivateNodeRegistrationAuthorization', () => {
   const expiryDate = moment().millisecond(0).add(1, 'days').toDate();
-  const serverData = arrayBufferFrom('This is the server data');
+  const gatewayData = arrayBufferFrom('This is the gateway data');
 
   // tslint:disable-next-line:no-let
-  let serverKeyPair: CryptoKeyPair;
+  let gatewayKeyPair: CryptoKeyPair;
   beforeAll(async () => {
-    serverKeyPair = await generateRSAKeyPair();
+    gatewayKeyPair = await generateRSAKeyPair();
   });
 
   describe('serialize', () => {
-    const authorization = new ClientRegistrationAuthorization(expiryDate, serverData);
+    const authorization = new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
 
     test('Serialization should be a sequence', async () => {
-      const serialization = await authorization.serialize(serverKeyPair.privateKey);
+      const serialization = await authorization.serialize(gatewayKeyPair.privateKey);
 
       const sequence = derDeserialize(serialization);
       expect(sequence).toBeInstanceOf(Sequence);
     });
 
     test('Expiry date should be honored', async () => {
-      const serialization = await authorization.serialize(serverKeyPair.privateKey);
+      const serialization = await authorization.serialize(gatewayKeyPair.privateKey);
 
       const sequence = derDeserialize(serialization);
 
@@ -41,28 +41,28 @@ describe('ClientRegistrationAuthorization', () => {
       );
     });
 
-    test('Server data should be honored', async () => {
-      const serialization = await authorization.serialize(serverKeyPair.privateKey);
+    test('Gateway data should be honored', async () => {
+      const serialization = await authorization.serialize(gatewayKeyPair.privateKey);
 
       const sequence = derDeserialize(serialization);
 
-      const serverDataASN1 = (sequence as Sequence).valueBlock.value[1] as Primitive;
-      expect(serverDataASN1.valueBlock.valueHex).toEqual(serverData);
+      const gatewayDataASN1 = (sequence as Sequence).valueBlock.value[1] as Primitive;
+      expect(gatewayDataASN1.valueBlock.valueHex).toEqual(gatewayData);
     });
 
     test('Signature should be valid', async () => {
-      const serialization = await authorization.serialize(serverKeyPair.privateKey);
+      const serialization = await authorization.serialize(gatewayKeyPair.privateKey);
 
       const sequence = derDeserialize(serialization);
       const signatureASN1 = (sequence as Sequence).valueBlock.value[2] as Primitive;
       const signature = signatureASN1.valueBlock.valueHex;
       const expectedPlaintext = serializeSequence(
-        new ObjectIdentifier({ value: CRA }),
+        new ObjectIdentifier({ value: PNRA }),
         dateToASN1DateTimeInUTC(expiryDate),
-        new OctetString({ valueHex: serverData }),
+        new OctetString({ valueHex: gatewayData }),
       );
       await expect(
-        verify(signature, serverKeyPair.publicKey, expectedPlaintext),
+        verify(signature, gatewayKeyPair.publicKey, expectedPlaintext),
       ).resolves.toBeTrue();
     });
   });
@@ -70,12 +70,14 @@ describe('ClientRegistrationAuthorization', () => {
   describe('deserialize', () => {
     test('Malformed values should be refused', async () => {
       await expect(
-        ClientRegistrationAuthorization.deserialize(
+        PrivateNodeRegistrationAuthorization.deserialize(
           arrayBufferFrom('foo'),
-          serverKeyPair.publicKey,
+          gatewayKeyPair.publicKey,
         ),
       ).rejects.toEqual(
-        new InvalidMessageError('Serialization is not a valid ClientRegistrationAuthorization'),
+        new InvalidMessageError(
+          'Serialization is not a valid PrivateNodeRegistrationAuthorization',
+        ),
       );
     });
 
@@ -86,47 +88,49 @@ describe('ClientRegistrationAuthorization', () => {
       );
 
       await expect(
-        ClientRegistrationAuthorization.deserialize(serialization, serverKeyPair.publicKey),
+        PrivateNodeRegistrationAuthorization.deserialize(serialization, gatewayKeyPair.publicKey),
       ).rejects.toEqual(
-        new InvalidMessageError('Serialization is not a valid ClientRegistrationAuthorization'),
+        new InvalidMessageError(
+          'Serialization is not a valid PrivateNodeRegistrationAuthorization',
+        ),
       );
     });
 
     test('Expired authorizations should be refused', async () => {
       const oneSecondAgo = new Date();
       oneSecondAgo.setSeconds(-1);
-      const cra = new ClientRegistrationAuthorization(oneSecondAgo, serverData);
-      const serialization = await cra.serialize(serverKeyPair.privateKey);
+      const authorization = new PrivateNodeRegistrationAuthorization(oneSecondAgo, gatewayData);
+      const serialization = await authorization.serialize(gatewayKeyPair.privateKey);
 
       await expect(
-        ClientRegistrationAuthorization.deserialize(serialization, serverKeyPair.publicKey),
-      ).rejects.toEqual(new InvalidMessageError('CRA already expired'));
+        PrivateNodeRegistrationAuthorization.deserialize(serialization, gatewayKeyPair.publicKey),
+      ).rejects.toEqual(new InvalidMessageError('Authorization already expired'));
     });
 
     test('Invalid signatures should be refused', async () => {
       const tomorrow = moment().add(1, 'days').toDate();
       const serialization = serializeSequence(
         dateToASN1DateTimeInUTC(tomorrow),
-        new VisibleString({ value: 'server data' }),
+        new VisibleString({ value: 'gateway data' }),
         new VisibleString({ value: 'invalid signature' }),
       );
 
       await expect(
-        ClientRegistrationAuthorization.deserialize(serialization, serverKeyPair.publicKey),
-      ).rejects.toEqual(new InvalidMessageError('CRA signature is invalid'));
+        PrivateNodeRegistrationAuthorization.deserialize(serialization, gatewayKeyPair.publicKey),
+      ).rejects.toEqual(new InvalidMessageError('Authorization signature is invalid'));
     });
 
     test('Valid values should be accepted', async () => {
-      const cra = new ClientRegistrationAuthorization(expiryDate, serverData);
-      const serialization = await cra.serialize(serverKeyPair.privateKey);
+      const authorization = new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
+      const serialization = await authorization.serialize(gatewayKeyPair.privateKey);
 
-      const craDeserialized = await ClientRegistrationAuthorization.deserialize(
+      const authorizationDeserialized = await PrivateNodeRegistrationAuthorization.deserialize(
         serialization,
-        serverKeyPair.publicKey,
+        gatewayKeyPair.publicKey,
       );
 
-      expect(craDeserialized.expiryDate).toEqual(expiryDate);
-      expect(craDeserialized.serverData).toEqual(serverData);
+      expect(authorizationDeserialized.expiryDate).toEqual(expiryDate);
+      expect(authorizationDeserialized.gatewayData).toEqual(gatewayData);
     });
   });
 });
