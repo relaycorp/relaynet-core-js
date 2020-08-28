@@ -8,18 +8,6 @@ import { PNRA_COUNTERSIGNATURE } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 
 export class PrivateNodeRegistrationRequest {
-  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistrationRequest', [
-    'privateNodePublicKey',
-    'pnraSerialized',
-    'countersignature',
-  ]);
-
-  constructor(
-    public readonly privateNodePublicKey: CryptoKey,
-    public readonly pnraSerialized: ArrayBuffer,
-  ) {
-  }
-
   public static async deserialize(
     serialization: ArrayBuffer,
   ): Promise<PrivateNodeRegistrationRequest> {
@@ -55,6 +43,18 @@ export class PrivateNodeRegistrationRequest {
       new ObjectIdentifier({ value: PNRA_COUNTERSIGNATURE }),
       pnraSerializedASN1,
     );
+  }
+
+  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistrationRequest', [
+    'privateNodePublicKey',
+    'pnraSerialized',
+    'countersignature',
+  ]);
+
+  constructor(
+    public readonly privateNodePublicKey: CryptoKey,
+    public readonly pnraSerialized: ArrayBuffer,
+  ) {
   }
 
   public async serialize(privateNodePrivateKey: CryptoKey): Promise<ArrayBuffer> {

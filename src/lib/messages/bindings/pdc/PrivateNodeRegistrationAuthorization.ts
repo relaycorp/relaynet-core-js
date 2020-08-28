@@ -11,15 +11,6 @@ import { PNRA } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 
 export class PrivateNodeRegistrationAuthorization {
-  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistrationAuthorization', [
-    'expiryDate',
-    'gatewayData',
-    'signature',
-  ]);
-
-  constructor(public readonly expiryDate: Date, public readonly gatewayData: ArrayBuffer) {
-  }
-
   public static async deserialize(
     serialization: ArrayBuffer,
     gatewayPublicKey: CryptoKey,
@@ -55,6 +46,12 @@ export class PrivateNodeRegistrationAuthorization {
     return new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
   }
 
+  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistrationAuthorization', [
+    'expiryDate',
+    'gatewayData',
+    'signature',
+  ]);
+
   private static makeSignaturePlaintext(
     expiryDateASN1: DateTime,
     gatewayDataASN1: OctetString,
@@ -64,6 +61,9 @@ export class PrivateNodeRegistrationAuthorization {
       expiryDateASN1,
       gatewayDataASN1,
     );
+  }
+
+  constructor(public readonly expiryDate: Date, public readonly gatewayData: ArrayBuffer) {
   }
 
   public async serialize(gatewayPrivateKey: CryptoKey): Promise<ArrayBuffer> {

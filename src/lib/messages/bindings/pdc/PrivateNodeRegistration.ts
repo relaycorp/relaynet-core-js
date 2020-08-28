@@ -4,17 +4,6 @@ import Certificate from '../../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../InvalidMessageError';
 
 export class PrivateNodeRegistration {
-  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistration', [
-    'privateNodeCertificate',
-    'gatewayCertificate',
-  ]);
-
-  constructor(
-    public readonly privateNodeCertificate: Certificate,
-    public readonly gatewayCertificate: Certificate,
-  ) {
-  }
-
   public static deserialize(serialization: ArrayBuffer): PrivateNodeRegistration {
     const result = verifySchema(serialization, PrivateNodeRegistration.SCHEMA);
     if (!result.verified) {
@@ -43,6 +32,17 @@ export class PrivateNodeRegistration {
       throw new InvalidMessageError(exc, 'Gateway certificate is invalid');
     }
     return new PrivateNodeRegistration(privateNodeCertificate, gatewayCertificate);
+  }
+
+  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistration', [
+    'privateNodeCertificate',
+    'gatewayCertificate',
+  ]);
+
+  constructor(
+    public readonly privateNodeCertificate: Certificate,
+    public readonly gatewayCertificate: Certificate,
+  ) {
   }
 
   public serialize(): ArrayBuffer {
