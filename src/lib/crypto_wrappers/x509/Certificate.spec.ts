@@ -530,6 +530,13 @@ test('serialize() should return a DER-encoded buffer', async () => {
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getCommonName());
 });
 
+test('expiryDate should return the expiry date', async () => {
+  const cert = await generateStubCert();
+
+  const expectedExpiryDate = cert.pkijsCertificate.notAfter.value;
+  expect(cert.expiryDate).toEqual(expectedExpiryDate);
+});
+
 test('getSerialNumber() should return the serial number as a buffer', async () => {
   const generateRandom64BitValueSpy = jest.spyOn(utils, 'generateRandom64BitValue');
   const cert = await generateStubCert();

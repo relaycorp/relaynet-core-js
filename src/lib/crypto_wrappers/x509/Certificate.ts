@@ -21,6 +21,10 @@ type FindIssuerSignature = (
  * certificates easy and safe.
  */
 export default class Certificate {
+  get expiryDate(): Date {
+    return this.pkijsCertificate.notAfter.value;
+  }
+
   /**
    * Deserialize certificate from DER-encoded value.
    *
