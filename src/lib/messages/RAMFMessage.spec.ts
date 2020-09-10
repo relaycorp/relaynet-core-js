@@ -219,7 +219,11 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expect(message.validate([stubSenderChain.rootCert])).toResolve();
+        const certificationPath = await message.validate([stubSenderChain.rootCert]);
+        expect(certificationPath).toHaveLength(3);
+        expect(certificationPath!![0].isEqual(message.senderCertificate)).toBeTrue();
+        expect(certificationPath!![1].isEqual(stubSenderChain.recipientCert)).toBeTrue();
+        expect(certificationPath!![2].isEqual(stubSenderChain.rootCert)).toBeTrue();
       });
 
       test('Message should be refused if recipient is private and did not authorize', async () => {
@@ -251,7 +255,11 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expect(message.validate([stubSenderChain.rootCert])).toResolve();
+        const certificationPath = await message.validate([stubSenderChain.rootCert]);
+        expect(certificationPath).toHaveLength(3);
+        expect(certificationPath!![2].isEqual(stubSenderChain.rootCert)).toBeTrue();
+        expect(certificationPath!![1].isEqual(stubSenderChain.recipientCert)).toBeTrue();
+        expect(certificationPath!![0].isEqual(message.senderCertificate)).toBeTrue();
       });
 
       test('Authorization enforcement should be skipped if trusted certs are absent', async () => {
@@ -259,7 +267,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expect(message.validate()).toResolve();
+        await expect(message.validate()).resolves.toBeNull();
       });
     });
 

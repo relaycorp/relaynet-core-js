@@ -108,13 +108,18 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
    *
    * @param trustedCertificates If present, will check that the sender is authorized to send
    *   the message based on the trusted certificates.
+   * @return The certification path from the sender to one of the `trustedCertificates` (if present)
    */
-  public async validate(trustedCertificates?: readonly Certificate[]): Promise<void> {
+  public async validate(
+    trustedCertificates?: readonly Certificate[],
+  ): Promise<null | readonly Certificate[]> {
     await this.validateTiming();
 
     if (trustedCertificates) {
-      await this.validateAuthorization(trustedCertificates);
+      return this.validateAuthorization(trustedCertificates);
     }
+
+    return null;
   }
 
   protected async decryptPayload(
@@ -146,7 +151,9 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
 
   protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;
 
-  private async validateAuthorization(trustedCertificates: readonly Certificate[]): Promise<void> {
+  private async validateAuthorization(
+    trustedCertificates: readonly Certificate[],
+  ): Promise<readonly Certificate[]> {
     // tslint:disable-next-line:no-let
     let certificationPath: readonly Certificate[];
     try {
@@ -155,15 +162,15 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
       throw new InvalidMessageError(error, 'Sender is not authorized');
     }
 
-    if (!this.isRecipientAddressPrivate) {
-      return;
+    if (this.isRecipientAddressPrivate) {
+      const recipientCertificate = certificationPath[1];
+      const recipientPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
+      if (recipientPrivateAddress !== this.recipientAddress) {
+        throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
+      }
     }
 
-    const recipientCertificate = certificationPath[1];
-    const recipientPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
-    if (recipientPrivateAddress !== this.recipientAddress) {
-      throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
-    }
+    return certificationPath;
   }
 
   private async validateTiming(): Promise<void> {
