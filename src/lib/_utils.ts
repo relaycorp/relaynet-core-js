@@ -1,3 +1,9 @@
+export function makeDateWithSecondPrecision(date?: Date): Date {
+  const dateWithoutMilliseconds = date ? new Date(date.getTime()) : new Date();
+  dateWithoutMilliseconds.setMilliseconds(0);
+  return dateWithoutMilliseconds;
+}
+
 /**
  * Try/catch block as a expression, a la Kotlin.
  *

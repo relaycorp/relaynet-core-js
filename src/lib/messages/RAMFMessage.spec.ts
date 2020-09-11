@@ -1,4 +1,5 @@
-/* tslint:disable:no-let max-classes-per-file */
+// tslint:disable:no-let max-classes-per-file
+
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
@@ -78,7 +79,9 @@ describe('RAMFMessage', () => {
           STUB_PAYLOAD_PLAINTEXT,
         );
 
-        expect(message.creationDate).toEqual(now);
+        const expectedDate = new Date(now.getTime());
+        expectedDate.setMilliseconds(0);
+        expect(message.creationDate).toEqual(expectedDate);
       });
 
       test('A custom date should be accepted', () => {
@@ -91,7 +94,9 @@ describe('RAMFMessage', () => {
           { creationDate: date },
         );
 
-        expect(message.creationDate).toEqual(date);
+        const expectedDate = new Date(date.getTime());
+        expectedDate.setMilliseconds(0);
+        expect(message.creationDate).toEqual(expectedDate);
       });
     });
 
@@ -308,15 +313,14 @@ describe('RAMFMessage', () => {
       });
 
       test('Date should not be before start date of sender certificate', async () => {
-        const certStartDate = senderCertificate.pkijsCertificate.notBefore.value;
         const message = new StubMessage(
           recipientPublicAddress,
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
-          { creationDate: new Date(certStartDate.getTime() - 1_000) },
+          { creationDate: new Date(senderCertificate.startDate.getTime() - 1_000) },
         );
 
-        jestDateMock.advanceTo(certStartDate);
+        jestDateMock.advanceTo(senderCertificate.startDate);
         await expect(message.validate()).rejects.toEqual(
           new InvalidMessageError('Message was created before the sender certificate was valid'),
         );
@@ -357,15 +361,12 @@ describe('RAMFMessage', () => {
           senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
           {
-            creationDate: senderCertificate.pkijsCertificate.notBefore.value,
+            creationDate: senderCertificate.startDate,
             ttl: 1,
           },
         );
 
-        const currentDate = new Date(message.creationDate);
-        currentDate.setSeconds(currentDate.getSeconds() + message.ttl);
-        currentDate.setMilliseconds(1); // Should be greater than zero so we can test rounding too
-        jestDateMock.advanceTo(currentDate);
+        jestDateMock.advanceTo(message.expiryDate);
 
         await message.validate();
       });

@@ -1,5 +1,6 @@
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
+import { makeDateWithSecondPrecision } from '../../_utils';
 
 import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
@@ -21,6 +22,10 @@ type FindIssuerSignature = (
  * certificates easy and safe.
  */
 export default class Certificate {
+  get startDate(): Date {
+    return this.pkijsCertificate.notBefore.value;
+  }
+
   get expiryDate(): Date {
     return this.pkijsCertificate.notAfter.value;
   }
@@ -45,8 +50,9 @@ export default class Certificate {
    * @param options
    */
   public static async issue(options: FullCertificateIssuanceOptions): Promise<Certificate> {
+    const validityStartDate = makeDateWithSecondPrecision(options.validityStartDate);
+
     //region Validation
-    const validityStartDate = options.validityStartDate || new Date();
     if (options.validityEndDate < validityStartDate) {
       throw new CertificateError('The end date must be later than the start date');
     }
