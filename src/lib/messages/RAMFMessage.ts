@@ -2,6 +2,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import uuid4 from 'uuid4';
 
 import { SignatureOptions } from '../..';
+import { makeDateWithSecondPrecision } from '../_utils';
 import {
   EnvelopedData,
   OriginatorSessionKey,
@@ -37,7 +38,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
-    this.creationDate = options.creationDate || new Date();
+    this.creationDate = makeDateWithSecondPrecision(options.creationDate);
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
     this.senderCaCertificateChain =
@@ -175,24 +176,20 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
 
   private async validateTiming(): Promise<void> {
     const currentDate = new Date();
-    currentDate.setMilliseconds(0); // Round down to match precision of date field
 
     if (currentDate < this.creationDate) {
       throw new InvalidMessageError('Message date is in the future');
     }
 
-    const pkijsCertificate = this.senderCertificate.pkijsCertificate;
-    if (this.creationDate < pkijsCertificate.notBefore.value) {
+    if (this.creationDate < this.senderCertificate.startDate) {
       throw new InvalidMessageError('Message was created before the sender certificate was valid');
     }
 
-    if (pkijsCertificate.notAfter.value < this.creationDate) {
+    if (this.senderCertificate.expiryDate < this.creationDate) {
       throw new InvalidMessageError('Message was created after the sender certificate expired');
     }
 
-    const expiryDate = new Date(this.creationDate);
-    expiryDate.setSeconds(expiryDate.getSeconds() + this.ttl);
-    if (expiryDate < currentDate) {
+    if (this.expiryDate < currentDate) {
       throw new InvalidMessageError('Message already expired');
     }
   }

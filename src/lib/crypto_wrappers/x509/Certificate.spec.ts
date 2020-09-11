@@ -128,18 +128,23 @@ describe('issue()', () => {
 
   test('should create a certificate valid from now by default', async () => {
     const now = new Date();
+    now.setMilliseconds(1); // We need to check it's rounded down to the nearest second
     jestDateMock.advanceTo(now);
+
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
       issuerPrivateKey: keyPair.privateKey,
       subjectPublicKey: keyPair.publicKey,
     });
 
-    expect(cert.pkijsCertificate.notBefore.value).toEqual(now);
+    const expectedDate = new Date(now.getTime());
+    expectedDate.setMilliseconds(0);
+    expect(cert.startDate).toEqual(expectedDate);
   });
 
   test('should honor a custom start validity date', async () => {
-    const startDate = new Date(2019, 1, 1);
+    const startDate = new Date(2019, 1, 1, 1, 1, 1, 1);
+
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
       issuerPrivateKey: keyPair.privateKey,
@@ -147,7 +152,9 @@ describe('issue()', () => {
       validityStartDate: startDate,
     });
 
-    expect(cert.pkijsCertificate.notBefore.value).toBe(startDate);
+    const expectedDate = new Date(startDate.getTime());
+    expectedDate.setMilliseconds(0);
+    expect(cert.startDate).toEqual(expectedDate);
   });
 
   test('should honor a custom end validity date', async () => {
@@ -528,6 +535,13 @@ test('serialize() should return a DER-encoded buffer', async () => {
   expect(issuerDnAttributes.length).toBe(1);
   expect(issuerDnAttributes[0].type).toBe(oids.COMMON_NAME);
   expect(issuerDnAttributes[0].value.valueBlock.value).toBe(cert.getCommonName());
+});
+
+test('startDate should return the start date', async () => {
+  const cert = await generateStubCert();
+
+  const expectedStartDate = cert.pkijsCertificate.notBefore.value;
+  expect(cert.startDate).toEqual(expectedStartDate);
 });
 
 test('expiryDate should return the expiry date', async () => {
