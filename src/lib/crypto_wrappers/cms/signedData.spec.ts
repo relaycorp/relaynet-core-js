@@ -183,19 +183,35 @@ describe('sign', () => {
     });
   });
 
-  test('Content should be attached', async () => {
-    jest.spyOn(pkijs.SignedData.prototype, 'sign');
-    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+  describe('Plaintext', () => {
+    test('Plaintext should be encapsulated by default', async () => {
+      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
-    const encapContentInfo = signedData.pkijsSignedData.encapContentInfo;
-    expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
-    expect(encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
-    expect(encapContentInfo).toHaveProperty('eContent');
-    const plaintextOctetString = encapContentInfo.eContent.valueBlock.value[0];
-    expectBuffersToEqual(
-      (plaintextOctetString as asn1js.OctetString).valueBlock.valueHex,
-      plaintext,
-    );
+      const encapContentInfo = signedData.pkijsSignedData.encapContentInfo;
+      expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
+      expect(encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
+      expect(encapContentInfo).toHaveProperty('eContent');
+      const plaintextOctetString = encapContentInfo.eContent.valueBlock.value[0];
+      expectBuffersToEqual(
+        (plaintextOctetString as asn1js.OctetString).valueBlock.valueHex,
+        plaintext,
+      );
+    });
+
+    test('Content should not be encapsulated if requested', async () => {
+      const signedData = await SignedData.sign(
+        plaintext,
+        keyPair.privateKey,
+        certificate,
+        undefined,
+        { encapsulatedSignature: false },
+      );
+
+      const encapContentInfo = signedData.pkijsSignedData.encapContentInfo;
+      expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
+      expect(encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
+      expect(encapContentInfo).toHaveProperty('eContent', undefined);
+    });
   });
 });
 
@@ -258,7 +274,48 @@ describe('deserialize', () => {
 });
 
 describe('verify', () => {
-  test('Invalid signatures should be rejected', async () => {
+  test('Value should be refused if plaintext is not encapsulated or specified', async () => {
+    const signedData = await SignedData.sign(
+      plaintext,
+      keyPair.privateKey,
+      certificate,
+      undefined,
+      {
+        encapsulatedSignature: false,
+      },
+    );
+
+    await expect(signedData.verify()).rejects.toMatchObject<Partial<CMSError>>({
+      message: 'Plaintext should be encapsulated or explicitly set',
+    });
+  });
+
+  test('Expected plaintext should be refused if one is already encapsulated', async () => {
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+
+    await expect(signedData.verify(plaintext)).rejects.toEqual(
+      new CMSError('No specific plaintext should be expected because one is already encapsulated'),
+    );
+  });
+
+  test('Invalid signature without encapsulated plaintext should be rejected', async () => {
+    const signedData = await SignedData.sign(
+      plaintext,
+      keyPair.privateKey,
+      certificate,
+      undefined,
+      {
+        encapsulatedSignature: false,
+      },
+    );
+    const differentPlaintext = arrayBufferFrom('this is an invalid plaintext');
+
+    await expect(signedData.verify(differentPlaintext)).rejects.toEqual(
+      new CMSError('Invalid signature:  (PKI.js code: 14)'),
+    );
+  });
+
+  test('Invalid signature with encapsulated plaintext should be rejected', async () => {
     // Let's tamper with the payload
     const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
     const differentPlaintext = arrayBufferFrom('Different');
@@ -273,17 +330,21 @@ describe('verify', () => {
     );
   });
 
-  test('Value should be refused if content is not encapsulated', async () => {
-    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
-    // tslint:disable-next-line:no-delete
-    delete signedData.pkijsSignedData.encapContentInfo.eContent;
+  test('Valid signature without encapsulated plaintext should be accepted', async () => {
+    const signedData = await SignedData.sign(
+      plaintext,
+      keyPair.privateKey,
+      certificate,
+      undefined,
+      {
+        encapsulatedSignature: false,
+      },
+    );
 
-    await expect(signedData.verify()).rejects.toMatchObject<Partial<CMSError>>({
-      message: 'CMS SignedData value should encapsulate content',
-    });
+    await signedData.verify(plaintext);
   });
 
-  test('Valid signatures should be accepted', async () => {
+  test('Valid signature with encapsulated plaintext should be accepted', async () => {
     const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
     await signedData.verify();
   });
