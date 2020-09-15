@@ -122,7 +122,7 @@ describe('Countersigner', () => {
       );
     });
 
-    test('Valid signatures from trusted signers should be accepted', async () => {
+    test('Signer certificate should be output if trusted and signature is valid', async () => {
       const countersigner = new Countersigner(OID_VALUE);
 
       const countersignature = await countersigner.sign(
@@ -131,9 +131,10 @@ describe('Countersigner', () => {
         SIGNER_CERTIFICATE,
       );
 
-      await expect(
-        countersigner.verify(countersignature, PLAINTEXT, [CA_CERTIFICATE]),
-      ).resolves.toBeUndefined();
+      const countersignerCertificate = await countersigner.verify(countersignature, PLAINTEXT, [
+        CA_CERTIFICATE,
+      ]);
+      await expect(countersignerCertificate.isEqual(SIGNER_CERTIFICATE)).toBeTrue();
     });
   });
 });
