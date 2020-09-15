@@ -4,7 +4,7 @@ import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../..';
 import { tryCatchAsync } from '../../../_utils';
 import { makeSequenceSchema, serializeSequence } from '../../../asn1';
 import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
-import { PNRA_COUNTERSIGNATURE } from '../../../oids';
+import { RELAYNET_OIDS } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 
 export class PrivateNodeRegistrationRequest {
@@ -40,7 +40,9 @@ export class PrivateNodeRegistrationRequest {
 
   public static makePNRACountersignaturePlaintext(pnraSerializedASN1: OctetString): ArrayBuffer {
     return serializeSequence(
-      new ObjectIdentifier({ value: PNRA_COUNTERSIGNATURE }),
+      new ObjectIdentifier({
+        value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
+      }),
       pnraSerializedASN1,
     );
   }
