@@ -138,7 +138,10 @@ export class SignedData {
     return contentInfo.toSchema().toBER(false);
   }
 
-  public async verify(expectedPlaintext?: ArrayBuffer): Promise<void> {
+  public async verify(
+    expectedPlaintext?: ArrayBuffer,
+    trustedCertificates?: readonly Certificate[],
+  ): Promise<void> {
     const currentPlaintext = this.plaintext;
     const isPlaintextEncapsulated = currentPlaintext !== null;
     if (isPlaintextEncapsulated && expectedPlaintext !== undefined) {
@@ -150,13 +153,16 @@ export class SignedData {
       throw new CMSError('Plaintext should be encapsulated or explicitly set');
     }
 
+    const trustedPkijsCerts = trustedCertificates?.map((c) => c.pkijsCertificate);
     // tslint:disable-next-line:no-let
     let verificationResult;
     try {
       verificationResult = await this.pkijsSignedData.verify({
+        checkChain: trustedCertificates !== undefined,
         data: isPlaintextEncapsulated ? undefined : expectedPlaintext,
         extendedMode: true,
         signer: 0,
+        trustedCerts: trustedPkijsCerts,
       });
 
       if (!verificationResult.signatureVerified) {
