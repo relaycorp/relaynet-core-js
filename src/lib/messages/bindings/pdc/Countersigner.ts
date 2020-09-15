@@ -26,14 +26,23 @@ export class Countersigner {
     return signedData.serialize();
   }
 
+  /**
+   * Verify `countersignature` and return the signer's certificate if valid.
+   *
+   * @param countersignature
+   * @param expectedPlaintext
+   * @param trustedCertificates
+   * @throws CMSError if the countersignature is invalid or the signer isn't trusted
+   */
   public async verify(
     countersignature: ArrayBuffer,
     expectedPlaintext: ArrayBuffer,
     trustedCertificates: readonly Certificate[],
-  ): Promise<void> {
+  ): Promise<Certificate> {
     const signedData = SignedData.deserialize(countersignature);
     const safePlaintext = this.makeSafePlaintext(expectedPlaintext);
     await signedData.verify(safePlaintext, trustedCertificates);
+    return signedData.signerCertificate!!;
   }
 
   protected makeSafePlaintext(plaintext: ArrayBuffer): ArrayBuffer {
