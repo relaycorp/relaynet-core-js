@@ -10,7 +10,7 @@ import {
   generateStubCert,
   getMockContext,
 } from '../../_test_utils';
-import * as oids from '../../oids';
+import { CMS_OIDS } from '../../oids';
 import { issueInitialDHKeyCertificate } from '../../pki';
 import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
@@ -78,7 +78,7 @@ describe('EnvelopedData', () => {
       const envelopedDataSerialized = envelopedData.serialize();
 
       const contentInfo = deserializeContentInfo(envelopedDataSerialized);
-      expect(contentInfo.contentType).toEqual(oids.CMS_ENVELOPED_DATA);
+      expect(contentInfo.contentType).toEqual(CMS_OIDS.ENVELOPED_DATA);
       expect(contentInfo.content).toBeInstanceOf(asn1js.Sequence);
     });
   });
@@ -119,7 +119,7 @@ describe('EnvelopedData', () => {
     test('Inner value should be a valid EnvelopedData', async () => {
       const contentInfo = new pkijs.ContentInfo({
         content: new asn1js.Integer({ value: 3 }),
-        contentType: oids.CMS_ENVELOPED_DATA,
+        contentType: CMS_OIDS.ENVELOPED_DATA,
       });
       const contentInfoSerialized = contentInfo.toSchema().toBER(false);
 
@@ -134,7 +134,7 @@ describe('EnvelopedData', () => {
       pkijsEnvelopedData.recipientInfos = [];
       const contentInfo = new pkijs.ContentInfo({
         content: pkijsEnvelopedData.toSchema(),
-        contentType: oids.CMS_ENVELOPED_DATA,
+        contentType: CMS_OIDS.ENVELOPED_DATA,
       });
       const contentInfoSerialized = contentInfo.toSchema().toBER(false);
 
@@ -153,7 +153,7 @@ describe('EnvelopedData', () => {
       );
       const contentInfo = new pkijs.ContentInfo({
         content: envelopedData.pkijsEnvelopedData.toSchema(),
-        contentType: oids.CMS_ENVELOPED_DATA,
+        contentType: CMS_OIDS.ENVELOPED_DATA,
       });
       const contentInfoSerialized = contentInfo.toSchema().toBER(false);
 

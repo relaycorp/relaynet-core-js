@@ -3,8 +3,7 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
-
-import * as oids from '../../oids';
+import { CMS_OIDS } from '../../oids';
 import { getPkijsCrypto } from '../_utils';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
@@ -89,7 +88,7 @@ export class SignedData {
     const pkijsSignedData = new pkijs.SignedData({
       certificates: [signerCertificate, ...caCertificates].map((c) => c.pkijsCertificate),
       encapContentInfo: new pkijs.EncapsulatedContentInfo({
-        eContentType: oids.CMS_DATA,
+        eContentType: CMS_OIDS.DATA,
         ...(encapsulatedSignature && { eContent: new asn1js.OctetString({ valueHex: plaintext }) }),
       }),
       signerInfos: [signerInfo],
@@ -133,7 +132,7 @@ export class SignedData {
   public serialize(): ArrayBuffer {
     const contentInfo = new pkijs.ContentInfo({
       content: this.pkijsSignedData.toSchema(true),
-      contentType: oids.CMS_SIGNED_DATA,
+      contentType: CMS_OIDS.SIGNED_DATA,
     });
     return contentInfo.toSchema().toBER(false);
   }
@@ -209,11 +208,11 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
     serialNumber: signerCertificate.pkijsCertificate.serialNumber,
   });
   const contentTypeAttribute = new pkijs.Attribute({
-    type: oids.CMS_ATTR_CONTENT_TYPE,
-    values: [new asn1js.ObjectIdentifier({ value: oids.CMS_DATA })],
+    type: CMS_OIDS.ATTR_CONTENT_TYPE,
+    values: [new asn1js.ObjectIdentifier({ value: CMS_OIDS.DATA })],
   });
   const digestAttribute = new pkijs.Attribute({
-    type: oids.CMS_ATTR_DIGEST,
+    type: CMS_OIDS.ATTR_DIGEST,
     values: [new asn1js.OctetString({ valueHex: digest })],
   });
   return new pkijs.SignerInfo({

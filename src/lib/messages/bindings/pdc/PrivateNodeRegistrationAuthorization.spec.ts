@@ -6,7 +6,7 @@ import { arrayBufferFrom } from '../../../_test_utils';
 import { dateToASN1DateTimeInUTC, serializeSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import { verify } from '../../../crypto_wrappers/rsaSigning';
-import { PNRA } from '../../../oids';
+import { RELAYNET_OIDS } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 import { PrivateNodeRegistrationAuthorization } from './PrivateNodeRegistrationAuthorization';
 
@@ -57,7 +57,7 @@ describe('PrivateNodeRegistrationAuthorization', () => {
       const signatureASN1 = (sequence as Sequence).valueBlock.value[2] as Primitive;
       const signature = signatureASN1.valueBlock.valueHex;
       const expectedPlaintext = serializeSequence(
-        new ObjectIdentifier({ value: PNRA }),
+        new ObjectIdentifier({ value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION }),
         dateToASN1DateTimeInUTC(expiryDate),
         new OctetString({ valueHex: gatewayData }),
       );

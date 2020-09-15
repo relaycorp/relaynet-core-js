@@ -8,7 +8,8 @@ import CMSError from '../../../crypto_wrappers/cms/CMSError';
 import { SignedData } from '../../../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../../../crypto_wrappers/keys';
 import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import { Countersigner } from './Countersigner';
+import { RELAYNET_OIDS } from '../../../oids';
+import { Countersigner, PARCEL_DELIVERY } from './Countersigner';
 
 const PLAINTEXT = arrayBufferFrom('the plaintext');
 
@@ -134,5 +135,11 @@ describe('Countersigner', () => {
         countersigner.verify(countersignature, PLAINTEXT, [CA_CERTIFICATE]),
       ).resolves.toBeUndefined();
     });
+  });
+});
+
+describe('Countersignature objects', () => {
+  test('PARCEL_DELIVERY should use the right OID', () => {
+    expect(PARCEL_DELIVERY.oid).toEqual(RELAYNET_OIDS.COUNTERSIGNATURE.PARCEL_DELIVERY);
   });
 });

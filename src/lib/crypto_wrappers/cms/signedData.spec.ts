@@ -13,7 +13,7 @@ import {
   reSerializeCertificate,
   sha256Hex,
 } from '../../_test_utils';
-import * as oids from '../../oids';
+import { CMS_OIDS } from '../../oids';
 import { generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
@@ -83,14 +83,14 @@ describe('sign', () => {
 
         const contentTypeAttribute = getSignerInfoAttribute(
           signedData.pkijsSignedData.signerInfos[0],
-          oids.CMS_ATTR_CONTENT_TYPE,
+          CMS_OIDS.ATTR_CONTENT_TYPE,
         );
         // @ts-ignore
         expect(contentTypeAttribute.values).toHaveLength(1);
         expect(
           // @ts-ignore
           contentTypeAttribute.values[0].valueBlock.toString(),
-        ).toEqual(oids.CMS_DATA);
+        ).toEqual(CMS_OIDS.DATA);
       });
 
       test('Plaintext digest should be present', async () => {
@@ -98,7 +98,7 @@ describe('sign', () => {
 
         const digestAttribute = getSignerInfoAttribute(
           signedData.pkijsSignedData.signerInfos[0],
-          oids.CMS_ATTR_DIGEST,
+          CMS_OIDS.ATTR_DIGEST,
         );
         // @ts-ignore
         expect(digestAttribute.values).toHaveLength(1);
@@ -147,7 +147,7 @@ describe('sign', () => {
 
       const digestAttribute = getSignerInfoAttribute(
         signedData.pkijsSignedData.signerInfos[0],
-        oids.CMS_ATTR_DIGEST,
+        CMS_OIDS.ATTR_DIGEST,
       );
       expect(
         // @ts-ignore
@@ -162,7 +162,7 @@ describe('sign', () => {
 
       const digestAttribute = getSignerInfoAttribute(
         signedData.pkijsSignedData.signerInfos[0],
-        oids.CMS_ATTR_DIGEST,
+        CMS_OIDS.ATTR_DIGEST,
       );
       const algorithmNameNodejs = hashingAlgorithmName.toLowerCase().replace('-', '');
       expect(
@@ -191,7 +191,7 @@ describe('sign', () => {
 
       const encapContentInfo = signedData.pkijsSignedData.encapContentInfo;
       expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
-      expect(encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
+      expect(encapContentInfo).toHaveProperty('eContentType', CMS_OIDS.DATA);
       expect(encapContentInfo).toHaveProperty('eContent');
       const plaintextOctetString = encapContentInfo.eContent.valueBlock.value[0];
       expectBuffersToEqual(
@@ -211,7 +211,7 @@ describe('sign', () => {
 
       const encapContentInfo = signedData.pkijsSignedData.encapContentInfo;
       expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
-      expect(encapContentInfo).toHaveProperty('eContentType', oids.CMS_DATA);
+      expect(encapContentInfo).toHaveProperty('eContentType', CMS_OIDS.DATA);
       expect(encapContentInfo).toHaveProperty('eContent', undefined);
     });
   });
@@ -235,7 +235,7 @@ describe('serialize', () => {
     const signedDataSerialized = signedData.serialize();
 
     const contentInfo = deserializeContentInfo(signedDataSerialized);
-    expect(contentInfo.contentType).toEqual(oids.CMS_SIGNED_DATA);
+    expect(contentInfo.contentType).toEqual(CMS_OIDS.SIGNED_DATA);
   });
 });
 
@@ -324,7 +324,7 @@ describe('verify', () => {
     // tslint:disable-next-line:no-object-mutation
     signedData.pkijsSignedData.encapContentInfo = new pkijs.EncapsulatedContentInfo({
       eContent: new asn1js.OctetString({ valueHex: differentPlaintext }),
-      eContentType: oids.CMS_DATA,
+      eContentType: CMS_OIDS.DATA,
     });
 
     await expect(signedData.verify()).rejects.toEqual(
