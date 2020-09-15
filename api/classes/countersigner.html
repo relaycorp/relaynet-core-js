@@ -122,7 +122,7 @@
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/7379a35/src/lib/messages/bindings/pdc/Countersigner.ts#L14">src/lib/messages/bindings/pdc/Countersigner.ts:14</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/2f240a8/src/lib/messages/bindings/pdc/Countersigner.ts#L14">src/lib/messages/bindings/pdc/Countersigner.ts:14</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -144,7 +144,7 @@
 				<div class="tsd-signature tsd-kind-icon">oid<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/7379a35/src/lib/messages/bindings/pdc/Countersigner.ts#L15">src/lib/messages/bindings/pdc/Countersigner.ts:15</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/2f240a8/src/lib/messages/bindings/pdc/Countersigner.ts#L15">src/lib/messages/bindings/pdc/Countersigner.ts:15</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -161,7 +161,7 @@
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/7379a35/src/lib/messages/bindings/pdc/Countersigner.ts#L17">src/lib/messages/bindings/pdc/Countersigner.ts:17</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/2f240a8/src/lib/messages/bindings/pdc/Countersigner.ts#L17">src/lib/messages/bindings/pdc/Countersigner.ts:17</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -184,15 +184,25 @@
 				<a name="verify" class="tsd-anchor"></a>
 				<h3>verify</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<li class="tsd-signature tsd-kind-icon">verify<span class="tsd-signature-symbol">(</span>countersignature<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, expectedPlaintext<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, trustedCertificates<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">readonly </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">verify<span class="tsd-signature-symbol">(</span>countersignature<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, expectedPlaintext<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, trustedCertificates<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">readonly </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/7379a35/src/lib/messages/bindings/pdc/Countersigner.ts#L29">src/lib/messages/bindings/pdc/Countersigner.ts:29</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/2f240a8/src/lib/messages/bindings/pdc/Countersigner.ts#L37">src/lib/messages/bindings/pdc/Countersigner.ts:37</a></li>
 							</ul>
 						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Verify <code>countersignature</code> and return the signer&#39;s certificate if valid.</p>
+							</div>
+							<dl class="tsd-comment-tags">
+								<dt>throws</dt>
+								<dd><p>CMSError if the countersignature is invalid or the signer isn&#39;t trusted</p>
+								</dd>
+							</dl>
+						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
@@ -205,7 +215,7 @@
 								<h5>trustedCertificates: <span class="tsd-signature-symbol">readonly </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">[]</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
