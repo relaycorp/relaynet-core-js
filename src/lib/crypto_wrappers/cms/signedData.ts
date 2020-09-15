@@ -3,8 +3,7 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
-
-import * as oids from '../../oids';
+import { CMS_OIDS } from '../../oids';
 import { getPkijsCrypto } from '../_utils';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
@@ -17,6 +16,10 @@ export interface SignatureVerification {
   readonly plaintext: ArrayBuffer;
   readonly signerCertificate: Certificate;
   readonly attachedCertificates: readonly Certificate[];
+}
+
+interface SignedDataOptions extends SignatureOptions {
+  readonly encapsulatedSignature: boolean;
 }
 
 export class SignedData {
@@ -71,7 +74,7 @@ export class SignedData {
     privateKey: CryptoKey,
     signerCertificate: Certificate,
     caCertificates: readonly Certificate[] = [],
-    options: Partial<SignatureOptions> = {},
+    options: Partial<SignedDataOptions> = {},
   ): Promise<SignedData> {
     // RS-018 prohibits the use of MD5 and SHA-1, but WebCrypto doesn't support MD5
     if (options.hashingAlgorithmName === 'SHA-1') {
@@ -81,16 +84,22 @@ export class SignedData {
     const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
     const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
     const signerInfo = initSignerInfo(signerCertificate, digest);
+    const encapsulatedSignature = options.encapsulatedSignature ?? true;
     const pkijsSignedData = new pkijs.SignedData({
       certificates: [signerCertificate, ...caCertificates].map((c) => c.pkijsCertificate),
       encapContentInfo: new pkijs.EncapsulatedContentInfo({
-        eContent: new asn1js.OctetString({ valueHex: plaintext }),
-        eContentType: oids.CMS_DATA,
+        eContentType: CMS_OIDS.DATA,
+        ...(encapsulatedSignature && { eContent: new asn1js.OctetString({ valueHex: plaintext }) }),
       }),
       signerInfos: [signerInfo],
       version: 1,
     });
-    await pkijsSignedData.sign(privateKey, 0, hashingAlgorithmName);
+    await pkijsSignedData.sign(
+      privateKey,
+      0,
+      hashingAlgorithmName,
+      encapsulatedSignature ? undefined : plaintext,
+    );
 
     return SignedData.reDeserialize(pkijsSignedData);
   }
@@ -123,22 +132,36 @@ export class SignedData {
   public serialize(): ArrayBuffer {
     const contentInfo = new pkijs.ContentInfo({
       content: this.pkijsSignedData.toSchema(true),
-      contentType: oids.CMS_SIGNED_DATA,
+      contentType: CMS_OIDS.SIGNED_DATA,
     });
     return contentInfo.toSchema().toBER(false);
   }
 
-  public async verify(): Promise<void> {
-    if (this.pkijsSignedData.encapContentInfo.eContent === undefined) {
-      throw new CMSError('CMS SignedData value should encapsulate content');
+  public async verify(
+    expectedPlaintext?: ArrayBuffer,
+    trustedCertificates?: readonly Certificate[],
+  ): Promise<void> {
+    const currentPlaintext = this.plaintext;
+    const isPlaintextEncapsulated = currentPlaintext !== null;
+    if (isPlaintextEncapsulated && expectedPlaintext !== undefined) {
+      throw new CMSError(
+        'No specific plaintext should be expected because one is already encapsulated',
+      );
+    }
+    if (!isPlaintextEncapsulated && expectedPlaintext === undefined) {
+      throw new CMSError('Plaintext should be encapsulated or explicitly set');
     }
 
+    const trustedPkijsCerts = trustedCertificates?.map((c) => c.pkijsCertificate);
     // tslint:disable-next-line:no-let
     let verificationResult;
     try {
       verificationResult = await this.pkijsSignedData.verify({
+        checkChain: trustedCertificates !== undefined,
+        data: isPlaintextEncapsulated ? undefined : expectedPlaintext,
         extendedMode: true,
         signer: 0,
+        trustedCerts: trustedPkijsCerts,
       });
 
       if (!verificationResult.signatureVerified) {
@@ -185,11 +208,11 @@ function initSignerInfo(signerCertificate: Certificate, digest: ArrayBuffer): pk
     serialNumber: signerCertificate.pkijsCertificate.serialNumber,
   });
   const contentTypeAttribute = new pkijs.Attribute({
-    type: oids.CMS_ATTR_CONTENT_TYPE,
-    values: [new asn1js.ObjectIdentifier({ value: oids.CMS_DATA })],
+    type: CMS_OIDS.ATTR_CONTENT_TYPE,
+    values: [new asn1js.ObjectIdentifier({ value: CMS_OIDS.DATA })],
   });
   const digestAttribute = new pkijs.Attribute({
-    type: oids.CMS_ATTR_DIGEST,
+    type: CMS_OIDS.ATTR_DIGEST,
     values: [new asn1js.OctetString({ valueHex: digest })],
   });
   return new pkijs.SignerInfo({

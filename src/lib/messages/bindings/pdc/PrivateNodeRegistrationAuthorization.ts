@@ -7,7 +7,7 @@ import {
   serializeSequence,
 } from '../../../asn1';
 import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
-import { PNRA } from '../../../oids';
+import { RELAYNET_OIDS } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 
 export class PrivateNodeRegistrationAuthorization {
@@ -57,7 +57,7 @@ export class PrivateNodeRegistrationAuthorization {
     gatewayDataASN1: OctetString,
   ): ArrayBuffer {
     return serializeSequence(
-      new ObjectIdentifier({ value: PNRA }),
+      new ObjectIdentifier({ value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION }),
       expiryDateASN1,
       gatewayDataASN1,
     );

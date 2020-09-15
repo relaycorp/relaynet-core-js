@@ -3,7 +3,7 @@ import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
-import * as oids from '../../oids';
+import { CMS_OIDS, RELAYNET_OIDS } from '../../oids';
 import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
@@ -53,7 +53,7 @@ export abstract class EnvelopedData {
    */
   public static deserialize(envelopedDataSerialized: ArrayBuffer): EnvelopedData {
     const contentInfo = deserializeContentInfo(envelopedDataSerialized);
-    if (contentInfo.contentType !== oids.CMS_ENVELOPED_DATA) {
+    if (contentInfo.contentType !== CMS_OIDS.ENVELOPED_DATA) {
       throw new CMSError(
         `ContentInfo does not wrap an EnvelopedData value (got OID ${contentInfo.contentType})`,
       );
@@ -91,7 +91,7 @@ export abstract class EnvelopedData {
   public serialize(): ArrayBuffer {
     const contentInfo = new pkijs.ContentInfo({
       content: this.pkijsEnvelopedData.toSchema(),
-      contentType: oids.CMS_ENVELOPED_DATA,
+      contentType: CMS_OIDS.ENVELOPED_DATA,
     });
     return contentInfo.toSchema().toBER(false);
   }
@@ -194,7 +194,7 @@ export class SessionEnvelopedData extends EnvelopedData {
       valueHex: dhKeyId,
     });
     const serialNumberAttribute = new pkijs.Attribute({
-      type: oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+      type: RELAYNET_OIDS.ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
       values: [serialNumberAttrValue],
     });
 
@@ -310,7 +310,7 @@ function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): Buffer {
   }
 
   const matchingAttrs = unprotectedAttrs.filter(
-    (a) => a.type === oids.RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+    (a) => a.type === RELAYNET_OIDS.ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
   );
   if (matchingAttrs.length === 0) {
     throw new CMSError('unprotectedAttrs does not contain originator key id');

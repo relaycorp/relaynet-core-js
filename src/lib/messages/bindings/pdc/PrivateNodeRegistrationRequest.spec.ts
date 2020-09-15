@@ -10,7 +10,7 @@ import { arrayBufferFrom, getAsn1SequenceItem } from '../../../_test_utils';
 import { serializeSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import { verify } from '../../../crypto_wrappers/rsaSigning';
-import { PNRA_COUNTERSIGNATURE } from '../../../oids';
+import { RELAYNET_OIDS } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
 
 const authorizationSerialized = arrayBufferFrom('The PNRA');
@@ -61,7 +61,9 @@ describe('serialize', () => {
     const sequence = derDeserialize(serialization);
     const signature = getAsn1SequenceItem(sequence, 2).valueBlock.valueHex;
     const expectedPNRACountersignature = serializeSequence(
-      new ObjectIdentifier({ value: PNRA_COUNTERSIGNATURE }),
+      new ObjectIdentifier({
+        value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
+      }),
       new OctetString({ valueHex: authorizationSerialized }),
     );
     await expect(
