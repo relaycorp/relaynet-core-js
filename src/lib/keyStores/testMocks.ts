@@ -7,10 +7,14 @@ import { PublicKeyStore, SessionPublicKeyData } from './publicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
   // tslint:disable-next-line:readonly-keyword
-  public readonly keys: { [key: string]: PrivateKeyData } = {};
+  public keys: { [key: string]: PrivateKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected readonly failOnFetch = false) {
     super();
+  }
+
+  public clear(): void {
+    this.keys = {};
   }
 
   public async registerNodeKey(privateKey: CryptoKey, certificate: Certificate): Promise<void> {
