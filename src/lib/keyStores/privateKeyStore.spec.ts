@@ -15,6 +15,11 @@ describe('PrivateKeyStore', () => {
   let PRIVATE_KEY: CryptoKey;
   let CERTIFICATE: Certificate;
 
+  const MOCK_STORE = new MockPrivateKeyStore();
+  beforeEach(() => {
+    MOCK_STORE.clear();
+  });
+
   describe('Node keys', () => {
     beforeAll(async () => {
       const keyPair = await keys.generateRSAKeyPair();
@@ -25,28 +30,24 @@ describe('PrivateKeyStore', () => {
 
     describe('fetchNodeKey', () => {
       test('Existing key pair should be returned', async () => {
-        const store = new MockPrivateKeyStore();
-        await store.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
+        await MOCK_STORE.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
 
-        const keyPair = await store.fetchNodeKey(CERTIFICATE.getSerialNumber());
+        const keyPair = await MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber());
 
         expect(keyPair).toHaveProperty('privateKey', PRIVATE_KEY);
         expect(CERTIFICATE.isEqual(keyPair.certificate)).toBeTrue();
       });
 
       test('UnknownKeyError should be thrown if key pair does not exist', async () => {
-        const store = new MockPrivateKeyStore();
-
-        await expect(store.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
+        await expect(MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
           UnknownKeyError,
         );
       });
 
       test('Session keys should not be returned', async () => {
-        const store = new MockPrivateKeyStore();
-        await store.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
+        await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
-        await expect(store.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
+        await expect(MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
           UnknownKeyError,
         );
       });
@@ -62,24 +63,20 @@ describe('PrivateKeyStore', () => {
 
     describe('saveNodeKey', () => {
       test('Key should be stored', async () => {
-        const store = new MockPrivateKeyStore();
-
-        await store.saveNodeKey(PRIVATE_KEY, CERTIFICATE);
+        await MOCK_STORE.saveNodeKey(PRIVATE_KEY, CERTIFICATE);
 
         const expectedKey: UnboundPrivateKeyData = {
           certificateDer: Buffer.from(CERTIFICATE.serialize()),
           keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
           type: 'node',
         };
-        expect(store.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
+        expect(MOCK_STORE.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
       });
 
       test('Key ids should be hex-encoded', async () => {
-        const store = new MockPrivateKeyStore();
+        await MOCK_STORE.saveNodeKey(PRIVATE_KEY, CERTIFICATE);
 
-        await store.saveNodeKey(PRIVATE_KEY, CERTIFICATE);
-
-        expect(store.keys).toHaveProperty(CERTIFICATE.getSerialNumberHex());
+        expect(MOCK_STORE.keys).toHaveProperty(CERTIFICATE.getSerialNumberHex());
       });
 
       test('Errors should be wrapped', async () => {
@@ -112,10 +109,9 @@ describe('PrivateKeyStore', () => {
     describe('Initial session keys', () => {
       describe('fetchInitialSessionKey', () => {
         test('Existing key pair should be returned', async () => {
-          const store = new MockPrivateKeyStore();
-          await store.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
+          await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
-          const keyPair = await store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber());
+          const keyPair = await MOCK_STORE.fetchInitialSessionKey(CERTIFICATE.getSerialNumber());
 
           expect(await keys.derSerializePrivateKey(keyPair.privateKey)).toEqual(
             await keys.derSerializePrivateKey(PRIVATE_KEY),
@@ -124,32 +120,28 @@ describe('PrivateKeyStore', () => {
         });
 
         test('UnknownKeyError should be thrown if key pair does not exist', async () => {
-          const store = new MockPrivateKeyStore();
-
           await expect(
-            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+            MOCK_STORE.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
           ).rejects.toBeInstanceOf(UnknownKeyError);
         });
 
         test('Node keys should not be returned', async () => {
-          const store = new MockPrivateKeyStore();
-          await store.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
+          await MOCK_STORE.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
 
           await expect(
-            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+            MOCK_STORE.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
           ).rejects.toBeInstanceOf(UnknownKeyError);
         });
 
         test('Subsequent session keys should not be returned', async () => {
-          const store = new MockPrivateKeyStore();
-          await store.registerSubsequentSessionKey(
+          await MOCK_STORE.registerSubsequentSessionKey(
             PRIVATE_KEY,
             CERTIFICATE.getSerialNumberHex(),
             await generateStubCert(),
           );
 
           await expect(
-            store.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
+            MOCK_STORE.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
           ).rejects.toBeInstanceOf(UnknownKeyError);
         });
 
@@ -164,16 +156,14 @@ describe('PrivateKeyStore', () => {
 
       describe('saveInitialSessionKey', () => {
         test('Unbound key should be stored', async () => {
-          const store = new MockPrivateKeyStore();
-
-          await store.saveInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
+          await MOCK_STORE.saveInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
           const expectedKey: UnboundPrivateKeyData = {
             certificateDer: Buffer.from(await CERTIFICATE.serialize()),
             keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
             type: 'session-initial',
           };
-          expect(store.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
+          expect(MOCK_STORE.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
         });
 
         test('Errors should be wrapped', async () => {
@@ -188,10 +178,9 @@ describe('PrivateKeyStore', () => {
 
     describe('fetchSessionKey', () => {
       test('Initial session keys should be returned', async () => {
-        const store = new MockPrivateKeyStore();
-        await store.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
+        await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
-        const privateKey = await store.fetchSessionKey(
+        const privateKey = await MOCK_STORE.fetchSessionKey(
           CERTIFICATE.getSerialNumber(),
           stubRecipientCertificate,
         );
@@ -202,14 +191,13 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Subsequent session keys should be returned', async () => {
-        const store = new MockPrivateKeyStore();
-        await store.registerSubsequentSessionKey(
+        await MOCK_STORE.registerSubsequentSessionKey(
           PRIVATE_KEY,
           CERTIFICATE.getSerialNumberHex(),
           stubRecipientCertificate,
         );
 
-        const privateKey = await store.fetchSessionKey(
+        const privateKey = await MOCK_STORE.fetchSessionKey(
           CERTIFICATE.getSerialNumber(),
           stubRecipientCertificate,
         );
@@ -220,16 +208,13 @@ describe('PrivateKeyStore', () => {
       });
 
       test('UnknownKeyError should be thrown if key pair does not exist', async () => {
-        const store = new MockPrivateKeyStore();
-
         await expect(
-          store.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
+          MOCK_STORE.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
         ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
       test('Keys bound to another recipient should not be returned', async () => {
-        const store = new MockPrivateKeyStore();
-        await store.registerSubsequentSessionKey(
+        await MOCK_STORE.registerSubsequentSessionKey(
           PRIVATE_KEY,
           CERTIFICATE.getSerialNumberHex(),
           stubRecipientCertificate,
@@ -237,16 +222,15 @@ describe('PrivateKeyStore', () => {
 
         const differentRecipientCert = await generateStubCert();
         await expect(
-          store.fetchSessionKey(CERTIFICATE.getSerialNumber(), differentRecipientCert),
+          MOCK_STORE.fetchSessionKey(CERTIFICATE.getSerialNumber(), differentRecipientCert),
         ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
       test('Node keys should not be returned', async () => {
-        const store = new MockPrivateKeyStore();
-        await store.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
+        await MOCK_STORE.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
 
         await expect(
-          store.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
+          MOCK_STORE.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
         ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
@@ -261,9 +245,7 @@ describe('PrivateKeyStore', () => {
 
     describe('saveSubsequentSessionKey', () => {
       test('Bound key should be stored', async () => {
-        const store = new MockPrivateKeyStore();
-
-        await store.saveSubsequentSessionKey(
+        await MOCK_STORE.saveSubsequentSessionKey(
           PRIVATE_KEY,
           CERTIFICATE.getSerialNumber(),
           stubRecipientCertificate,
@@ -276,7 +258,7 @@ describe('PrivateKeyStore', () => {
           ),
           type: 'session-subsequent',
         };
-        expect(store.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
+        expect(MOCK_STORE.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
       });
 
       test('Errors should be wrapped', async () => {
