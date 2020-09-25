@@ -2,13 +2,13 @@
 
 import { ObjectIdentifier, OctetString } from 'asn1js';
 
-import { arrayBufferFrom, generateStubCert, reSerializeCertificate } from '../../../_test_utils';
-import { serializeSequence } from '../../../asn1';
-import CMSError from '../../../crypto_wrappers/cms/CMSError';
-import { SignedData } from '../../../crypto_wrappers/cms/signedData';
-import { generateRSAKeyPair } from '../../../crypto_wrappers/keys';
-import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import { RELAYNET_OIDS } from '../../../oids';
+import { arrayBufferFrom, generateStubCert, reSerializeCertificate } from '../../_test_utils';
+import { serializeSequence } from '../../asn1';
+import CMSError from '../../crypto_wrappers/cms/CMSError';
+import { SignedData } from '../../crypto_wrappers/cms/signedData';
+import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { RELAYNET_OIDS } from '../../oids';
 import { Countersigner, NONCE_SIGNATURE, PARCEL_DELIVERY } from './Countersigner';
 
 const PLAINTEXT = arrayBufferFrom('the plaintext');

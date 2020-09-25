@@ -57,7 +57,7 @@ export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 
 // Control messages
 export * from './lib/messages/ParcelCollectionAck';
-export * from './lib/messages/bindings/pdc/Countersigner';
+export { Countersigner, PARCEL_DELIVERY } from './lib/messages/bindings/Countersigner';
 export { PrivateNodeRegistrationAuthorization } from './lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization';
 export { PrivateNodeRegistration } from './lib/messages/bindings/pdc/PrivateNodeRegistration';
 export { PrivateNodeRegistrationRequest } from './lib/messages/bindings/pdc/PrivateNodeRegistrationRequest';
