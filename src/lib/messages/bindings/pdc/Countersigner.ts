@@ -54,3 +54,5 @@ export class Countersigner {
 }
 
 export const PARCEL_DELIVERY = new Countersigner(RELAYNET_OIDS.COUNTERSIGNATURE.PARCEL_DELIVERY);
+
+export const NONCE_SIGNATURE = new Countersigner(RELAYNET_OIDS.COUNTERSIGNATURE.NONCE_SIGNATURE);
