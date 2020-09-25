@@ -21,7 +21,7 @@ export class Countersigner {
   ): Promise<ArrayBuffer> {
     const safePlaintext = this.makeSafePlaintext(plaintext);
     const signedData = await SignedData.sign(safePlaintext, privateKey, signerCertificate, [], {
-      encapsulatedSignature: false,
+      encapsulatePlaintext: false,
     });
     return signedData.serialize();
   }
