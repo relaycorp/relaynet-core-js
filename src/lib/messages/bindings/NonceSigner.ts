@@ -5,7 +5,7 @@ import { NONCE_SIGNATURE } from './Countersigner';
  * Handshake nonce signer for a given private endpoint or private gateway.
  *
  */
-export default class NonceSigner {
+export class NonceSigner {
   /**
    *
    * @param certificate The certificate of the private node
