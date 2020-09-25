@@ -2,7 +2,7 @@
 
 import { OctetString, Sequence } from 'asn1js';
 import { arrayBufferFrom, generateStubCert } from '../../../_test_utils';
-import { serializeSequence } from '../../../asn1';
+import { derSerializeHeterogeneousSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import Certificate from '../../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../InvalidMessageError';
@@ -54,7 +54,7 @@ describe('deserialize', () => {
   });
 
   test('Sequence should have at least two items', () => {
-    const invalidSerialization = serializeSequence(
+    const invalidSerialization = derSerializeHeterogeneousSequence(
       new OctetString({ valueHex: arrayBufferFrom('nope.jpg') }),
     );
 
@@ -65,7 +65,7 @@ describe('deserialize', () => {
   });
 
   test('Invalid private node certificates should be refused', () => {
-    const invalidSerialization = serializeSequence(
+    const invalidSerialization = derSerializeHeterogeneousSequence(
       new OctetString({ valueHex: arrayBufferFrom('not a certificate') }),
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
     );
@@ -77,7 +77,7 @@ describe('deserialize', () => {
   });
 
   test('Invalid gateway certificates should be refused', () => {
-    const invalidSerialization = serializeSequence(
+    const invalidSerialization = derSerializeHeterogeneousSequence(
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
       new OctetString({ valueHex: arrayBufferFrom('not a certificate') }),
     );

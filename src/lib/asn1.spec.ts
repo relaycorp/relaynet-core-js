@@ -2,13 +2,19 @@ import { OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'a
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
-import { arrayBufferFrom } from './_test_utils';
-import { asn1DateTimeToDate, dateToASN1DateTimeInUTC, serializeSequence } from './asn1';
+import { arrayBufferFrom, expectBuffersToEqual } from './_test_utils';
+import {
+  asn1DateTimeToDate,
+  dateToASN1DateTimeInUTC,
+  derSerializeHeterogeneousSequence,
+  derSerializeHomogeneousSequence,
+} from './asn1';
+import { derDeserialize } from './crypto_wrappers/_utils';
 import InvalidMessageError from './messages/InvalidMessageError';
 
-describe('serializeSequence', () => {
+describe('derSerializeHeterogeneousSequence', () => {
   test('An empty input should result in an empty sequence', () => {
-    const serialization = serializeSequence();
+    const serialization = derSerializeHeterogeneousSequence();
 
     const schema = new Sequence();
     const schemaVerification = verifySchema(serialization, schema);
@@ -20,7 +26,7 @@ describe('serializeSequence', () => {
   test('Values should be implicitly tagged', () => {
     const item1 = new VisibleString({ value: 'foo' });
     const item2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
-    const serialization = serializeSequence(item1, item2);
+    const serialization = derSerializeHeterogeneousSequence(item1, item2);
 
     const schema = new Sequence({
       name: 'Dummy',
@@ -48,6 +54,27 @@ describe('serializeSequence', () => {
       'valueBlock.valueHex',
       item2.valueBlock.valueHex,
     );
+  });
+});
+
+describe('derSerializeHomogeneousSequence', () => {
+  test('An empty input should result in an empty sequence', () => {
+    const serialization = derSerializeHomogeneousSequence([]);
+
+    const deserialization = derDeserialize(serialization) as Sequence;
+    expect(deserialization.valueBlock.value).toHaveLength(0);
+  });
+
+  test('Values should be explicitly tagged', () => {
+    const item1 = new VisibleString({ value: 'foo' });
+    const item2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
+
+    const serialization = derSerializeHomogeneousSequence([item1, item2]);
+
+    const deserialization = derDeserialize(serialization) as Sequence;
+    expect(deserialization.valueBlock.value).toHaveLength(2);
+    expectBuffersToEqual(item1.toBER(), deserialization.valueBlock.value[0].toBER());
+    expectBuffersToEqual(item2.toBER(), deserialization.valueBlock.value[1].toBER());
   });
 });
 

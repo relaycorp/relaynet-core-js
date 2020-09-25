@@ -2,14 +2,14 @@
 
 import { ObjectIdentifier, OctetString } from 'asn1js';
 
-import { arrayBufferFrom, generateStubCert, reSerializeCertificate } from '../../../_test_utils';
-import { serializeSequence } from '../../../asn1';
-import CMSError from '../../../crypto_wrappers/cms/CMSError';
-import { SignedData } from '../../../crypto_wrappers/cms/signedData';
-import { generateRSAKeyPair } from '../../../crypto_wrappers/keys';
-import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import { RELAYNET_OIDS } from '../../../oids';
-import { Countersigner, PARCEL_DELIVERY } from './Countersigner';
+import { arrayBufferFrom, generateStubCert, reSerializeCertificate } from '../../_test_utils';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
+import CMSError from '../../crypto_wrappers/cms/CMSError';
+import { SignedData } from '../../crypto_wrappers/cms/signedData';
+import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { RELAYNET_OIDS } from '../../oids';
+import { Countersigner, NONCE_SIGNATURE, PARCEL_DELIVERY } from './Countersigner';
 
 const PLAINTEXT = arrayBufferFrom('the plaintext');
 
@@ -77,7 +77,10 @@ describe('Countersigner', () => {
       );
 
       const signedData = SignedData.deserialize(countersignature);
-      const expectedPlaintext = serializeSequence(OID, new OctetString({ valueHex: PLAINTEXT }));
+      const expectedPlaintext = derSerializeHeterogeneousSequence(
+        OID,
+        new OctetString({ valueHex: PLAINTEXT }),
+      );
       await signedData.verify(expectedPlaintext);
     });
   });
@@ -142,5 +145,9 @@ describe('Countersigner', () => {
 describe('Countersignature objects', () => {
   test('PARCEL_DELIVERY should use the right OID', () => {
     expect(PARCEL_DELIVERY.oid).toEqual(RELAYNET_OIDS.COUNTERSIGNATURE.PARCEL_DELIVERY);
+  });
+
+  test('NONCE_SIGNATURE should use the right OID', () => {
+    expect(NONCE_SIGNATURE.oid).toEqual(RELAYNET_OIDS.COUNTERSIGNATURE.NONCE_SIGNATURE);
   });
 });

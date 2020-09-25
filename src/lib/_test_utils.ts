@@ -42,7 +42,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   futureDate.setDate(futureDate.getDate() + 1);
   futureDate.setMilliseconds(0);
   const subjectPublicKey = config.subjectPublicKey || keyPair.publicKey;
-  return Certificate.issue({
+  const certificate = await Certificate.issue({
     commonName: `0${await getPublicKeyDigestHex(subjectPublicKey)}`,
     issuerCertificate: config.issuerCertificate,
     issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
@@ -50,6 +50,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
     validityEndDate: futureDate,
     ...config.attributes,
   });
+  return reSerializeCertificate(certificate);
 }
 
 export function calculateDigestHex(algorithm: string, plaintext: ArrayBuffer | Buffer): string {
@@ -90,20 +91,28 @@ export async function getPromiseRejection<ErrorType extends Error>(
   throw new Error('Expected promise to throw');
 }
 
+/**
+ * Assert that two buffers are of the same type and contain the same octets.
+ *
+ * expect(value1).toEqual(value2) does NOT work with ArrayBuffer instances: It always passes.
+ *
+ * @param expectedBuffer
+ * @param actualBuffer
+ */
 export function expectBuffersToEqual(
-  buffer1: Buffer | ArrayBuffer,
-  buffer2: Buffer | ArrayBuffer,
+  expectedBuffer: Buffer | ArrayBuffer,
+  actualBuffer: Buffer | ArrayBuffer,
 ): void {
-  expect(buffer1.byteLength).toEqual(buffer2.byteLength);
-  if (buffer1 instanceof Buffer) {
-    expect(buffer2).toBeInstanceOf(Buffer);
-    expect(buffer1.equals(buffer2 as Buffer)).toBeTrue();
+  expect(expectedBuffer.byteLength).toEqual(actualBuffer.byteLength);
+  if (expectedBuffer instanceof Buffer) {
+    expect(actualBuffer).toBeInstanceOf(Buffer);
+    expect(expectedBuffer.equals(actualBuffer as Buffer)).toBeTrue();
   } else {
-    expect(buffer1).toBeInstanceOf(ArrayBuffer);
-    expect(buffer2).toBeInstanceOf(ArrayBuffer);
+    expect(expectedBuffer).toBeInstanceOf(ArrayBuffer);
+    expect(actualBuffer).toBeInstanceOf(ArrayBuffer);
 
-    const actualBuffer1 = Buffer.from(buffer1);
-    const actualBuffer2 = Buffer.from(buffer2);
+    const actualBuffer1 = Buffer.from(expectedBuffer);
+    const actualBuffer2 = Buffer.from(actualBuffer);
     expect(actualBuffer1.equals(actualBuffer2)).toBeTrue();
   }
 }

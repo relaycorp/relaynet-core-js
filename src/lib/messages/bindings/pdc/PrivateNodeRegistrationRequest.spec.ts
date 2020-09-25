@@ -7,7 +7,7 @@ import {
   PrivateNodeRegistrationRequest,
 } from '../../../..';
 import { arrayBufferFrom, getAsn1SequenceItem } from '../../../_test_utils';
-import { serializeSequence } from '../../../asn1';
+import { derSerializeHeterogeneousSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import { verify } from '../../../crypto_wrappers/rsaSigning';
 import { RELAYNET_OIDS } from '../../../oids';
@@ -60,7 +60,7 @@ describe('serialize', () => {
 
     const sequence = derDeserialize(serialization);
     const signature = getAsn1SequenceItem(sequence, 2).valueBlock.valueHex;
-    const expectedPNRACountersignature = serializeSequence(
+    const expectedPNRACountersignature = derSerializeHeterogeneousSequence(
       new ObjectIdentifier({
         value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
       }),
@@ -82,7 +82,7 @@ describe('deserialize', () => {
   });
 
   test('Sequence should have at least 3 items', async () => {
-    const invalidSerialization = serializeSequence(
+    const invalidSerialization = derSerializeHeterogeneousSequence(
       new VisibleString({ value: 'foo' }),
       new VisibleString({ value: 'bar' }),
     );
@@ -93,7 +93,7 @@ describe('deserialize', () => {
   });
 
   test('Malformed private node public key should be refused', async () => {
-    const invalidSerialization = serializeSequence(
+    const invalidSerialization = derSerializeHeterogeneousSequence(
       new VisibleString({ value: 'not a valid public key' }),
       new VisibleString({ value: 'foo' }),
       new VisibleString({ value: 'bar' }),
@@ -105,7 +105,7 @@ describe('deserialize', () => {
   });
 
   test('Invalid countersignatures should be refused', async () => {
-    const invalidSerialization = serializeSequence(
+    const invalidSerialization = derSerializeHeterogeneousSequence(
       new OctetString({ valueHex: await derSerializePublicKey(privateNodeKeyPair.publicKey) }),
       new VisibleString({ value: 'gateway data' }),
       new VisibleString({ value: 'invalid signature' }),

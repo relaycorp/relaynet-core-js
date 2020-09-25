@@ -19,7 +19,7 @@ export interface SignatureVerification {
 }
 
 interface SignedDataOptions extends SignatureOptions {
-  readonly encapsulatedSignature: boolean;
+  readonly encapsulatePlaintext: boolean;
 }
 
 export class SignedData {
@@ -84,12 +84,12 @@ export class SignedData {
     const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
     const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
     const signerInfo = initSignerInfo(signerCertificate, digest);
-    const encapsulatedSignature = options.encapsulatedSignature ?? true;
+    const encapsulatePlaintext = options.encapsulatePlaintext ?? true;
     const pkijsSignedData = new pkijs.SignedData({
       certificates: [signerCertificate, ...caCertificates].map((c) => c.pkijsCertificate),
       encapContentInfo: new pkijs.EncapsulatedContentInfo({
         eContentType: CMS_OIDS.DATA,
-        ...(encapsulatedSignature && { eContent: new asn1js.OctetString({ valueHex: plaintext }) }),
+        ...(encapsulatePlaintext && { eContent: new asn1js.OctetString({ valueHex: plaintext }) }),
       }),
       signerInfos: [signerInfo],
       version: 1,
@@ -98,7 +98,7 @@ export class SignedData {
       privateKey,
       0,
       hashingAlgorithmName,
-      encapsulatedSignature ? undefined : plaintext,
+      encapsulatePlaintext ? undefined : plaintext,
     );
 
     return SignedData.reDeserialize(pkijsSignedData);

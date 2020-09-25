@@ -4,7 +4,14 @@ import { TextDecoder } from 'util';
 
 import InvalidMessageError from './messages/InvalidMessageError';
 
-export function serializeSequence(...items: ReadonlyArray<BaseBlock<any>>): ArrayBuffer {
+/**
+ * Serialize ASN.1 values as a DER SEQUENCE implicitly tagged.
+ *
+ * @param items
+ */
+export function derSerializeHeterogeneousSequence(
+  ...items: ReadonlyArray<BaseBlock<any>>
+): ArrayBuffer {
   const asn1Items = items.map(
     (item, index) =>
       new Primitive({
@@ -13,6 +20,16 @@ export function serializeSequence(...items: ReadonlyArray<BaseBlock<any>>): Arra
       } as any),
   );
   return new Sequence({ value: asn1Items } as any).toBER(false);
+}
+
+/**
+ * Serialize ASN.1 values as a DER SEQUENCE explicitly tagged.
+ *
+ * @param items
+ */
+export function derSerializeHomogeneousSequence(items: ReadonlyArray<BaseBlock<any>>): ArrayBuffer {
+  const sequence = new Sequence({ value: items } as any);
+  return sequence.toBER();
 }
 
 /**

@@ -1,6 +1,6 @@
 import * as asn1js from 'asn1js';
 import { TextDecoder } from 'util';
-import { makeSequenceSchema, serializeSequence } from '../asn1';
+import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../asn1';
 
 import { generateFormatSignature } from './formatSignature';
 import InvalidMessageError from './InvalidMessageError';
@@ -44,7 +44,7 @@ export class ParcelCollectionAck {
   ) {}
 
   public serialize(): ArrayBuffer {
-    const ackSerialized = serializeSequence(
+    const ackSerialized = derSerializeHeterogeneousSequence(
       new asn1js.VisibleString({ value: this.senderEndpointPrivateAddress }),
       new asn1js.VisibleString({ value: this.recipientEndpointAddress }),
       new asn1js.VisibleString({ value: this.parcelId }),

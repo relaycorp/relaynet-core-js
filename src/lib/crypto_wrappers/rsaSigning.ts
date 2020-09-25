@@ -1,3 +1,8 @@
+/**
+ * Plain RSA signatures are used when CMS SignedData can't be used. That is, when the signer
+ * doesn't (yet) have a certificate.
+ */
+
 import * as utils from './_utils';
 
 const rsaPssParams = {
