@@ -42,7 +42,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
   futureDate.setDate(futureDate.getDate() + 1);
   futureDate.setMilliseconds(0);
   const subjectPublicKey = config.subjectPublicKey || keyPair.publicKey;
-  return Certificate.issue({
+  const certificate = await Certificate.issue({
     commonName: `0${await getPublicKeyDigestHex(subjectPublicKey)}`,
     issuerCertificate: config.issuerCertificate,
     issuerPrivateKey: config.issuerPrivateKey || keyPair.privateKey,
@@ -50,6 +50,7 @@ export async function generateStubCert(config: Partial<StubCertConfig> = {}): Pr
     validityEndDate: futureDate,
     ...config.attributes,
   });
+  return reSerializeCertificate(certificate);
 }
 
 export function calculateDigestHex(algorithm: string, plaintext: ArrayBuffer | Buffer): string {
