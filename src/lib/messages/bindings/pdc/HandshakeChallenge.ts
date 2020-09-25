@@ -1,5 +1,5 @@
 import { OctetString, verifySchema } from 'asn1js';
-import { makeSequenceSchema, serializeSequence } from '../../../asn1';
+import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../../../asn1';
 import InvalidMessageError from '../../InvalidMessageError';
 
 export class HandshakeChallenge {
@@ -19,6 +19,6 @@ export class HandshakeChallenge {
   constructor(public nonce: ArrayBuffer) {}
 
   public serialize(): ArrayBuffer {
-    return serializeSequence(new OctetString({ valueHex: this.nonce }));
+    return derSerializeHeterogeneousSequence(new OctetString({ valueHex: this.nonce }));
   }
 }

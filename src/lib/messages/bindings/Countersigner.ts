@@ -1,5 +1,5 @@
 import { ObjectIdentifier, OctetString } from 'asn1js';
-import { serializeSequence } from '../../asn1';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
 import { SignedData } from '../../crypto_wrappers/cms/signedData';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { RELAYNET_OIDS } from '../../oids';
@@ -46,7 +46,7 @@ export class Countersigner {
   }
 
   protected makeSafePlaintext(plaintext: ArrayBuffer): ArrayBuffer {
-    return serializeSequence(
+    return derSerializeHeterogeneousSequence(
       new ObjectIdentifier({ value: this.oid }),
       new OctetString({ valueHex: plaintext }),
     );

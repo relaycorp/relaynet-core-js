@@ -1,4 +1,5 @@
 import * as asn1js from 'asn1js';
+import { derSerializeHomogeneousSequence } from '../../asn1';
 
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
 import InvalidMessageError from '../InvalidMessageError';
@@ -128,9 +129,6 @@ export default class CargoMessageSet implements PayloadPlaintext {
     const messagesSerialized = Array.from(this.messages).map(
       (m) => new asn1js.OctetString({ valueHex: m }),
     );
-    const set = new asn1js.Sequence();
-    // tslint:disable-next-line:no-object-mutation
-    set.valueBlock.value = messagesSerialized;
-    return set.toBER(false);
+    return derSerializeHomogeneousSequence(messagesSerialized);
   }
 }

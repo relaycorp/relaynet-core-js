@@ -3,8 +3,8 @@ import { DateTime, ObjectIdentifier, OctetString, verifySchema } from 'asn1js';
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
+  derSerializeHeterogeneousSequence,
   makeSequenceSchema,
-  serializeSequence,
 } from '../../../asn1';
 import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
 import { RELAYNET_OIDS } from '../../../oids';
@@ -56,7 +56,7 @@ export class PrivateNodeRegistrationAuthorization {
     expiryDateASN1: DateTime,
     gatewayDataASN1: OctetString,
   ): ArrayBuffer {
-    return serializeSequence(
+    return derSerializeHeterogeneousSequence(
       new ObjectIdentifier({ value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION }),
       expiryDateASN1,
       gatewayDataASN1,
@@ -73,7 +73,7 @@ export class PrivateNodeRegistrationAuthorization {
       gatewayDataASN1,
     );
     const signature = await sign(signaturePlaintext, gatewayPrivateKey);
-    return serializeSequence(
+    return derSerializeHeterogeneousSequence(
       expiryDateASN1,
       gatewayDataASN1,
       new OctetString({ valueHex: signature }),

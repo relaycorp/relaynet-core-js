@@ -3,7 +3,7 @@
 import { ObjectIdentifier, OctetString } from 'asn1js';
 
 import { arrayBufferFrom, generateStubCert, reSerializeCertificate } from '../../_test_utils';
-import { serializeSequence } from '../../asn1';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
 import CMSError from '../../crypto_wrappers/cms/CMSError';
 import { SignedData } from '../../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
@@ -77,7 +77,10 @@ describe('Countersigner', () => {
       );
 
       const signedData = SignedData.deserialize(countersignature);
-      const expectedPlaintext = serializeSequence(OID, new OctetString({ valueHex: PLAINTEXT }));
+      const expectedPlaintext = derSerializeHeterogeneousSequence(
+        OID,
+        new OctetString({ valueHex: PLAINTEXT }),
+      );
       await signedData.verify(expectedPlaintext);
     });
   });

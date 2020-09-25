@@ -1,5 +1,5 @@
 import { OctetString, verifySchema } from 'asn1js';
-import { makeSequenceSchema, serializeSequence } from '../../../asn1';
+import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../../../asn1';
 import Certificate from '../../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../InvalidMessageError';
 
@@ -45,7 +45,7 @@ export class PrivateNodeRegistration {
   ) {}
 
   public serialize(): ArrayBuffer {
-    return serializeSequence(
+    return derSerializeHeterogeneousSequence(
       new OctetString({ valueHex: this.privateNodeCertificate.serialize() }),
       new OctetString({ valueHex: this.gatewayCertificate.serialize() }),
     );

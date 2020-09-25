@@ -2,7 +2,7 @@ import { ObjectIdentifier, OctetString, verifySchema } from 'asn1js';
 
 import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../..';
 import { tryCatchAsync } from '../../../_utils';
-import { makeSequenceSchema, serializeSequence } from '../../../asn1';
+import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../../../asn1';
 import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
 import { RELAYNET_OIDS } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
@@ -39,7 +39,7 @@ export class PrivateNodeRegistrationRequest {
   }
 
   public static makePNRACountersignaturePlaintext(pnraSerializedASN1: OctetString): ArrayBuffer {
-    return serializeSequence(
+    return derSerializeHeterogeneousSequence(
       new ObjectIdentifier({
         value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
       }),
@@ -67,7 +67,7 @@ export class PrivateNodeRegistrationRequest {
     );
     const signature = await sign(countersignaturePlaintext, privateNodePrivateKey);
 
-    return serializeSequence(
+    return derSerializeHeterogeneousSequence(
       new OctetString({ valueHex: privateNodePublicKeySerialized }),
       authorizationSerializedASN1,
       new OctetString({ valueHex: signature }),

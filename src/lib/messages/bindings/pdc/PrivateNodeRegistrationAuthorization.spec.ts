@@ -3,7 +3,7 @@ import moment from 'moment';
 import { generateRSAKeyPair } from '../../../..';
 
 import { arrayBufferFrom } from '../../../_test_utils';
-import { dateToASN1DateTimeInUTC, serializeSequence } from '../../../asn1';
+import { dateToASN1DateTimeInUTC, derSerializeHeterogeneousSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import { verify } from '../../../crypto_wrappers/rsaSigning';
 import { RELAYNET_OIDS } from '../../../oids';
@@ -56,7 +56,7 @@ describe('PrivateNodeRegistrationAuthorization', () => {
       const sequence = derDeserialize(serialization);
       const signatureASN1 = (sequence as Sequence).valueBlock.value[2] as Primitive;
       const signature = signatureASN1.valueBlock.valueHex;
-      const expectedPlaintext = serializeSequence(
+      const expectedPlaintext = derSerializeHeterogeneousSequence(
         new ObjectIdentifier({ value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION }),
         dateToASN1DateTimeInUTC(expiryDate),
         new OctetString({ valueHex: gatewayData }),
@@ -82,7 +82,7 @@ describe('PrivateNodeRegistrationAuthorization', () => {
     });
 
     test('Sequence should have at least 3 items', async () => {
-      const serialization = serializeSequence(
+      const serialization = derSerializeHeterogeneousSequence(
         new VisibleString({ value: 'foo' }),
         new VisibleString({ value: 'bar' }),
       );
@@ -109,7 +109,7 @@ describe('PrivateNodeRegistrationAuthorization', () => {
 
     test('Invalid signatures should be refused', async () => {
       const tomorrow = moment().add(1, 'days').toDate();
-      const serialization = serializeSequence(
+      const serialization = derSerializeHeterogeneousSequence(
         dateToASN1DateTimeInUTC(tomorrow),
         new VisibleString({ value: 'gateway data' }),
         new VisibleString({ value: 'invalid signature' }),
