@@ -1,4 +1,4 @@
-import { OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
+import { Constructed, OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
@@ -8,6 +8,7 @@ import {
   dateToASN1DateTimeInUTC,
   derSerializeHeterogeneousSequence,
   derSerializeHomogeneousSequence,
+  makeHeterogeneousSequenceSchema,
 } from './asn1';
 import { derDeserialize } from './crypto_wrappers/_utils';
 import InvalidMessageError from './messages/InvalidMessageError';
@@ -23,7 +24,66 @@ describe('derSerializeHeterogeneousSequence', () => {
     expect(schemaVerification.result.valueBlock.value).toHaveLength(0);
   });
 
-  test('Values should be implicitly tagged', () => {
+  test('Primitive values should be implicitly tagged', () => {
+    const item = new OctetString({ valueHex: arrayBufferFrom('foo') } as any);
+
+    const serialization = derSerializeHeterogeneousSequence(item);
+
+    const schema = new Sequence({
+      name: 'Dummy',
+      value: [
+        new Primitive({
+          idBlock: { tagClass: 3, tagNumber: 0 },
+          name: 'item',
+          optional: false,
+        } as any),
+      ],
+    } as any);
+
+    const schemaVerification = verifySchema(serialization, schema);
+    expect(schemaVerification.verified).toBeTrue();
+    expect(schemaVerification.result.Dummy.item).toHaveProperty(
+      'valueBlock.valueHex',
+      item.valueBlock.valueHex,
+    );
+    expect(schemaVerification.result.Dummy.item).toHaveProperty(
+      'valueBlock.valueHex',
+      item.valueBlock.valueHex,
+    );
+  });
+
+  test('Constructed items should be implicitly tagged', () => {
+    const subitem1 = new VisibleString({ value: 'foo' });
+    const subitem2 = new VisibleString({ value: 'bar' });
+    const item = new Sequence({ value: [subitem1, subitem2] } as any);
+
+    const serialization = derSerializeHeterogeneousSequence(item);
+
+    const schema = new Sequence({
+      name: 'Dummy',
+      value: [
+        new Constructed({
+          idBlock: { tagClass: 3, tagNumber: 0 },
+          name: 'item',
+          optional: false,
+          value: [subitem1, subitem2],
+        } as any),
+      ],
+    } as any);
+
+    const schemaVerification = verifySchema(serialization, schema);
+    expect(schemaVerification.verified).toBeTrue();
+    expect(schemaVerification.result.Dummy.item.valueBlock.value[0]).toHaveProperty(
+      'valueBlock.valueHex',
+      subitem1.valueBlock.valueHex,
+    );
+    expect(schemaVerification.result.Dummy.item.valueBlock.value[0]).toHaveProperty(
+      'valueBlock.valueHex',
+      subitem2.valueBlock.valueHex,
+    );
+  });
+
+  test('Multiple values should be implicitly tagged', () => {
     const item1 = new VisibleString({ value: 'foo' });
     const item2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
     const serialization = derSerializeHeterogeneousSequence(item1, item2);
@@ -75,6 +135,90 @@ describe('derSerializeHomogeneousSequence', () => {
     expect(deserialization.valueBlock.value).toHaveLength(2);
     expectBuffersToEqual(item1.toBER(), deserialization.valueBlock.value[0].toBER());
     expectBuffersToEqual(item2.toBER(), deserialization.valueBlock.value[1].toBER());
+  });
+});
+
+describe('makeHeterogeneousSequenceSchema', () => {
+  const EMPTY_SEQUENCE_SERIALIZED = new Sequence().toBER();
+  const PRIMITIVE_ITEM = new Primitive({ valueHex: arrayBufferFrom('primitive') } as any);
+  const SINGLE_ITEM_SEQUENCE_SERIALIZED = derSerializeHeterogeneousSequence(PRIMITIVE_ITEM);
+
+  test('Schema name should be honored', () => {
+    const schemaName = 'Foo';
+
+    const schema = makeHeterogeneousSequenceSchema(schemaName, []);
+
+    expect(schema).toHaveProperty('name', schemaName);
+  });
+
+  test('Primitive values should remain as such', () => {
+    const item = new Primitive({ name: 'item' });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item]);
+
+    expect(schema.valueBlock.value).toHaveLength(1);
+    expect(schema.valueBlock.value[0]).toBeInstanceOf(Primitive);
+  });
+
+  test('Constructed items should remain as such', () => {
+    const item = new Constructed({ name: 'item' });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item]);
+
+    expect(schema.valueBlock.value).toHaveLength(1);
+    expect(schema.valueBlock.value[0]).toBeInstanceOf(Constructed);
+  });
+
+  test('Items should be implicitly tagged', () => {
+    const item1 = new Primitive({ name: 'item1' });
+    const item2 = new Constructed({ name: 'item2' });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item1, item2]);
+
+    expect(schema.valueBlock.value).toHaveLength(2);
+    expect(schema.valueBlock.value[0]).toHaveProperty(
+      'idBlock',
+      expect.objectContaining({ tagClass: 3, tagNumber: 0 }),
+    );
+    expect(schema.valueBlock.value[1]).toHaveProperty(
+      'idBlock',
+      expect.objectContaining({ tagClass: 3, tagNumber: 1 }),
+    );
+  });
+
+  test('Item names should be honored', () => {
+    const item = new Primitive({ name: 'item' });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item]);
+
+    expect(schema.valueBlock.value[0]).toHaveProperty('name', (item as any).name);
+  });
+
+  test('Optional items should remain as such', () => {
+    const item = new Primitive({ name: 'item', optional: true });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item]);
+
+    expect(verifySchema(EMPTY_SEQUENCE_SERIALIZED, schema)).toHaveProperty('verified', true);
+    expect(verifySchema(SINGLE_ITEM_SEQUENCE_SERIALIZED, schema)).toHaveProperty('verified', true);
+  });
+
+  test('Required items should remain as such', () => {
+    const item = new Primitive({ name: 'item', optional: false });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item]);
+
+    expect(verifySchema(EMPTY_SEQUENCE_SERIALIZED, schema)).toHaveProperty('verified', false);
+    expect(verifySchema(SINGLE_ITEM_SEQUENCE_SERIALIZED, schema)).toHaveProperty('verified', true);
+  });
+
+  test('Items should be required by default', () => {
+    const item = new Primitive({ name: 'item' });
+
+    const schema = makeHeterogeneousSequenceSchema('Foo', [item]);
+
+    expect(verifySchema(EMPTY_SEQUENCE_SERIALIZED, schema)).toHaveProperty('verified', false);
+    expect(verifySchema(SINGLE_ITEM_SEQUENCE_SERIALIZED, schema)).toHaveProperty('verified', true);
   });
 });
 

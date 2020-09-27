@@ -1,5 +1,5 @@
-import { OctetString, verifySchema } from 'asn1js';
-import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../../../asn1';
+import { OctetString, Primitive, verifySchema } from 'asn1js';
+import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../../asn1';
 import Certificate from '../../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../InvalidMessageError';
 
@@ -34,9 +34,9 @@ export class PrivateNodeRegistration {
     return new PrivateNodeRegistration(privateNodeCertificate, gatewayCertificate);
   }
 
-  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistration', [
-    'privateNodeCertificate',
-    'gatewayCertificate',
+  private static readonly SCHEMA = makeHeterogeneousSequenceSchema('PrivateNodeRegistration', [
+    new Primitive({ name: 'privateNodeCertificate' }),
+    new Primitive({ name: 'gatewayCertificate' }),
   ]);
 
   constructor(

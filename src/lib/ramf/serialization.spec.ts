@@ -14,7 +14,7 @@ import {
   getAsn1SequenceItem,
   getPromiseRejection,
 } from '../_test_utils';
-import { dateToASN1DateTimeInUTC } from '../asn1';
+import { dateToASN1DateTimeInUTC, derSerializeHeterogeneousSequence } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
@@ -999,27 +999,13 @@ describe('MessageSerializer', () => {
       serializer.writeUInt8(stubConcreteMessageVersionOctet);
 
       const signedData = await cmsSignedData.SignedData.sign(
-        serializeFieldSet(sequenceItems),
+        derSerializeHeterogeneousSequence(...sequenceItems),
         SENDER_PRIVATE_KEY,
         senderCertificate ?? SENDER_CERTIFICATE,
       );
       serializer.writeBuffer(Buffer.from(signedData.serialize()));
 
       return bufferToArray(serializer.toBuffer());
-    }
-
-    function serializeFieldSet(sequenceItems: ReadonlyArray<asn1js.BaseBlock<any>>): ArrayBuffer {
-      const fieldSet = new asn1js.Sequence({
-        value: sequenceItems.map(
-          (item, index) =>
-            new asn1js.Primitive({
-              idBlock: { tagClass: 3, tagNumber: index },
-              ...(item.valueBlock.valueHex && { valueHex: item.valueBlock.valueHex }),
-            } as any),
-        ),
-      } as any);
-
-      return fieldSet.toBER(false);
     }
   });
 });
