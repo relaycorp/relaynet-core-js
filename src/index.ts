@@ -39,8 +39,9 @@ export { default as CertificateError } from './lib/crypto_wrappers/x509/Certific
 export * from './lib/pki';
 
 // CMS
-export * from './lib/crypto_wrappers/cms/envelopedData';
+export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
 export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
+export { default as CMSError } from './lib/crypto_wrappers/cms/CMSError';
 
 // RAMF
 export { default as Payload } from './lib/messages/payloads/PayloadPlaintext';
