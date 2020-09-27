@@ -1,4 +1,4 @@
-import { OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
+import { Constructed, OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
@@ -23,7 +23,66 @@ describe('derSerializeHeterogeneousSequence', () => {
     expect(schemaVerification.result.valueBlock.value).toHaveLength(0);
   });
 
-  test('Values should be implicitly tagged', () => {
+  test('Primitive values should be implicitly tagged', () => {
+    const item = new OctetString({ valueHex: arrayBufferFrom('foo') } as any);
+
+    const serialization = derSerializeHeterogeneousSequence(item);
+
+    const schema = new Sequence({
+      name: 'Dummy',
+      value: [
+        new Primitive({
+          idBlock: { tagClass: 3, tagNumber: 0 },
+          name: 'item',
+          optional: false,
+        } as any),
+      ],
+    } as any);
+
+    const schemaVerification = verifySchema(serialization, schema);
+    expect(schemaVerification.verified).toBeTrue();
+    expect(schemaVerification.result.Dummy.item).toHaveProperty(
+      'valueBlock.valueHex',
+      item.valueBlock.valueHex,
+    );
+    expect(schemaVerification.result.Dummy.item).toHaveProperty(
+      'valueBlock.valueHex',
+      item.valueBlock.valueHex,
+    );
+  });
+
+  test('Constructed items should be implicitly tagged', () => {
+    const subitem1 = new VisibleString({ value: 'foo' });
+    const subitem2 = new VisibleString({ value: 'bar' });
+    const item = new Sequence({ value: [subitem1, subitem2] } as any);
+
+    const serialization = derSerializeHeterogeneousSequence(item);
+
+    const schema = new Sequence({
+      name: 'Dummy',
+      value: [
+        new Constructed({
+          idBlock: { tagClass: 3, tagNumber: 0 },
+          name: 'item',
+          optional: false,
+          value: [subitem1, subitem2],
+        } as any),
+      ],
+    } as any);
+
+    const schemaVerification = verifySchema(serialization, schema);
+    expect(schemaVerification.verified).toBeTrue();
+    expect(schemaVerification.result.Dummy.item.valueBlock.value[0]).toHaveProperty(
+      'valueBlock.valueHex',
+      subitem1.valueBlock.valueHex,
+    );
+    expect(schemaVerification.result.Dummy.item.valueBlock.value[0]).toHaveProperty(
+      'valueBlock.valueHex',
+      subitem2.valueBlock.valueHex,
+    );
+  });
+
+  test('Multiple values should be implicitly tagged', () => {
     const item1 = new VisibleString({ value: 'foo' });
     const item2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
     const serialization = derSerializeHeterogeneousSequence(item1, item2);

@@ -1,4 +1,4 @@
-import { BaseBlock, DateTime, GeneralizedTime, Primitive, Sequence } from 'asn1js';
+import { BaseBlock, Constructed, DateTime, GeneralizedTime, Primitive, Sequence } from 'asn1js';
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
@@ -12,13 +12,12 @@ import InvalidMessageError from './messages/InvalidMessageError';
 export function derSerializeHeterogeneousSequence(
   ...items: ReadonlyArray<BaseBlock<any>>
 ): ArrayBuffer {
-  const asn1Items = items.map(
-    (item, index) =>
-      new Primitive({
-        idBlock: { tagClass: 3, tagNumber: index },
-        valueHex: item.valueBlock.toBER(),
-      } as any),
-  );
+  const asn1Items = items.map((item, index) => {
+    const idBlock = { tagClass: 3, tagNumber: index };
+    return item instanceof Constructed
+      ? new Constructed({ idBlock, value: item.valueBlock.value } as any)
+      : new Primitive({ idBlock, valueHex: item.valueBlock.toBER() } as any);
+  });
   return new Sequence({ value: asn1Items } as any).toBER(false);
 }
 
