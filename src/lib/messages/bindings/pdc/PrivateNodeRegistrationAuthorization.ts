@@ -1,10 +1,10 @@
-import { DateTime, ObjectIdentifier, OctetString, verifySchema } from 'asn1js';
+import { DateTime, ObjectIdentifier, OctetString, Primitive, verifySchema } from 'asn1js';
 
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
   derSerializeHeterogeneousSequence,
-  makeSequenceSchema,
+  makeHeterogeneousSequenceSchema,
 } from '../../../asn1';
 import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
 import { RELAYNET_OIDS } from '../../../oids';
@@ -46,11 +46,14 @@ export class PrivateNodeRegistrationAuthorization {
     return new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
   }
 
-  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistrationAuthorization', [
-    'expiryDate',
-    'gatewayData',
-    'signature',
-  ]);
+  private static readonly SCHEMA = makeHeterogeneousSequenceSchema(
+    'PrivateNodeRegistrationAuthorization',
+    [
+      new Primitive({ name: 'expiryDate' }),
+      new Primitive({ name: 'gatewayData' }),
+      new Primitive({ name: 'signature' }),
+    ],
+  );
 
   private static makeSignaturePlaintext(
     expiryDateASN1: DateTime,

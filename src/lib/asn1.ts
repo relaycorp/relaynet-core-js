@@ -35,19 +35,22 @@ export function derSerializeHomogeneousSequence(items: ReadonlyArray<BaseBlock<a
  * Make a schema for a sequence whose items are all implicitly tagged.
  *
  * @param name
- * @param itemNames
+ * @param items
  */
-export function makeSequenceSchema(name: string, itemNames: readonly string[]): Sequence {
+export function makeHeterogeneousSequenceSchema(
+  name: string,
+  items: ReadonlyArray<BaseBlock<any>>,
+): Sequence {
   return new Sequence({
     name,
-    value: itemNames.map(
-      (itemName, tagNumber) =>
-        new Primitive({
-          idBlock: { tagClass: 3, tagNumber },
-          name: itemName,
-          optional: false,
-        } as any),
-    ),
+    value: items.map((item, tagNumber) => {
+      const asn1Type = item instanceof Constructed ? Constructed : Primitive;
+      return new asn1Type({
+        idBlock: { tagClass: 3, tagNumber },
+        name: (item as any).name,
+        optional: (item as any).optional ?? false,
+      } as any);
+    }),
   } as any);
 }
 

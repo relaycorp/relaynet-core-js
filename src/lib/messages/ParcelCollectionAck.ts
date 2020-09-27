@@ -1,6 +1,6 @@
-import * as asn1js from 'asn1js';
+import { Primitive, verifySchema, VisibleString } from 'asn1js';
 import { TextDecoder } from 'util';
-import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../asn1';
+import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../asn1';
 
 import { generateFormatSignature } from './formatSignature';
 import InvalidMessageError from './InvalidMessageError';
@@ -17,7 +17,7 @@ export class ParcelCollectionAck {
     }
 
     const pcaSequenceSerialized = pcaSerialized.slice(10);
-    const result = asn1js.verifySchema(pcaSequenceSerialized, ParcelCollectionAck.SCHEMA);
+    const result = verifySchema(pcaSequenceSerialized, ParcelCollectionAck.SCHEMA);
     if (!result.verified) {
       throw new InvalidMessageError('PCA did not meet required structure');
     }
@@ -31,10 +31,10 @@ export class ParcelCollectionAck {
     );
   }
 
-  private static readonly SCHEMA = makeSequenceSchema('ParcelCollectionAck', [
-    'senderEndpointPrivateAddress',
-    'recipientEndpointAddress',
-    'parcelId',
+  private static readonly SCHEMA = makeHeterogeneousSequenceSchema('ParcelCollectionAck', [
+    new Primitive({ name: 'senderEndpointPrivateAddress' }),
+    new Primitive({ name: 'recipientEndpointAddress' }),
+    new Primitive({ name: 'parcelId' }),
   ]);
 
   constructor(
@@ -45,9 +45,9 @@ export class ParcelCollectionAck {
 
   public serialize(): ArrayBuffer {
     const ackSerialized = derSerializeHeterogeneousSequence(
-      new asn1js.VisibleString({ value: this.senderEndpointPrivateAddress }),
-      new asn1js.VisibleString({ value: this.recipientEndpointAddress }),
-      new asn1js.VisibleString({ value: this.parcelId }),
+      new VisibleString({ value: this.senderEndpointPrivateAddress }),
+      new VisibleString({ value: this.recipientEndpointAddress }),
+      new VisibleString({ value: this.parcelId }),
     );
     const serialization = new ArrayBuffer(
       ParcelCollectionAck.FORMAT_SIGNATURE.byteLength + ackSerialized.byteLength,

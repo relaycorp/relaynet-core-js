@@ -1,8 +1,8 @@
-import { ObjectIdentifier, OctetString, verifySchema } from 'asn1js';
+import { ObjectIdentifier, OctetString, Primitive, verifySchema } from 'asn1js';
 
 import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../..';
 import { tryCatchAsync } from '../../../_utils';
-import { derSerializeHeterogeneousSequence, makeSequenceSchema } from '../../../asn1';
+import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../../asn1';
 import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
 import { RELAYNET_OIDS } from '../../../oids';
 import InvalidMessageError from '../../InvalidMessageError';
@@ -47,11 +47,14 @@ export class PrivateNodeRegistrationRequest {
     );
   }
 
-  private static readonly SCHEMA = makeSequenceSchema('PrivateNodeRegistrationRequest', [
-    'privateNodePublicKey',
-    'pnraSerialized',
-    'countersignature',
-  ]);
+  private static readonly SCHEMA = makeHeterogeneousSequenceSchema(
+    'PrivateNodeRegistrationRequest',
+    [
+      new Primitive({ name: 'privateNodePublicKey' }),
+      new Primitive({ name: 'pnraSerialized' }),
+      new Primitive({ name: 'countersignature' }),
+    ],
+  );
 
   constructor(
     public readonly privateNodePublicKey: CryptoKey,

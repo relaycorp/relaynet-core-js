@@ -1,5 +1,6 @@
-import { Constructed, OctetString, Sequence } from 'asn1js';
+import { Constructed, Integer, OctetString, Sequence } from 'asn1js';
 import { arrayBufferFrom, expectBuffersToEqual } from '../../../_test_utils';
+import { derSerializeHeterogeneousSequence } from '../../../asn1';
 import { derDeserialize } from '../../../crypto_wrappers/_utils';
 import InvalidMessageError from '../../InvalidMessageError';
 import { HandshakeResponse } from './HandshakeResponse';
@@ -37,9 +38,10 @@ describe('serialize', () => {
 
     const nonceSignaturesASN1 = sequence.valueBlock.value[0] as Constructed;
     expect(nonceSignaturesASN1.valueBlock.value).toHaveLength(1);
+    expect(nonceSignaturesASN1.valueBlock.value[0]).toBeInstanceOf(OctetString);
     expectBuffersToEqual(
       SIGNATURE1,
-      (sequence.valueBlock.value[0] as OctetString).valueBlock.valueHex,
+      (nonceSignaturesASN1.valueBlock.value[0] as OctetString).valueBlock.valueHex,
     );
   });
 
@@ -69,7 +71,7 @@ describe('serialize', () => {
 
 describe('deserialize', () => {
   test('Invalid serialization should be refused', () => {
-    const invalidSerialization = arrayBufferFrom('I am a "challenge" :wink: :wink:');
+    const invalidSerialization = derSerializeHeterogeneousSequence(new Integer({ value: 42 }));
 
     expect(() => HandshakeResponse.deserialize(invalidSerialization)).toThrowWithMessage(
       InvalidMessageError,

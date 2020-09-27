@@ -8,7 +8,7 @@ import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
   derSerializeHeterogeneousSequence,
-  makeSequenceSchema,
+  makeHeterogeneousSequenceSchema,
 } from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
@@ -48,12 +48,12 @@ interface MessageFieldSet {
   readonly payload: Buffer;
 }
 
-const ASN1_SCHEMA = makeSequenceSchema('RAMFMessage', [
-  'recipientAddress',
-  'id',
-  'date',
-  'ttl',
-  'payload',
+const ASN1_SCHEMA = makeHeterogeneousSequenceSchema('RAMFMessage', [
+  new asn1js.Primitive({ name: 'recipientAddress' }),
+  new asn1js.Primitive({ name: 'id' }),
+  new asn1js.Primitive({ name: 'date' }),
+  new asn1js.Primitive({ name: 'ttl' }),
+  new asn1js.Primitive({ name: 'payload' }),
 ]);
 
 /**
