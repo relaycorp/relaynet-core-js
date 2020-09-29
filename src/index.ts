@@ -62,6 +62,7 @@ export { NonceSigner } from './lib/messages/bindings/NonceSigner';
 export { NONCE_SIGNATURE, PARCEL_DELIVERY } from './lib/messages/bindings/Countersigner';
 export { HandshakeChallenge } from './lib/messages/bindings/pdc/HandshakeChallenge';
 export { HandshakeResponse } from './lib/messages/bindings/pdc/HandshakeResponse';
+export { ParcelDelivery } from './lib/messages/bindings/pdc/ParcelDelivery';
 export { PrivateNodeRegistrationAuthorization } from './lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization';
 export { PrivateNodeRegistration } from './lib/messages/bindings/pdc/PrivateNodeRegistration';
 export { PrivateNodeRegistrationRequest } from './lib/messages/bindings/pdc/PrivateNodeRegistrationRequest';
