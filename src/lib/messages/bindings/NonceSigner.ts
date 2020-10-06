@@ -1,5 +1,5 @@
 import Certificate from '../../crypto_wrappers/x509/Certificate';
-import { NONCE_SIGNATURE } from './Countersigner';
+import { NONCE_SIGNATURE } from './DetachedSignature';
 
 /**
  * Handshake nonce signer for a given private endpoint or private gateway.

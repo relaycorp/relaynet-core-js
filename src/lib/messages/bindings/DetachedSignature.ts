@@ -5,15 +5,20 @@ import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { RELAYNET_OIDS } from '../../oids';
 
 /**
- * Utility to sign and verify countersignatures.
- *
- * Such countersignatures are represented with CMS SignedData values where the plaintext is not
- * encapsulated (to avoid re-encoding the plaintext for performance reasons), and the
- * (counter)signer's certificate is encapsulated.
+ * Utility to sign and verify CMS SignedData values where the plaintext is not encapsulated (to
+ * avoid re-encoding the plaintext for performance reasons), and the signer's certificate is
+ * encapsulated.
  */
-export class Countersigner {
+export class DetachedSignature {
   constructor(public oid: string) {}
 
+  /**
+   * Sign the `plaintext` and return the CMS SignedData serialized.
+   *
+   * @param plaintext
+   * @param privateKey
+   * @param signerCertificate
+   */
   public async sign(
     plaintext: ArrayBuffer,
     privateKey: CryptoKey,
@@ -27,19 +32,19 @@ export class Countersigner {
   }
 
   /**
-   * Verify `countersignature` and return the signer's certificate if valid.
+   * Verify `signatureSerialized` and return the signer's certificate if valid.
    *
-   * @param countersignature
+   * @param signatureSerialized
    * @param expectedPlaintext
    * @param trustedCertificates
-   * @throws CMSError if the countersignature is invalid or the signer isn't trusted
+   * @throws CMSError if the signatureSerialized is invalid or the signer isn't trusted
    */
   public async verify(
-    countersignature: ArrayBuffer,
+    signatureSerialized: ArrayBuffer,
     expectedPlaintext: ArrayBuffer,
     trustedCertificates: readonly Certificate[],
   ): Promise<Certificate> {
-    const signedData = SignedData.deserialize(countersignature);
+    const signedData = SignedData.deserialize(signatureSerialized);
     const safePlaintext = this.makeSafePlaintext(expectedPlaintext);
     await signedData.verify(safePlaintext, trustedCertificates);
     return signedData.signerCertificate!!;
@@ -53,6 +58,6 @@ export class Countersigner {
   }
 }
 
-export const PARCEL_DELIVERY = new Countersigner(RELAYNET_OIDS.COUNTERSIGNATURE.PARCEL_DELIVERY);
+export const PARCEL_DELIVERY = new DetachedSignature(RELAYNET_OIDS.SIGNATURE.PARCEL_DELIVERY);
 
-export const NONCE_SIGNATURE = new Countersigner(RELAYNET_OIDS.COUNTERSIGNATURE.NONCE_SIGNATURE);
+export const NONCE_SIGNATURE = new DetachedSignature(RELAYNET_OIDS.SIGNATURE.NONCE);

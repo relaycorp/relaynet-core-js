@@ -59,7 +59,7 @@ export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 // Control messages
 export * from './lib/messages/ParcelCollectionAck';
 export { NonceSigner } from './lib/messages/bindings/NonceSigner';
-export { NONCE_SIGNATURE, PARCEL_DELIVERY } from './lib/messages/bindings/Countersigner';
+export { NONCE_SIGNATURE, PARCEL_DELIVERY } from './lib/messages/bindings/DetachedSignature';
 export { HandshakeChallenge } from './lib/messages/bindings/pdc/HandshakeChallenge';
 export { HandshakeResponse } from './lib/messages/bindings/pdc/HandshakeResponse';
 export { ParcelDelivery } from './lib/messages/bindings/pdc/ParcelDelivery';

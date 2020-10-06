@@ -3,7 +3,7 @@
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
-import { NONCE_SIGNATURE } from './Countersigner';
+import { NONCE_SIGNATURE } from './DetachedSignature';
 import { NonceSigner } from './NonceSigner';
 
 describe('NonceSigner', () => {
