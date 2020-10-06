@@ -81,7 +81,14 @@ export abstract class EnvelopedData {
     return new envelopedDataClass(pkijsEnvelopedData);
   }
 
-  protected constructor(readonly pkijsEnvelopedData: pkijs.EnvelopedData) {}
+  /**
+   * @internal
+   */
+  public readonly pkijsEnvelopedData: pkijs.EnvelopedData;
+
+  protected constructor(pkijsEnvelopedData: pkijs.EnvelopedData) {
+    this.pkijsEnvelopedData = pkijsEnvelopedData;
+  }
 
   /**
    * Return the DER serialization of the current EnvelopedData value.

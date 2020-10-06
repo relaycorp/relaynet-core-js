@@ -111,7 +111,14 @@ export default class Certificate {
     return new Certificate(pkijsCert);
   }
 
-  public constructor(public readonly pkijsCertificate: pkijs.Certificate) {}
+  /**
+   * @internal
+   */
+  public readonly pkijsCertificate: pkijs.Certificate;
+
+  public constructor(pkijsCertificate: pkijs.Certificate) {
+    this.pkijsCertificate = pkijsCertificate;
+  }
 
   /**
    * Serialize certificate as DER-encoded buffer.
