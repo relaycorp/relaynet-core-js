@@ -144,7 +144,9 @@ describe('DetachedSignature', () => {
 
 describe('DetachedSignature objects', () => {
   test('PARCEL_DELIVERY should use the right OID', () => {
-    expect(DETACHED_SIGNATURE_TYPES.PARCEL_DELIVERY.oid).toEqual(RELAYNET_OIDS.SIGNATURE.PARCEL_DELIVERY);
+    expect(DETACHED_SIGNATURE_TYPES.PARCEL_DELIVERY.oid).toEqual(
+      RELAYNET_OIDS.SIGNATURE.PARCEL_DELIVERY,
+    );
   });
 
   test('NONCE_SIGNATURE should use the right OID', () => {
