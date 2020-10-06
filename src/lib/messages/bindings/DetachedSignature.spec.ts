@@ -9,7 +9,7 @@ import { SignedData } from '../../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { RELAYNET_OIDS } from '../../oids';
-import { Countersigner, NONCE_SIGNATURE, PARCEL_DELIVERY } from './Countersigner';
+import { DETACHED_SIGNATURE_TYPES, DetachedSignatureType } from './DetachedSignatureType';
 
 const PLAINTEXT = arrayBufferFrom('the plaintext');
 
@@ -36,47 +36,47 @@ beforeAll(async () => {
   });
 });
 
-describe('Countersigner', () => {
+describe('DetachedSignature', () => {
   const OID_VALUE = '1.2.3.4';
   const OID = new ObjectIdentifier({ value: OID_VALUE });
 
   describe('sign', () => {
     test('Plaintext should not be encapsulated', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
 
-      const countersignature = await countersigner.sign(
+      const signedDataSerialized = await signature.sign(
         PLAINTEXT,
         SIGNER_PRIVATE_KEY,
         SIGNER_CERTIFICATE,
       );
 
-      const signedData = SignedData.deserialize(countersignature);
+      const signedData = SignedData.deserialize(signedDataSerialized);
       expect(signedData.plaintext).toBeNull();
     });
 
     test('Certificate should be encapsulated', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
 
-      const countersignature = await countersigner.sign(
+      const signedDataSerialized = await signature.sign(
         PLAINTEXT,
         SIGNER_PRIVATE_KEY,
         SIGNER_CERTIFICATE,
       );
 
-      const signedData = SignedData.deserialize(countersignature);
+      const signedData = SignedData.deserialize(signedDataSerialized);
       expect(signedData.signerCertificate).not.toBeNull();
     });
 
     test('Signature should validate', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
 
-      const countersignature = await countersigner.sign(
+      const signedDataSerialized = await signature.sign(
         PLAINTEXT,
         SIGNER_PRIVATE_KEY,
         SIGNER_CERTIFICATE,
       );
 
-      const signedData = SignedData.deserialize(countersignature);
+      const signedData = SignedData.deserialize(signedDataSerialized);
       const expectedPlaintext = derSerializeHeterogeneousSequence(
         OID,
         new OctetString({ valueHex: PLAINTEXT }),
@@ -87,67 +87,69 @@ describe('Countersigner', () => {
 
   describe('verify', () => {
     test('Malformed signatures should be refused', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
 
-      const countersignature = arrayBufferFrom('not valid');
+      const signedDataSerialized = arrayBufferFrom('not valid');
 
       await expect(
-        countersigner.verify(countersignature, PLAINTEXT, [CA_CERTIFICATE]),
+        signature.verify(signedDataSerialized, PLAINTEXT, [CA_CERTIFICATE]),
       ).rejects.toBeInstanceOf(CMSError);
     });
 
     test('Invalid signatures should be refused', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
       const differentKeyPair = await generateRSAKeyPair();
 
-      const countersignature = await countersigner.sign(
+      const signedDataSerialized = await signature.sign(
         PLAINTEXT,
         differentKeyPair.privateKey,
         SIGNER_CERTIFICATE,
       );
 
       await expect(
-        countersigner.verify(countersignature, PLAINTEXT, [CA_CERTIFICATE]),
+        signature.verify(signedDataSerialized, PLAINTEXT, [CA_CERTIFICATE]),
       ).rejects.toBeInstanceOf(CMSError);
     });
 
     test('Untrusted signers should be refused', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
 
-      const countersignature = await countersigner.sign(
+      const signedDataSerialized = await signature.sign(
         PLAINTEXT,
         SIGNER_PRIVATE_KEY,
         SIGNER_CERTIFICATE,
       );
 
-      await expect(countersigner.verify(countersignature, PLAINTEXT, [])).rejects.toBeInstanceOf(
+      await expect(signature.verify(signedDataSerialized, PLAINTEXT, [])).rejects.toBeInstanceOf(
         CMSError,
       );
     });
 
     test('Signer certificate should be output if trusted and signature is valid', async () => {
-      const countersigner = new Countersigner(OID_VALUE);
+      const signature = new DetachedSignatureType(OID_VALUE);
 
-      const countersignature = await countersigner.sign(
+      const signedDataSerialized = await signature.sign(
         PLAINTEXT,
         SIGNER_PRIVATE_KEY,
         SIGNER_CERTIFICATE,
       );
 
-      const countersignerCertificate = await countersigner.verify(countersignature, PLAINTEXT, [
+      const signerCertificate = await signature.verify(signedDataSerialized, PLAINTEXT, [
         CA_CERTIFICATE,
       ]);
-      await expect(countersignerCertificate.isEqual(SIGNER_CERTIFICATE)).toBeTrue();
+      await expect(signerCertificate.isEqual(SIGNER_CERTIFICATE)).toBeTrue();
     });
   });
 });
 
-describe('Countersignature objects', () => {
+describe('DetachedSignature objects', () => {
   test('PARCEL_DELIVERY should use the right OID', () => {
-    expect(PARCEL_DELIVERY.oid).toEqual(RELAYNET_OIDS.COUNTERSIGNATURE.PARCEL_DELIVERY);
+    expect(DETACHED_SIGNATURE_TYPES.PARCEL_DELIVERY.oid).toEqual(
+      RELAYNET_OIDS.SIGNATURE.PARCEL_DELIVERY,
+    );
   });
 
   test('NONCE_SIGNATURE should use the right OID', () => {
-    expect(NONCE_SIGNATURE.oid).toEqual(RELAYNET_OIDS.COUNTERSIGNATURE.NONCE_SIGNATURE);
+    expect(DETACHED_SIGNATURE_TYPES.NONCE.oid).toEqual(RELAYNET_OIDS.SIGNATURE.NONCE);
   });
 });
