@@ -9,7 +9,7 @@ import { RELAYNET_OIDS } from '../../oids';
  * avoid re-encoding the plaintext for performance reasons), and the signer's certificate is
  * encapsulated.
  */
-export class DetachedSignature {
+export class DetachedSignatureType {
   constructor(public oid: string) {}
 
   /**
@@ -58,6 +58,7 @@ export class DetachedSignature {
   }
 }
 
-export const PARCEL_DELIVERY = new DetachedSignature(RELAYNET_OIDS.SIGNATURE.PARCEL_DELIVERY);
-
-export const NONCE_SIGNATURE = new DetachedSignature(RELAYNET_OIDS.SIGNATURE.NONCE);
+export const DETACHED_SIGNATURE_TYPES = {
+  NONCE: new DetachedSignatureType(RELAYNET_OIDS.SIGNATURE.NONCE),
+  PARCEL_DELIVERY: new DetachedSignatureType(RELAYNET_OIDS.SIGNATURE.PARCEL_DELIVERY),
+};

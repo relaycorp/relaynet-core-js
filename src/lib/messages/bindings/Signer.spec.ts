@@ -3,10 +3,10 @@
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
-import { NONCE_SIGNATURE } from './DetachedSignature';
-import { NonceSigner } from './NonceSigner';
+import { DETACHED_SIGNATURE_TYPES } from './DetachedSignatureType';
+import { Signer } from './Signer';
 
-describe('NonceSigner', () => {
+describe('Signer', () => {
   const nonce = arrayBufferFrom('The nonce');
   let keyPair: CryptoKeyPair;
   let certificate: Certificate;
@@ -28,15 +28,15 @@ describe('NonceSigner', () => {
   });
 
   test('Signature should be valid', async () => {
-    const signer = new NonceSigner(certificate, keyPair.privateKey);
+    const signer = new Signer(certificate, keyPair.privateKey);
 
-    const serialization = await signer.sign(nonce);
+    const serialization = await signer.sign(nonce, DETACHED_SIGNATURE_TYPES.NONCE);
 
-    await NONCE_SIGNATURE.verify(serialization, nonce, [caCertificate]);
+    await DETACHED_SIGNATURE_TYPES.NONCE.verify(serialization, nonce, [caCertificate]);
   });
 
   test('Signer certificate should be exposed', () => {
-    const signer = new NonceSigner(certificate, keyPair.privateKey);
+    const signer = new Signer(certificate, keyPair.privateKey);
 
     expect(signer.certificate).toEqual(certificate);
   });
