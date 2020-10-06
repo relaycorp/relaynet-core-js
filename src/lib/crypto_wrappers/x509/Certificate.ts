@@ -116,6 +116,9 @@ export default class Certificate {
    */
   public readonly pkijsCertificate: pkijs.Certificate;
 
+  /**
+   * @internal
+   */
   public constructor(pkijsCertificate: pkijs.Certificate) {
     this.pkijsCertificate = pkijsCertificate;
   }

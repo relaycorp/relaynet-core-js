@@ -86,6 +86,9 @@ export abstract class EnvelopedData {
    */
   public readonly pkijsEnvelopedData: pkijs.EnvelopedData;
 
+  /**
+   * @internal
+   */
   protected constructor(pkijsEnvelopedData: pkijs.EnvelopedData) {
     this.pkijsEnvelopedData = pkijsEnvelopedData;
   }
