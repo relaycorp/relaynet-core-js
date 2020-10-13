@@ -335,7 +335,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expect(message.validate(undefined)).resolves.toBeNull();
+        await expect(message.validate()).resolves.toBeNull();
       });
     });
 
@@ -355,7 +355,7 @@ describe('RAMFMessage', () => {
         );
         jestDateMock.advanceTo(stubDate);
 
-        await message.validate(undefined);
+        await message.validate();
       });
 
       test('Date should not be in the future', async () => {
@@ -370,7 +370,7 @@ describe('RAMFMessage', () => {
         oneSecondAgo.setDate(oneSecondAgo.getDate() - 1_000);
         jestDateMock.advanceTo(oneSecondAgo);
 
-        await expect(message.validate(undefined)).rejects.toEqual(
+        await expect(message.validate()).rejects.toEqual(
           new InvalidMessageError('Message date is in the future'),
         );
       });
@@ -384,7 +384,7 @@ describe('RAMFMessage', () => {
         );
 
         jestDateMock.advanceTo(senderCertificate.startDate);
-        await expect(message.validate(undefined)).rejects.toEqual(
+        await expect(message.validate()).rejects.toEqual(
           new InvalidMessageError('Message was created before the sender certificate was valid'),
         );
       });
@@ -400,7 +400,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceTo(message.creationDate);
 
-        await message.validate(undefined);
+        await message.validate();
       });
 
       test('Date should not be after expiry date of sender certificate', async () => {
@@ -413,7 +413,7 @@ describe('RAMFMessage', () => {
         );
 
         jestDateMock.advanceTo(message.creationDate);
-        await expect(message.validate(undefined)).rejects.toEqual(
+        await expect(message.validate()).rejects.toEqual(
           new InvalidMessageError('Message was created after the sender certificate expired'),
         );
       });
@@ -431,7 +431,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceTo(message.expiryDate);
 
-        await message.validate(undefined);
+        await message.validate();
       });
 
       test('TTL in the past should not be accepted', async () => {
@@ -443,7 +443,7 @@ describe('RAMFMessage', () => {
         );
 
         jestDateMock.advanceTo(message.creationDate.getTime() + (message.ttl + 1) * 1_000);
-        await expect(message.validate(undefined)).rejects.toEqual(
+        await expect(message.validate()).rejects.toEqual(
           new InvalidMessageError('Message already expired'),
         );
       });
