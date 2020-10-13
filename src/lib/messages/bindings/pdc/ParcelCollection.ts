@@ -1,4 +1,6 @@
 import Certificate from '../../../crypto_wrappers/x509/Certificate';
+import Parcel from '../../Parcel';
+import { RecipientAddressType } from '../../RecipientAddressType';
 
 export class ParcelCollection {
   constructor(
@@ -11,7 +13,9 @@ export class ParcelCollection {
     await this.ackCallback();
   }
 
-  public async deserializeAndValidateParcel(): Promise<void> {
-    return undefined;
+  public async deserializeAndValidateParcel(): Promise<Parcel> {
+    const parcel = await Parcel.deserialize(this.parcelSerialized);
+    await parcel.validate(RecipientAddressType.PRIVATE, this.trustedCertificates);
+    return parcel;
   }
 }
