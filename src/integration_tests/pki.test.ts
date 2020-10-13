@@ -76,7 +76,7 @@ test('Messages by authorized senders should be accepted', async () => {
     },
   );
 
-  await parcel.validate([publicGatewayCert]);
+  await parcel.validate(undefined, [publicGatewayCert]);
 });
 
 test('Certificate chain should be computed corrected', async () => {
@@ -115,7 +115,7 @@ test('Messages by unauthorized senders should be refused', async () => {
     },
   );
 
-  await expect(parcel.validate([publicGatewayCert])).rejects.toHaveProperty(
+  await expect(parcel.validate(undefined, [publicGatewayCert])).rejects.toHaveProperty(
     'message',
     'Sender is not authorized: No valid certificate paths found',
   );
