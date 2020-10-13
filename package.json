@@ -44,14 +44,14 @@
     "asn1js": "^2.0.26",
     "binary-parser": "^1.5.0",
     "buffer-to-arraybuffer": "0.0.5",
-    "moment": "^2.29.0",
+    "moment": "^2.29.1",
     "pkijs": "2.1.84",
     "smart-buffer": "^4.1.0",
     "uuid4": "^2.0.2",
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "@relaycorp/shared-config": "^1.4.4",
+    "@relaycorp/shared-config": "^1.4.5",
     "@types/asn1js": "0.0.2",
     "@types/binary-parser": "^1.5.0",
     "@types/jest": "^26.0.14",

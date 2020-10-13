@@ -3,7 +3,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
-import { generateStubCert, reSerializeCertificate } from '../_test_utils';
+import { generateStubCert, getPromiseRejection, reSerializeCertificate } from '../_test_utils';
 import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
@@ -14,6 +14,7 @@ import { MockPrivateKeyStore } from '../keyStores/testMocks';
 import { issueInitialDHKeyCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
+import { RecipientAddressType } from './RecipientAddressType';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';
 jest.mock('uuid4', () => {
@@ -45,9 +46,11 @@ describe('RAMFMessage', () => {
     recipientPrivateAddress = recipientCertificate.getCommonName();
 
     const senderKeyPair = await generateRSAKeyPair();
-    senderCertificate = await generateStubCert({
-      subjectPublicKey: senderKeyPair.publicKey,
-    });
+    senderCertificate = reSerializeCertificate(
+      await generateStubCert({
+        subjectPublicKey: senderKeyPair.publicKey,
+      }),
+    );
   });
 
   let stubSenderChain: AuthorizedSenderChain;
@@ -197,17 +200,77 @@ describe('RAMFMessage', () => {
   });
 
   describe('validate', () => {
+    describe('Recipient address', () => {
+      const PRIVATE_ADDRESS = '0deadbeef';
+      const PUBLIC_ADDRESS = 'https://example.com';
+
+      test('Public address should be allowed if no specific type is required', async () => {
+        const message = new StubMessage(PUBLIC_ADDRESS, senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        await message.validate();
+      });
+
+      test('Private address should be allowed if no specific type is required', async () => {
+        const message = new StubMessage(PRIVATE_ADDRESS, senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        await message.validate();
+      });
+
+      test('Syntactically-invalid addresses should be refused', async () => {
+        const message = new StubMessage(
+          'this is an invalid address',
+          senderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
+
+        const error = await getPromiseRejection(message.validate());
+
+        expect(error).toBeInstanceOf(InvalidMessageError);
+        expect(error.message).toEqual('Recipient address is malformed');
+      });
+
+      test('Private address should be refused if a public one is required', async () => {
+        const message = new StubMessage(PRIVATE_ADDRESS, senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        const error = await getPromiseRejection(message.validate(RecipientAddressType.PUBLIC));
+
+        expect(error).toBeInstanceOf(InvalidMessageError);
+        expect(error.message).toEqual('Recipient address should be public but got a private one');
+      });
+
+      test('Public address should be refused if a private one is required', async () => {
+        const message = new StubMessage(PUBLIC_ADDRESS, senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        const error = await getPromiseRejection(message.validate(RecipientAddressType.PRIVATE));
+
+        expect(error).toBeInstanceOf(InvalidMessageError);
+        expect(error.message).toEqual('Recipient address should be private but got a public one');
+      });
+
+      test('Private address should be allowed if a private one is required', async () => {
+        const message = new StubMessage(PRIVATE_ADDRESS, senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        await message.validate(RecipientAddressType.PRIVATE);
+      });
+
+      test('Public address should be allowed if a public one is required', async () => {
+        const message = new StubMessage(PUBLIC_ADDRESS, senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        await message.validate(RecipientAddressType.PUBLIC);
+      });
+    });
+
     describe('Authorization', () => {
       test('Message should be refused if sender is not trusted', async () => {
         const message = new StubMessage(
           await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
-          reSerializeCertificate(senderCertificate),
+          senderCertificate,
           STUB_PAYLOAD_PLAINTEXT,
         );
 
         jestDateMock.advanceBy(1_000);
 
-        await expect(message.validate([stubSenderChain.rootCert])).rejects.toEqual(
+        await expect(message.validate(undefined, [stubSenderChain.rootCert])).rejects.toEqual(
           new InvalidMessageError('Sender is not authorized: No valid certificate paths found'),
         );
       });
@@ -224,7 +287,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        const certificationPath = await message.validate([stubSenderChain.rootCert]);
+        const certificationPath = await message.validate(undefined, [stubSenderChain.rootCert]);
         expect(certificationPath).toHaveLength(3);
         expect(certificationPath!![0].isEqual(message.senderCertificate)).toBeTrue();
         expect(certificationPath!![1].isEqual(stubSenderChain.recipientCert)).toBeTrue();
@@ -243,7 +306,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        await expect(message.validate([stubSenderChain.rootCert])).rejects.toEqual(
+        await expect(message.validate(undefined, [stubSenderChain.rootCert])).rejects.toEqual(
           new InvalidMessageError(`Sender is not authorized to reach ${message.recipientAddress}`),
         );
       });
@@ -260,7 +323,7 @@ describe('RAMFMessage', () => {
 
         jestDateMock.advanceBy(1_000);
 
-        const certificationPath = await message.validate([stubSenderChain.rootCert]);
+        const certificationPath = await message.validate(undefined, [stubSenderChain.rootCert]);
         expect(certificationPath).toHaveLength(3);
         expect(certificationPath!![2].isEqual(stubSenderChain.rootCert)).toBeTrue();
         expect(certificationPath!![1].isEqual(stubSenderChain.recipientCert)).toBeTrue();
