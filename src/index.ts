@@ -63,6 +63,7 @@ export { Signer } from './lib/messages/bindings/Signer';
 export { DETACHED_SIGNATURE_TYPES } from './lib/messages/bindings/DetachedSignatureType';
 export { HandshakeChallenge } from './lib/messages/bindings/pdc/HandshakeChallenge';
 export { HandshakeResponse } from './lib/messages/bindings/pdc/HandshakeResponse';
+export { ParcelCollection } from './lib/messages/bindings/pdc/ParcelCollection';
 export { ParcelDelivery } from './lib/messages/bindings/pdc/ParcelDelivery';
 export { PrivateNodeRegistrationAuthorization } from './lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization';
 export { PrivateNodeRegistration } from './lib/messages/bindings/pdc/PrivateNodeRegistration';
