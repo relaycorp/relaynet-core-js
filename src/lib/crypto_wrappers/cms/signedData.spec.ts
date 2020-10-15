@@ -1,4 +1,4 @@
-// tslint:disable:no-let no-object-mutation
+// tslint:disable:no-object-mutation
 
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
@@ -10,7 +10,6 @@ import {
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
-  reSerializeCertificate,
   sha256Hex,
 } from '../../_test_utils';
 import { CMS_OIDS } from '../../oids';
@@ -349,44 +348,6 @@ describe('verify', () => {
   test('Valid signature with encapsulated plaintext should be accepted', async () => {
     const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
     await signedData.verify();
-  });
-
-  test('Untrusted signer certificate should be refused if requested', async () => {
-    const anotherKeyPair = await generateRSAKeyPair();
-    const anotherCertificate = await generateStubCert({
-      issuerPrivateKey: anotherKeyPair.privateKey,
-      subjectPublicKey: anotherKeyPair.publicKey,
-    });
-    const signedData = await SignedData.sign(
-      plaintext,
-      anotherKeyPair.privateKey,
-      anotherCertificate,
-    );
-
-    await expect(signedData.verify(undefined, [certificate])).rejects.toBeInstanceOf(CMSError);
-  });
-
-  test('Trusted signer certificate should be accepted', async () => {
-    const trustedCertificate = reSerializeCertificate(
-      await generateStubCert({
-        attributes: { isCA: true },
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
-      }),
-    );
-    const signerKeyPair = await generateRSAKeyPair();
-    const signerCertificate = await generateStubCert({
-      issuerCertificate: trustedCertificate,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: signerKeyPair.publicKey,
-    });
-    const signedData = await SignedData.sign(
-      plaintext,
-      signerKeyPair.privateKey,
-      signerCertificate,
-    );
-
-    await signedData.verify(undefined, [trustedCertificate]);
   });
 });
 

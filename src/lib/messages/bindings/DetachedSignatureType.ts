@@ -37,7 +37,8 @@ export class DetachedSignatureType {
    * @param signatureSerialized
    * @param expectedPlaintext
    * @param trustedCertificates
-   * @throws CMSError if the signatureSerialized is invalid or the signer isn't trusted
+   * @throws CMSError if the signatureSerialized is invalid
+   * @throws CertificateError if the signer isn't trusted
    */
   public async verify(
     signatureSerialized: ArrayBuffer,
@@ -46,8 +47,11 @@ export class DetachedSignatureType {
   ): Promise<Certificate> {
     const signedData = SignedData.deserialize(signatureSerialized);
     const safePlaintext = this.makeSafePlaintext(expectedPlaintext);
-    await signedData.verify(safePlaintext, trustedCertificates);
-    return signedData.signerCertificate!!;
+    await signedData.verify(safePlaintext);
+
+    const signerCertificate = signedData.signerCertificate!!;
+    await signerCertificate.getCertificationPath([], trustedCertificates);
+    return signerCertificate;
   }
 
   protected makeSafePlaintext(plaintext: ArrayBuffer): ArrayBuffer {
