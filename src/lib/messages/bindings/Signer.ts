@@ -14,9 +14,9 @@ export class Signer {
   constructor(public certificate: Certificate, private privateKey: CryptoKey) {}
 
   public async sign(
-    nonce: ArrayBuffer,
+    plaintext: ArrayBuffer,
     detachedSignatureType: DetachedSignatureType,
   ): Promise<ArrayBuffer> {
-    return detachedSignatureType.sign(nonce, this.privateKey, this.certificate);
+    return detachedSignatureType.sign(plaintext, this.privateKey, this.certificate);
   }
 }
