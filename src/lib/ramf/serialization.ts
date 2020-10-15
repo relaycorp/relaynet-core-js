@@ -16,7 +16,13 @@ import RAMFMessage from '../messages/RAMFMessage';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 
-const MAX_MESSAGE_LENGTH = 9437184; // 9 MiB
+/**
+ * Maximum length of any RAMF message per RS-001.
+ *
+ * https://specs.relaynet.network/RS-001
+ */
+export const MAX_RAMF_MESSAGE_LENGTH = 9437184; // 9 MiB
+
 const MAX_RECIPIENT_ADDRESS_LENGTH = 1024;
 const MAX_ID_LENGTH = 64;
 const MAX_TTL = 15552000;
@@ -114,7 +120,7 @@ export async function serialize(
 }
 
 function validateMessageLength(serialization: ArrayBuffer): void {
-  if (MAX_MESSAGE_LENGTH < serialization.byteLength) {
+  if (MAX_RAMF_MESSAGE_LENGTH < serialization.byteLength) {
     throw new RAMFSyntaxError(
       `Message should not be longer than 9 MiB (got ${serialization.byteLength} octets)`,
     );
