@@ -142,6 +142,9 @@ describe('DetachedSignature', () => {
     });
 
     test('Signature should verify if issuer of signer is not a root CA', async () => {
+      // PKI.js' SignedData.verify() can't be relied on to verify the signer, so we have to do our
+      // own verification: https://github.com/relaycorp/relaynet-core-js/issues/178
+
       const caKeyPair = await generateRSAKeyPair();
       const rootCertificate = reSerializeCertificate(
         await generateStubCert({
