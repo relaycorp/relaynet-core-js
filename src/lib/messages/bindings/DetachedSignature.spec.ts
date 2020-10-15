@@ -8,6 +8,7 @@ import CMSError from '../../crypto_wrappers/cms/CMSError';
 import { SignedData } from '../../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
+import CertificateError from '../../crypto_wrappers/x509/CertificateError';
 import { RELAYNET_OIDS } from '../../oids';
 import { DETACHED_SIGNATURE_TYPES, DetachedSignatureType } from './DetachedSignatureType';
 
@@ -121,7 +122,7 @@ describe('DetachedSignature', () => {
       );
 
       await expect(signature.verify(signedDataSerialized, PLAINTEXT, [])).rejects.toBeInstanceOf(
-        CMSError,
+        CertificateError,
       );
     });
 
@@ -138,6 +139,40 @@ describe('DetachedSignature', () => {
         CA_CERTIFICATE,
       ]);
       await expect(signerCertificate.isEqual(SIGNER_CERTIFICATE)).toBeTrue();
+    });
+
+    test('Signature should verify if issuer of signer is not a root CA', async () => {
+      const caKeyPair = await generateRSAKeyPair();
+      const rootCertificate = reSerializeCertificate(
+        await generateStubCert({
+          attributes: { isCA: true, pathLenConstraint: 1 },
+          issuerPrivateKey: caKeyPair.privateKey,
+          subjectPublicKey: caKeyPair.publicKey,
+        }),
+      );
+      const intermediateKeyPair = await generateRSAKeyPair();
+      const intermediateCertificate = await generateStubCert({
+        attributes: { isCA: true, pathLenConstraint: 0 },
+        issuerCertificate: rootCertificate,
+        issuerPrivateKey: caKeyPair.privateKey,
+        subjectPublicKey: intermediateKeyPair.publicKey,
+      });
+      const signerKeyPair = await generateRSAKeyPair();
+      const signerCertificate = await generateStubCert({
+        attributes: { isCA: true, pathLenConstraint: 0 },
+        issuerCertificate: intermediateCertificate,
+        issuerPrivateKey: intermediateKeyPair.privateKey,
+        subjectPublicKey: signerKeyPair.publicKey,
+      });
+      const signature = new DetachedSignatureType(OID_VALUE);
+
+      const signedDataSerialized = await signature.sign(
+        PLAINTEXT,
+        signerKeyPair.privateKey,
+        signerCertificate,
+      );
+
+      await signature.verify(signedDataSerialized, PLAINTEXT, [intermediateCertificate]);
     });
   });
 });
