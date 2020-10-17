@@ -38,15 +38,6 @@ export class PrivateNodeRegistrationRequest {
     );
   }
 
-  public static makePNRACountersignaturePlaintext(pnraSerializedASN1: OctetString): ArrayBuffer {
-    return derSerializeHeterogeneousSequence(
-      new ObjectIdentifier({
-        value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
-      }),
-      pnraSerializedASN1,
-    );
-  }
-
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema(
     'PrivateNodeRegistrationRequest',
     [
@@ -55,6 +46,15 @@ export class PrivateNodeRegistrationRequest {
       new Primitive({ name: 'countersignature' }),
     ],
   );
+
+  private static makePNRACountersignaturePlaintext(pnraSerializedASN1: OctetString): ArrayBuffer {
+    return derSerializeHeterogeneousSequence(
+      new ObjectIdentifier({
+        value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
+      }),
+      pnraSerializedASN1,
+    );
+  }
 
   constructor(
     public readonly privateNodePublicKey: CryptoKey,
