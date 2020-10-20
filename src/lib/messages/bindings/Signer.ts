@@ -2,7 +2,7 @@ import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { DetachedSignatureType } from './DetachedSignatureType';
 
 /**
- * Object to produce detached signatures given a key pair..
+ * Object to produce detached signatures given a key pair.
  *
  */
 export class Signer {
