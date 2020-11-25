@@ -12,6 +12,7 @@ import CMSError from './CMSError';
 
 const pkijsCrypto = getPkijsCrypto();
 
+// CBC mode is temporary. See: https://github.com/relaycorp/relayverse/issues/16
 const AES_CIPHER_MODE = 'AES-CBC';
 const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
 
