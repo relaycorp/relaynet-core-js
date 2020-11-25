@@ -1,9 +1,7 @@
-/* tslint:disable:no-let */
-
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
-import { arrayToAsyncIterable, asyncIterableToArray } from '../_test_utils';
+import { arrayToAsyncIterable, asyncIterableToArray, CRYPTO_OIDS } from '../_test_utils';
 import { generateRandom64BitValue } from '../crypto_wrappers/_utils';
 import {
   EnvelopedData,
@@ -172,7 +170,7 @@ describe('Gateway', () => {
       );
 
       expect(await getCargoPayloadEncryptionAlgorithmId(cargoesSerialized[0])).toEqual(
-        '2.16.840.1.101.3.4.1.26',
+        CRYPTO_OIDS.AES_CBC_192,
       );
     });
 
@@ -190,7 +188,7 @@ describe('Gateway', () => {
       );
 
       expect(await getCargoPayloadEncryptionAlgorithmId(cargoesSerialized[0])).toEqual(
-        '2.16.840.1.101.3.4.1.26',
+        CRYPTO_OIDS.AES_CBC_192,
       );
     });
 

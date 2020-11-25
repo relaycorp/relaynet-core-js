@@ -12,6 +12,8 @@ import CMSError from './CMSError';
 
 const pkijsCrypto = getPkijsCrypto();
 
+// CBC mode is temporary. See: https://github.com/relaycorp/relayverse/issues/16
+const AES_CIPHER_MODE = 'AES-CBC';
 const AES_KEY_SIZES: ReadonlyArray<number> = [128, 192, 256];
 
 export interface EncryptionOptions {
@@ -153,8 +155,7 @@ export class SessionlessEnvelopedData extends EnvelopedData {
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     await pkijsEnvelopedData.encrypt(
-      // @ts-ignore
-      { name: 'AES-GCM', length: aesKeySize },
+      { name: AES_CIPHER_MODE, length: aesKeySize } as any,
       plaintext,
     );
 
@@ -219,7 +220,7 @@ export class SessionEnvelopedData extends EnvelopedData {
     const [pkijsEncryptionResult]: ReadonlyArray<{
       readonly ecdhPrivateKey: CryptoKey;
     }> = (await pkijsEnvelopedData.encrypt(
-      { name: 'AES-GCM', length: aesKeySize } as any,
+      { name: AES_CIPHER_MODE, length: aesKeySize } as any,
       plaintext,
     )) as any;
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
