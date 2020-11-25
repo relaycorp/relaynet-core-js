@@ -1,9 +1,10 @@
-// tslint:disable:no-let no-object-mutation
+// tslint:disable:no-object-mutation
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import {
   arrayBufferFrom,
+  CRYPTO_OIDS,
   expectAsn1ValuesToBeEqual,
   expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
@@ -25,9 +26,6 @@ import {
 } from './envelopedData';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
-const OID_AES_CBC_128 = '2.16.840.1.101.3.4.1.2';
-const OID_AES_CBC_192 = '2.16.840.1.101.3.4.1.22';
-const OID_AES_CBC_256 = '2.16.840.1.101.3.4.1.42';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
 const OID_ECDH_P256 = '1.2.840.10045.3.1.7';
 const OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
@@ -525,13 +523,13 @@ function describeEncryptedContentInfoEncryption(
 
       const envelopedData = deserializeEnvelopedData(envelopedDataSerialized);
       expect(envelopedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-        OID_AES_CBC_128,
+        CRYPTO_OIDS.AES_CBC_128,
       );
     });
 
     test.each([
-      [192, OID_AES_CBC_192],
-      [256, OID_AES_CBC_256],
+      [192, CRYPTO_OIDS.AES_CBC_192],
+      [256, CRYPTO_OIDS.AES_CBC_256],
     ])('AES-CBC-%s should also be supported', async (aesKeySize, expectedOid) => {
       const envelopedDataSerialized = await encryptFunc({ aesKeySize: aesKeySize as number });
 

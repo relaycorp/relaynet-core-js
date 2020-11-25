@@ -7,6 +7,12 @@ import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/key
 import Certificate from './crypto_wrappers/x509/Certificate';
 import FullCertificateIssuanceOptions from './crypto_wrappers/x509/FullCertificateIssuanceOptions';
 
+export const CRYPTO_OIDS = {
+  AES_CBC_128: '2.16.840.1.101.3.4.1.2',
+  AES_CBC_192: '2.16.840.1.101.3.4.1.22',
+  AES_CBC_256: '2.16.840.1.101.3.4.1.42',
+};
+
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;
 
 export function expectPkijsValuesToBeEqual(
