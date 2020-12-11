@@ -48,7 +48,7 @@ export interface DeliveryAuthorizationIssuanceOptions extends BasicCertificateIs
 }
 
 /**
- * Issue a Parcel Delivery Authorization (PDA).
+ * Issue a Parcel Delivery Authorization (PDA) or Cargo Delivery Authorization (CDA).
  *
  * The issuer must be the *private* node wishing to receive messages from the subject. Both
  * nodes must be of the same type: Both gateways or both endpoints.
