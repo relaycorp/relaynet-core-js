@@ -54,6 +54,7 @@ export { default as Parcel } from './lib/messages/Parcel';
 export { default as ServiceMessage } from './lib/messages/payloads/ServiceMessage';
 export { default as Cargo } from './lib/messages/Cargo';
 export { CargoCollectionAuthorization } from './lib/messages/CargoCollectionAuthorization';
+export { CargoCollectionRequest } from './lib/messages/payloads/CargoCollectionRequest';
 export { default as CargoMessageSet } from './lib/messages/payloads/CargoMessageSet';
 export { default as InvalidMessageError } from './lib/messages/InvalidMessageError';
 export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';

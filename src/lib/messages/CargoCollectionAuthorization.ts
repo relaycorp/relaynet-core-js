@@ -2,13 +2,13 @@
 
 import { SignatureOptions } from '../..';
 import * as serialization from '../ramf/serialization';
-import EmptyPayloadPlaintext from './payloads/EmptyPayloadPlaintext';
+import { CargoCollectionRequest } from './payloads/CargoCollectionRequest';
 import RAMFMessage from './RAMFMessage';
 
 const concreteMessageTypeOctet = 0x44;
 const concreteMessageVersionOctet = 0;
 
-export class CargoCollectionAuthorization extends RAMFMessage<EmptyPayloadPlaintext> {
+export class CargoCollectionAuthorization extends RAMFMessage<CargoCollectionRequest> {
   public static async deserialize(
     cargoSerialized: ArrayBuffer,
   ): Promise<CargoCollectionAuthorization> {
@@ -20,7 +20,7 @@ export class CargoCollectionAuthorization extends RAMFMessage<EmptyPayloadPlaint
     );
   }
 
-  protected readonly deserializePayload = EmptyPayloadPlaintext.deserialize;
+  protected readonly deserializePayload = CargoCollectionRequest.deserialize;
 
   public async serialize(
     senderPrivateKey: CryptoKey,
