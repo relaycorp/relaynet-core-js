@@ -20,10 +20,9 @@ export class Gateway extends BaseNode {
   public async *generateCargoes(
     messages: CargoMessageStream,
     recipientCertificate: Certificate,
-    currentKeyId: Buffer,
+    privateKey: CryptoKey,
+    certificate: Certificate,
   ): AsyncIterable<Buffer> {
-    const { privateKey, certificate } = await this.privateKeyStore.fetchNodeKey(currentKeyId);
-
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
@@ -47,7 +46,6 @@ export class Gateway extends BaseNode {
   ): Promise<Buffer> {
     const sessionKey = await this.fetchSessionKeyForRecipient(recipientCertificate);
 
-    // tslint:disable-next-line:no-let
     let envelopedData: EnvelopedData;
     if (sessionKey) {
       const encryptionResult = await SessionEnvelopedData.encrypt(
