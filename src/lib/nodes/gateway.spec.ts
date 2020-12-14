@@ -1,6 +1,5 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { SignatureOptions } from '../..';
 import { arrayToAsyncIterable, asyncIterableToArray, CRYPTO_OIDS } from '../_test_utils';
 import { generateRandom64BitValue } from '../crypto_wrappers/_utils';
 import {
@@ -8,6 +7,7 @@ import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
+import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
@@ -73,7 +73,6 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -89,7 +88,6 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -116,7 +114,6 @@ describe('Gateway', () => {
           },
         ],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -138,7 +135,6 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -165,7 +161,6 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -183,7 +178,6 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -198,12 +192,11 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
       const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-      expect(CERTIFICATE.isEqual(cargo.senderCertificate));
+      expect(CERTIFICATE.isEqual(cargo.senderCertificate)).toBeTrue();
     });
 
     test('Signature options should be honored if present', async () => {
@@ -216,7 +209,6 @@ describe('Gateway', () => {
       await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -233,7 +225,6 @@ describe('Gateway', () => {
           { message: MESSAGE, expiryDate: new Date() },
         ],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -247,7 +238,6 @@ describe('Gateway', () => {
       const cargoesSerialized = await generateCargoesFromMessages(
         [],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -266,7 +256,6 @@ describe('Gateway', () => {
           { message: Buffer.from(dummyParcelSerialized), expiryDate: TOMORROW },
         ],
         RECIPIENT_CERTIFICATE,
-        CERTIFICATE.getSerialNumber(),
         gateway,
       );
 
@@ -283,11 +272,15 @@ describe('Gateway', () => {
     async function generateCargoesFromMessages(
       messages: ReadonlyArray<{ readonly expiryDate: Date; readonly message: Buffer }>,
       recipientCertificate: Certificate,
-      senderKeyId: Buffer,
       gateway: Gateway,
     ): Promise<readonly Buffer[]> {
       return asyncIterableToArray(
-        gateway.generateCargoes(arrayToAsyncIterable(messages), recipientCertificate, senderKeyId),
+        gateway.generateCargoes(
+          arrayToAsyncIterable(messages),
+          recipientCertificate,
+          PRIVATE_KEY,
+          CERTIFICATE,
+        ),
       );
     }
 
