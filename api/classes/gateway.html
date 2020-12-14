@@ -105,7 +105,7 @@
 						<aside class="tsd-sources">
 							<p>Inherited from <a href="basenode.html">BaseNode</a>.<a href="basenode.html#constructor">constructor</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5d0f685/src/lib/nodes/baseNode.ts#L11">src/lib/nodes/baseNode.ts:11</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94e99b/src/lib/nodes/baseNode.ts#L11">src/lib/nodes/baseNode.ts:11</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -131,13 +131,13 @@
 				<a name="generatecargoes" class="tsd-anchor"></a>
 				<h3>generate<wbr>Cargoes</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<li class="tsd-signature tsd-kind-icon">generate<wbr>Cargoes<span class="tsd-signature-symbol">(</span>messages<span class="tsd-signature-symbol">: </span><a href="../globals.html#cargomessagestream" class="tsd-signature-type">CargoMessageStream</a>, recipientCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a>, currentKeyId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">generate<wbr>Cargoes<span class="tsd-signature-symbol">(</span>messages<span class="tsd-signature-symbol">: </span><a href="../globals.html#cargomessagestream" class="tsd-signature-type">CargoMessageStream</a>, recipientCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a>, privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span>, certificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type">Certificate</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5d0f685/src/lib/nodes/gateway.ts#L20">src/lib/nodes/gateway.ts:20</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/d94e99b/src/lib/nodes/gateway.ts#L20">src/lib/nodes/gateway.ts:20</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -149,7 +149,10 @@
 								<h5>recipientCertificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
 							</li>
 							<li>
-								<h5>currentKeyId: <span class="tsd-signature-type">Buffer</span></h5>
+								<h5>privateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+							</li>
+							<li>
+								<h5>certificate: <a href="certificate.html" class="tsd-signature-type">Certificate</a></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></h4>
