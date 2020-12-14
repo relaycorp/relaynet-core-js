@@ -54,7 +54,7 @@
     "@relaycorp/shared-config": "^1.4.6",
     "@types/asn1js": "2.0.0",
     "@types/binary-parser": "^1.5.0",
-    "@types/jest": "^26.0.16",
+    "@types/jest": "^26.0.19",
     "@types/pkijs": "0.0.6",
     "@types/verror": "^1.10.3",
     "del-cli": "^3.0.0",
