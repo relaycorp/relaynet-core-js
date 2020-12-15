@@ -8,15 +8,16 @@ import {
 } from '../crypto_wrappers/cms/envelopedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import Cargo from '../messages/Cargo';
+import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
 import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
-import { BaseNode } from './baseNode';
+import { BaseNode } from './BaseNode';
 
 export type CargoMessageStream = AsyncIterable<{
   readonly message: Buffer;
   readonly expiryDate: Date;
 }>;
 
-export class Gateway extends BaseNode {
+export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> {
   public async *generateCargoes(
     messages: CargoMessageStream,
     recipientCertificate: Certificate,
