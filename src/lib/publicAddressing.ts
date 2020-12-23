@@ -35,17 +35,17 @@ export async function resolvePublicAddress(
   const name = `_${bindingType}._tcp.${hostName}`;
   const doh = new DNSoverHTTPS({ url: resolverURL });
   const result = await doh.getDNS({ dnssec: true, name, rrtype: 'SRV', decode: true });
-  if (!result?.flag_ad) {
+  if (!result.flag_ad) {
     throw new PublicAddressingError(`DNSSEC verification for SRV ${name} failed`);
   }
-  if (result?.rcode !== 'NOERROR') {
+  if (result.rcode !== 'NOERROR') {
     // hostName is an IP address or a domain name without the expected SRV record
     return null;
   }
   const srvAnswers = result.answers.filter((a) => a.type === 'SRV');
   // TODO: Pick the best answer based on its weight and priority fields
   const answer = srvAnswers[0];
-  if (!answer || !answer.data?.target || !answer.data?.port) {
+  if (!answer || !answer.data || !answer.data.target || !answer.data.port) {
     // This is a malformed response, but let's handle it gracefully
     return null;
   }

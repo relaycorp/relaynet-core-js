@@ -76,6 +76,20 @@ describe('resolvePublicAddress', () => {
     await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
   });
 
+  test('Null should be returned if the Answer data is absent', async () => {
+    mockGetDNS.mockReturnValue({
+      ...SUCCESSFUL_RESPONSE,
+      answers: [
+        {
+          ...SUCCESSFUL_RESPONSE.answers[0],
+          data: undefined,
+        },
+      ],
+    });
+
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+  });
+
   test('Null should be returned if the Answer host is absent', async () => {
     mockGetDNS.mockReturnValue({
       ...SUCCESSFUL_RESPONSE,
