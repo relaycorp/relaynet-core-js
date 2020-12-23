@@ -74,3 +74,5 @@ export { PrivateNodeRegistrationRequest } from './lib/messages/bindings/pdc/Priv
 export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 
 //endregion
+
+export * from './lib/publicAddressing';
