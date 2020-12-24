@@ -28,6 +28,16 @@ jest.mock('dohdec', () => ({
 import { BindingType, PublicAddressingError, resolvePublicAddress } from './publicAddressing';
 
 describe('resolvePublicAddress', () => {
+  const MALFORMED_ANSWER_ERROR = new PublicAddressingError('DNS answer is malformed');
+
+  test('DNS resolution should be skipped if host name contains port', async () => {
+    const address = await resolvePublicAddress(`${HOST}:${TARGET_PORT}`, BindingType.PDC);
+
+    expect(address).toHaveProperty('host', HOST);
+    expect(address).toHaveProperty('port', TARGET_PORT);
+    expect(mockGetDNS).not.toBeCalled();
+  });
+
   test('Specified domain name should be requested', async () => {
     await resolvePublicAddress(HOST, BindingType.PDC);
 
@@ -70,13 +80,15 @@ describe('resolvePublicAddress', () => {
     await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
   });
 
-  test('Null should be returned if the Answer is empty', async () => {
+  test('An error should be thrown if the Answer is empty', async () => {
     mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, answers: [] });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      MALFORMED_ANSWER_ERROR,
+    );
   });
 
-  test('Null should be returned if the Answer data is absent', async () => {
+  test('An error should be thrown if the Answer data is absent', async () => {
     mockGetDNS.mockReturnValue({
       ...SUCCESSFUL_RESPONSE,
       answers: [
@@ -87,10 +99,12 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      MALFORMED_ANSWER_ERROR,
+    );
   });
 
-  test('Null should be returned if the Answer host is absent', async () => {
+  test('An error should be thrown if the Answer host is absent', async () => {
     mockGetDNS.mockReturnValue({
       ...SUCCESSFUL_RESPONSE,
       answers: [
@@ -101,10 +115,12 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      MALFORMED_ANSWER_ERROR,
+    );
   });
 
-  test('Null should be returned if the Answer port is absent', async () => {
+  test('An error should be thrown if the Answer port is absent', async () => {
     mockGetDNS.mockReturnValue({
       ...SUCCESSFUL_RESPONSE,
       answers: [
@@ -115,7 +131,9 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      MALFORMED_ANSWER_ERROR,
+    );
   });
 
   test('An error should be thrown if DNSSEC verification fails', async () => {
