@@ -2,6 +2,7 @@ import { BindingType, resolvePublicAddress } from '..';
 
 describe('resolvePublicAddress', () => {
   const EXISTING_PUBLIC_ADDRESS = 'frankfurt.relaycorp.cloud';
+  const NON_EXISTING_ADDRESS = 'unlikely-to-ever-exist.relaycorp.cloud';
 
   test('Existing address should be resolved', async () => {
     const address = await resolvePublicAddress(EXISTING_PUBLIC_ADDRESS, BindingType.PDC);
@@ -31,9 +32,14 @@ describe('resolvePublicAddress', () => {
     await expect(resolvePublicAddress('dnssec-failed.org', BindingType.PDC)).toReject();
   });
 
-  test('Non-existing domains should not be resolved', async () => {
+  test('Non-existing addresses should not be resolved', async () => {
+    await expect(resolvePublicAddress(NON_EXISTING_ADDRESS, BindingType.PDC)).resolves.toBeNull();
+  });
+
+  test('Non-existing address should resolve if port is contained', async () => {
+    const port = 1234;
     await expect(
-      resolvePublicAddress('unlikely-to-ever-exist.relaycorp.cloud', BindingType.PDC),
-    ).resolves.toBeNull();
+      resolvePublicAddress(`${NON_EXISTING_ADDRESS}:${port}`, BindingType.PDC),
+    ).resolves.toEqual({ host: NON_EXISTING_ADDRESS, port });
   });
 });
