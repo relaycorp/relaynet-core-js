@@ -11,12 +11,9 @@ describe('resolvePublicAddress', () => {
     expect(address?.port).toBeNumber();
   });
 
-  test.skip('Google DNS should be supported', async () => {
+  test('Google DNS should be supported', async () => {
     // This is important to check because CloudFlare and Google DNS resolvers are slightly
     // different. For example, Google's adds a trailing dot to the target host.
-
-    // TODO: Reinstate this test when the following issue has been fixed
-    // https://github.com/hildjj/dohdec/issues/13
 
     const cfAddress = await resolvePublicAddress(EXISTING_PUBLIC_ADDRESS, BindingType.PDC);
     const gAddress = await resolvePublicAddress(

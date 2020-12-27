@@ -44,7 +44,7 @@
     "asn1js": "^2.0.26",
     "binary-parser": "^1.7.0",
     "buffer-to-arraybuffer": "0.0.5",
-    "dohdec": "^3.0.0",
+    "dohdec": "^3.1.0",
     "moment": "^2.29.1",
     "pkijs": "2.1.84",
     "smart-buffer": "^4.1.0",
