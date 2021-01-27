@@ -12,6 +12,8 @@ import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequ
 import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
 import { BaseNode } from './BaseNode';
 
+const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
+
 export type CargoMessageStream = AsyncIterable<{
   readonly message: Buffer;
   readonly expiryDate: Date;
@@ -27,8 +29,7 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
-      const creationDate = new Date();
-      creationDate.setMilliseconds(0);
+      const creationDate = getCargoCreationTime();
       const cargo = new Cargo(
         await recipientCertificate.calculateSubjectPrivateAddress(),
         certificate,
@@ -79,6 +80,13 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
       return undefined;
     }
   }
+}
+
+function getCargoCreationTime(): Date {
+  const creationDate = new Date();
+  creationDate.setMilliseconds(0);
+  creationDate.setHours(creationDate.getHours() - CLOCK_DRIFT_TOLERANCE_HOURS);
+  return creationDate;
 }
 
 async function* convertBufferMessagesToArrayBuffer(

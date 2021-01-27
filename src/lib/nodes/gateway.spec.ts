@@ -216,6 +216,24 @@ describe('Gateway', () => {
       expect(cargoSerializeSpy).toBeCalledWith(expect.anything(), signatureOptions);
     });
 
+    test('Cargo creation date should be 3 hours in the past', async () => {
+      const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+
+      const cargoesSerialized = await generateCargoesFromMessages(
+        [{ message: MESSAGE, expiryDate: TOMORROW }],
+        RECIPIENT_CERTIFICATE,
+        gateway,
+      );
+
+      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
+      const expectedCreationDate = new Date();
+      expectedCreationDate.setHours(expectedCreationDate.getHours() - 3);
+      expect(cargo.creationDate.getTime()).toBeWithin(
+        expectedCreationDate.getTime() - 5_000,
+        expectedCreationDate.getTime() + 5_000,
+      );
+    });
+
     test('Cargo TTL should be that of the message with the latest TTL', async () => {
       const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
 
