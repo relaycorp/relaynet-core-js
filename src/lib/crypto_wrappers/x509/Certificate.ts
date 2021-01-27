@@ -34,14 +34,11 @@ export default class Certificate {
    * Deserialize certificate from DER-encoded value.
    *
    * @param certDer DER-encoded X.509 certificate
-   * @throws {CertificateError}
    */
   public static deserialize(certDer: ArrayBuffer): Certificate {
     const asn1Value = derDeserialize(certDer);
     const pkijsCert = new pkijs.Certificate({ schema: asn1Value });
-    const certificate = new Certificate(pkijsCert);
-    certificate.validate();
-    return certificate;
+    return new Certificate(pkijsCert);
   }
 
   /**
@@ -181,6 +178,14 @@ export default class Certificate {
       throw new CertificateError(
         `Only X.509 v3 certificates are supported (got v${x509CertVersion})`,
       );
+    }
+
+    const currentDate = new Date();
+    if (currentDate < this.startDate) {
+      throw new CertificateError('Certificate is not yet valid');
+    }
+    if (this.expiryDate < currentDate) {
+      throw new CertificateError('Certificate already expired');
     }
   }
 

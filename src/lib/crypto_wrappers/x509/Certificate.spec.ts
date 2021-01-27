@@ -50,17 +50,6 @@ describe('deserialize()', () => {
       'Value is not DER-encoded',
     );
   });
-
-  test('should validate the certificate', async () => {
-    const cert = await generateStubCert();
-
-    const error = new Error('Fewer');
-    jest.spyOn(Certificate.prototype, 'validate').mockImplementationOnce(() => {
-      throw error;
-    });
-
-    expect(() => Certificate.deserialize(cert.serialize())).toThrow(error);
-  });
 });
 
 describe('issue()', () => {
@@ -635,6 +624,32 @@ describe('validate()', () => {
       'Only X.509 v3 certificates are supported (got v2)',
     );
   });
+
+  test('Certificate not yet valid should not be accepted', async () => {
+    const validityStartDate = new Date();
+    validityStartDate.setMinutes(validityStartDate.getMinutes() + 5);
+    const validityEndDate = new Date(validityStartDate);
+    validityEndDate.setMinutes(validityEndDate.getMinutes() + 1);
+    const cert = await generateStubCert({ attributes: { validityEndDate, validityStartDate } });
+
+    expect(() => cert.validate()).toThrowWithMessage(
+      CertificateError,
+      'Certificate is not yet valid',
+    );
+  });
+
+  test('Expired certificate should not be accepted', async () => {
+    const validityEndDate = new Date();
+    validityEndDate.setMinutes(validityEndDate.getMinutes() - 1);
+    const validityStartDate = new Date(validityEndDate);
+    validityStartDate.setMinutes(validityStartDate.getMinutes() - 1);
+    const cert = await generateStubCert({ attributes: { validityEndDate, validityStartDate } });
+
+    expect(() => cert.validate()).toThrowWithMessage(
+      CertificateError,
+      'Certificate already expired',
+    );
+  });
 });
 
 describe('getCertificationPath', () => {
@@ -665,6 +680,18 @@ describe('getCertificationPath', () => {
 
   test('Cert not issued by trusted cert should not be trusted', async () => {
     const cert = await generateStubCert();
+
+    await expect(cert.getCertificationPath([], [stubRootCa])).rejects.toEqual(
+      new CertificateError('No valid certificate paths found'),
+    );
+  });
+
+  test('Expired certificate should not be trusted', async () => {
+    const validityEndDate = new Date();
+    validityEndDate.setMinutes(validityEndDate.getMinutes() - 1);
+    const validityStartDate = new Date(validityEndDate);
+    validityStartDate.setMinutes(validityStartDate.getMinutes() - 1);
+    const cert = await generateStubCert({ attributes: { validityEndDate, validityStartDate } });
 
     await expect(cert.getCertificationPath([], [stubRootCa])).rejects.toEqual(
       new CertificateError('No valid certificate paths found'),

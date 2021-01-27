@@ -126,6 +126,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     if (trustedCertificates) {
       return this.validateAuthorization(trustedCertificates);
     }
+    this.senderCertificate.validate();
 
     return null;
   }
@@ -202,14 +203,6 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
 
     if (currentDate < this.creationDate) {
       throw new InvalidMessageError('Message date is in the future');
-    }
-
-    if (this.creationDate < this.senderCertificate.startDate) {
-      throw new InvalidMessageError('Message was created before the sender certificate was valid');
-    }
-
-    if (this.senderCertificate.expiryDate < this.creationDate) {
-      throw new InvalidMessageError('Message was created after the sender certificate expired');
     }
 
     if (this.expiryDate < currentDate) {

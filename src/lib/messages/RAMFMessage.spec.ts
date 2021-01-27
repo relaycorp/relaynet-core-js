@@ -10,6 +10,7 @@ import {
 } from '../crypto_wrappers/cms/envelopedData';
 import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import CertificateError from '../crypto_wrappers/x509/CertificateError';
 import { MockPrivateKeyStore } from '../keyStores/testMocks';
 import { issueInitialDHKeyCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
@@ -260,7 +261,30 @@ describe('RAMFMessage', () => {
       });
     });
 
-    describe('Authorization', () => {
+    describe('Authorization without trusted certificates', () => {
+      test('Invalid sender certificate should be refused', async () => {
+        const validityStartDate = new Date();
+        validityStartDate.setMinutes(validityStartDate.getMinutes() + 1);
+        const invalidSenderCertificate = await generateStubCert({
+          attributes: { validityStartDate },
+        });
+        const message = new StubMessage(
+          '0deadbeef',
+          invalidSenderCertificate,
+          STUB_PAYLOAD_PLAINTEXT,
+        );
+
+        await expect(message.validate()).rejects.toBeInstanceOf(CertificateError);
+      });
+
+      test('Valid sender certificate should be allowed', async () => {
+        const message = new StubMessage('0deadbeef', senderCertificate, STUB_PAYLOAD_PLAINTEXT);
+
+        await expect(message.validate()).resolves.toBeNull();
+      });
+    });
+
+    describe('Authorization with trusted certificates', () => {
       test('Message should be refused if sender is not trusted', async () => {
         const message = new StubMessage(
           await stubSenderChain.recipientCert.calculateSubjectPrivateAddress(),
@@ -329,14 +353,6 @@ describe('RAMFMessage', () => {
         expect(certificationPath!![1].isEqual(stubSenderChain.recipientCert)).toBeTrue();
         expect(certificationPath!![0].isEqual(message.senderCertificate)).toBeTrue();
       });
-
-      test('Authorization enforcement should be skipped if trusted certs are absent', async () => {
-        const message = new StubMessage('0deadbeef', senderCertificate, STUB_PAYLOAD_PLAINTEXT);
-
-        jestDateMock.advanceBy(1_000);
-
-        await expect(message.validate()).resolves.toBeNull();
-      });
     });
 
     describe('Validity period', () => {
@@ -372,49 +388,6 @@ describe('RAMFMessage', () => {
 
         await expect(message.validate()).rejects.toEqual(
           new InvalidMessageError('Message date is in the future'),
-        );
-      });
-
-      test('Date should not be before start date of sender certificate', async () => {
-        const message = new StubMessage(
-          recipientPublicAddress,
-          senderCertificate,
-          STUB_PAYLOAD_PLAINTEXT,
-          { creationDate: new Date(senderCertificate.startDate.getTime() - 1_000) },
-        );
-
-        jestDateMock.advanceTo(senderCertificate.startDate);
-        await expect(message.validate()).rejects.toEqual(
-          new InvalidMessageError('Message was created before the sender certificate was valid'),
-        );
-      });
-
-      test('Date may be at the expiry date of sender certificate', async () => {
-        const certEndDate = senderCertificate.pkijsCertificate.notAfter.value;
-        const message = new StubMessage(
-          recipientPublicAddress,
-          senderCertificate,
-          STUB_PAYLOAD_PLAINTEXT,
-          { creationDate: certEndDate },
-        );
-
-        jestDateMock.advanceTo(message.creationDate);
-
-        await message.validate();
-      });
-
-      test('Date should not be after expiry date of sender certificate', async () => {
-        const certEndDate = senderCertificate.pkijsCertificate.notAfter.value;
-        const message = new StubMessage(
-          recipientPublicAddress,
-          senderCertificate,
-          STUB_PAYLOAD_PLAINTEXT,
-          { creationDate: new Date(certEndDate.getTime() + 1_000) },
-        );
-
-        jestDateMock.advanceTo(message.creationDate);
-        await expect(message.validate()).rejects.toEqual(
-          new InvalidMessageError('Message was created after the sender certificate expired'),
         );
       });
 
