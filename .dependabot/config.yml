@@ -3,10 +3,6 @@ update_configs:
   - package_manager: javascript
     directory: /
     update_schedule: weekly
-    ignored_updates:
-      - match:
-          # https://github.com/relaycorp/relaynet-core-js/issues/73
-          dependency_name: pkijs
     version_requirement_updates: increase_versions
   - package_manager: ruby:bundler
     directory: /docs
