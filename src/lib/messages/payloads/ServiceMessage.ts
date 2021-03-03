@@ -31,7 +31,6 @@ export default class ServiceMessage implements PayloadPlaintext {
    */
   public static deserialize(serialization: ArrayBuffer): ServiceMessage {
     const serializationBuffer = Buffer.from(serialization);
-    // tslint:disable-next-line:no-let
     let messageParts;
     try {
       messageParts = PARSER.parse(serializationBuffer);
@@ -42,7 +41,7 @@ export default class ServiceMessage implements PayloadPlaintext {
     return new ServiceMessage(messageParts.messageType, messageParts.message);
   }
 
-  constructor(readonly type: string, readonly value: Buffer) {}
+  constructor(readonly type: string, readonly content: Buffer) {}
 
   /**
    * Serialize service message.
@@ -55,11 +54,11 @@ export default class ServiceMessage implements PayloadPlaintext {
       throw new RAMFError('Service message type exceeds maximum length');
     }
 
-    if (MAX_VALUE_LENGTH < this.value.length) {
+    if (MAX_VALUE_LENGTH < this.content.length) {
       throw new RAMFError('Service message value exceeds maximum length');
     }
 
-    const serializationLength = 1 + typeLength + 4 + this.value.length;
+    const serializationLength = 1 + typeLength + 4 + this.content.length;
     if (ServiceMessage.MAX_LENGTH < serializationLength) {
       throw new InvalidMessageError(
         `Service message must not exceed ${ServiceMessage.MAX_LENGTH} octets ` +
@@ -70,8 +69,8 @@ export default class ServiceMessage implements PayloadPlaintext {
     const serialization = Buffer.allocUnsafe(serializationLength);
     serialization.writeUInt8(typeLength, 0);
     serialization.write(this.type, 1);
-    serialization.writeUInt32LE(this.value.length, 1 + typeLength);
-    this.value.copy(serialization, 1 + typeLength + 4);
+    serialization.writeUInt32LE(this.content.length, 1 + typeLength);
+    this.content.copy(serialization, 1 + typeLength + 4);
     return bufferToArray(serialization);
   }
 }
