@@ -1,5 +1,3 @@
-// tslint:disable:no-let
-
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import { CryptoEngine } from 'pkijs';

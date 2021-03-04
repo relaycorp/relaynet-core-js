@@ -1,5 +1,3 @@
-/* tslint:disable:no-let */
-
 import { OctetString, Sequence } from 'asn1js';
 import { arrayBufferFrom, generateStubCert } from '../../../_test_utils';
 import { derSerializeHeterogeneousSequence } from '../../../asn1';

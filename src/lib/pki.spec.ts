@@ -1,5 +1,3 @@
-// tslint:disable:no-let
-
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
