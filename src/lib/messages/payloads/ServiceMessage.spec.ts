@@ -1,9 +1,10 @@
-import { OctetString, Sequence } from 'asn1js';
+import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
-import { expectBuffersToEqual } from '../../_test_utils';
-import { derDeserialize } from '../../crypto_wrappers/_utils';
 
-import RAMFError from '../../ramf/RAMFError';
+import { arrayBufferFrom, expectBuffersToEqual, getAsn1SequenceItem } from '../../_test_utils';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { derDeserialize } from '../../crypto_wrappers/_utils';
+import InvalidMessageError from '../InvalidMessageError';
 import ServiceMessage from './ServiceMessage';
 
 const TYPE = 'the type';
@@ -17,8 +18,9 @@ describe('ServiceMessage', () => {
       const serialization = message.serialize();
 
       const sequence = derDeserialize(serialization);
-      expect(sequence).toBeInstanceOf(Sequence);
-      expect((sequence as Sequence).valueBlock.value[0]).toHaveProperty('valueBlock.value', TYPE);
+      expect(sequence).toBeInstanceOf(asn1js.Sequence);
+      const typeASN1 = getAsn1SequenceItem(sequence, 0);
+      expect(typeASN1.valueBlock.valueHex).toEqual(arrayBufferFrom(TYPE));
     });
 
     test('Content should be serialized', () => {
@@ -27,39 +29,38 @@ describe('ServiceMessage', () => {
       const serialization = message.serialize();
 
       const sequence = derDeserialize(serialization);
-      expect(sequence).toBeInstanceOf(Sequence);
-      expectBuffersToEqual(
-        bufferToArray(CONTENT),
-        ((sequence as Sequence).valueBlock.value[1] as OctetString).valueBlock.valueHex,
-      );
+      expect(sequence).toBeInstanceOf(asn1js.Sequence);
+      const contentASN1 = getAsn1SequenceItem(sequence, 1);
+      expectBuffersToEqual(bufferToArray(CONTENT), contentASN1.valueBlock.valueHex);
     });
   });
 
   describe('deserialize', () => {
-    test('Invalid buffers should result in an error', () => {
-      const invalidBuffer = bufferToArray(Buffer.from('nope.jpeg'));
-      expect(() => ServiceMessage.deserialize(invalidBuffer)).toThrowWithMessage(
-        RAMFError,
+    test('Serialization should be DER sequence', () => {
+      const invalidSerialization = new asn1js.Null().toBER(false);
+      expect(() => ServiceMessage.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
         'Invalid service message serialization',
       );
     });
 
-    test('A valid serialization should result in a new ServiceMessage', () => {
+    test('Sequence should have at least two items', () => {
+      const invalidSerialization = derSerializeHeterogeneousSequence(
+        new asn1js.VisibleString({ value: 'foo' }),
+      );
+      expect(() => ServiceMessage.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
+        'Invalid service message serialization',
+      );
+    });
+
+    test('Valid service message should be accepted', () => {
       const originalMessage = new ServiceMessage(TYPE, Buffer.from('Hey'));
       const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
 
       const finalMessage = ServiceMessage.deserialize(serialization);
       expect(finalMessage.type).toEqual(originalMessage.type);
-      expect(finalMessage.content.equals(originalMessage.content)).toBeTrue();
-    });
-
-    test('Value length prefix should be decoded in little-endian', () => {
-      const valueLength = 0x0100; // Two *different* octets, so endianness matters
-      const originalMessage = new ServiceMessage(TYPE, Buffer.from('A'.repeat(valueLength)));
-      const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
-
-      const finalMessage = ServiceMessage.deserialize(serialization);
-      expect(finalMessage.content).toHaveLength(valueLength);
+      expectBuffersToEqual(originalMessage.content, finalMessage.content);
     });
   });
 });
