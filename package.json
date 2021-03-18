@@ -68,7 +68,7 @@
     "ts-jest": "^26.5.3",
     "ts-node": "^9.1.1",
     "tslint": "^5.20.1",
-    "typedoc": "^0.20.23",
+    "typedoc": "^0.20.32",
     "typescript": "^3.9.9"
   },
   "prettier": "@relaycorp/shared-config/.prettierrc.json",
