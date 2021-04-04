@@ -3,7 +3,7 @@ import BasicCertificateIssuanceOptions from './crypto_wrappers/x509/BasicCertifi
 import Certificate from './crypto_wrappers/x509/Certificate';
 import CertificateError from './crypto_wrappers/x509/CertificateError';
 
-const MAX_DH_CERT_LENGTH_DAYS = 180;
+const MAX_DH_CERT_LENGTH_DAYS = 60;
 const SECONDS_PER_DAY = 86_400;
 const MAX_DH_CERT_LENGTH_MS = MAX_DH_CERT_LENGTH_DAYS * SECONDS_PER_DAY * 1_000;
 
