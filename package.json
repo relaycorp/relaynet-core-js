@@ -42,7 +42,7 @@
   "dependencies": {
     "@peculiar/webcrypto": "^1.1.6",
     "@types/verror": "^1.10.4",
-    "asn1js": "^2.0.26",
+    "asn1js": "^2.1.1",
     "binary-parser": "^1.7.0",
     "buffer-to-arraybuffer": "0.0.6",
     "dohdec": "^3.1.0",

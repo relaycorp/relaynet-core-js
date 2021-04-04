@@ -2,7 +2,6 @@ import bufferToArray from 'buffer-to-arraybuffer';
 
 import {
   EnvelopedData,
-  OriginatorSessionKey,
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
@@ -46,7 +45,7 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
     payloadPlaintext: ArrayBuffer,
     recipientCertificate: Certificate,
   ): Promise<Buffer> {
-    const sessionKey = await this.fetchSessionKeyForRecipient(recipientCertificate);
+    const sessionKey = await this.publicKeyStore.fetchLastSessionKey(recipientCertificate);
 
     let envelopedData: EnvelopedData;
     if (sessionKey) {
@@ -69,16 +68,6 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
       );
     }
     return Buffer.from(envelopedData.serialize());
-  }
-
-  private async fetchSessionKeyForRecipient(
-    recipientCertificate: Certificate,
-  ): Promise<OriginatorSessionKey | undefined> {
-    try {
-      return await this.publicKeyStore.fetchLastSessionKey(recipientCertificate);
-    } catch (_) {
-      return undefined;
-    }
   }
 }
 
