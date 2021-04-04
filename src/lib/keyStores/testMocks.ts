@@ -73,7 +73,7 @@ export class MockPublicKeyStore extends PublicKeyStore {
   // tslint:disable-next-line:readonly-keyword
   public readonly keys: { [key: string]: SessionPublicKeyData } = {};
 
-  constructor(protected readonly failOnSave = false) {
+  constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
     super();
   }
 
@@ -82,6 +82,9 @@ export class MockPublicKeyStore extends PublicKeyStore {
   }
 
   protected async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null> {
+    if (this.fetchError) {
+      throw this.fetchError;
+    }
     const keyData = this.keys[peerPrivateAddress];
     return keyData ?? null;
   }

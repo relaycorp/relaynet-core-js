@@ -39,6 +39,16 @@ describe('PublicKeyStore', () => {
 
       await expect(store.fetchLastSessionKey(CERTIFICATE)).resolves.toBeNull();
     });
+
+    test('Retrieval errors should be wrapped', async () => {
+      const fetchError = new Error('Ho noes');
+
+      const store = new MockPublicKeyStore(false, fetchError);
+
+      await expect(store.fetchLastSessionKey(CERTIFICATE)).rejects.toEqual(
+        new PublicKeyStoreError(fetchError, 'Failed to retrieve key'),
+      );
+    });
   });
 
   describe('saveSessionKey', () => {
