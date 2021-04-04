@@ -81,12 +81,9 @@ export class MockPublicKeyStore extends PublicKeyStore {
     this.keys[peerPrivateAddress] = keyData;
   }
 
-  protected async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData> {
+  protected async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null> {
     const keyData = this.keys[peerPrivateAddress];
-    if (keyData === undefined) {
-      throw new Error(`Unknown key ${peerPrivateAddress}`);
-    }
-    return keyData;
+    return keyData ?? null;
   }
 
   protected async saveKey(
