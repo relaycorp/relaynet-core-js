@@ -1,4 +1,4 @@
-/* tslint:disable:no-let no-object-mutation */
+/* tslint:disable:no-object-mutation */
 
 import { generateStubCert } from '../_test_utils';
 import { derSerializePublicKey, generateECDHKeyPair } from '../crypto_wrappers/keys';
@@ -30,16 +30,23 @@ describe('PublicKeyStore', () => {
       store.registerKey(keyData, await CERTIFICATE.calculateSubjectPrivateAddress());
 
       const key = await store.fetchLastSessionKey(CERTIFICATE);
-      expect(key.keyId).toEqual(KEY_ID);
-      expect(await derSerializePublicKey(key.publicKey)).toEqual(keyData.publicKeyDer);
+      expect(key?.keyId).toEqual(KEY_ID);
+      expect(await derSerializePublicKey(key!.publicKey)).toEqual(keyData.publicKeyDer);
     });
 
-    test('An error should be thrown if key for recipient does not exist', async () => {
+    test('Null should be returned if key for recipient does not exist', async () => {
       const store = new MockPublicKeyStore();
 
-      await expect(store.fetchLastSessionKey(CERTIFICATE)).rejects.toHaveProperty(
-        'message',
-        expect.stringMatching(/^Failed to retrieve key: Unknown key/),
+      await expect(store.fetchLastSessionKey(CERTIFICATE)).resolves.toBeNull();
+    });
+
+    test('Retrieval errors should be wrapped', async () => {
+      const fetchError = new Error('Ho noes');
+
+      const store = new MockPublicKeyStore(false, fetchError);
+
+      await expect(store.fetchLastSessionKey(CERTIFICATE)).rejects.toEqual(
+        new PublicKeyStoreError(fetchError, 'Failed to retrieve key'),
       );
     });
   });

@@ -10,9 +10,14 @@ export interface SessionPublicKeyData {
 }
 
 export abstract class PublicKeyStore {
-  public async fetchLastSessionKey(peerCertificate: Certificate): Promise<OriginatorSessionKey> {
+  public async fetchLastSessionKey(
+    peerCertificate: Certificate,
+  ): Promise<OriginatorSessionKey | null> {
     const peerPrivateAddress = await peerCertificate.calculateSubjectPrivateAddress();
     const keyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
+    if (!keyData) {
+      return null;
+    }
     const publicKey = await derDeserializeECDHPublicKey(keyData.publicKeyDer);
     return { publicKey, keyId: keyData.publicKeyId };
   }
@@ -24,14 +29,7 @@ export abstract class PublicKeyStore {
   ): Promise<void> {
     const peerPrivateAddress = await peerCertificate.calculateSubjectPrivateAddress();
 
-    // tslint:disable-next-line:no-let
-    let priorKeyData: SessionPublicKeyData | undefined;
-    try {
-      priorKeyData = await this.fetchKey(peerPrivateAddress);
-    } catch (_) {
-      priorKeyData = undefined;
-    }
-
+    const priorKeyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
     if (priorKeyData && creationTime <= priorKeyData.publicKeyCreationTime) {
       return;
     }
@@ -48,7 +46,9 @@ export abstract class PublicKeyStore {
     }
   }
 
-  protected abstract async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData>;
+  protected abstract async fetchKey(
+    peerPrivateAddress: string,
+  ): Promise<SessionPublicKeyData | null>;
 
   protected abstract async saveKey(
     keyData: SessionPublicKeyData,
@@ -57,7 +57,7 @@ export abstract class PublicKeyStore {
 
   private async fetchKeyDataOrThrowError(
     peerPrivateAddress: string,
-  ): Promise<SessionPublicKeyData> {
+  ): Promise<SessionPublicKeyData | null> {
     try {
       return await this.fetchKey(peerPrivateAddress);
     } catch (error) {
