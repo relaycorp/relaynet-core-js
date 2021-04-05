@@ -10,8 +10,9 @@ export interface PublicNodeAddress {
 }
 
 export enum BindingType {
-  PDC = 'awala-pdc',
   CRC = 'awala-crc',
+  GSC = 'awala-gsc',
+  PDC = 'awala-pdc',
 }
 
 export class PublicAddressingError extends RelaynetError {}
