@@ -4,8 +4,8 @@ import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../inde
 import { tryCatchAsync } from '../../_utils';
 import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
 import { sign, verify } from '../../crypto_wrappers/rsaSigning';
-import { RELAYNET_OIDS } from '../../oids';
 import InvalidMessageError from '../../messages/InvalidMessageError';
+import { RELAYNET_OIDS } from '../../oids';
 
 export class PrivateNodeRegistrationRequest {
   public static async deserialize(

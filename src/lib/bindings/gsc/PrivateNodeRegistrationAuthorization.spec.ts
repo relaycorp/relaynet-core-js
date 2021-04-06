@@ -6,8 +6,8 @@ import { arrayBufferFrom } from '../../_test_utils';
 import { dateToASN1DateTimeInUTC, derSerializeHeterogeneousSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import { verify } from '../../crypto_wrappers/rsaSigning';
-import { RELAYNET_OIDS } from '../../oids';
 import InvalidMessageError from '../../messages/InvalidMessageError';
+import { RELAYNET_OIDS } from '../../oids';
 import { PrivateNodeRegistrationAuthorization } from './PrivateNodeRegistrationAuthorization';
 
 describe('PrivateNodeRegistrationAuthorization', () => {
