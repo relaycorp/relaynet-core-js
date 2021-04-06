@@ -63,6 +63,9 @@ export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 export * from './lib/messages/ParcelCollectionAck';
 export { Signer } from './lib/messages/bindings/Signer';
 export { DETACHED_SIGNATURE_TYPES } from './lib/messages/bindings/DetachedSignatureType';
+// GSC interface (for bindings like PoWeb)
+export { GSCClient } from './lib/bindings/gsc/GSCClient';
+export { StreamingMode } from './lib/bindings/gsc/StreamingMode';
 export { HandshakeChallenge } from './lib/bindings/gsc/HandshakeChallenge';
 export { HandshakeResponse } from './lib/bindings/gsc/HandshakeResponse';
 export { ParcelCollection } from './lib/bindings/gsc/ParcelCollection';
