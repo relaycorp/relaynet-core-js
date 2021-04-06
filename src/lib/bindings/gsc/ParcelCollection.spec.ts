@@ -1,18 +1,18 @@
 import {
-  generateRSAKeyPair,
-  issueDeliveryAuthorization,
-  issueEndpointCertificate,
-  issueGatewayCertificate,
-} from '../../../index';
-import {
   arrayBufferFrom,
   expectBuffersToEqual,
   generateStubCert,
   reSerializeCertificate,
 } from '../../_test_utils';
+import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import Parcel from '../../messages/Parcel';
+import {
+  issueDeliveryAuthorization,
+  issueEndpointCertificate,
+  issueGatewayCertificate,
+} from '../../pki';
 import RAMFSyntaxError from '../../ramf/RAMFSyntaxError';
 import { ParcelCollection } from './ParcelCollection';
 
