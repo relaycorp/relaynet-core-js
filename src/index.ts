@@ -63,13 +63,13 @@ export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 export * from './lib/messages/ParcelCollectionAck';
 export { Signer } from './lib/messages/bindings/Signer';
 export { DETACHED_SIGNATURE_TYPES } from './lib/messages/bindings/DetachedSignatureType';
-export { HandshakeChallenge } from './lib/messages/bindings/pdc/HandshakeChallenge';
-export { HandshakeResponse } from './lib/messages/bindings/pdc/HandshakeResponse';
-export { ParcelCollection } from './lib/messages/bindings/pdc/ParcelCollection';
-export { ParcelDelivery } from './lib/messages/bindings/pdc/ParcelDelivery';
-export { PrivateNodeRegistrationAuthorization } from './lib/messages/bindings/pdc/PrivateNodeRegistrationAuthorization';
-export { PrivateNodeRegistration } from './lib/messages/bindings/pdc/PrivateNodeRegistration';
-export { PrivateNodeRegistrationRequest } from './lib/messages/bindings/pdc/PrivateNodeRegistrationRequest';
+export { HandshakeChallenge } from './lib/bindings/gsc/HandshakeChallenge';
+export { HandshakeResponse } from './lib/bindings/gsc/HandshakeResponse';
+export { ParcelCollection } from './lib/bindings/gsc/ParcelCollection';
+export { ParcelDelivery } from './lib/bindings/gsc/ParcelDelivery';
+export { PrivateNodeRegistrationAuthorization } from './lib/bindings/gsc/PrivateNodeRegistrationAuthorization';
+export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistration';
+export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
 // Nodes
 export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 

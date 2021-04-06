@@ -1,8 +1,8 @@
 import { Constructed, Integer, OctetString, Sequence } from 'asn1js';
-import { arrayBufferFrom, expectBuffersToEqual } from '../../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../../asn1';
-import { derDeserialize } from '../../../crypto_wrappers/_utils';
-import InvalidMessageError from '../../InvalidMessageError';
+import { arrayBufferFrom, expectBuffersToEqual } from '../../_test_utils';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { derDeserialize } from '../../crypto_wrappers/_utils';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 import { HandshakeResponse } from './HandshakeResponse';
 
 const SIGNATURE1 = arrayBufferFrom('Signature 1');

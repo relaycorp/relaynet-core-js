@@ -1,9 +1,9 @@
 import { OctetString, Sequence } from 'asn1js';
-import { arrayBufferFrom, generateStubCert } from '../../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../../asn1';
-import { derDeserialize } from '../../../crypto_wrappers/_utils';
-import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import InvalidMessageError from '../../InvalidMessageError';
+import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { derDeserialize } from '../../crypto_wrappers/_utils';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 import { PrivateNodeRegistration } from './PrivateNodeRegistration';
 
 let privateNodeCertificate: Certificate;

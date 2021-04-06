@@ -5,13 +5,13 @@ import {
   derSerializePublicKey,
   generateRSAKeyPair,
   PrivateNodeRegistrationRequest,
-} from '../../../..';
-import { arrayBufferFrom, getAsn1SequenceItem } from '../../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../../asn1';
-import { derDeserialize } from '../../../crypto_wrappers/_utils';
-import { verify } from '../../../crypto_wrappers/rsaSigning';
-import { RELAYNET_OIDS } from '../../../oids';
-import InvalidMessageError from '../../InvalidMessageError';
+} from '../../../index';
+import { arrayBufferFrom, getAsn1SequenceItem } from '../../_test_utils';
+import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { derDeserialize } from '../../crypto_wrappers/_utils';
+import { verify } from '../../crypto_wrappers/rsaSigning';
+import { RELAYNET_OIDS } from '../../oids';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 
 const authorizationSerialized = arrayBufferFrom('The PNRA');
 let privateNodeKeyPair: CryptoKeyPair;

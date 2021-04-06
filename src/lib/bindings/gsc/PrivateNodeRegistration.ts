@@ -1,7 +1,7 @@
 import { OctetString, Primitive, verifySchema } from 'asn1js';
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../../asn1';
-import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import InvalidMessageError from '../../InvalidMessageError';
+import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 
 export class PrivateNodeRegistration {
   public static deserialize(serialization: ArrayBuffer): PrivateNodeRegistration {
