@@ -5,10 +5,10 @@ import {
   dateToASN1DateTimeInUTC,
   derSerializeHeterogeneousSequence,
   makeHeterogeneousSequenceSchema,
-} from '../../../asn1';
-import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
-import { RELAYNET_OIDS } from '../../../oids';
-import InvalidMessageError from '../../InvalidMessageError';
+} from '../../asn1';
+import { sign, verify } from '../../crypto_wrappers/rsaSigning';
+import InvalidMessageError from '../../messages/InvalidMessageError';
+import { RELAYNET_OIDS } from '../../oids';
 
 export class PrivateNodeRegistrationAuthorization {
   public static async deserialize(

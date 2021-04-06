@@ -1,6 +1,6 @@
-import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import Parcel from '../../Parcel';
-import { RecipientAddressType } from '../../RecipientAddressType';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import Parcel from '../../messages/Parcel';
+import { RecipientAddressType } from '../../messages/RecipientAddressType';
 
 export class ParcelCollection {
   constructor(

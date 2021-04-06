@@ -1,6 +1,6 @@
 import { OctetString, Primitive, verifySchema } from 'asn1js';
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../../asn1';
-import InvalidMessageError from '../../InvalidMessageError';
+import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 
 export class HandshakeChallenge {
   public static deserialize(serialization: ArrayBuffer): HandshakeChallenge {

@@ -1,11 +1,11 @@
 import { ObjectIdentifier, OctetString, Primitive, verifySchema } from 'asn1js';
 
-import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../..';
-import { tryCatchAsync } from '../../../_utils';
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../../asn1';
-import { sign, verify } from '../../../crypto_wrappers/rsaSigning';
-import { RELAYNET_OIDS } from '../../../oids';
-import InvalidMessageError from '../../InvalidMessageError';
+import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../index';
+import { tryCatchAsync } from '../../_utils';
+import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import { sign, verify } from '../../crypto_wrappers/rsaSigning';
+import InvalidMessageError from '../../messages/InvalidMessageError';
+import { RELAYNET_OIDS } from '../../oids';
 
 export class PrivateNodeRegistrationRequest {
   public static async deserialize(

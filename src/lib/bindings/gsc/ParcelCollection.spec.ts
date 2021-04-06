@@ -1,19 +1,19 @@
 import {
-  generateRSAKeyPair,
-  issueDeliveryAuthorization,
-  issueEndpointCertificate,
-  issueGatewayCertificate,
-} from '../../../..';
-import {
   arrayBufferFrom,
   expectBuffersToEqual,
   generateStubCert,
   reSerializeCertificate,
-} from '../../../_test_utils';
-import Certificate from '../../../crypto_wrappers/x509/Certificate';
-import RAMFSyntaxError from '../../../ramf/RAMFSyntaxError';
-import InvalidMessageError from '../../InvalidMessageError';
-import Parcel from '../../Parcel';
+} from '../../_test_utils';
+import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import InvalidMessageError from '../../messages/InvalidMessageError';
+import Parcel from '../../messages/Parcel';
+import {
+  issueDeliveryAuthorization,
+  issueEndpointCertificate,
+  issueGatewayCertificate,
+} from '../../pki';
+import RAMFSyntaxError from '../../ramf/RAMFSyntaxError';
 import { ParcelCollection } from './ParcelCollection';
 
 const PARCEL_SERIALIZED = arrayBufferFrom('the parcel serialized');
