@@ -30,7 +30,6 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     privateKey: CryptoKey,
     certificate: Certificate,
   ): Promise<void> {
-    // tslint:disable-next-line:no-object-mutation
     this.keys[certificate.getSerialNumberHex()] = {
       certificateDer: Buffer.from(certificate.serialize()),
       keyDer: await derSerializePrivateKey(privateKey),
@@ -43,7 +42,6 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     keyId: string,
     recipientCertificate: Certificate,
   ): Promise<void> {
-    // tslint:disable-next-line:no-object-mutation
     this.keys[keyId] = {
       keyDer: await derSerializePrivateKey(privateKey),
       recipientPublicKeyDigest: await getPublicKeyDigestHex(
@@ -64,17 +62,20 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    // tslint:disable-next-line:no-object-mutation
     this.keys[keyId] = privateKeyData;
   }
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {
   // tslint:disable-next-line:readonly-keyword
-  public readonly keys: { [key: string]: SessionPublicKeyData } = {};
+  public keys: { [key: string]: SessionPublicKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
     super();
+  }
+
+  public clear(): void {
+    this.keys = {};
   }
 
   public registerKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {

@@ -19,9 +19,13 @@ describe('PublicKeyStore', () => {
     CERTIFICATE = await generateStubCert();
   });
 
+  const store = new MockPublicKeyStore();
+  beforeEach(() => {
+    store.clear();
+  });
+
   describe('fetchLastSessionKey', () => {
     test('Key data should be returned if key for recipient exists', async () => {
-      const store = new MockPublicKeyStore();
       const keyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(PUBLIC_KEY),
@@ -35,17 +39,15 @@ describe('PublicKeyStore', () => {
     });
 
     test('Null should be returned if key for recipient does not exist', async () => {
-      const store = new MockPublicKeyStore();
-
       await expect(store.fetchLastSessionKey(CERTIFICATE)).resolves.toBeNull();
     });
 
     test('Retrieval errors should be wrapped', async () => {
       const fetchError = new Error('Ho noes');
 
-      const store = new MockPublicKeyStore(false, fetchError);
+      const bogusStore = new MockPublicKeyStore(false, fetchError);
 
-      await expect(store.fetchLastSessionKey(CERTIFICATE)).rejects.toEqual(
+      await expect(bogusStore.fetchLastSessionKey(CERTIFICATE)).rejects.toEqual(
         new PublicKeyStoreError(fetchError, 'Failed to retrieve key'),
       );
     });
@@ -53,8 +55,6 @@ describe('PublicKeyStore', () => {
 
   describe('saveSessionKey', () => {
     test('Key data should be saved if there is no prior key for recipient', async () => {
-      const store = new MockPublicKeyStore();
-
       await store.saveSessionKey(
         { keyId: KEY_ID, publicKey: PUBLIC_KEY },
         CERTIFICATE,
@@ -71,7 +71,6 @@ describe('PublicKeyStore', () => {
     });
 
     test('Key data should be saved if prior key is older', async () => {
-      const store = new MockPublicKeyStore();
       const oldKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(PUBLIC_KEY),
@@ -99,7 +98,6 @@ describe('PublicKeyStore', () => {
     });
 
     test('Key data should not be saved if prior key is newer', async () => {
-      const store = new MockPublicKeyStore();
       const currentKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(PUBLIC_KEY),
@@ -122,10 +120,14 @@ describe('PublicKeyStore', () => {
     });
 
     test('Any error should be propagated', async () => {
-      const store = new MockPublicKeyStore(true);
+      const bogusStore = new MockPublicKeyStore(true);
 
       await expect(
-        store.saveSessionKey({ keyId: KEY_ID, publicKey: PUBLIC_KEY }, CERTIFICATE, CREATION_DATE),
+        bogusStore.saveSessionKey(
+          { keyId: KEY_ID, publicKey: PUBLIC_KEY },
+          CERTIFICATE,
+          CREATION_DATE,
+        ),
       ).rejects.toEqual(new PublicKeyStoreError('Failed to save public session key: Denied'));
     });
   });
