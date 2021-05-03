@@ -47,7 +47,7 @@
     "buffer-to-arraybuffer": "0.0.6",
     "dohdec": "^3.1.0",
     "moment": "^2.29.1",
-    "pkijs": "^2.1.94",
+    "pkijs": "^2.1.95",
     "smart-buffer": "^4.1.0",
     "uuid4": "^2.0.2",
     "verror": "^1.10.0"
