@@ -8,16 +8,6 @@ updates:
     timezone: Etc/UCT
   open-pull-requests-limit: 99
   versioning-strategy: increase
-  ignore:
-  - dependency-name: asn1js
-    versions:
-    - 2.1.0
-  - dependency-name: typedoc
-    versions:
-    - 0.20.25
-    - 0.20.27
-    - 0.20.29
-    - 0.20.30
 - package-ecosystem: bundler
   directory: "/docs"
   schedule:
