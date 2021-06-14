@@ -320,8 +320,9 @@ describe('SessionEnvelopedData', () => {
       expect(dhKeyId).toHaveProperty('byteLength', 8);
 
       expect(envelopedData.pkijsEnvelopedData.unprotectedAttrs).toHaveLength(1);
-      const dhKeyIdAttribute = (envelopedData.pkijsEnvelopedData
-        .unprotectedAttrs as readonly pkijs.Attribute[])[0];
+      const dhKeyIdAttribute = (
+        envelopedData.pkijsEnvelopedData.unprotectedAttrs as readonly pkijs.Attribute[]
+      )[0];
       expect(dhKeyIdAttribute).toHaveProperty(
         'type',
         OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,

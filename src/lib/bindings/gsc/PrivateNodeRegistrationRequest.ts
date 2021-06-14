@@ -25,9 +25,8 @@ export class PrivateNodeRegistrationRequest {
 
     const authorizationSerializedASN1 = request.pnraSerialized;
     const countersignature = request.countersignature.valueBlock.valueHex;
-    const countersignaturePlaintext = PrivateNodeRegistrationRequest.makePNRACountersignaturePlaintext(
-      authorizationSerializedASN1,
-    );
+    const countersignaturePlaintext =
+      PrivateNodeRegistrationRequest.makePNRACountersignaturePlaintext(authorizationSerializedASN1);
     if (!(await verify(countersignature, privateNodePublicKey, countersignaturePlaintext))) {
       throw new InvalidMessageError('Authorization countersignature is invalid');
     }
@@ -65,9 +64,8 @@ export class PrivateNodeRegistrationRequest {
     const privateNodePublicKeySerialized = await derSerializePublicKey(this.privateNodePublicKey);
 
     const authorizationSerializedASN1 = new OctetString({ valueHex: this.pnraSerialized });
-    const countersignaturePlaintext = PrivateNodeRegistrationRequest.makePNRACountersignaturePlaintext(
-      authorizationSerializedASN1,
-    );
+    const countersignaturePlaintext =
+      PrivateNodeRegistrationRequest.makePNRACountersignaturePlaintext(authorizationSerializedASN1);
     const signature = await sign(countersignaturePlaintext, privateNodePrivateKey);
 
     return derSerializeHeterogeneousSequence(
