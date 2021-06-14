@@ -278,9 +278,10 @@ describe('issue()', () => {
       subjectPublicKey: issuerKeyPair.publicKey,
     });
     // tslint:disable-next-line:no-object-mutation
-    issuerCert.pkijsCertificate.extensions = (
-      issuerCert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>
-    ).filter((e) => e.extnID !== oids.BASIC_CONSTRAINTS);
+    issuerCert.pkijsCertificate.extensions = (issuerCert.pkijsCertificate
+      .extensions as ReadonlyArray<pkijs.Extension>).filter(
+      (e) => e.extnID !== oids.BASIC_CONSTRAINTS,
+    );
 
     await expect(
       Certificate.issue({
@@ -591,7 +592,7 @@ test('calculateSubjectPrivateAddress should return private node address', async 
 describe('getIssuerPrivateAddress', () => {
   test('Nothing should be output if there are no extensions', async () => {
     const certificate = await generateStubCert({});
-    // tslint:disable-next-line:no-delete
+    // tslint:disable-next-line:no-delete no-object-mutation
     delete certificate.pkijsCertificate.extensions;
 
     expect(certificate.getIssuerPrivateAddress()).toBeNull();

@@ -148,7 +148,7 @@ export default class Certificate {
 
   public getCommonName(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
-      (a) => (a.type as unknown as string) === oids.COMMON_NAME,
+      (a) => ((a.type as unknown) as string) === oids.COMMON_NAME,
     );
     if (matchingDnAttr.length === 0) {
       throw new CertificateError('Distinguished Name does not contain Common Name');
