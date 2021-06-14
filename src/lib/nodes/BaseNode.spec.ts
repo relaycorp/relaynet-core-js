@@ -105,7 +105,9 @@ describe('unwrapMessagePayload', () => {
     expectBuffersToEqual(Buffer.from(encryptionResult.dhKeyId), storedKey.publicKeyId);
     expectBuffersToEqual(
       await derSerializePublicKey(
-        (await encryptionResult.envelopedData.getOriginatorKey()).publicKey,
+        (
+          await encryptionResult.envelopedData.getOriginatorKey()
+        ).publicKey,
       ),
       storedKey.publicKeyDer,
     );
