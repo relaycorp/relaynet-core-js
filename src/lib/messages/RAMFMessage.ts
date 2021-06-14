@@ -70,8 +70,8 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
    * @param signatureOptions
    */
   public abstract async serialize(
-    // This method would be concrete if TS allowed us to store the message type and version as
-    // properties
+  // This method would be concrete if TS allowed us to store the message type and version as
+  // properties
     senderPrivateKey: CryptoKey,
     signatureOptions?: Partial<SignatureOptions>,
   ): Promise<ArrayBuffer>;
