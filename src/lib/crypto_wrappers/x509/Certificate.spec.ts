@@ -1,5 +1,3 @@
-/* tslint:disable:no-let */
-
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
@@ -588,6 +586,45 @@ test('calculateSubjectPrivateAddress should return private node address', async 
   await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
     `0${await getPublicKeyDigest(nodeKeyPair.publicKey)}`,
   );
+});
+
+describe('getIssuerPrivateAddress', () => {
+  test('Nothing should be output if there are no extensions', async () => {
+    const certificate = await generateStubCert({});
+    // tslint:disable-next-line:no-delete no-object-mutation
+    delete certificate.pkijsCertificate.extensions;
+
+    expect(certificate.getIssuerPrivateAddress()).toBeNull();
+  });
+
+  test('Nothing should be output if extension is missing', async () => {
+    const certificate = await generateStubCert({});
+    // tslint:disable-next-line:no-object-mutation
+    certificate.pkijsCertificate.extensions = certificate.pkijsCertificate.extensions!.filter(
+      (e) => e.extnID !== oids.AUTHORITY_KEY,
+    );
+
+    expect(certificate.getIssuerPrivateAddress()).toBeNull();
+  });
+
+  test('Private address of issuer should be output if extension is present', async () => {
+    const issuerKeyPair = await generateRSAKeyPair();
+    const issuerCertificate = reSerializeCertificate(
+      await generateStubCert({
+        attributes: { isCA: true },
+        issuerPrivateKey: issuerKeyPair.privateKey,
+        subjectPublicKey: issuerKeyPair.publicKey,
+      }),
+    );
+    const certificate = await generateStubCert({
+      issuerCertificate,
+      issuerPrivateKey: issuerKeyPair.privateKey,
+    });
+
+    expect(certificate.getIssuerPrivateAddress()).toEqual(
+      await issuerCertificate.calculateSubjectPrivateAddress(),
+    );
+  });
 });
 
 describe('isEqual', () => {

@@ -194,6 +194,18 @@ export default class Certificate {
     return `0${subjectKeyDigest}`;
   }
 
+  public getIssuerPrivateAddress(): string | null {
+    const authorityKeyAttribute = this.pkijsCertificate.extensions?.find(
+      (attr) => attr.extnID === oids.AUTHORITY_KEY,
+    );
+    if (!authorityKeyAttribute) {
+      return null;
+    }
+    const authorityKeyId = authorityKeyAttribute.parsedValue as pkijs.AuthorityKeyIdentifier;
+    const id = Buffer.from(authorityKeyId.keyIdentifier.valueBlock.valueHex).toString('hex');
+    return `0${id}`;
+  }
+
   /**
    * Return the certification path (aka "certificate chain") if this certificate can be trusted.
    *
