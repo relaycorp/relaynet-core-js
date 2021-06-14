@@ -280,10 +280,9 @@ describe('issue()', () => {
       subjectPublicKey: issuerKeyPair.publicKey,
     });
     // tslint:disable-next-line:no-object-mutation
-    issuerCert.pkijsCertificate.extensions = (issuerCert.pkijsCertificate
-      .extensions as ReadonlyArray<pkijs.Extension>).filter(
-      (e) => e.extnID !== oids.BASIC_CONSTRAINTS,
-    );
+    issuerCert.pkijsCertificate.extensions = (
+      issuerCert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>
+    ).filter((e) => e.extnID !== oids.BASIC_CONSTRAINTS);
 
     await expect(
       Certificate.issue({
