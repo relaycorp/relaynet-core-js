@@ -37,7 +37,7 @@
     "clean": "del-cli build test"
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=12"
   },
   "dependencies": {
     "@peculiar/webcrypto": "^1.1.7",
