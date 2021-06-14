@@ -148,7 +148,7 @@ export default class Certificate {
 
   public getCommonName(): string {
     const matchingDnAttr = this.pkijsCertificate.subject.typesAndValues.filter(
-      (a) => ((a.type as unknown) as string) === oids.COMMON_NAME,
+      (a) => (a.type as unknown as string) === oids.COMMON_NAME,
     );
     if (matchingDnAttr.length === 0) {
       throw new CertificateError('Distinguished Name does not contain Common Name');
@@ -192,6 +192,18 @@ export default class Certificate {
   public async calculateSubjectPrivateAddress(): Promise<string> {
     const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
     return `0${subjectKeyDigest}`;
+  }
+
+  public getIssuerPrivateAddress(): string | null {
+    const authorityKeyAttribute = this.pkijsCertificate.extensions?.find(
+      (attr) => attr.extnID === oids.AUTHORITY_KEY,
+    );
+    if (!authorityKeyAttribute) {
+      return null;
+    }
+    const authorityKeyId = authorityKeyAttribute.parsedValue as pkijs.AuthorityKeyIdentifier;
+    const id = Buffer.from(authorityKeyId.keyIdentifier.valueBlock.valueHex).toString('hex');
+    return `0${id}`;
   }
 
   /**
