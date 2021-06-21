@@ -2754,10 +2754,10 @@ img {
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 				<a name="collectparcels" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> collect<wbr>Parcels</h3>
-				<div class="tsd-signature tsd-kind-icon">collect<wbr>Parcels<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>nonceSigners<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">readonly </span><a href="../classes/signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a><span class="tsd-signature-symbol">[]</span>, streamingMode<span class="tsd-signature-symbol">: </span><a href="../enums/streamingmode.html" class="tsd-signature-type" data-tsd-kind="Enumeration">StreamingMode</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/parcelcollection.html" class="tsd-signature-type" data-tsd-kind="Class">ParcelCollection</a><span class="tsd-signature-symbol">&gt;</span></div>
+				<div class="tsd-signature tsd-kind-icon">collect<wbr>Parcels<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>nonceSigners<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">readonly </span><a href="../classes/signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a><span class="tsd-signature-symbol">[]</span>, streamingMode<span class="tsd-signature-symbol">: </span><a href="../enums/streamingmode.html" class="tsd-signature-type" data-tsd-kind="Enumeration">StreamingMode</a>, handshakeCallback<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/parcelcollection.html" class="tsd-signature-type" data-tsd-kind="Class">ParcelCollection</a><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cdcd6a5a/src/lib/bindings/gsc/GSCClient.ts#L13">src/lib/bindings/gsc/GSCClient.ts:13</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/29b0e53c/src/lib/bindings/gsc/GSCClient.ts#L13">src/lib/bindings/gsc/GSCClient.ts:13</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -2765,7 +2765,7 @@ img {
 					<ul class="tsd-parameters">
 						<li class="tsd-parameter-signature">
 							<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-interface">
-								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>nonceSigners<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">readonly </span><a href="../classes/signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a><span class="tsd-signature-symbol">[]</span>, streamingMode<span class="tsd-signature-symbol">: </span><a href="../enums/streamingmode.html" class="tsd-signature-type" data-tsd-kind="Enumeration">StreamingMode</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/parcelcollection.html" class="tsd-signature-type" data-tsd-kind="Class">ParcelCollection</a><span class="tsd-signature-symbol">&gt;</span></li>
+								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>nonceSigners<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">readonly </span><a href="../classes/signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a><span class="tsd-signature-symbol">[]</span>, streamingMode<span class="tsd-signature-symbol">: </span><a href="../enums/streamingmode.html" class="tsd-signature-type" data-tsd-kind="Enumeration">StreamingMode</a>, handshakeCallback<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/parcelcollection.html" class="tsd-signature-type" data-tsd-kind="Class">ParcelCollection</a><span class="tsd-signature-symbol">&gt;</span></li>
 							</ul>
 							<ul class="tsd-descriptions">
 								<li class="tsd-description">
@@ -2776,6 +2776,21 @@ img {
 										</li>
 										<li>
 											<h5>streamingMode: <a href="../enums/streamingmode.html" class="tsd-signature-type" data-tsd-kind="Enumeration">StreamingMode</a></h5>
+										</li>
+										<li>
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> handshakeCallback: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
+											<ul class="tsd-parameters">
+												<li class="tsd-parameter-signature">
+													<ul class="tsd-signatures tsd-kind-type-literal">
+														<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+													</ul>
+													<ul class="tsd-descriptions">
+														<li class="tsd-description">
+															<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+														</li>
+													</ul>
+												</li>
+											</ul>
 										</li>
 									</ul>
 									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/parcelcollection.html" class="tsd-signature-type" data-tsd-kind="Class">ParcelCollection</a><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -2791,7 +2806,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">deliver<wbr>Parcel<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>parcelSerialized<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span>, signer<span class="tsd-signature-symbol">: </span><a href="../classes/signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cdcd6a5a/src/lib/bindings/gsc/GSCClient.ts#L11">src/lib/bindings/gsc/GSCClient.ts:11</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/29b0e53c/src/lib/bindings/gsc/GSCClient.ts#L11">src/lib/bindings/gsc/GSCClient.ts:11</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -2825,7 +2840,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">pre<wbr>Register<wbr>Node<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>nodePublicKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cdcd6a5a/src/lib/bindings/gsc/GSCClient.ts#L7">src/lib/bindings/gsc/GSCClient.ts:7</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/29b0e53c/src/lib/bindings/gsc/GSCClient.ts#L7">src/lib/bindings/gsc/GSCClient.ts:7</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -2856,7 +2871,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">register<wbr>Node<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>pnrrSerialized<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/privatenoderegistration.html" class="tsd-signature-type" data-tsd-kind="Class">PrivateNodeRegistration</a><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cdcd6a5a/src/lib/bindings/gsc/GSCClient.ts#L9">src/lib/bindings/gsc/GSCClient.ts:9</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/29b0e53c/src/lib/bindings/gsc/GSCClient.ts#L9">src/lib/bindings/gsc/GSCClient.ts:9</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
