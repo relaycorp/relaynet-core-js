@@ -13,5 +13,6 @@ export interface GSCClient {
   readonly collectParcels: (
     nonceSigners: readonly Signer[],
     streamingMode: StreamingMode,
+    handshakeCallback?: () => void,
   ) => AsyncIterable<ParcelCollection>;
 }
