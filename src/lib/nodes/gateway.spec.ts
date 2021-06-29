@@ -67,7 +67,7 @@ describe('Gateway', () => {
       RECIPIENT_PUBLIC_SESSION_KEY_ID = Buffer.from(await generateRandom64BitValue());
     });
 
-    test('Cargo recipient should be private address of recipient', async () => {
+    test('Recipient address should be private if public address is unset', async () => {
       const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
 
       const cargoesSerialized = await generateCargoesFromMessages(
@@ -80,6 +80,21 @@ describe('Gateway', () => {
       expect(cargo.recipientAddress).toEqual(
         await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
       );
+    });
+
+    test('Recipient address should be specified public one if set', async () => {
+      const gateway = new Gateway(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const publicAddress = 'https://gateway.com';
+
+      const cargoesSerialized = await generateCargoesFromMessages(
+        [{ expiryDate: TOMORROW, message: MESSAGE }],
+        RECIPIENT_CERTIFICATE,
+        gateway,
+        publicAddress,
+      );
+
+      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
+      expect(cargo.recipientAddress).toEqual(publicAddress);
     });
 
     test('Payload should be encrypted with recipient certificate if there is no session', async () => {
@@ -291,6 +306,7 @@ describe('Gateway', () => {
       messages: ReadonlyArray<{ readonly expiryDate: Date; readonly message: Buffer }>,
       recipientCertificate: Certificate,
       gateway: Gateway,
+      recipientPublicAddress?: string,
     ): Promise<readonly Buffer[]> {
       return asyncIterableToArray(
         gateway.generateCargoes(
@@ -298,6 +314,7 @@ describe('Gateway', () => {
           recipientCertificate,
           PRIVATE_KEY,
           CERTIFICATE,
+          recipientPublicAddress,
         ),
       );
     }
