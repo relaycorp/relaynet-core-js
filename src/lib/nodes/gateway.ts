@@ -24,13 +24,16 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
     recipientCertificate: Certificate,
     privateKey: CryptoKey,
     certificate: Certificate,
+    recipientPublicAddress?: string,
   ): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
+    const recipientAddress =
+      recipientPublicAddress ?? (await recipientCertificate.calculateSubjectPrivateAddress());
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
       const creationDate = getCargoCreationTime();
       const cargo = new Cargo(
-        await recipientCertificate.calculateSubjectPrivateAddress(),
+        recipientAddress,
         certificate,
         await this.encryptPayload(messageSerialized, recipientCertificate),
         { creationDate, ttl: getSecondsBetweenDates(creationDate, expiryDate) },
