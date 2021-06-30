@@ -195,6 +195,7 @@ export default class Certificate {
   public async calculateSubjectPrivateAddress(): Promise<string> {
     if (!this.privateAddressCache) {
       const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
+      // tslint:disable-next-line:no-object-mutation
       this.privateAddressCache = `0${subjectKeyDigest}`;
     }
     return this.privateAddressCache;
