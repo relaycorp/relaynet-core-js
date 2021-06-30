@@ -1,5 +1,3 @@
-// tslint:disable:no-let
-
 import {
   Certificate,
   generateRSAKeyPair,
@@ -88,10 +86,10 @@ test('Certificate chain should be computed corrected', async () => {
   );
 
   await expect(parcel.getSenderCertificationPath([publicGatewayCert])).resolves.toEqual([
-    endpointPdaCert,
-    peerEndpointCert,
-    privateGatewayCert,
-    publicGatewayCert,
+    expect.toSatisfy((c) => c.isEqual(endpointPdaCert)),
+    expect.toSatisfy((c) => c.isEqual(peerEndpointCert)),
+    expect.toSatisfy((c) => c.isEqual(privateGatewayCert)),
+    expect.toSatisfy((c) => c.isEqual(publicGatewayCert)),
   ]);
 });
 
