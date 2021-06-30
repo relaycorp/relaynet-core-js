@@ -113,6 +113,9 @@ export default class Certificate {
    */
   public readonly pkijsCertificate: pkijs.Certificate;
 
+  // tslint:disable-next-line:readonly-keyword
+  protected privateAddressCache: string | null = null;
+
   /**
    * @internal
    */
@@ -190,8 +193,11 @@ export default class Certificate {
   }
 
   public async calculateSubjectPrivateAddress(): Promise<string> {
-    const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
-    return `0${subjectKeyDigest}`;
+    if (!this.privateAddressCache) {
+      const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
+      this.privateAddressCache = `0${subjectKeyDigest}`;
+    }
+    return this.privateAddressCache;
   }
 
   public getIssuerPrivateAddress(): string | null {
