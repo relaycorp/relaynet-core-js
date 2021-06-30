@@ -576,16 +576,32 @@ describe('getCommonName()', () => {
   });
 });
 
-test('calculateSubjectPrivateAddress should return private node address', async () => {
-  const nodeKeyPair = await generateRSAKeyPair();
-  const nodeCertificate = await generateStubCert({
-    issuerPrivateKey: nodeKeyPair.privateKey,
-    subjectPublicKey: nodeKeyPair.publicKey,
+describe('calculateSubjectPrivateAddress', () => {
+  test('Private node address should be returned', async () => {
+    const nodeKeyPair = await generateRSAKeyPair();
+    const nodeCertificate = await generateStubCert({
+      issuerPrivateKey: nodeKeyPair.privateKey,
+      subjectPublicKey: nodeKeyPair.publicKey,
+    });
+
+    await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
+      `0${await getPublicKeyDigest(nodeKeyPair.publicKey)}`,
+    );
   });
 
-  await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
-    `0${await getPublicKeyDigest(nodeKeyPair.publicKey)}`,
-  );
+  test('Computation should be cached', async () => {
+    const nodeKeyPair = await generateRSAKeyPair();
+    const nodeCertificate = await generateStubCert({
+      issuerPrivateKey: nodeKeyPair.privateKey,
+      subjectPublicKey: nodeKeyPair.publicKey,
+    });
+    const getPublicKeySpy = jest.spyOn(nodeCertificate, 'getPublicKey');
+
+    const address = await nodeCertificate.calculateSubjectPrivateAddress();
+    await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(address);
+
+    expect(getPublicKeySpy).toBeCalledTimes(1);
+  });
 });
 
 describe('getIssuerPrivateAddress', () => {

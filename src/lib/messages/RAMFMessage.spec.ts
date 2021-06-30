@@ -1,4 +1,4 @@
-// tslint:disable:no-let max-classes-per-file
+// tslint:disable:max-classes-per-file
 
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
@@ -178,9 +178,9 @@ describe('RAMFMessage', () => {
     );
 
     await expect(message.getSenderCertificationPath([stubSenderChain.rootCert])).resolves.toEqual([
-      stubSenderChain.senderCert,
-      stubSenderChain.recipientCert,
-      stubSenderChain.rootCert,
+      expect.toSatisfy((c) => c.isEqual(stubSenderChain.senderCert)),
+      expect.toSatisfy((c) => c.isEqual(stubSenderChain.recipientCert)),
+      expect.toSatisfy((c) => c.isEqual(stubSenderChain.rootCert)),
     ]);
   });
 
