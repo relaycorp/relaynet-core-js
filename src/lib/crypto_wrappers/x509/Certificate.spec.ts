@@ -836,6 +836,29 @@ describe('getCertificationPath', () => {
       cert.getCertificationPath([trustedIntermediateCaCert], [stubRootCa]),
     ).rejects.toEqual(new CertificateError('No valid certificate paths found'));
   });
+
+  test('Root certificate should be ignored if passed as intermediate unnecessarily', async () => {
+    const intermediateCaKeyPair = await generateRSAKeyPair();
+    const intermediateCaCert = reSerializeCertificate(
+      await generateStubCert({
+        attributes: { isCA: true },
+        issuerCertificate: stubRootCa,
+        issuerPrivateKey: stubTrustedCaPrivateKey,
+        subjectPublicKey: intermediateCaKeyPair.publicKey,
+      }),
+    );
+
+    const cert = reSerializeCertificate(
+      await generateStubCert({
+        issuerCertificate: intermediateCaCert,
+        issuerPrivateKey: intermediateCaKeyPair.privateKey,
+      }),
+    );
+
+    await expect(
+      cert.getCertificationPath([intermediateCaCert, stubRootCa], [intermediateCaCert]),
+    ).resolves.toEqual([cert, intermediateCaCert]);
+  });
 });
 
 test('getPublicKey should return the subject public key', async () => {
