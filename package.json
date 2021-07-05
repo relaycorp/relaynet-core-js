@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@peculiar/webcrypto": "^1.1.7",
-    "@types/verror": "^1.10.4",
+    "@types/verror": "^1.10.5",
     "asn1js": "^2.1.1",
     "binary-parser": "^1.9.1",
     "buffer-to-arraybuffer": "0.0.6",
