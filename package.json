@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@relaycorp/shared-config": "^1.5.3",
-    "@types/asn1js": "2.0.0",
+    "@types/asn1js": "2.0.2",
     "@types/binary-parser": "^1.5.1",
     "@types/jest": "^26.0.24",
     "@types/pkijs": "0.0.10",
