@@ -241,8 +241,21 @@ export default class Certificate {
       const certificate = new Certificate(pkijsCertificate);
       return isCertificateInArray(certificate, trustedCertificates) ? [pkijsCertificate] : [];
     }
+
+    // Ignore any intermediate certificate that's also the issuer of a trusted certificate.
+    // The main reason for doing this isn't performance, but the fact that PKI.js would fail to
+    // compute the path.
+    const intermediateCertsSanitized = intermediateCaCertificates.filter((c) => {
+      for (const trustedCertificate of trustedCertificates) {
+        if (trustedCertificate.pkijsCertificate.issuer.isEqual(c.pkijsCertificate.subject)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     const chainValidator = new pkijs.CertificateChainValidationEngine({
-      certs: [...intermediateCaCertificates.map((c) => c.pkijsCertificate), this.pkijsCertificate],
+      certs: [...intermediateCertsSanitized.map((c) => c.pkijsCertificate), this.pkijsCertificate],
       findIssuer,
       trustedCerts: trustedCertificates.map((c) => c.pkijsCertificate),
     });
