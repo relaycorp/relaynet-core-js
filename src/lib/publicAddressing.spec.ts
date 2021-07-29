@@ -1,4 +1,4 @@
-import { mockSpy } from './_test_utils';
+import { getPromiseRejection, mockSpy } from './_test_utils';
 
 const HOST = 'test.relaycorp.cloud';
 const TARGET_HOST = 'test-pdc.relaycorp.cloud';
@@ -25,7 +25,12 @@ const mockDOH = mockSpy(jest.fn(), () => ({ getDNS: mockGetDNS }));
 jest.mock('dohdec', () => ({
   DNSoverHTTPS: mockDOH,
 }));
-import { BindingType, PublicAddressingError, resolvePublicAddress } from './publicAddressing';
+import {
+  BindingType,
+  PublicAddressingError,
+  resolvePublicAddress,
+  UnreachableResolverError,
+} from './publicAddressing';
 
 describe('resolvePublicAddress', () => {
   const MALFORMED_ANSWER_ERROR = new PublicAddressingError('DNS answer is malformed');
@@ -136,8 +141,28 @@ describe('resolvePublicAddress', () => {
     );
   });
 
+  test('UnreachableResolverError should be thrown if resolver is unreachable', async () => {
+    const networkError = new Error('Disconnected from Internet');
+    // tslint:disable-next-line:no-object-mutation
+    (networkError as any).errno = 'ENOTFOUND';
+    mockGetDNS.mockRejectedValue(networkError);
+
+    const error = await getPromiseRejection(resolvePublicAddress(HOST, BindingType.PDC));
+
+    expect(error).toBeInstanceOf(UnreachableResolverError);
+    expect(error.message).toMatch(/^Failed to reach DoH resolver:/);
+    expect((error as UnreachableResolverError).cause()).toEqual(networkError);
+  });
+
+  test('Unexpected DNS lookup errors with the resolver should be propagated', async () => {
+    const dnsLookupError = new Error('This is unexpected');
+    mockGetDNS.mockRejectedValue(dnsLookupError);
+
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toBe(dnsLookupError);
+  });
+
   test('An error should be thrown if DNSSEC verification fails', async () => {
-    mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, flag_ad: false });
+    mockGetDNS.mockResolvedValue({ ...SUCCESSFUL_RESPONSE, flag_ad: false });
 
     await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
       new PublicAddressingError(

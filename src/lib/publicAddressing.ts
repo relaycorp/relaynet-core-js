@@ -1,4 +1,6 @@
-import { DNSoverHTTPS } from 'dohdec';
+// tslint:disable:max-classes-per-file
+
+import { DNSoverHTTPS, LookupResult } from 'dohdec';
 
 import RelaynetError from './RelaynetError';
 
@@ -17,13 +19,16 @@ export enum BindingType {
 
 export class PublicAddressingError extends RelaynetError {}
 
+export class UnreachableResolverError extends RelaynetError {}
+
 /**
  * Return public node address for `hostName` if it has a valid SRV record.
  *
  * @param hostName The host name to look up
  * @param bindingType The SRV service to look up
  * @param resolverURL The URL for the DNS-over-HTTPS resolver
- * @throws PublicAddressingError If DNSSEC verification failed or the DNS resolver was unreachable
+ * @throws PublicAddressingError If DNSSEC verification failed
+ * @throws UnreachableResolverError If the DNS resolver was unreachable
  *
  * `null` is returned when `hostName` is an IP address or a non-existing SRV record for the service
  * in `bindingType`.
@@ -46,7 +51,14 @@ export async function resolvePublicAddress(
 
   const name = `_${bindingType}._tcp.${hostName}`;
   const doh = new DNSoverHTTPS({ url: resolverURL });
-  const result = await doh.getDNS({ dnssec: true, name, rrtype: 'SRV', decode: true });
+  let result: LookupResult;
+  try {
+    result = await doh.getDNS({ dnssec: true, name, rrtype: 'SRV', decode: true });
+  } catch (error) {
+    throw error.errno === 'ENOTFOUND'
+      ? new UnreachableResolverError(error, 'Failed to reach DoH resolver')
+      : error;
+  }
   if (!result.flag_ad) {
     throw new PublicAddressingError(`DNSSEC verification for SRV ${name} failed`);
   }
