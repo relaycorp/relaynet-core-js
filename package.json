@@ -43,7 +43,7 @@
     "@peculiar/webcrypto": "^1.1.7",
     "@types/verror": "^1.10.5",
     "asn1js": "^2.1.1",
-    "binary-parser": "^1.9.2",
+    "binary-parser": "^2.0.0",
     "buffer-to-arraybuffer": "0.0.6",
     "dohdec": "^3.1.0",
     "moment": "^2.29.1",
