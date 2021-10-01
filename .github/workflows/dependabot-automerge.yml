@@ -8,5 +8,4 @@ on:
 
 jobs:
   dependabot-automerge:
-    runs-on: ubuntu-latest
     uses: relaycorp/shared-workflows/.github/workflows/dependabot-automerge.yml@main
