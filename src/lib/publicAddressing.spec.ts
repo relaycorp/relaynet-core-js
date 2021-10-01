@@ -1,6 +1,7 @@
 import { getPromiseRejection, mockSpy } from './_test_utils';
 
 const HOST = 'test.relaycorp.cloud';
+const HOST_SRV_NAME = `_awala-pdc._tcp.${HOST}`;
 const TARGET_HOST = 'test-pdc.relaycorp.cloud';
 const TARGET_PORT = 443;
 
@@ -60,7 +61,9 @@ describe('resolvePublicAddress', () => {
   test('SRV record should be requested', async () => {
     await resolvePublicAddress(HOST, BindingType.PDC);
 
-    expect(mockGetDNS).toBeCalledWith(expect.objectContaining({ rrtype: 'SRV' }));
+    expect(mockGetDNS).toBeCalledWith(
+      expect.objectContaining({ name: HOST_SRV_NAME, rrtype: 'SRV' }),
+    );
   });
 
   test('CloudFlare resolver should be used by default', async () => {
@@ -79,10 +82,19 @@ describe('resolvePublicAddress', () => {
     expect(mockDOH).toBeCalledWith(expect.objectContaining({ url: resolverURL }));
   });
 
-  test('Null should be returned if DNS lookup status is not NOERROR', async () => {
+  test('Null should be returned if domain does not exist', async () => {
     mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, rcode: 'NXDOMAIN' });
 
     await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+  });
+
+  test('An error should be thrown if DNS lookup status is not NOERROR', async () => {
+    const status = 'SERVFAIL';
+    mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, rcode: status });
+
+    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      new PublicAddressingError(`SRV lookup for ${HOST_SRV_NAME} failed with status ${status}`),
+    );
   });
 
   test('An error should be thrown if the Answer is empty', async () => {

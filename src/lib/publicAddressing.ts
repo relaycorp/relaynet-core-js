@@ -59,12 +59,15 @@ export async function resolvePublicAddress(
       ? new UnreachableResolverError(error, 'Failed to reach DoH resolver')
       : error;
   }
-  if (!result.flag_ad) {
-    throw new PublicAddressingError(`DNSSEC verification for SRV ${name} failed`);
-  }
-  if (result.rcode !== 'NOERROR') {
+  if (result.rcode === 'NXDOMAIN') {
     // hostName is an IP address or a domain name without the expected SRV record
     return null;
+  }
+  if (result.rcode !== 'NOERROR') {
+    throw new PublicAddressingError(`SRV lookup for ${name} failed with status ${result.rcode}`);
+  }
+  if (!result.flag_ad) {
+    throw new PublicAddressingError(`DNSSEC verification for SRV ${name} failed`);
   }
   const srvAnswers = result.answers.filter((a) => a.type === 'SRV');
   // TODO: Pick the best answer based on its weight and priority fields
