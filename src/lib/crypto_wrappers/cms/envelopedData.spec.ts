@@ -27,7 +27,6 @@ import {
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
-const OID_ECDH_P256 = '1.2.840.10045.3.1.7';
 const OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
 
 const plaintext = arrayBufferFrom('Winter is coming');
@@ -299,15 +298,6 @@ describe('SessionEnvelopedData', () => {
 
       const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
       expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
-    });
-
-    test('Originator should include curve name in the algorithm parameters', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      const algorithm =
-        envelopedData.pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm;
-      expect(algorithm).toHaveProperty('algorithmParams');
-      expect(algorithm.algorithmParams.valueBlock.toString()).toEqual(OID_ECDH_P256);
     });
 
     test('Generated (EC)DH key id should be output and included in unprotectedAttrs', async () => {

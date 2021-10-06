@@ -225,10 +225,6 @@ export class SessionEnvelopedData extends EnvelopedData {
     )) as any;
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
 
-    // pkijs.EnvelopedData.encrypt() deleted the algorithm params so we should reinstate them:
-    pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
-      pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
-
     const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
     return { dhPrivateKey, dhKeyId, envelopedData };
   }
