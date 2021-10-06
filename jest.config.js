@@ -1,6 +1,8 @@
 // For a detailed explanation regarding each configuration property, visit:
 // https://jestjs.io/docs/en/configuration.html
 
+const path = require('path');
+
 module.exports = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
@@ -122,7 +124,7 @@ module.exports = {
   setupFiles: ["jest-date-mock"],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  setupFilesAfterEnv: ["jest-extended", "./jest.setup.js"],
+  setupFilesAfterEnv: ["jest-extended", path.join(__dirname, "jest.setup.js")],
 
   // A list of paths to snapshot serializer modules Jest should use for snapshot testing
   // snapshotSerializers: [],
