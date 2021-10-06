@@ -7,6 +7,6 @@ on:
 
 jobs:
   dependabot-automerge:
-    uses: relaycorp/shared-workflows/prs.yml
+    uses: relaycorp/shared-workflows/prs.yml@main
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
