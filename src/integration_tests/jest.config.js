@@ -1,8 +1,8 @@
-const mainJestConfig = require('./jest.config');
+const mainJestConfig = require('../../jest.config');
 
 module.exports = {
   preset: mainJestConfig.preset,
-  roots: ['src/integration_tests'],
+  roots: ['.'],
   testEnvironment: mainJestConfig.testEnvironment,
   setupFilesAfterEnv: mainJestConfig.setupFilesAfterEnv
 };

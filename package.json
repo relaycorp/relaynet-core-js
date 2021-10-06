@@ -31,7 +31,7 @@
     "static-checks:prettier": "prettier \"src/**/*.ts\" --list-different",
     "test:ci:unit": "run-s build test:ci:unit:jest",
     "test:ci:unit:jest": "jest --config jest.config.ci.js --coverage",
-    "test:integration": "jest --config jest.config.integration.js",
+    "test:integration": "jest --config src/integration_tests/jest.config.js",
     "cov": "run-s build test:unit && opn coverage/lcov-report/index.html",
     "doc-api": "typedoc src/index.ts --out build/docs/api",
     "clean": "del-cli build test"
@@ -43,7 +43,7 @@
     "@peculiar/webcrypto": "^1.1.7",
     "@types/verror": "^1.10.5",
     "asn1js": "^2.1.1",
-    "binary-parser": "^1.9.2",
+    "binary-parser": "^2.0.1",
     "buffer-to-arraybuffer": "0.0.6",
     "dohdec": "^3.1.0",
     "moment": "^2.29.1",
