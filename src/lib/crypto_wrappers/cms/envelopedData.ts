@@ -213,8 +213,20 @@ export class SessionEnvelopedData extends EnvelopedData {
       unprotectedAttrs: [serialNumberAttribute],
     });
 
-    const pkijsCertificate = await getOrMakePkijsCertificate(certificateOrOriginatorKey);
-    pkijsEnvelopedData.addRecipientByCertificate(pkijsCertificate, {}, 2);
+    if (certificateOrOriginatorKey instanceof Certificate) {
+      pkijsEnvelopedData.addRecipientByCertificate(
+        certificateOrOriginatorKey.pkijsCertificate,
+        {},
+        2,
+      );
+    } else {
+      // TODO: Add method to @types/PKI.js
+      // @ts-ignore
+      pkijsEnvelopedData.addRecipientByKeyIdentifier(
+        certificateOrOriginatorKey.publicKey,
+        certificateOrOriginatorKey.keyId,
+      );
+    }
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     const [pkijsEncryptionResult]: ReadonlyArray<{
@@ -255,8 +267,11 @@ export class SessionEnvelopedData extends EnvelopedData {
   public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
-    const serialNumberBlock = encryptedKey.rid.value.serialNumber;
-    return Buffer.from(serialNumberBlock.valueBlock.valueHex);
+    const recipientIdBlock =
+      encryptedKey.rid.value instanceof pkijs.IssuerAndSerialNumber
+        ? encryptedKey.rid.value.serialNumber
+        : encryptedKey.rid.value.subjectKeyIdentifier;
+    return Buffer.from(recipientIdBlock.valueBlock.valueHex);
   }
 
   public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
@@ -289,25 +304,6 @@ async function pkijsDecrypt(
   } catch (error) {
     throw new CMSError(error, 'Decryption failed');
   }
-}
-
-async function getOrMakePkijsCertificate(
-  certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
-): Promise<pkijs.Certificate> {
-  // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
-  // uses it for is to get the public key algorithm. Which you can get from the private key.
-  if (certificateOrOriginatorKey instanceof Certificate) {
-    return certificateOrOriginatorKey.pkijsCertificate;
-  }
-
-  const pkijsCertificate = new pkijs.Certificate({
-    serialNumber: new asn1js.Integer({
-      // @ts-ignore
-      valueHex: bufferToArray(certificateOrOriginatorKey.keyId),
-    }),
-  });
-  await pkijsCertificate.subjectPublicKeyInfo.importKey(certificateOrOriginatorKey.publicKey);
-  return pkijsCertificate;
 }
 
 function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): Buffer {

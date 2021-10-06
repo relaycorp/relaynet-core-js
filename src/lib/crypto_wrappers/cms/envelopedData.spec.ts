@@ -292,6 +292,13 @@ describe('SessionlessEnvelopedData', () => {
 
 describe('SessionEnvelopedData', () => {
   describe('encrypt', () => {
+    test('RecipientInfo should be KeyAgreeRecipientInfo', async () => {
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+      const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
+      expect(recipientInfo.value).toBeInstanceOf(pkijs.KeyAgreeRecipientInfo);
+    });
+
     test('Result should include generated (EC)DH private key', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
       const { dhPrivateKey } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
@@ -317,12 +324,22 @@ describe('SessionEnvelopedData', () => {
         'type',
         OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
       );
-      // @ts-ignore
-      expectBuffersToEqual(dhKeyIdAttribute.values[0].valueBlock.valueHex, dhKeyId);
+      expectBuffersToEqual((dhKeyIdAttribute as any).values[0].valueBlock.valueHex, dhKeyId);
     });
 
-    test('Originator key should be acceptable in lieu of certificate', async () => {
-      jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
+    test('IssuerAndSerialNumber should be used if recipient certificate is passed', async () => {
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+      const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
+      const encryptedKey = recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0];
+      expect(encryptedKey.rid.value).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
+      expect(encryptedKey.rid.value.issuer.isEqual(bobDhCertificate.pkijsCertificate.issuer));
+      expect(
+        encryptedKey.rid.value.serialNumber.isEqual(bobDhCertificate.pkijsCertificate.serialNumber),
+      );
+    });
+
+    test('RecipientKeyIdentifier should be used if recipient certificate is passed', async () => {
       const bobOriginatorKey: OriginatorSessionKey = {
         keyId: Buffer.from('key id'),
         publicKey: bobDhPublicKey,
@@ -330,14 +347,6 @@ describe('SessionEnvelopedData', () => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobOriginatorKey);
 
       expect(envelopedData.getRecipientKeyId()).toEqual(bobOriginatorKey.keyId);
-
-      const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
-      const recipientCertificate = recipientInfo.value.recipientCertificate;
-      const recipientPublicKey = recipientCertificate.subjectPublicKeyInfo.toSchema().toBER(false);
-      expectBuffersToEqual(
-        await derSerializePublicKey(bobOriginatorKey.publicKey),
-        Buffer.from(recipientPublicKey),
-      );
     });
 
     describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
@@ -442,6 +451,26 @@ describe('SessionEnvelopedData', () => {
           new CMSError('Expected KeyAgreeRecipientInfo (got variant: 3)'),
         );
       });
+    });
+  });
+
+  describe('getRecipientKeyId', () => {
+    test('Serial number should be returned if recipient certificate was used', async () => {
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+
+      const actualKeyId = envelopedData.getRecipientKeyId();
+      expect(actualKeyId).toEqual(bobDhCertificate.getSerialNumber());
+    });
+
+    test('Key id should be returned if recipient originator was used', async () => {
+      const bobOriginatorKey: OriginatorSessionKey = {
+        keyId: Buffer.from('key id'),
+        publicKey: bobDhPublicKey,
+      };
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobOriginatorKey);
+
+      const actualKeyId = envelopedData.getRecipientKeyId();
+      expect(actualKeyId).toEqual(bobOriginatorKey.keyId);
     });
   });
 

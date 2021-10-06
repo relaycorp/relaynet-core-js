@@ -157,13 +157,9 @@ function checkRecipientInfo(
   );
 
   // Validate recipientEncryptedKeys
-  expect(recipientInfo.value.recipientEncryptedKeys.encryptedKeys).toHaveLength(1);
-  const keyAgreeRecipientIdentifier =
-    recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0].rid;
-  expect(keyAgreeRecipientIdentifier.variant).toEqual(1);
   const expectedKeyId =
     expectedRecipientCertificate instanceof Certificate
       ? expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.valueHex
-      : bufferToArray(expectedRecipientCertificate.keyId);
-  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.valueHex).toEqual(expectedKeyId);
+      : expectedRecipientCertificate.keyId;
+  expect(envelopedData.getRecipientKeyId()).toEqual(Buffer.from(expectedKeyId));
 }
