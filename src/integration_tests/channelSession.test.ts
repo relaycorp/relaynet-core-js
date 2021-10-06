@@ -1,8 +1,3 @@
-// tslint:disable:no-let
-
-// @ts-ignore
-import bufferToArray from 'buffer-to-arraybuffer';
-// @ts-ignore
 import * as pkijs from 'pkijs';
 
 import {
