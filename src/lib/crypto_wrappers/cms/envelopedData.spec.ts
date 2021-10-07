@@ -501,36 +501,6 @@ describe('SessionEnvelopedData', () => {
       const decryptedPlaintext = await envelopedData.decrypt(bobDhPrivateKey);
       expectBuffersToEqual(decryptedPlaintext, plaintext);
     });
-
-    test('Recipient DH certificate should be faked to set the key algorithm', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      jest.spyOn(pkijs.EnvelopedData.prototype, 'decrypt');
-      await envelopedData.decrypt(bobDhPrivateKey);
-
-      const pkijsDecryptCall = getMockContext(pkijs.EnvelopedData.prototype.decrypt).calls[0];
-      const pkijsDecryptCallArgs = pkijsDecryptCall[1];
-      const actualAlgorithm =
-        pkijsDecryptCallArgs.recipientCertificate.subjectPublicKeyInfo.algorithm;
-      const expectedAlgorithm = bobDhCertificate.pkijsCertificate.subjectPublicKeyInfo.algorithm;
-      expect(actualAlgorithm.algorithmParams.valueBlock.toString()).toEqual(
-        expectedAlgorithm.algorithmParams.valueBlock.toString(),
-      );
-    });
-
-    test('Decryption with mismatching key algorithms should fail', async () => {
-      // This is a safeguard for the workaround to avoid having to pass the recipientCertificate
-      // to PKI.js EnvelopedData.encrypt().
-      const { privateKey } = await generateECDHKeyPair('P-384');
-      expect((privateKey.algorithm as EcKeyAlgorithm).namedCurve).not.toEqual(
-        (bobDhPrivateKey.algorithm as EcKeyAlgorithm).namedCurve,
-      );
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      await expect(envelopedData.decrypt(privateKey)).rejects.toEqual(
-        new CMSError('Decryption failed: Private key is not valid for specified curve.'),
-      );
-    });
   });
 });
 

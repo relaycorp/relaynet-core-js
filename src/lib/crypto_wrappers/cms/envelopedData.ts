@@ -113,7 +113,18 @@ export abstract class EnvelopedData {
    *
    * @param privateKey The private key to decrypt the ciphertext.
    */
-  public abstract async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer>;
+  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    const encryptArgs = {
+      recipientPrivateKey: bufferToArray(privateKeyDer),
+    };
+    try {
+      // TODO: Update @types/pkijs
+      return await this.pkijsEnvelopedData.decrypt(0, encryptArgs as any);
+    } catch (error) {
+      throw new CMSError(error, 'Decryption failed');
+    }
+  }
 
   /**
    * Return the id of the recipient's key used to encrypt the content.
@@ -160,10 +171,6 @@ export class SessionlessEnvelopedData extends EnvelopedData {
     );
 
     return new SessionlessEnvelopedData(pkijsEnvelopedData);
-  }
-
-  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
-    return pkijsDecrypt(this.pkijsEnvelopedData, privateKey);
   }
 
   public getRecipientKeyId(): Buffer {
@@ -272,37 +279,6 @@ export class SessionEnvelopedData extends EnvelopedData {
         ? encryptedKey.rid.value.serialNumber
         : encryptedKey.rid.value.subjectKeyIdentifier;
     return Buffer.from(recipientIdBlock.valueBlock.valueHex);
-  }
-
-  public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
-    const originator = this.pkijsEnvelopedData.recipientInfos[0].value.originator;
-    const dhCertificate: pkijs.Certificate = {
-      subjectPublicKeyInfo: {
-        // @ts-ignore
-        algorithm: {
-          algorithmParams: originator.value.algorithm.algorithmParams,
-        },
-      },
-    };
-    return pkijsDecrypt(this.pkijsEnvelopedData, dhPrivateKey, dhCertificate);
-  }
-}
-
-async function pkijsDecrypt(
-  envelopedData: pkijs.EnvelopedData,
-  privateKey: CryptoKey,
-  dhCertificate?: pkijs.Certificate,
-): Promise<ArrayBuffer> {
-  const privateKeyDer = await derSerializePrivateKey(privateKey);
-  const encryptArgs = {
-    recipientCertificate: dhCertificate,
-    recipientPrivateKey: bufferToArray(privateKeyDer),
-  };
-  try {
-    // @ts-ignore
-    return await envelopedData.decrypt(0, encryptArgs);
-  } catch (error) {
-    throw new CMSError(error, 'Decryption failed');
   }
 }
 
