@@ -115,12 +115,11 @@ export abstract class EnvelopedData {
    */
   public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
     const privateKeyDer = await derSerializePrivateKey(privateKey);
-    const encryptArgs = {
-      recipientPrivateKey: bufferToArray(privateKeyDer),
-    };
     try {
       // TODO: Update @types/pkijs
-      return await this.pkijsEnvelopedData.decrypt(0, encryptArgs as any);
+      return await this.pkijsEnvelopedData.decrypt(0, {
+        recipientPrivateKey: bufferToArray(privateKeyDer),
+      } as any);
     } catch (error) {
       throw new CMSError(error, 'Decryption failed');
     }
