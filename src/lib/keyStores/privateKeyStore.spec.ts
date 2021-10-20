@@ -1,5 +1,3 @@
-// tslint:disable:no-let
-
 import { generateStubCert } from '../_test_utils';
 import * as keys from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -47,8 +45,11 @@ describe('PrivateKeyStore', () => {
       test('Session keys should not be returned', async () => {
         await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, CERTIFICATE);
 
-        await expect(MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
+        await expect(
+          MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber()),
+        ).rejects.toThrowWithMessage(
           UnknownKeyError,
+          `Key ${CERTIFICATE.getSerialNumberHex()} is not a node key`,
         );
       });
 
@@ -130,7 +131,10 @@ describe('PrivateKeyStore', () => {
 
           await expect(
             MOCK_STORE.fetchInitialSessionKey(CERTIFICATE.getSerialNumber()),
-          ).rejects.toBeInstanceOf(UnknownKeyError);
+          ).rejects.toThrowWithMessage(
+            UnknownKeyError,
+            `Key ${CERTIFICATE.getSerialNumberHex()} is not an initial session key`,
+          );
         });
 
         test('Subsequent session keys should not be returned', async () => {
@@ -223,7 +227,10 @@ describe('PrivateKeyStore', () => {
         const differentRecipientCert = await generateStubCert();
         await expect(
           MOCK_STORE.fetchSessionKey(CERTIFICATE.getSerialNumber(), differentRecipientCert),
-        ).rejects.toBeInstanceOf(UnknownKeyError);
+        ).rejects.toThrowWithMessage(
+          UnknownKeyError,
+          `Session key ${CERTIFICATE.getSerialNumberHex()} is bound to another recipient`,
+        );
       });
 
       test('Node keys should not be returned', async () => {
@@ -231,7 +238,10 @@ describe('PrivateKeyStore', () => {
 
         await expect(
           MOCK_STORE.fetchSessionKey(CERTIFICATE.getSerialNumber(), stubRecipientCertificate),
-        ).rejects.toBeInstanceOf(UnknownKeyError);
+        ).rejects.toThrowWithMessage(
+          UnknownKeyError,
+          `Key ${CERTIFICATE.getSerialNumberHex()} is not a session key`,
+        );
       });
 
       test('Errors should be wrapped', async () => {
