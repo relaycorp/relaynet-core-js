@@ -1,9 +1,66 @@
+import { Sequence } from 'asn1js';
+import bufferToArray from 'buffer-to-arraybuffer';
+
+import { arrayBufferFrom } from '../_test_utils';
+import { derDeserialize } from '../crypto_wrappers/_utils';
+import {
+  derSerializePublicKey,
+  generateECDHKeyPair,
+  generateRSAKeyPair,
+} from '../crypto_wrappers/keys';
+import { PublicNodeConnectionParams } from './PublicNodeConnectionParams';
+
+const PUBLIC_ADDRESS = 'example.com';
+
+let identityKey: CryptoKey;
+let sessionKey: CryptoKey;
+beforeAll(async () => {
+  const identityKeyPair = await generateRSAKeyPair();
+  identityKey = identityKeyPair.publicKey;
+
+  const sessionKeyPair = await generateECDHKeyPair();
+  sessionKey = sessionKeyPair.publicKey;
+});
+
 describe('serialize', () => {
-  test.todo('Public address should be serialized');
+  test('Public address should be serialized', async () => {
+    const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
 
-  test.todo('Identity key should be serialized');
+    const serialization = await params.serialize();
 
-  test.todo('Session key should be serialized');
+    const sequence = derDeserialize(serialization);
+    expect(sequence).toBeInstanceOf(Sequence);
+    expect((sequence as Sequence).valueBlock.value[0]).toHaveProperty(
+      'valueBlock.valueHex',
+      arrayBufferFrom(PUBLIC_ADDRESS),
+    );
+  });
+
+  test('Identity key should be serialized', async () => {
+    const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
+
+    const serialization = await params.serialize();
+
+    const sequence = derDeserialize(serialization);
+    expect(sequence).toBeInstanceOf(Sequence);
+    expect((sequence as Sequence).valueBlock.value[1]).toHaveProperty(
+      'valueBlock.valueHex',
+      bufferToArray(await derSerializePublicKey(identityKey)),
+    );
+  });
+
+  test('Session key should be serialized', async () => {
+    const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
+
+    const serialization = await params.serialize();
+
+    const sequence = derDeserialize(serialization);
+    expect(sequence).toBeInstanceOf(Sequence);
+    expect((sequence as Sequence).valueBlock.value[2]).toHaveProperty(
+      'valueBlock.valueHex',
+      bufferToArray(await derSerializePublicKey(sessionKey)),
+    );
+  });
 });
 
 describe('deserialized', () => {
