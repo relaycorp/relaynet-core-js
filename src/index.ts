@@ -80,4 +80,5 @@ export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 
 //endregion
 
+export * from './lib/nodes/PublicNodeConnectionParams';
 export * from './lib/publicAddressing';
