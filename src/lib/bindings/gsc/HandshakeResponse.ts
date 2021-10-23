@@ -1,6 +1,6 @@
 import { Constructed, OctetString, Repeated, verifySchema } from 'asn1js';
 
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 
 export class HandshakeResponse {
@@ -32,6 +32,6 @@ export class HandshakeResponse {
   public serialize(): ArrayBuffer {
     const asn1NonceSignatures = this.nonceSignatures.map((s) => new OctetString({ valueHex: s }));
     const nonceSignaturesASN1 = new Constructed({ value: asn1NonceSignatures } as any);
-    return derSerializeHeterogeneousSequence(nonceSignaturesASN1);
+    return makeImplicitlyTaggedSequence(nonceSignaturesASN1).toBER();
   }
 }

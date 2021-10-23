@@ -1,11 +1,12 @@
 import { Integer } from 'asn1js';
+
 import {
   arrayBufferFrom,
   expectBuffersToEqual,
   generateStubCert,
   getAsn1SequenceItem,
 } from '../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../InvalidMessageError';
@@ -40,7 +41,7 @@ describe('deserialize', () => {
 
   test('Sequence should have at least one item', () => {
     expect(() =>
-      CargoCollectionRequest.deserialize(derSerializeHeterogeneousSequence()),
+      CargoCollectionRequest.deserialize(makeImplicitlyTaggedSequence().toBER()),
     ).toThrowWithMessage(
       InvalidMessageError,
       'Serialization is not a valid CargoCollectionRequest',
@@ -50,7 +51,7 @@ describe('deserialize', () => {
   test('Malformed Cargo Delivery Authorizations should be refused', () => {
     const invalidCertificate = new Integer({ value: 42 });
     expect(() =>
-      CargoCollectionRequest.deserialize(derSerializeHeterogeneousSequence(invalidCertificate)),
+      CargoCollectionRequest.deserialize(makeImplicitlyTaggedSequence(invalidCertificate).toBER()),
     ).toThrowWithMessage(
       InvalidMessageError,
       /^CargoCollectionRequest contains a malformed Cargo Delivery Authorization: /,

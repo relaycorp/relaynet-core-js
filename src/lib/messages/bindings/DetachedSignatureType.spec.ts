@@ -1,9 +1,7 @@
-// tslint:disable:no-let
-
 import { ObjectIdentifier, OctetString } from 'asn1js';
 
 import { arrayBufferFrom, generateStubCert, reSerializeCertificate } from '../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { makeImplicitlyTaggedSequence } from '../../asn1';
 import CMSError from '../../crypto_wrappers/cms/CMSError';
 import { SignedData } from '../../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
@@ -78,10 +76,10 @@ describe('DetachedSignature', () => {
       );
 
       const signedData = SignedData.deserialize(signedDataSerialized);
-      const expectedPlaintext = derSerializeHeterogeneousSequence(
+      const expectedPlaintext = makeImplicitlyTaggedSequence(
         OID,
         new OctetString({ valueHex: PLAINTEXT }),
-      );
+      ).toBER();
       await signedData.verify(expectedPlaintext);
     });
   });

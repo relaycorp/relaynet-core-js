@@ -7,8 +7,8 @@ import { SignatureOptions } from '../..';
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
-  derSerializeHeterogeneousSequence,
   makeHeterogeneousSequenceSchema,
+  makeImplicitlyTaggedSequence,
 } from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
@@ -90,13 +90,13 @@ export async function serialize(
     concreteMessageVersionOctet,
   );
 
-  const fieldSetSerialized = derSerializeHeterogeneousSequence(
+  const fieldSetSerialized = makeImplicitlyTaggedSequence(
     new asn1js.VisibleString({ value: message.recipientAddress }),
     new asn1js.VisibleString({ value: message.id }),
     dateToASN1DateTimeInUTC(message.creationDate),
     new asn1js.Integer({ value: message.ttl }),
     new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
-  );
+  ).toBER();
 
   //region Signature
   const signature = await cmsSignedData.sign(

@@ -13,6 +13,7 @@ import {
 } from '../../_test_utils';
 import { CMS_OIDS } from '../../oids';
 import { issueInitialDHKeyCertificate } from '../../pki';
+import { SessionKey } from '../../SessionKey';
 import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
@@ -20,7 +21,6 @@ import CMSError from './CMSError';
 import {
   EncryptionOptions,
   EnvelopedData,
-  OriginatorSessionKey,
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from './envelopedData';
@@ -333,7 +333,7 @@ describe('SessionEnvelopedData', () => {
 
     test('Originator key should be acceptable in lieu of certificate', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
-      const bobOriginatorKey: OriginatorSessionKey = {
+      const bobOriginatorKey: SessionKey = {
         keyId: Buffer.from('key id'),
         publicKey: bobDhPublicKey,
       };
