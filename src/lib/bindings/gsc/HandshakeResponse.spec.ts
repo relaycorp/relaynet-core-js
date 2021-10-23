@@ -1,6 +1,7 @@
 import { Constructed, Integer, OctetString, Sequence } from 'asn1js';
+
 import { arrayBufferFrom, expectBuffersToEqual } from '../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import { HandshakeResponse } from './HandshakeResponse';
@@ -71,7 +72,7 @@ describe('serialize', () => {
 
 describe('deserialize', () => {
   test('Invalid serialization should be refused', () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(new Integer({ value: 42 }));
+    const invalidSerialization = makeImplicitlyTaggedSequence(new Integer({ value: 42 })).toBER();
 
     expect(() => HandshakeResponse.deserialize(invalidSerialization)).toThrowWithMessage(
       InvalidMessageError,

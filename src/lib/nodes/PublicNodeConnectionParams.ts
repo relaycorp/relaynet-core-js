@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
 
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../asn1';
+import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../asn1';
 import {
   derDeserializeECDHPublicKey,
   derDeserializeRSAPublicKey,
@@ -67,10 +67,10 @@ export class PublicNodeConnectionParams {
   public async serialize(): Promise<ArrayBuffer> {
     const identityKeySerialized = await derSerializePublicKey(this.identityKey);
     const sessionKeySerialized = await derSerializePublicKey(this.sessionKey);
-    return derSerializeHeterogeneousSequence(
+    return makeImplicitlyTaggedSequence(
       new VisibleString({ value: this.publicAddress }),
       new OctetString({ valueHex: bufferToArray(identityKeySerialized) }),
       new OctetString({ valueHex: bufferToArray(sessionKeySerialized) }),
-    );
+    ).toBER();
   }
 }

@@ -2,7 +2,7 @@ import { OctetString, Sequence, VisibleString } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { arrayBufferFrom } from '../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../asn1';
+import { makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import {
   derSerializePublicKey,
@@ -54,7 +54,7 @@ describe('serialize', () => {
   test('Session key should be serialized', async () => {
     const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
 
-    const serialization = await params.serialize();
+      const serialization = await params.serialize();
 
     const sequence = derDeserialize(serialization);
     expect(sequence).toBeInstanceOf(Sequence);
@@ -84,10 +84,10 @@ describe('deserialized', () => {
   });
 
   test('Sequence should have at least three items', async () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: arrayBufferFrom('nope.jpg') }),
       new OctetString({ valueHex: arrayBufferFrom('whoops.jpg') }),
-    );
+    ).toBER();
 
     await expect(
       PublicNodeConnectionParams.deserialize(invalidSerialization),
@@ -96,11 +96,11 @@ describe('deserialized', () => {
 
   test('Public address should be syntactically valid', async () => {
     const invalidPublicAddress = 'not a public address';
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new VisibleString({ value: invalidPublicAddress }),
       new OctetString({ valueHex: identityKeySerialized }),
       new OctetString({ valueHex: sessionKeySerialized }),
-    );
+    ).toBER();
 
     await expect(PublicNodeConnectionParams.deserialize(invalidSerialization)).rejects.toThrow(
       new InvalidPublicNodeConnectionParams(
@@ -110,13 +110,13 @@ describe('deserialized', () => {
   });
 
   test('Identity key should be a valid RSA public key', async () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new VisibleString({ value: PUBLIC_ADDRESS }),
       new OctetString({
         valueHex: sessionKeySerialized, // Wrong type of key
       }),
       new OctetString({ valueHex: sessionKeySerialized }),
-    );
+    ).toBER();
 
     await expect(
       PublicNodeConnectionParams.deserialize(invalidSerialization),
@@ -127,13 +127,13 @@ describe('deserialized', () => {
   });
 
   test('Session key should be a valid ECDH public key', async () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new VisibleString({ value: PUBLIC_ADDRESS }),
       new OctetString({ valueHex: identityKeySerialized }),
       new OctetString({
         valueHex: identityKeySerialized, // Wrong type of key
       }),
-    );
+    ).toBER();
 
     await expect(
       PublicNodeConnectionParams.deserialize(invalidSerialization),
