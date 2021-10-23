@@ -12,8 +12,8 @@ import {
   generateRSAKeyPair,
   issueEndpointCertificate,
   issueInitialDHKeyCertificate,
-  OriginatorSessionKey,
   SessionEnvelopedData,
+  SessionKey,
 } from '..';
 
 import { arrayBufferFrom, expectBuffersToEqual } from '../lib/_test_utils';
@@ -132,7 +132,7 @@ test('EnvelopedData should be decrypted after serialization', async () => {
 
 function checkRecipientInfo(
   envelopedData: SessionEnvelopedData,
-  expectedRecipientCertificate: Certificate | OriginatorSessionKey,
+  expectedRecipientCertificate: Certificate | SessionKey,
 ): void {
   expect(envelopedData.pkijsEnvelopedData.recipientInfos).toHaveLength(1);
   const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];

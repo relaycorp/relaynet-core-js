@@ -4,6 +4,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { CMS_OIDS, RELAYNET_OIDS } from '../../oids';
+import { SessionKey } from '../../SessionKey';
 import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
@@ -33,15 +34,6 @@ export interface SessionEncryptionResult {
 
   /** EnvelopedData value using the Channel Session Protocol. */
   readonly envelopedData: SessionEnvelopedData;
-}
-
-/** Key of the sender/producer of the EnvelopedData value using the Channel Session Protocol */
-export interface OriginatorSessionKey {
-  /** Id of the ECDH key pair */
-  readonly keyId: Buffer;
-
-  /** Public key of the ECDH key pair. */
-  readonly publicKey: CryptoKey; // DH or ECDH key
 }
 
 export abstract class EnvelopedData {
@@ -195,7 +187,7 @@ export class SessionEnvelopedData extends EnvelopedData {
    */
   public static async encrypt(
     plaintext: ArrayBuffer,
-    certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
+    certificateOrOriginatorKey: Certificate | SessionKey,
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
@@ -236,7 +228,7 @@ export class SessionEnvelopedData extends EnvelopedData {
   /**
    * Return the key of the ECDH key of the originator/producer of the EnvelopedData value.
    */
-  public async getOriginatorKey(): Promise<OriginatorSessionKey> {
+  public async getOriginatorKey(): Promise<SessionKey> {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
@@ -296,7 +288,7 @@ async function pkijsDecrypt(
 }
 
 async function getOrMakePkijsCertificate(
-  certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
+  certificateOrOriginatorKey: Certificate | SessionKey,
 ): Promise<pkijs.Certificate> {
   // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
   // uses it for is to get the public key algorithm. Which you can get from the private key.
