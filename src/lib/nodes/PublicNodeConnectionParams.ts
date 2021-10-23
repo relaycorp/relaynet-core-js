@@ -9,6 +9,7 @@ import {
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
 } from '../crypto_wrappers/keys';
+import { SessionKey } from '../SessionKey';
 import { InvalidPublicNodeConnectionParams } from './InvalidPublicNodeConnectionParams';
 
 export class PublicNodeConnectionParams {
@@ -49,7 +50,7 @@ export class PublicNodeConnectionParams {
       );
     }
 
-    return new PublicNodeConnectionParams(publicAddress, identityKey, sessionKey);
+    return new PublicNodeConnectionParams(publicAddress, identityKey, sessionKey as any);
   }
 
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema('PublicNodeConnectionParams', [
@@ -61,16 +62,22 @@ export class PublicNodeConnectionParams {
   constructor(
     public readonly publicAddress: string,
     public readonly identityKey: CryptoKey,
-    public readonly sessionKey: CryptoKey,
+    public readonly sessionKey: SessionKey,
   ) {}
 
   public async serialize(): Promise<ArrayBuffer> {
     const identityKeySerialized = await derSerializePublicKey(this.identityKey);
-    const sessionKeySerialized = await derSerializePublicKey(this.sessionKey);
+
+    const sessionPublicKeySerialized = await derSerializePublicKey(this.sessionKey.publicKey);
+    const sessionKeySequence = makeImplicitlyTaggedSequence(
+      new OctetString({ valueHex: bufferToArray(this.sessionKey.keyId) }),
+      new OctetString({ valueHex: bufferToArray(sessionPublicKeySerialized) }),
+    );
+
     return makeImplicitlyTaggedSequence(
       new VisibleString({ value: this.publicAddress }),
       new OctetString({ valueHex: bufferToArray(identityKeySerialized) }),
-      new OctetString({ valueHex: bufferToArray(sessionKeySerialized) }),
+      sessionKeySequence,
     ).toBER();
   }
 }

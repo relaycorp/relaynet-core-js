@@ -1,4 +1,4 @@
-import { OctetString, Sequence, VisibleString } from 'asn1js';
+import { Constructed, OctetString, Sequence, VisibleString } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { arrayBufferFrom } from '../_test_utils';
@@ -9,19 +9,23 @@ import {
   generateECDHKeyPair,
   generateRSAKeyPair,
 } from '../crypto_wrappers/keys';
+import { SessionKey } from '../SessionKey';
 import { InvalidPublicNodeConnectionParams } from './InvalidPublicNodeConnectionParams';
 import { PublicNodeConnectionParams } from './PublicNodeConnectionParams';
 
 const PUBLIC_ADDRESS = 'example.com';
 
 let identityKey: CryptoKey;
-let sessionKey: CryptoKey;
+let sessionKey: SessionKey;
 beforeAll(async () => {
   const identityKeyPair = await generateRSAKeyPair();
   identityKey = identityKeyPair.publicKey;
 
   const sessionKeyPair = await generateECDHKeyPair();
-  sessionKey = sessionKeyPair.publicKey;
+  sessionKey = {
+    keyId: Buffer.from('key id'),
+    publicKey: sessionKeyPair.publicKey,
+  };
 });
 
 describe('serialize', () => {
@@ -51,17 +55,41 @@ describe('serialize', () => {
     );
   });
 
-  test('Session key should be serialized', async () => {
-    const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
+  describe('Session key', () => {
+    test('Session key should be a CONSTRUCTED value', async () => {
+      const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
 
-    const serialization = await params.serialize();
+      const serialization = await params.serialize();
 
-    const sequence = derDeserialize(serialization);
-    expect(sequence).toBeInstanceOf(Sequence);
-    expect((sequence as Sequence).valueBlock.value[2]).toHaveProperty(
-      'valueBlock.valueHex',
-      bufferToArray(await derSerializePublicKey(sessionKey)),
-    );
+      const sequence = derDeserialize(serialization);
+      const sessionKeySequence = (sequence as Sequence).valueBlock.value[2];
+      expect(sessionKeySequence).toBeInstanceOf(Constructed);
+    });
+
+    test('Id should be serialized', async () => {
+      const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
+
+      const serialization = await params.serialize();
+
+      const sequence = derDeserialize(serialization);
+      expect(
+        ((sequence as Sequence).valueBlock.value[2] as Sequence).valueBlock.value[0],
+      ).toHaveProperty('valueBlock.valueHex', bufferToArray(sessionKey.keyId));
+    });
+
+    test('Public key should be serialized', async () => {
+      const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
+
+      const serialization = await params.serialize();
+
+      const sequence = derDeserialize(serialization);
+      expect(
+        ((sequence as Sequence).valueBlock.value[2] as Sequence).valueBlock.value[1],
+      ).toHaveProperty(
+        'valueBlock.valueHex',
+        bufferToArray(await derSerializePublicKey(sessionKey.publicKey)),
+      );
+    });
   });
 });
 
@@ -70,7 +98,7 @@ describe('deserialized', () => {
   let sessionKeySerialized: ArrayBuffer;
   beforeAll(async () => {
     identityKeySerialized = bufferToArray(await derSerializePublicKey(identityKey));
-    sessionKeySerialized = bufferToArray(await derSerializePublicKey(sessionKey));
+    sessionKeySerialized = bufferToArray(await derSerializePublicKey(sessionKey.publicKey));
   });
 
   const malformedErrorMessage = 'Serialization is not a valid PublicNodeConnectionParams';
@@ -126,21 +154,37 @@ describe('deserialized', () => {
     );
   });
 
-  test('Session key should be a valid ECDH public key', async () => {
-    const invalidSerialization = makeImplicitlyTaggedSequence(
-      new VisibleString({ value: PUBLIC_ADDRESS }),
-      new OctetString({ valueHex: identityKeySerialized }),
-      new OctetString({
-        valueHex: identityKeySerialized, // Wrong type of key
-      }),
-    ).toBER();
+  describe('Session key', () => {
+    test('SEQUENCE should contain at least two items', async () => {
+      const invalidSerialization = makeImplicitlyTaggedSequence(
+        new VisibleString({ value: PUBLIC_ADDRESS }),
+        new OctetString({ valueHex: identityKeySerialized }),
+        makeImplicitlyTaggedSequence(
+          new OctetString({ valueHex: bufferToArray(sessionKey.keyId) }),
+        ),
+      ).toBER();
 
-    await expect(
-      PublicNodeConnectionParams.deserialize(invalidSerialization),
-    ).rejects.toThrowWithMessage(
-      InvalidPublicNodeConnectionParams,
-      /^Session key is not a valid ECDH public key/,
-    );
+      await expect(
+        PublicNodeConnectionParams.deserialize(invalidSerialization),
+      ).rejects.toThrowWithMessage(InvalidPublicNodeConnectionParams, malformedErrorMessage);
+    });
+
+    test('Session key should be a valid ECDH public key', async () => {
+      const invalidSerialization = makeImplicitlyTaggedSequence(
+        new VisibleString({ value: PUBLIC_ADDRESS }),
+        new OctetString({ valueHex: identityKeySerialized }),
+        new OctetString({
+          valueHex: identityKeySerialized, // Wrong type of key
+        }),
+      ).toBER();
+
+      await expect(
+        PublicNodeConnectionParams.deserialize(invalidSerialization),
+      ).rejects.toThrowWithMessage(
+        InvalidPublicNodeConnectionParams,
+        /^Session key is not a valid ECDH public key/,
+      );
+    });
   });
 
   test('Valid serialization should be deserialized', async () => {
@@ -153,7 +197,8 @@ describe('deserialized', () => {
     await expect(derSerializePublicKey(paramsDeserialized.identityKey)).resolves.toEqual(
       Buffer.from(identityKeySerialized),
     );
-    await expect(derSerializePublicKey(paramsDeserialized.sessionKey)).resolves.toEqual(
+    await expect(paramsDeserialized.sessionKey.keyId).toEqual(sessionKey.keyId);
+    await expect(derSerializePublicKey(paramsDeserialized.sessionKey.publicKey)).resolves.toEqual(
       Buffer.from(sessionKeySerialized),
     );
   });
