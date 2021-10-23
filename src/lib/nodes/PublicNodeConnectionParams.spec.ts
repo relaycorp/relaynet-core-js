@@ -54,7 +54,7 @@ describe('serialize', () => {
   test('Session key should be serialized', async () => {
     const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
 
-      const serialization = await params.serialize();
+    const serialization = await params.serialize();
 
     const sequence = derDeserialize(serialization);
     expect(sequence).toBeInstanceOf(Sequence);
