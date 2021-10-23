@@ -101,6 +101,14 @@ describe('deserialized', () => {
     sessionKeySerialized = bufferToArray(await derSerializePublicKey(sessionKey.publicKey));
   });
 
+  let sessionKeySequence: Sequence;
+  beforeAll(() => {
+    sessionKeySequence = makeImplicitlyTaggedSequence(
+      new OctetString({ valueHex: bufferToArray(sessionKey.keyId) }),
+      new OctetString({ valueHex: sessionKeySerialized }),
+    );
+  });
+
   const malformedErrorMessage = 'Serialization is not a valid PublicNodeConnectionParams';
 
   test('Serialization should be DER sequence', async () => {
@@ -127,7 +135,7 @@ describe('deserialized', () => {
     const invalidSerialization = makeImplicitlyTaggedSequence(
       new VisibleString({ value: invalidPublicAddress }),
       new OctetString({ valueHex: identityKeySerialized }),
-      new OctetString({ valueHex: sessionKeySerialized }),
+      sessionKeySequence,
     ).toBER();
 
     await expect(PublicNodeConnectionParams.deserialize(invalidSerialization)).rejects.toThrow(
@@ -143,7 +151,7 @@ describe('deserialized', () => {
       new OctetString({
         valueHex: sessionKeySerialized, // Wrong type of key
       }),
-      new OctetString({ valueHex: sessionKeySerialized }),
+      sessionKeySequence,
     ).toBER();
 
     await expect(
@@ -166,16 +174,22 @@ describe('deserialized', () => {
 
       await expect(
         PublicNodeConnectionParams.deserialize(invalidSerialization),
-      ).rejects.toThrowWithMessage(InvalidPublicNodeConnectionParams, malformedErrorMessage);
+      ).rejects.toThrowWithMessage(
+        InvalidPublicNodeConnectionParams,
+        'Session key should have at least two items',
+      );
     });
 
     test('Session key should be a valid ECDH public key', async () => {
       const invalidSerialization = makeImplicitlyTaggedSequence(
         new VisibleString({ value: PUBLIC_ADDRESS }),
         new OctetString({ valueHex: identityKeySerialized }),
-        new OctetString({
-          valueHex: identityKeySerialized, // Wrong type of key
-        }),
+        makeImplicitlyTaggedSequence(
+          new OctetString({ valueHex: bufferToArray(sessionKey.keyId) }),
+          new OctetString({
+            valueHex: identityKeySerialized, // Wrong type of key
+          }),
+        ),
       ).toBER();
 
       await expect(

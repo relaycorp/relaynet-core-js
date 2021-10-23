@@ -1,4 +1,4 @@
-import { OctetString, Primitive, verifySchema, VisibleString } from 'asn1js';
+import { Constructed, OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
@@ -40,9 +40,18 @@ export class PublicNodeConnectionParams {
         'Identity key is not a valid RSA public key',
       );
     }
-    let sessionKey: CryptoKey;
+
+    const sessionKeySequence = paramsASN1.sessionKey as Sequence;
+    if (sessionKeySequence.valueBlock.value.length < 2) {
+      throw new InvalidPublicNodeConnectionParams('Session key should have at least two items');
+    }
+    const sessionKeyId = (sessionKeySequence.valueBlock.value[0] as Primitive).valueBlock.valueHex;
+    const sessionPublicKeyASN1 = sessionKeySequence.valueBlock.value[1] as Primitive;
+    let sessionPublicKey: CryptoKey;
     try {
-      sessionKey = await derDeserializeECDHPublicKey(paramsASN1.sessionKey.valueBlock.valueHex);
+      sessionPublicKey = await derDeserializeECDHPublicKey(
+        sessionPublicKeyASN1.valueBlock.valueHex,
+      );
     } catch (err) {
       throw new InvalidPublicNodeConnectionParams(
         new Error(err), // The original error could be a string 🤦
@@ -50,13 +59,22 @@ export class PublicNodeConnectionParams {
       );
     }
 
-    return new PublicNodeConnectionParams(publicAddress, identityKey, sessionKey as any);
+    return new PublicNodeConnectionParams(publicAddress, identityKey, {
+      keyId: Buffer.from(sessionKeyId),
+      publicKey: sessionPublicKey,
+    });
   }
 
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema('PublicNodeConnectionParams', [
     new Primitive({ name: 'publicAddress' }),
     new Primitive({ name: 'identityKey' }),
-    new Primitive({ name: 'sessionKey' }),
+    new Constructed({
+      name: 'sessionKey',
+      value: [
+        new Primitive({ idBlock: { tagClass: 3, tagNumber: 0 } } as any),
+        new Primitive({ idBlock: { tagClass: 3, tagNumber: 1 } } as any),
+      ],
+    } as any),
   ]);
 
   constructor(
