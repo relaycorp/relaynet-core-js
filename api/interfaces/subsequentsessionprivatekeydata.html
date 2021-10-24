@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>UnboundPrivateKeyData | @relaycorp/relaynet-core</title>
+	<title>SubsequentSessionPrivateKeyData | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">:root {
@@ -2705,16 +2705,16 @@ img {
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class="current tsd-kind-interface">
-			<a href="unboundprivatekeydata.html" class="tsd-kind-icon">Unbound<wbr>Private<wbr>Key<wbr>Data</a>
+			<a href="subsequentsessionprivatekeydata.html" class="tsd-kind-icon">Subsequent<wbr>Session<wbr>Private<wbr>Key<wbr>Data</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="unboundprivatekeydata.html#certificateder" class="tsd-kind-icon">certificate<wbr>Der</a>
-				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited">
-					<a href="unboundprivatekeydata.html#keyder" class="tsd-kind-icon">key<wbr>Der</a>
+					<a href="subsequentsessionprivatekeydata.html#keyder" class="tsd-kind-icon">key<wbr>Der</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-overwrite">
-					<a href="unboundprivatekeydata.html#type" class="tsd-kind-icon">type</a>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="subsequentsessionprivatekeydata.html#recipientpublickeydigest" class="tsd-kind-icon">recipient<wbr>Public<wbr>Key<wbr>Digest</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="subsequentsessionprivatekeydata.html#type" class="tsd-kind-icon">type</a>
 				</li>
 			</ul>
 		</li>
@@ -2725,9 +2725,9 @@ img {
 		<section class="tsd-panel tsd-comment">
 			<div class="tsd-comment tsd-typography">
 				<div class="lead">
-					<p>Data for a private key not bound to any recipient.</p>
+					<p>Data for a private key of a session key pair bound to a specific recipient.</p>
 				</div>
-				<p>In other words, this is for node keys and initial session keys.</p>
+				<p>In other words, this is for subsequent session keys.</p>
 			</div>
 		</section>
 		<section class="tsd-panel tsd-hierarchy">
@@ -2737,7 +2737,7 @@ img {
 					<a href="baseprivatekeydata.html" class="tsd-signature-type" data-tsd-kind="Interface">BasePrivateKeyData</a>
 					<ul class="tsd-hierarchy">
 						<li>
-							<span class="target">UnboundPrivateKeyData</span>
+							<span class="target">SubsequentSessionPrivateKeyData</span>
 						</li>
 					</ul>
 				</li>
@@ -2750,9 +2750,9 @@ img {
 					<section class="tsd-index-section ">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="unboundprivatekeydata.html#certificateder" class="tsd-kind-icon">certificate<wbr>Der</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="unboundprivatekeydata.html#keyder" class="tsd-kind-icon">key<wbr>Der</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-overwrite"><a href="unboundprivatekeydata.html#type" class="tsd-kind-icon">type</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="subsequentsessionprivatekeydata.html#keyder" class="tsd-kind-icon">key<wbr>Der</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="subsequentsessionprivatekeydata.html#recipientpublickeydigest" class="tsd-kind-icon">recipient<wbr>Public<wbr>Key<wbr>Digest</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="subsequentsessionprivatekeydata.html#type" class="tsd-kind-icon">type</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2760,16 +2760,6 @@ img {
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="certificateder" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> certificate<wbr>Der</h3>
-				<div class="tsd-signature tsd-kind-icon">certificate<wbr>Der<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span></div>
-				<aside class="tsd-sources">
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cc5aa380/src/lib/keyStores/privateKeyStore.ts#L27">src/lib/keyStores/privateKeyStore.ts:27</a></li>
-					</ul>
-				</aside>
-			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited">
 				<a name="keyder" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> key<wbr>Der</h3>
@@ -2777,18 +2767,27 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="baseprivatekeydata.html">BasePrivateKeyData</a>.<a href="baseprivatekeydata.html#keyder">keyDer</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cc5aa380/src/lib/keyStores/privateKeyStore.ts#L16">src/lib/keyStores/privateKeyStore.ts:16</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/keyStores/privateKeyStore.ts#L16">src/lib/keyStores/privateKeyStore.ts:16</a></li>
 					</ul>
 				</aside>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-overwrite">
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+				<a name="recipientpublickeydigest" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> recipient<wbr>Public<wbr>Key<wbr>Digest</h3>
+				<div class="tsd-signature tsd-kind-icon">recipient<wbr>Public<wbr>Key<wbr>Digest<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/keyStores/privateKeyStore.ts#L43">src/lib/keyStores/privateKeyStore.ts:43</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 				<a name="type" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> type</h3>
-				<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;node&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;session-initial&quot;</span></div>
+				<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;session-subsequent&quot;</span></div>
 				<aside class="tsd-sources">
-					<p>Overrides <a href="baseprivatekeydata.html">BasePrivateKeyData</a>.<a href="baseprivatekeydata.html#type">type</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/cc5aa380/src/lib/keyStores/privateKeyStore.ts#L26">src/lib/keyStores/privateKeyStore.ts:26</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/keyStores/privateKeyStore.ts#L40">src/lib/keyStores/privateKeyStore.ts:40</a></li>
 					</ul>
 				</aside>
 			</section>
