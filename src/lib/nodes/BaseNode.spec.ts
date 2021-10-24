@@ -10,7 +10,7 @@ import {
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
-import { issueGatewayCertificate, issueInitialDHKeyCertificate } from '../pki';
+import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { BaseNode } from './BaseNode';
 
@@ -29,11 +29,9 @@ beforeAll(async () => {
 });
 
 let recipientCertificate: Certificate;
-let recipientPrivateKey: CryptoKey;
 let privateKeyStore: MockPrivateKeyStore;
 beforeAll(async () => {
   const recipientKeyPair = await generateRSAKeyPair();
-  recipientPrivateKey = recipientKeyPair.privateKey;
 
   recipientCertificate = await issueGatewayCertificate({
     issuerPrivateKey: recipientKeyPair.privateKey,
@@ -75,20 +73,12 @@ describe('unwrapMessagePayload', () => {
 
   test('Payload plaintext should be returned and session key stored when using a session', async () => {
     const sessionKeyPair = await generateECDHKeyPair();
-    const initialSessionCertificate = await issueInitialDHKeyCertificate({
-      issuerCertificate: recipientCertificate,
-      issuerPrivateKey: recipientPrivateKey,
-      subjectPublicKey: sessionKeyPair.publicKey,
-      validityEndDate: TOMORROW,
+    const sessionKeyId = Buffer.from('key id');
+    await privateKeyStore.registerInitialSessionKey(sessionKeyPair.privateKey, sessionKeyId);
+    const encryptionResult = await SessionEnvelopedData.encrypt(payloadPlaintextContent, {
+      keyId: sessionKeyId,
+      publicKey: sessionKeyPair.publicKey,
     });
-    await privateKeyStore.registerInitialSessionKey(
-      sessionKeyPair.privateKey,
-      initialSessionCertificate,
-    );
-    const encryptionResult = await SessionEnvelopedData.encrypt(
-      payloadPlaintextContent,
-      initialSessionCertificate,
-    );
     const message = new StubMessage(
       RECIPIENT_ADDRESS,
       senderCertificate,

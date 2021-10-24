@@ -182,12 +182,12 @@ export class SessionEnvelopedData extends EnvelopedData {
    * Return an EnvelopedData value using the Channel Session Protocol.
    *
    * @param plaintext The plaintext whose ciphertext has to be embedded in the EnvelopedData value.
-   * @param certificateOrOriginatorKey The ECDH certificate or public key of the recipient.
+   * @param recipientSessionKey The ECDH public key of the recipient.
    * @param options Any encryption options.
    */
   public static async encrypt(
     plaintext: ArrayBuffer,
-    certificateOrOriginatorKey: Certificate | SessionKey,
+    recipientSessionKey: SessionKey,
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
@@ -205,7 +205,7 @@ export class SessionEnvelopedData extends EnvelopedData {
       unprotectedAttrs: [serialNumberAttribute],
     });
 
-    const pkijsCertificate = await getOrMakePkijsCertificate(certificateOrOriginatorKey);
+    const pkijsCertificate = await getOrMakePkijsCertificate(recipientSessionKey);
     pkijsEnvelopedData.addRecipientByCertificate(pkijsCertificate, {}, 2);
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
@@ -288,14 +288,8 @@ async function pkijsDecrypt(
 }
 
 async function getOrMakePkijsCertificate(
-  certificateOrOriginatorKey: Certificate | SessionKey,
+  certificateOrOriginatorKey: SessionKey,
 ): Promise<pkijs.Certificate> {
-  // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
-  // uses it for is to get the public key algorithm. Which you can get from the private key.
-  if (certificateOrOriginatorKey instanceof Certificate) {
-    return certificateOrOriginatorKey.pkijsCertificate;
-  }
-
   const pkijsCertificate = new pkijs.Certificate({
     serialNumber: new asn1js.Integer({
       // @ts-ignore

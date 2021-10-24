@@ -26,12 +26,8 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     };
   }
 
-  public async registerInitialSessionKey(
-    privateKey: CryptoKey,
-    certificate: Certificate,
-  ): Promise<void> {
-    this.keys[certificate.getSerialNumberHex()] = {
-      certificateDer: Buffer.from(certificate.serialize()),
+  public async registerInitialSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
+    this.keys[keyId.toString('hex')] = {
       keyDer: await derSerializePrivateKey(privateKey),
       type: 'session-initial',
     };

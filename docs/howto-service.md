@@ -91,24 +91,11 @@ Where possible, you should use the [channel session protocol](https://specs.rela
 This protocol requires the recipient to generate an ephemeral key pair and share the public component before communication begins, in addition to the longer term key already generated above; e.g.:
 
 ```javascript
-import {
-  issueInitialDHKeyCertificate,
-  generateECDHKeyPair,
-} from '@relaycorp/relaynet-core';
+import { generateECDHKeyPair } from '@relaycorp/relaynet-core';
 
 async function generateInitialKeyPair() {
   const { privateKey, publicKey } = await generateECDHKeyPair();
   yourFunctionToSecurelyPersistSessionPrivateKey(privateKey);
-
-  // Self-signing certificate here, but it can/should be issued by the gateway
-  const endpointPrivateKey = yourFunctionToSecurelyRetrievePrivateKey();
-  const endpointCertificate = yourFunctionToRetrieveCertificate();
-  const certificate = await issueInitialDHKeyCertificate({
-    issuerPrivateKey: endpointPrivateKey,
-    issuerCertificate: endpointCertificate,
-    subjectPublicKey: publicKey,
-  });
-  yourFunctionToShareInitialCertificate(certificate);
 }
 ```
 
@@ -130,7 +117,7 @@ async function serializeMessage() {
 
   const { serialization, dhPrivateKey } = await parcel.serializeWithSession(
     senderPrivateKey,
-    recipientDhCertificate,
+    recipientPublicKey,
   );
   yourFunctionToSecurelyPersistSessionPrivateKey(dhPrivateKey);
   return serialization;
@@ -143,9 +130,6 @@ async function deserializeParcel(parcelSerialized) {
   if (parcel.recipient !== 'rne+https://acme.com') {
     throw new Error('Invalid recipient');
   }
-  return await parcel.unwrapMessageWithSession(
-    recipientDhPrivateKey,
-    recipientDhCertificate,
-  );
+  return await parcel.unwrapMessageWithSession(recipientDhPrivateKey);
 }
 ```
