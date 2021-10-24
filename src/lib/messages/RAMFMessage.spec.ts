@@ -12,7 +12,6 @@ import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import CertificateError from '../crypto_wrappers/x509/CertificateError';
 import { MockPrivateKeyStore } from '../keyStores/testMocks';
-import { issueInitialDHKeyCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import InvalidMessageError from './InvalidMessageError';
 import { RecipientAddressType } from './RecipientAddressType';
@@ -449,24 +448,14 @@ describe('RAMFMessage', () => {
 
     test('SessionEnvelopedData payload should be decrypted', async () => {
       const recipientDhKeyPair = await generateECDHKeyPair();
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const recipientDhCertificate = await issueInitialDHKeyCertificate({
-        issuerCertificate: recipientCertificate,
-        issuerPrivateKey: recipientPrivateKey,
-        subjectPublicKey: recipientDhKeyPair.publicKey,
-        validityEndDate: tomorrow,
+      const keyId = Buffer.from('key id');
+      const { envelopedData } = await SessionEnvelopedData.encrypt(STUB_PAYLOAD_PLAINTEXT, {
+        keyId,
+        publicKey: recipientDhKeyPair.publicKey,
       });
-      const { envelopedData } = await SessionEnvelopedData.encrypt(
-        STUB_PAYLOAD_PLAINTEXT,
-        recipientDhCertificate,
-      );
 
       const recipientKeyStore = new MockPrivateKeyStore();
-      await recipientKeyStore.registerInitialSessionKey(
-        recipientDhKeyPair.privateKey,
-        recipientDhCertificate,
-      );
+      await recipientKeyStore.registerInitialSessionKey(recipientDhKeyPair.privateKey, keyId);
 
       const stubMessage = new StubMessage(
         '0123',
