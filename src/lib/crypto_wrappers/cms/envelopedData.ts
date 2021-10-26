@@ -53,7 +53,6 @@ export abstract class EnvelopedData {
         `ContentInfo does not wrap an EnvelopedData value (got OID ${contentInfo.contentType})`,
       );
     }
-    // tslint:disable-next-line:no-let
     let pkijsEnvelopedData;
     try {
       pkijsEnvelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
@@ -257,11 +256,8 @@ export class SessionEnvelopedData extends EnvelopedData {
   public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
-    const recipientIdBlock =
-      encryptedKey.rid.value instanceof pkijs.IssuerAndSerialNumber
-        ? encryptedKey.rid.value.serialNumber
-        : encryptedKey.rid.value.subjectKeyIdentifier;
-    return Buffer.from(recipientIdBlock.valueBlock.valueHex);
+    const subjectKeyIdentifierBlock = encryptedKey.rid.value.subjectKeyIdentifier;
+    return Buffer.from(subjectKeyIdentifierBlock.valueBlock.valueHex);
   }
 }
 

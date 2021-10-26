@@ -323,8 +323,8 @@ describe('SessionEnvelopedData', () => {
 
       const keyInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
       const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
-      const serialNumberBlock = encryptedKey.rid.value.serialNumber;
-      expect(Buffer.from(serialNumberBlock.valueBlock.valueHex)).toEqual(bobSessionKeyId);
+      const subjectKeyIdentifierBlock = encryptedKey.rid.value.subjectKeyIdentifier;
+      expect(Buffer.from(subjectKeyIdentifierBlock.valueBlock.valueHex)).toEqual(bobSessionKeyId);
     });
 
     describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
