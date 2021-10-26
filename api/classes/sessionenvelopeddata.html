@@ -2707,7 +2707,7 @@ img {
 		<li class="current tsd-kind-class">
 			<a href="sessionenvelopeddata.html" class="tsd-kind-icon">Session<wbr>Enveloped<wbr>Data</a>
 			<ul>
-				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="sessionenvelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
@@ -2759,7 +2759,7 @@ img {
 					<section class="tsd-index-section ">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="sessionenvelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="sessionenvelopeddata.html#decrypt" class="tsd-kind-icon">decrypt</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="sessionenvelopeddata.html#getoriginatorkey" class="tsd-kind-icon">get<wbr>Originator<wbr>Key</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="sessionenvelopeddata.html#getrecipientkeyid" class="tsd-kind-icon">get<wbr>Recipient<wbr>Key<wbr>Id</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="sessionenvelopeddata.html#serialize" class="tsd-kind-icon">serialize</a></li>
@@ -2772,24 +2772,32 @@ img {
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Methods</h2>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 				<a name="decrypt" class="tsd-anchor"></a>
 				<h3>decrypt</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
-					<li class="tsd-signature tsd-kind-icon">decrypt<span class="tsd-signature-symbol">(</span>dhPrivateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></li>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">decrypt<span class="tsd-signature-symbol">(</span>privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Overrides <a href="envelopeddata.html">EnvelopedData</a>.<a href="envelopeddata.html#decrypt">decrypt</a></p>
+							<p>Inherited from <a href="envelopeddata.html">EnvelopedData</a>.<a href="envelopeddata.html#decrypt">decrypt</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/crypto_wrappers/cms/envelopedData.ts#L258">src/lib/crypto_wrappers/cms/envelopedData.ts:258</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b5655d3d/src/lib/crypto_wrappers/cms/envelopedData.ts#L108">src/lib/crypto_wrappers/cms/envelopedData.ts:108</a></li>
 							</ul>
 						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Return the plaintext for the ciphertext contained in the current EnvelopedData value.</p>
+							</div>
+						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5>dhPrivateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+								<h5>privateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<p>The private key to decrypt the ciphertext.</p>
+								</div>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -2806,7 +2814,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/crypto_wrappers/cms/envelopedData.ts#L231">src/lib/crypto_wrappers/cms/envelopedData.ts:231</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b5655d3d/src/lib/crypto_wrappers/cms/envelopedData.ts#L236">src/lib/crypto_wrappers/cms/envelopedData.ts:236</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2829,7 +2837,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Overrides <a href="envelopeddata.html">EnvelopedData</a>.<a href="envelopeddata.html#getrecipientkeyid">getRecipientKeyId</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/crypto_wrappers/cms/envelopedData.ts#L251">src/lib/crypto_wrappers/cms/envelopedData.ts:251</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b5655d3d/src/lib/crypto_wrappers/cms/envelopedData.ts#L256">src/lib/crypto_wrappers/cms/envelopedData.ts:256</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
@@ -2847,7 +2855,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from <a href="envelopeddata.html">EnvelopedData</a>.<a href="envelopeddata.html#serialize">serialize</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/crypto_wrappers/cms/envelopedData.ts#L95">src/lib/crypto_wrappers/cms/envelopedData.ts:95</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b5655d3d/src/lib/crypto_wrappers/cms/envelopedData.ts#L95">src/lib/crypto_wrappers/cms/envelopedData.ts:95</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2871,7 +2879,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from <a href="envelopeddata.html">EnvelopedData</a>.<a href="envelopeddata.html#deserialize">deserialize</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/crypto_wrappers/cms/envelopedData.ts#L48">src/lib/crypto_wrappers/cms/envelopedData.ts:48</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b5655d3d/src/lib/crypto_wrappers/cms/envelopedData.ts#L49">src/lib/crypto_wrappers/cms/envelopedData.ts:49</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2903,7 +2911,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/5e734dc1/src/lib/crypto_wrappers/cms/envelopedData.ts#L188">src/lib/crypto_wrappers/cms/envelopedData.ts:188</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b5655d3d/src/lib/crypto_wrappers/cms/envelopedData.ts#L194">src/lib/crypto_wrappers/cms/envelopedData.ts:194</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
