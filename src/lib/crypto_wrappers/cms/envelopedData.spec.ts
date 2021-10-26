@@ -1,4 +1,5 @@
 // tslint:disable:no-object-mutation
+
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
@@ -12,7 +13,7 @@ import {
   getMockContext,
 } from '../../_test_utils';
 import { CMS_OIDS } from '../../oids';
-import { issueInitialDHKeyCertificate } from '../../pki';
+import { SessionKey } from '../../SessionKey';
 import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
@@ -20,7 +21,6 @@ import CMSError from './CMSError';
 import {
   EncryptionOptions,
   EnvelopedData,
-  OriginatorSessionKey,
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from './envelopedData';
@@ -30,9 +30,6 @@ const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
 const OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
 
 const plaintext = arrayBufferFrom('Winter is coming');
-
-const TOMORROW = new Date();
-TOMORROW.setDate(TOMORROW.getDate() + 1);
 
 // For sessionless tests:
 let nodePrivateKey: CryptoKey;
@@ -49,18 +46,12 @@ beforeAll(async () => {
 
 // For channel session tests:
 let bobDhPrivateKey: CryptoKey;
-let bobDhPublicKey: CryptoKey;
-let bobDhCertificate: Certificate;
+const bobSessionKeyId = Buffer.from('bob session key id');
+let bobSessionKey: SessionKey;
 beforeAll(async () => {
   const bobDhKeyPair = await generateECDHKeyPair();
   bobDhPrivateKey = bobDhKeyPair.privateKey;
-  bobDhPublicKey = bobDhKeyPair.publicKey;
-  bobDhCertificate = await issueInitialDHKeyCertificate({
-    issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodePrivateKey,
-    subjectPublicKey: bobDhPublicKey,
-    validityEndDate: TOMORROW,
-  });
+  bobSessionKey = { keyId: bobSessionKeyId, publicKey: bobDhKeyPair.publicKey };
 });
 
 afterEach(() => {
@@ -176,7 +167,7 @@ describe('EnvelopedData', () => {
     });
 
     test('A KeyAgreeRecipientInfo should result in a SessionEnvelopedData instance', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
       const envelopedDataSerialized = envelopedData.serialize();
 
       const envelopedDataDeserialized = EnvelopedData.deserialize(envelopedDataSerialized);
@@ -293,7 +284,7 @@ describe('SessionlessEnvelopedData', () => {
 describe('SessionEnvelopedData', () => {
   describe('encrypt', () => {
     test('RecipientInfo should be KeyAgreeRecipientInfo', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
       const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
       expect(recipientInfo.value).toBeInstanceOf(pkijs.KeyAgreeRecipientInfo);
@@ -301,7 +292,7 @@ describe('SessionEnvelopedData', () => {
 
     test('Result should include generated (EC)DH private key', async () => {
       jest.spyOn(pkijs.EnvelopedData.prototype, 'encrypt');
-      const { dhPrivateKey } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const { dhPrivateKey } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
       const pkijsEncryptCall = getMockContext(pkijs.EnvelopedData.prototype.encrypt).results[0];
       expect(dhPrivateKey).toBe((await pkijsEncryptCall.value)[0].ecdhPrivateKey);
@@ -310,7 +301,7 @@ describe('SessionEnvelopedData', () => {
     test('Generated (EC)DH key id should be output and included in unprotectedAttrs', async () => {
       const { envelopedData, dhKeyId } = await SessionEnvelopedData.encrypt(
         plaintext,
-        bobDhCertificate,
+        bobSessionKey,
       );
 
       expect(dhKeyId).toBeInstanceOf(ArrayBuffer);
@@ -327,32 +318,19 @@ describe('SessionEnvelopedData', () => {
       expectBuffersToEqual((dhKeyIdAttribute as any).values[0].valueBlock.valueHex, dhKeyId);
     });
 
-    test('IssuerAndSerialNumber should be used if recipient certificate is passed', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+    test('Recipient key id should be stored in EnvelopedData', async () => {
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
-      const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
-      const encryptedKey = recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0];
-      expect(encryptedKey.rid.value).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
-      expect(encryptedKey.rid.value.issuer.isEqual(bobDhCertificate.pkijsCertificate.issuer));
-      expect(
-        encryptedKey.rid.value.serialNumber.isEqual(bobDhCertificate.pkijsCertificate.serialNumber),
-      );
-    });
-
-    test('RecipientKeyIdentifier should be used if recipient certificate is passed', async () => {
-      const bobOriginatorKey: OriginatorSessionKey = {
-        keyId: Buffer.from('key id'),
-        publicKey: bobDhPublicKey,
-      };
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobOriginatorKey);
-
-      expect(envelopedData.getRecipientKeyId()).toEqual(bobOriginatorKey.keyId);
+      const keyInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
+      const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
+      const serialNumberBlock = encryptedKey.rid.value.serialNumber;
+      expect(Buffer.from(serialNumberBlock.valueBlock.valueHex)).toEqual(bobSessionKeyId);
     });
 
     describeEncryptedContentInfoEncryption(async (options?: EncryptionOptions) => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(
         plaintext,
-        bobDhCertificate,
+        bobSessionKey,
         options,
       );
       return envelopedData.serialize();
@@ -362,7 +340,7 @@ describe('SessionEnvelopedData', () => {
   describe('getOriginatorKey', () => {
     let envelopedData: SessionEnvelopedData;
     beforeEach(async () => {
-      const encryptionResult = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const encryptionResult = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
       envelopedData = encryptionResult.envelopedData;
     });
 
@@ -373,10 +351,7 @@ describe('SessionEnvelopedData', () => {
         const unprotectedAttrs = envelopedData.pkijsEnvelopedData
           .unprotectedAttrs as readonly pkijs.Attribute[];
         const dhKeyIdAttribute = unprotectedAttrs[0];
-        expect(keyId).toEqual(
-          // @ts-ignore
-          Buffer.from(dhKeyIdAttribute.values[0].valueBlock.valueHex),
-        );
+        expect(keyId).toEqual(Buffer.from((dhKeyIdAttribute as any).values[0].valueBlock.valueHex));
       });
 
       test('Call should fail if unprotectedAttrs is missing', async () => {
@@ -454,37 +429,17 @@ describe('SessionEnvelopedData', () => {
     });
   });
 
-  describe('getRecipientKeyId', () => {
-    test('Serial number should be returned if recipient certificate was used', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
-
-      const actualKeyId = envelopedData.getRecipientKeyId();
-      expect(actualKeyId).toEqual(bobDhCertificate.getSerialNumber());
-    });
-
-    test('Key id should be returned if recipient originator was used', async () => {
-      const bobOriginatorKey: OriginatorSessionKey = {
-        keyId: Buffer.from('key id'),
-        publicKey: bobDhPublicKey,
-      };
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobOriginatorKey);
-
-      const actualKeyId = envelopedData.getRecipientKeyId();
-      expect(actualKeyId).toEqual(bobOriginatorKey.keyId);
-    });
-  });
-
   test('getRecipientKeyId() should return the recipient key id', async () => {
-    const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+    const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
     const actualKeyId = envelopedData.getRecipientKeyId();
-    expect(actualKeyId).toEqual(bobDhCertificate.getSerialNumber());
+    expect(actualKeyId).toEqual(bobSessionKeyId);
   });
 
   describe('decrypt', () => {
     test('Decryption with the wrong private key should fail', async () => {
       const differentDhKeyPair = await generateECDHKeyPair();
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
       expect.hasAssertions();
       try {
@@ -496,7 +451,7 @@ describe('SessionEnvelopedData', () => {
     });
 
     test('Decryption should succeed with the right private key', async () => {
-      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobDhCertificate);
+      const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
       const decryptedPlaintext = await envelopedData.decrypt(bobDhPrivateKey);
       expectBuffersToEqual(decryptedPlaintext, plaintext);

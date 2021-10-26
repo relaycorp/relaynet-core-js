@@ -42,6 +42,7 @@ export * from './lib/pki';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
+export { SessionKey } from './lib/SessionKey';
 export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
 export { default as CMSError } from './lib/crypto_wrappers/cms/CMSError';
 
@@ -80,4 +81,6 @@ export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
 
 //endregion
 
+export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
+export { InvalidPublicNodeConnectionParams } from './lib/nodes/InvalidPublicNodeConnectionParams';
 export * from './lib/publicAddressing';

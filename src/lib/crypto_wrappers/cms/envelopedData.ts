@@ -1,9 +1,11 @@
 // tslint:disable:no-object-mutation max-classes-per-file
+
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { CMS_OIDS, RELAYNET_OIDS } from '../../oids';
+import { SessionKey } from '../../SessionKey';
 import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
@@ -33,15 +35,6 @@ export interface SessionEncryptionResult {
 
   /** EnvelopedData value using the Channel Session Protocol. */
   readonly envelopedData: SessionEnvelopedData;
-}
-
-/** Key of the sender/producer of the EnvelopedData value using the Channel Session Protocol */
-export interface OriginatorSessionKey {
-  /** Id of the ECDH key pair */
-  readonly keyId: Buffer;
-
-  /** Public key of the ECDH key pair. */
-  readonly publicKey: CryptoKey; // DH or ECDH key
 }
 
 export abstract class EnvelopedData {
@@ -196,12 +189,12 @@ export class SessionEnvelopedData extends EnvelopedData {
    * Return an EnvelopedData value using the Channel Session Protocol.
    *
    * @param plaintext The plaintext whose ciphertext has to be embedded in the EnvelopedData value.
-   * @param certificateOrOriginatorKey The ECDH certificate or public key of the recipient.
+   * @param recipientSessionKey The ECDH public key of the recipient.
    * @param options Any encryption options.
    */
   public static async encrypt(
     plaintext: ArrayBuffer,
-    certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
+    recipientSessionKey: SessionKey,
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
@@ -219,20 +212,11 @@ export class SessionEnvelopedData extends EnvelopedData {
       unprotectedAttrs: [serialNumberAttribute],
     });
 
-    if (certificateOrOriginatorKey instanceof Certificate) {
-      pkijsEnvelopedData.addRecipientByCertificate(
-        certificateOrOriginatorKey.pkijsCertificate,
-        {},
-        2,
-      );
-    } else {
-      // TODO: Add method to @types/PKI.js
-      // @ts-ignore
-      pkijsEnvelopedData.addRecipientByKeyIdentifier(
-        certificateOrOriginatorKey.publicKey,
-        certificateOrOriginatorKey.keyId,
-      );
-    }
+    // @ts-ignore
+    pkijsEnvelopedData.addRecipientByKeyIdentifier(
+      recipientSessionKey.publicKey,
+      recipientSessionKey.keyId,
+    );
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     const [pkijsEncryptionResult]: ReadonlyArray<{
@@ -250,7 +234,7 @@ export class SessionEnvelopedData extends EnvelopedData {
   /**
    * Return the key of the ECDH key of the originator/producer of the EnvelopedData value.
    */
-  public async getOriginatorKey(): Promise<OriginatorSessionKey> {
+  public async getOriginatorKey(): Promise<SessionKey> {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];

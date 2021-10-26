@@ -1,7 +1,7 @@
 import { Primitive, verifySchema, VisibleString } from 'asn1js';
 import { TextDecoder } from 'util';
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../asn1';
 
+import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../asn1';
 import { generateFormatSignature } from './formatSignature';
 import InvalidMessageError from './InvalidMessageError';
 
@@ -44,11 +44,11 @@ export class ParcelCollectionAck {
   ) {}
 
   public serialize(): ArrayBuffer {
-    const ackSerialized = derSerializeHeterogeneousSequence(
+    const ackSerialized = makeImplicitlyTaggedSequence(
       new VisibleString({ value: this.senderEndpointPrivateAddress }),
       new VisibleString({ value: this.recipientEndpointAddress }),
       new VisibleString({ value: this.parcelId }),
-    );
+    ).toBER();
     const serialization = new ArrayBuffer(
       ParcelCollectionAck.FORMAT_SIGNATURE.byteLength + ackSerialized.byteLength,
     );

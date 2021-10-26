@@ -290,6 +290,23 @@ describe('Key deserializers', () => {
     expect(algorithm).toHaveProperty('namedCurve', 'P-256');
   });
 
+  test('derDeserializeECDHPublicKey should accept an ArrayBuffer serialization', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.publicKey);
+
+    const publicKeyDerArrayBuffer = bufferToArray(stubKeyDer);
+    const publicKey = await derDeserializeECDHPublicKey(publicKeyDerArrayBuffer, ecdhCurveName);
+
+    expect(publicKey).toBe(stubKeyPair.publicKey);
+    expect(mockImportKey).toBeCalledTimes(1);
+    expect(mockImportKey).toBeCalledWith(
+      'spki',
+      publicKeyDerArrayBuffer,
+      { name: 'ECDH', namedCurve: ecdhCurveName },
+      true,
+      [],
+    );
+  });
+
   test('derDeserializeECDHPrivateKey should convert DER private key to ECDH key', async () => {
     mockImportKey.mockResolvedValueOnce(stubKeyPair.privateKey);
 

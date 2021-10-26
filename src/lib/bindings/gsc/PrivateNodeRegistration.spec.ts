@@ -1,6 +1,7 @@
 import { OctetString, Sequence } from 'asn1js';
+
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../messages/InvalidMessageError';
@@ -52,9 +53,9 @@ describe('deserialize', () => {
   });
 
   test('Sequence should have at least two items', () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: arrayBufferFrom('nope.jpg') }),
-    );
+    ).toBER();
 
     expect(() => PrivateNodeRegistration.deserialize(invalidSerialization)).toThrowWithMessage(
       InvalidMessageError,
@@ -63,10 +64,10 @@ describe('deserialize', () => {
   });
 
   test('Invalid private node certificates should be refused', () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: arrayBufferFrom('not a certificate') }),
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
-    );
+    ).toBER();
 
     expect(() => PrivateNodeRegistration.deserialize(invalidSerialization)).toThrowWithMessage(
       InvalidMessageError,
@@ -75,10 +76,10 @@ describe('deserialize', () => {
   });
 
   test('Invalid gateway certificates should be refused', () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(
+    const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
       new OctetString({ valueHex: arrayBufferFrom('not a certificate') }),
-    );
+    ).toBER();
 
     expect(() => PrivateNodeRegistration.deserialize(invalidSerialization)).toThrowWithMessage(
       InvalidMessageError,
