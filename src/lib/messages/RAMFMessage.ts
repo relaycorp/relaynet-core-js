@@ -142,13 +142,14 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
     keyId: Buffer,
   ): Promise<CryptoKey> {
-    // tslint:disable-next-line:no-let
     let privateKey: CryptoKey;
     if (privateKeyOrStore instanceof PrivateKeyStore) {
-      privateKey =
-        payloadEnvelopedData instanceof SessionEnvelopedData
-          ? await privateKeyOrStore.fetchSessionKey(keyId, this.senderCertificate)
-          : (await privateKeyOrStore.fetchNodeKey(keyId)).privateKey;
+      if (payloadEnvelopedData instanceof SessionEnvelopedData) {
+        const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
+        privateKey = await privateKeyOrStore.fetchSessionKey(keyId, peerPrivateAddress);
+      } else {
+        privateKey = (await privateKeyOrStore.fetchNodeKey(keyId)).privateKey;
+      }
     } else {
       privateKey = privateKeyOrStore;
     }
@@ -176,7 +177,6 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   private async validateAuthorization(
     trustedCertificates: readonly Certificate[],
   ): Promise<readonly Certificate[]> {
-    // tslint:disable-next-line:no-let
     let certificationPath: readonly Certificate[];
     try {
       certificationPath = await this.getSenderCertificationPath(trustedCertificates);

@@ -48,8 +48,9 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
     payloadPlaintext: ArrayBuffer,
     recipientCertificate: Certificate,
   ): Promise<Buffer> {
-    const sessionKey = await this.publicKeyStore.fetchLastSessionKey(recipientCertificate);
+    const peerPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
 
+    const sessionKey = await this.publicKeyStore.fetchLastSessionKey(peerPrivateAddress);
     let envelopedData: EnvelopedData;
     if (sessionKey) {
       const encryptionResult = await SessionEnvelopedData.encrypt(
@@ -60,7 +61,7 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
       await this.privateKeyStore.saveSubsequentSessionKey(
         encryptionResult.dhPrivateKey,
         Buffer.from(encryptionResult.dhKeyId),
-        recipientCertificate,
+        peerPrivateAddress,
       );
       envelopedData = encryptionResult.envelopedData;
     } else {
