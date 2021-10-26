@@ -95,72 +95,39 @@ describe('generateRsaKeyPair', () => {
 });
 
 describe('generateDHKeyPair', () => {
-  const stubKey: CryptoKey = {
-    algorithm: { name: 'ECDH' },
-    extractable: true,
-    type: 'private',
-    usages: [],
-  };
-  const stubECDHKeyPair: CryptoKeyPair = {
-    privateKey: stubKey,
-    publicKey: stubKey,
-  };
-
-  const mockGenerateKey = jest.spyOn(CryptoEngine.prototype, 'generateKey');
-  beforeEach(() => {
-    mockGenerateKey.mockReset();
-    // @ts-ignore
-    mockGenerateKey.mockImplementation(() => Promise.resolve(stubECDHKeyPair));
-  });
-
-  afterAll(() => {
-    mockGenerateKey.mockRestore();
-  });
-
   test('The result should be a DH key pair', async () => {
     const keyPair = await generateECDHKeyPair();
 
-    expect(keyPair).toBe(stubECDHKeyPair);
-
-    expect(mockGenerateKey).toBeCalledTimes(1);
-    const generateKeyCallArgs = mockGenerateKey.mock.calls[0];
-    const algorithm = generateKeyCallArgs[0];
-    expect(algorithm).toHaveProperty('name', 'ECDH');
+    expect(keyPair).toHaveProperty('privateKey.algorithm.name', 'ECDH');
+    expect(keyPair).toHaveProperty('publicKey.algorithm.name', 'ECDH');
   });
 
   test('NIST P-256 curve should be used by default', async () => {
-    await generateECDHKeyPair();
+    const keyPair = await generateECDHKeyPair();
 
-    const generateKeyCallArgs = mockGenerateKey.mock.calls[0];
-    const algorithm = generateKeyCallArgs[0];
-    expect(algorithm).toHaveProperty('namedCurve', 'P-256');
+    expect(keyPair).toHaveProperty('privateKey.algorithm.namedCurve', 'P-256');
+    expect(keyPair).toHaveProperty('publicKey.algorithm.namedCurve', 'P-256');
   });
 
   test.each([['P-384', 'P-521']])('%s should also be supported', async (curveName) => {
-    await generateECDHKeyPair(curveName as ECDHCurveName);
+    const keyPair = await generateECDHKeyPair(curveName as ECDHCurveName);
 
-    const generateKeyCallArgs = mockGenerateKey.mock.calls[0];
-    const algorithm = generateKeyCallArgs[0];
-    expect(algorithm).toHaveProperty('namedCurve', curveName);
+    expect(keyPair).toHaveProperty('privateKey.algorithm.namedCurve', curveName);
+    expect(keyPair).toHaveProperty('publicKey.algorithm.namedCurve', curveName);
   });
 
   test('The key pair should be extractable', async () => {
-    await generateECDHKeyPair();
+    const keyPair = await generateECDHKeyPair();
 
-    const generateKeyCallArgs = mockGenerateKey.mock.calls[0];
-
-    const extractableFlag = generateKeyCallArgs[1];
-    expect(extractableFlag).toBeTrue();
+    expect(keyPair).toHaveProperty('privateKey.extractable', true);
+    expect(keyPair).toHaveProperty('publicKey.extractable', true);
   });
 
-  test('deriveKey and deriveBits should be the only uses of the keys', async () => {
-    await generateECDHKeyPair();
+  test('deriveKey and deriveBits should be the only uses of the private keys', async () => {
+    const keyPair = await generateECDHKeyPair();
 
-    const generateKeyCallArgs = mockGenerateKey.mock.calls[0];
-    const keyUses = generateKeyCallArgs[2];
-    expect(keyUses).toHaveLength(2);
-    expect(keyUses).toContain('deriveBits');
-    expect(keyUses).toContain('deriveKey');
+    expect(keyPair.privateKey.usages).toContainValues(['deriveBits', 'deriveKey']);
+    expect(keyPair.publicKey.usages).toBeEmpty();
   });
 });
 
@@ -321,6 +288,23 @@ describe('Key deserializers', () => {
     expect(mockImportKey).toBeCalledTimes(1);
     const algorithm = mockImportKey.mock.calls[0][2];
     expect(algorithm).toHaveProperty('namedCurve', 'P-256');
+  });
+
+  test('derDeserializeECDHPublicKey should accept an ArrayBuffer serialization', async () => {
+    mockImportKey.mockResolvedValueOnce(stubKeyPair.publicKey);
+
+    const publicKeyDerArrayBuffer = bufferToArray(stubKeyDer);
+    const publicKey = await derDeserializeECDHPublicKey(publicKeyDerArrayBuffer, ecdhCurveName);
+
+    expect(publicKey).toBe(stubKeyPair.publicKey);
+    expect(mockImportKey).toBeCalledTimes(1);
+    expect(mockImportKey).toBeCalledWith(
+      'spki',
+      publicKeyDerArrayBuffer,
+      { name: 'ECDH', namedCurve: ecdhCurveName },
+      true,
+      [],
+    );
   });
 
   test('derDeserializeECDHPrivateKey should convert DER private key to ECDH key', async () => {

@@ -1,4 +1,13 @@
-import { Constructed, OctetString, Primitive, Sequence, verifySchema, VisibleString } from 'asn1js';
+import {
+  BaseBlock,
+  Constructed,
+  LocalBaseBlock,
+  OctetString,
+  Primitive,
+  Sequence,
+  verifySchema,
+  VisibleString,
+} from 'asn1js';
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
@@ -6,115 +15,68 @@ import { arrayBufferFrom, expectBuffersToEqual } from './_test_utils';
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
-  derSerializeHeterogeneousSequence,
   derSerializeHomogeneousSequence,
   makeHeterogeneousSequenceSchema,
+  makeImplicitlyTaggedSequence,
 } from './asn1';
 import { derDeserialize } from './crypto_wrappers/_utils';
 import InvalidMessageError from './messages/InvalidMessageError';
 
-describe('derSerializeHeterogeneousSequence', () => {
+describe('makeImplicitlyTaggedSequence', () => {
   test('An empty input should result in an empty sequence', () => {
-    const serialization = derSerializeHeterogeneousSequence();
+    const sequence = makeImplicitlyTaggedSequence();
 
-    const schema = new Sequence();
-    const schemaVerification = verifySchema(serialization, schema);
-
-    expect(schemaVerification.verified).toBeTrue();
-    expect(schemaVerification.result.valueBlock.value).toHaveLength(0);
+    expect(sequence.valueBlock.value).toHaveLength(0);
   });
 
   test('Primitive values should be implicitly tagged', () => {
-    const item = new OctetString({ valueHex: arrayBufferFrom('foo') } as any);
+    const originalItem = new OctetString({ valueHex: arrayBufferFrom('foo') } as any);
 
-    const serialization = derSerializeHeterogeneousSequence(item);
+    const sequence = makeImplicitlyTaggedSequence(originalItem);
 
-    const schema = new Sequence({
-      name: 'Dummy',
-      value: [
-        new Primitive({
-          idBlock: { tagClass: 3, tagNumber: 0 },
-          name: 'item',
-          optional: false,
-        } as any),
-      ],
-    } as any);
-
-    const schemaVerification = verifySchema(serialization, schema);
-    expect(schemaVerification.verified).toBeTrue();
-    expect(schemaVerification.result.Dummy.item).toHaveProperty(
-      'valueBlock.valueHex',
-      item.valueBlock.valueHex,
-    );
-    expect(schemaVerification.result.Dummy.item).toHaveProperty(
-      'valueBlock.valueHex',
-      item.valueBlock.valueHex,
-    );
+    expectItemToBeImplicitlyTaggedPrimitive(sequence.valueBlock.value[0], originalItem, 0);
   });
 
   test('Constructed items should be implicitly tagged', () => {
-    const subitem1 = new VisibleString({ value: 'foo' });
-    const subitem2 = new VisibleString({ value: 'bar' });
-    const item = new Sequence({ value: [subitem1, subitem2] } as any);
+    const originalSubItem1 = new VisibleString({ value: 'foo' });
+    const originalSubItem2 = new VisibleString({ value: 'bar' });
+    const originalItem = new Sequence({ value: [originalSubItem1, originalSubItem2] } as any);
 
-    const serialization = derSerializeHeterogeneousSequence(item);
+    const sequence = makeImplicitlyTaggedSequence(originalItem);
 
-    const schema = new Sequence({
-      name: 'Dummy',
-      value: [
-        new Constructed({
-          idBlock: { tagClass: 3, tagNumber: 0 },
-          name: 'item',
-          optional: false,
-          value: [subitem1, subitem2],
-        } as any),
-      ],
-    } as any);
-
-    const schemaVerification = verifySchema(serialization, schema);
-    expect(schemaVerification.verified).toBeTrue();
-    expect(schemaVerification.result.Dummy.item.valueBlock.value[0]).toHaveProperty(
-      'valueBlock.valueHex',
-      subitem1.valueBlock.valueHex,
+    const sequenceItem = sequence.valueBlock.value[0];
+    expect(sequenceItem).toBeInstanceOf(Constructed);
+    expect((sequenceItem as Constructed).idBlock).toEqual(
+      expect.objectContaining({ tagClass: 3, tagNumber: 0 }),
     );
-    expect(schemaVerification.result.Dummy.item.valueBlock.value[0]).toHaveProperty(
-      'valueBlock.valueHex',
-      subitem2.valueBlock.valueHex,
-    );
+    expect((sequenceItem as Constructed).valueBlock.value[0]).toBe(originalSubItem1);
+    expect((sequenceItem as Constructed).valueBlock.value[1]).toBe(originalSubItem2);
   });
 
   test('Multiple values should be implicitly tagged', () => {
-    const item1 = new VisibleString({ value: 'foo' });
-    const item2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
-    const serialization = derSerializeHeterogeneousSequence(item1, item2);
+    const originalItem1 = new VisibleString({ value: 'foo' });
+    const originalItem2 = new OctetString({ valueHex: arrayBufferFrom('bar') } as any);
 
-    const schema = new Sequence({
-      name: 'Dummy',
-      value: [
-        new Primitive({
-          idBlock: { tagClass: 3, tagNumber: 0 },
-          name: 'item1',
-          optional: false,
-        } as any),
-        new Primitive({
-          idBlock: { tagClass: 3, tagNumber: 1 },
-          name: 'item2',
-          optional: false,
-        } as any),
-      ],
-    } as any);
+    const sequence = makeImplicitlyTaggedSequence(originalItem1, originalItem2);
 
-    const schemaVerification = verifySchema(serialization, schema);
-    expect(schemaVerification.verified).toBeTrue();
-    expect(schemaVerification.result.Dummy.item1).toHaveProperty(
-      'valueBlock.valueHex',
-      item1.valueBlock.valueHex,
-    );
-    expect(schemaVerification.result.Dummy.item2).toHaveProperty(
-      'valueBlock.valueHex',
-      item2.valueBlock.valueHex,
-    );
+    expectItemToBeImplicitlyTaggedPrimitive(sequence.valueBlock.value[0], originalItem1, 0);
+    expectItemToBeImplicitlyTaggedPrimitive(sequence.valueBlock.value[1], originalItem2, 1);
   });
+
+  function expectItemToBeImplicitlyTaggedPrimitive(
+    item: LocalBaseBlock,
+    itemExplicitlyTagged: BaseBlock<any>,
+    expectedTagNumber: number,
+  ): void {
+    if (item! instanceof Primitive) {
+      expect.fail('Item is not a primitive');
+    }
+    const itemTyped = item as Primitive;
+    expect(itemTyped.idBlock).toEqual(
+      expect.objectContaining({ tagClass: 3, tagNumber: expectedTagNumber }),
+    );
+    expect(itemTyped.valueBlock.valueHex).toEqual(itemExplicitlyTagged.valueBlock.valueHex);
+  }
 });
 
 describe('derSerializeHomogeneousSequence', () => {
@@ -141,7 +103,7 @@ describe('derSerializeHomogeneousSequence', () => {
 describe('makeHeterogeneousSequenceSchema', () => {
   const EMPTY_SEQUENCE_SERIALIZED = new Sequence().toBER();
   const PRIMITIVE_ITEM = new Primitive({ valueHex: arrayBufferFrom('primitive') } as any);
-  const SINGLE_ITEM_SEQUENCE_SERIALIZED = derSerializeHeterogeneousSequence(PRIMITIVE_ITEM);
+  const SINGLE_ITEM_SEQUENCE_SERIALIZED = makeImplicitlyTaggedSequence(PRIMITIVE_ITEM).toBER();
 
   test('Schema name should be honored', () => {
     const schemaName = 'Foo';

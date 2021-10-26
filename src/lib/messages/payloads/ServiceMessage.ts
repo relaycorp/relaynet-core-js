@@ -2,7 +2,7 @@ import { OctetString, Primitive, verifySchema, VisibleString } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { TextDecoder } from 'util';
 
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
 import InvalidMessageError from '../InvalidMessageError';
 import PayloadPlaintext from './PayloadPlaintext';
 
@@ -39,6 +39,6 @@ export default class ServiceMessage implements PayloadPlaintext {
   public serialize(): ArrayBuffer {
     const typeASN1 = new VisibleString({ value: this.type });
     const contentASN1 = new OctetString({ valueHex: bufferToArray(this.content) });
-    return derSerializeHeterogeneousSequence(typeASN1, contentASN1);
+    return makeImplicitlyTaggedSequence(typeASN1, contentASN1).toBER();
   }
 }

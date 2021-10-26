@@ -1,0 +1,10 @@
+name: Process PRs
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  dependabot-automerge:
+    uses: relaycorp/shared-workflows/.github/workflows/prs.yml@main

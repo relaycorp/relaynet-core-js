@@ -5,20 +5,18 @@ import { TextDecoder } from 'util';
 import InvalidMessageError from './messages/InvalidMessageError';
 
 /**
- * Serialize ASN.1 values as a DER SEQUENCE implicitly tagged.
+ * Create implicitly tagged SEQUENCE from the `items`.
  *
  * @param items
  */
-export function derSerializeHeterogeneousSequence(
-  ...items: ReadonlyArray<BaseBlock<any>>
-): ArrayBuffer {
+export function makeImplicitlyTaggedSequence(...items: ReadonlyArray<BaseBlock<any>>): Sequence {
   const asn1Items = items.map((item, index) => {
     const idBlock = { tagClass: 3, tagNumber: index };
     return item instanceof Constructed
       ? new Constructed({ idBlock, value: item.valueBlock.value } as any)
       : new Primitive({ idBlock, valueHex: item.valueBlock.toBER() } as any);
   });
-  return new Sequence({ value: asn1Items } as any).toBER(false);
+  return new Sequence({ value: asn1Items } as any);
 }
 
 /**

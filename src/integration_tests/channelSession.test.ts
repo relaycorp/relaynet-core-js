@@ -1,68 +1,22 @@
-// tslint:disable:no-let
-
-// @ts-ignore
-import bufferToArray from 'buffer-to-arraybuffer';
-// @ts-ignore
 import * as pkijs from 'pkijs';
 
-import {
-  Certificate,
-  EnvelopedData,
-  generateECDHKeyPair,
-  generateRSAKeyPair,
-  issueEndpointCertificate,
-  issueInitialDHKeyCertificate,
-  OriginatorSessionKey,
-  SessionEnvelopedData,
-} from '..';
+import { EnvelopedData, generateECDHKeyPair, SessionEnvelopedData } from '..';
 
 import { arrayBufferFrom, expectBuffersToEqual } from '../lib/_test_utils';
 
-const TOMORROW = new Date();
-TOMORROW.setDate(TOMORROW.getDate() + 1);
-
-let nodeKeyPair: CryptoKeyPair;
-let nodeCertificate: Certificate;
-beforeAll(async () => {
-  nodeKeyPair = await generateRSAKeyPair();
-  nodeCertificate = await issueEndpointCertificate({
-    issuerPrivateKey: nodeKeyPair.privateKey,
-    subjectPublicKey: nodeKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
-});
-
-test('DH certificate can be issued, serialized and deserialized', async () => {
-  const dhKeyPair = await generateECDHKeyPair();
-  const dhCertificate = await issueInitialDHKeyCertificate({
-    issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodeKeyPair.privateKey,
-    subjectPublicKey: dhKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
-
-  expect(dhCertificate.getCommonName()).toEqual(nodeCertificate.getCommonName());
-
-  const dhCertificateSerialized = dhCertificate.serialize();
-  const dhCertificateDeserialized = Certificate.deserialize(dhCertificateSerialized);
-  expect(dhCertificateDeserialized.getCommonName()).toEqual(dhCertificate.getCommonName());
-});
-
 test('Encryption and decryption with subsequent DH keys', async () => {
   const bobKeyPair1 = await generateECDHKeyPair();
-  const bobDhCertificate = await issueInitialDHKeyCertificate({
-    issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodeKeyPair.privateKey,
-    subjectPublicKey: bobKeyPair1.publicKey,
-    validityEndDate: TOMORROW,
-  });
+  const bobKeyPair1Id = Buffer.from('bob key pair 1');
 
   // Run 1: Alice initiates contact with Bob. Bob decrypts message.
   const plaintext1 = arrayBufferFrom('Hi. My name is Alice.');
-  const encryptionResult1 = await SessionEnvelopedData.encrypt(plaintext1, bobDhCertificate);
+  const encryptionResult1 = await SessionEnvelopedData.encrypt(plaintext1, {
+    keyId: bobKeyPair1Id,
+    publicKey: bobKeyPair1.publicKey,
+  });
   const decryptedPlaintext1 = await encryptionResult1.envelopedData.decrypt(bobKeyPair1.privateKey);
   expectBuffersToEqual(decryptedPlaintext1, plaintext1);
-  checkRecipientInfo(encryptionResult1.envelopedData, bobDhCertificate);
+  checkRecipientInfo(encryptionResult1.envelopedData, bobKeyPair1Id);
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
   const plaintext2 = arrayBufferFrom('Hi, Alice. My name is Bob.');
@@ -72,7 +26,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     encryptionResult1.dhPrivateKey as CryptoKey,
   );
   expectBuffersToEqual(decryptedPlaintext2, plaintext2);
-  checkRecipientInfo(encryptionResult2.envelopedData, alicePublicKey1);
+  checkRecipientInfo(encryptionResult2.envelopedData, alicePublicKey1.keyId);
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
   const plaintext3 = arrayBufferFrom('Nice to meet you, Bob.');
@@ -82,27 +36,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     encryptionResult2.dhPrivateKey as CryptoKey,
   );
   expectBuffersToEqual(decryptedPlaintext3, plaintext3);
-  checkRecipientInfo(encryptionResult3.envelopedData, bobPublicKey2);
-});
-
-test('SessionEnvelopedData.getRecipientKeyId() can be retrieved after serialization', async () => {
-  // This essentially makes sure we're not reading `recipientCertificate` on the recipientInfo
-  // as PKI.js attaches it to the EnvelopedData value temporarily but isn't output to the
-  // ASN.1 representation because it isn't part of the CMS serialization.
-  const dhKeyPair = await generateECDHKeyPair();
-  const dhCertificate = await issueInitialDHKeyCertificate({
-    issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodeKeyPair.privateKey,
-    subjectPublicKey: dhKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
-
-  const { envelopedData } = await SessionEnvelopedData.encrypt(arrayBufferFrom('f'), dhCertificate);
-
-  const envelopedDataDeserialized = EnvelopedData.deserialize(
-    envelopedData.serialize(),
-  ) as SessionEnvelopedData;
-  expect(envelopedDataDeserialized.getRecipientKeyId()).toEqual(dhCertificate.getSerialNumber());
+  checkRecipientInfo(encryptionResult3.envelopedData, bobPublicKey2.keyId);
 });
 
 test('EnvelopedData should be decrypted after serialization', async () => {
@@ -110,15 +44,13 @@ test('EnvelopedData should be decrypted after serialization', async () => {
   // been serialized. This is a regression test for
   // https://github.com/PeculiarVentures/PKI.js/pull/258
   const dhKeyPair = await generateECDHKeyPair();
-  const dhCertificate = await issueInitialDHKeyCertificate({
-    issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodeKeyPair.privateKey,
-    subjectPublicKey: dhKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
+  const keyId = Buffer.from('key id');
 
   const plaintext = arrayBufferFrom('plaintext');
-  const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, dhCertificate);
+  const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, {
+    keyId,
+    publicKey: dhKeyPair.publicKey,
+  });
 
   // Check it can be decrypted before serializing it:
   expectBuffersToEqual(await envelopedData.decrypt(dhKeyPair.privateKey), plaintext);
@@ -132,7 +64,7 @@ test('EnvelopedData should be decrypted after serialization', async () => {
 
 function checkRecipientInfo(
   envelopedData: SessionEnvelopedData,
-  expectedRecipientCertificate: Certificate | OriginatorSessionKey,
+  expectedRecipientSessionKeyId: Buffer,
 ): void {
   expect(envelopedData.pkijsEnvelopedData.recipientInfos).toHaveLength(1);
   const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
@@ -157,13 +89,5 @@ function checkRecipientInfo(
   );
 
   // Validate recipientEncryptedKeys
-  expect(recipientInfo.value.recipientEncryptedKeys.encryptedKeys).toHaveLength(1);
-  const keyAgreeRecipientIdentifier =
-    recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0].rid;
-  expect(keyAgreeRecipientIdentifier.variant).toEqual(1);
-  const expectedKeyId =
-    expectedRecipientCertificate instanceof Certificate
-      ? expectedRecipientCertificate.pkijsCertificate.serialNumber.valueBlock.valueHex
-      : bufferToArray(expectedRecipientCertificate.keyId);
-  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.valueHex).toEqual(expectedKeyId);
+  expect(envelopedData.getRecipientKeyId()).toEqual(expectedRecipientSessionKeyId);
 }

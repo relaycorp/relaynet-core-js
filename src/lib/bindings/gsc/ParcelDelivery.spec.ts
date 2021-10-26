@@ -1,7 +1,7 @@
 import { Integer, Primitive, Sequence } from 'asn1js';
 
 import { arrayBufferFrom, expectBuffersToEqual } from '../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import { ParcelDelivery } from './ParcelDelivery';
@@ -52,7 +52,7 @@ describe('deserialize', () => {
   });
 
   test('Sequence should have at lease two items', () => {
-    const invalidSerialization = derSerializeHeterogeneousSequence(new Integer({ value: 42 }));
+    const invalidSerialization = makeImplicitlyTaggedSequence(new Integer({ value: 42 })).toBER();
 
     expect(() => ParcelDelivery.deserialize(invalidSerialization)).toThrowWithMessage(
       InvalidMessageError,
