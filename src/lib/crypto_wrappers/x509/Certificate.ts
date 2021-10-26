@@ -4,7 +4,7 @@ import { makeDateWithSecondPrecision } from '../../_utils';
 
 import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
-import { getPublicKeyDigest, getPublicKeyDigestHex } from '../keys';
+import { getPrivateAddressFromIdentityKey, getPublicKeyDigest } from '../keys';
 import CertificateError from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
 
@@ -194,9 +194,8 @@ export default class Certificate {
 
   public async calculateSubjectPrivateAddress(): Promise<string> {
     if (!this.privateAddressCache) {
-      const subjectKeyDigest = await getPublicKeyDigestHex(await this.getPublicKey());
       // tslint:disable-next-line:no-object-mutation
-      this.privateAddressCache = `0${subjectKeyDigest}`;
+      this.privateAddressCache = await getPrivateAddressFromIdentityKey(await this.getPublicKey());
     }
     return this.privateAddressCache;
   }

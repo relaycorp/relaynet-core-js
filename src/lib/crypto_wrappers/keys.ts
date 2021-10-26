@@ -178,5 +178,10 @@ export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<strin
 export async function getPrivateAddressFromIdentityKey(
   identityPublicKey: CryptoKey,
 ): Promise<string> {
-  throw new Error(identityPublicKey.type);
+  const algorithmName = identityPublicKey.algorithm.name;
+  if (!algorithmName.startsWith('RSA-')) {
+    throw new Error(`Only RSA keys are supported (got ${algorithmName})`);
+  }
+  const keyDigest = await getPublicKeyDigestHex(identityPublicKey);
+  return `0${keyDigest}`;
 }
