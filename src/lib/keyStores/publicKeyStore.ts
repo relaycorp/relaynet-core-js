@@ -1,5 +1,4 @@
 import { derDeserializeECDHPublicKey, derSerializePublicKey } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
 import { SessionKey } from '../SessionKey';
 import PublicKeyStoreError from './PublicKeyStoreError';
 
@@ -10,8 +9,7 @@ export interface SessionPublicKeyData {
 }
 
 export abstract class PublicKeyStore {
-  public async fetchLastSessionKey(peerCertificate: Certificate): Promise<SessionKey | null> {
-    const peerPrivateAddress = await peerCertificate.calculateSubjectPrivateAddress();
+  public async fetchLastSessionKey(peerPrivateAddress: string): Promise<SessionKey | null> {
     const keyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
     if (!keyData) {
       return null;
@@ -22,11 +20,9 @@ export abstract class PublicKeyStore {
 
   public async saveSessionKey(
     key: SessionKey,
-    peerCertificate: Certificate,
+    peerPrivateAddress: string,
     creationTime: Date,
   ): Promise<void> {
-    const peerPrivateAddress = await peerCertificate.calculateSubjectPrivateAddress();
-
     const priorKeyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
     if (priorKeyData && creationTime <= priorKeyData.publicKeyCreationTime) {
       return;
