@@ -11,7 +11,11 @@ import {
 } from '../../_test_utils';
 import * as oids from '../../oids';
 import * as utils from '../_utils';
-import { derSerializePublicKey, generateRSAKeyPair } from '../keys';
+import {
+  derSerializePublicKey,
+  generateRSAKeyPair,
+  getPrivateAddressFromIdentityKey,
+} from '../keys';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
 
@@ -585,7 +589,7 @@ describe('calculateSubjectPrivateAddress', () => {
     });
 
     await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
-      `0${await getPublicKeyDigest(nodeKeyPair.publicKey)}`,
+      await getPrivateAddressFromIdentityKey(nodeKeyPair.publicKey),
     );
   });
 

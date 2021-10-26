@@ -174,3 +174,9 @@ export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<strin
   const digest = Buffer.from(await getPublicKeyDigest(publicKey));
   return digest.toString('hex');
 }
+
+export async function getPrivateAddressFromIdentityKey(
+  identityPublicKey: CryptoKey,
+): Promise<string> {
+  throw new Error(identityPublicKey.type);
+}

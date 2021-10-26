@@ -26,6 +26,7 @@ export {
   generateRSAKeyPair,
   getPublicKeyDigest,
   getPublicKeyDigestHex,
+  getPrivateAddressFromIdentityKey,
 } from './lib/crypto_wrappers/keys';
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/publicKeyStore';
