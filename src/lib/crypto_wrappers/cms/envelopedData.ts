@@ -1,4 +1,5 @@
 // tslint:disable:no-object-mutation max-classes-per-file
+
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
@@ -52,7 +53,6 @@ export abstract class EnvelopedData {
         `ContentInfo does not wrap an EnvelopedData value (got OID ${contentInfo.contentType})`,
       );
     }
-    // tslint:disable-next-line:no-let
     let pkijsEnvelopedData;
     try {
       pkijsEnvelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
@@ -105,7 +105,17 @@ export abstract class EnvelopedData {
    *
    * @param privateKey The private key to decrypt the ciphertext.
    */
-  public abstract async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer>;
+  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    try {
+      // TODO: Update @types/pkijs
+      return await this.pkijsEnvelopedData.decrypt(0, {
+        recipientPrivateKey: bufferToArray(privateKeyDer),
+      } as any);
+    } catch (error) {
+      throw new CMSError(error, 'Decryption failed');
+    }
+  }
 
   /**
    * Return the id of the recipient's key used to encrypt the content.
@@ -152,10 +162,6 @@ export class SessionlessEnvelopedData extends EnvelopedData {
     );
 
     return new SessionlessEnvelopedData(pkijsEnvelopedData);
-  }
-
-  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
-    return pkijsDecrypt(this.pkijsEnvelopedData, privateKey);
   }
 
   public getRecipientKeyId(): Buffer {
@@ -205,8 +211,11 @@ export class SessionEnvelopedData extends EnvelopedData {
       unprotectedAttrs: [serialNumberAttribute],
     });
 
-    const pkijsCertificate = await getOrMakePkijsCertificate(recipientSessionKey);
-    pkijsEnvelopedData.addRecipientByCertificate(pkijsCertificate, {}, 2);
+    // @ts-ignore
+    pkijsEnvelopedData.addRecipientByKeyIdentifier(
+      recipientSessionKey.publicKey,
+      recipientSessionKey.keyId,
+    );
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     const [pkijsEncryptionResult]: ReadonlyArray<{
@@ -216,10 +225,6 @@ export class SessionEnvelopedData extends EnvelopedData {
       plaintext,
     )) as any;
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
-
-    // pkijs.EnvelopedData.encrypt() deleted the algorithm params so we should reinstate them:
-    pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
-      pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
 
     const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
     return { dhPrivateKey, dhKeyId, envelopedData };
@@ -251,53 +256,9 @@ export class SessionEnvelopedData extends EnvelopedData {
   public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
-    const serialNumberBlock = encryptedKey.rid.value.serialNumber;
-    return Buffer.from(serialNumberBlock.valueBlock.valueHex);
+    const subjectKeyIdentifierBlock = encryptedKey.rid.value.subjectKeyIdentifier;
+    return Buffer.from(subjectKeyIdentifierBlock.valueBlock.valueHex);
   }
-
-  public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
-    const originator = this.pkijsEnvelopedData.recipientInfos[0].value.originator;
-    const dhCertificate: pkijs.Certificate = {
-      subjectPublicKeyInfo: {
-        // @ts-ignore
-        algorithm: {
-          algorithmParams: originator.value.algorithm.algorithmParams,
-        },
-      },
-    };
-    return pkijsDecrypt(this.pkijsEnvelopedData, dhPrivateKey, dhCertificate);
-  }
-}
-
-async function pkijsDecrypt(
-  envelopedData: pkijs.EnvelopedData,
-  privateKey: CryptoKey,
-  dhCertificate?: pkijs.Certificate,
-): Promise<ArrayBuffer> {
-  const privateKeyDer = await derSerializePrivateKey(privateKey);
-  const encryptArgs = {
-    recipientCertificate: dhCertificate,
-    recipientPrivateKey: bufferToArray(privateKeyDer),
-  };
-  try {
-    // @ts-ignore
-    return await envelopedData.decrypt(0, encryptArgs);
-  } catch (error) {
-    throw new CMSError(error, 'Decryption failed');
-  }
-}
-
-async function getOrMakePkijsCertificate(
-  certificateOrOriginatorKey: SessionKey,
-): Promise<pkijs.Certificate> {
-  const pkijsCertificate = new pkijs.Certificate({
-    serialNumber: new asn1js.Integer({
-      // @ts-ignore
-      valueHex: bufferToArray(certificateOrOriginatorKey.keyId),
-    }),
-  });
-  await pkijsCertificate.subjectPublicKeyInfo.importKey(certificateOrOriginatorKey.publicKey);
-  return pkijsCertificate;
 }
 
 function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): Buffer {

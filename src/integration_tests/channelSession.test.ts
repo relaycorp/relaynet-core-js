@@ -1,6 +1,3 @@
-// @ts-ignore
-import bufferToArray from 'buffer-to-arraybuffer';
-// @ts-ignore
 import * as pkijs from 'pkijs';
 
 import { EnvelopedData, generateECDHKeyPair, SessionEnvelopedData } from '..';
@@ -92,10 +89,5 @@ function checkRecipientInfo(
   );
 
   // Validate recipientEncryptedKeys
-  expect(recipientInfo.value.recipientEncryptedKeys.encryptedKeys).toHaveLength(1);
-  const keyAgreeRecipientIdentifier =
-    recipientInfo.value.recipientEncryptedKeys.encryptedKeys[0].rid;
-  expect(keyAgreeRecipientIdentifier.variant).toEqual(1);
-  const expectedKeyId = bufferToArray(expectedRecipientSessionKeyId);
-  expect(keyAgreeRecipientIdentifier.value.serialNumber.valueBlock.valueHex).toEqual(expectedKeyId);
+  expect(envelopedData.getRecipientKeyId()).toEqual(expectedRecipientSessionKeyId);
 }
