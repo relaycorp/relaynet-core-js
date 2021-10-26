@@ -2,14 +2,11 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import uuid4 from 'uuid4';
 
 import { makeDateWithSecondPrecision } from '../_utils';
-import {
-  EnvelopedData,
-  OriginatorSessionKey,
-  SessionEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
+import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyStore } from '../keyStores/privateKeyStore';
+import { SessionKey } from '../SessionKey';
 import InvalidMessageError from './InvalidMessageError';
 import PayloadPlaintext from './payloads/PayloadPlaintext';
 import { RecipientAddressType } from './RecipientAddressType';
@@ -93,7 +90,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
 
   public async unwrapPayload(
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-  ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: OriginatorSessionKey }> {
+  ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: SessionKey }> {
     const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
 
     const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, privateKeyOrStore);

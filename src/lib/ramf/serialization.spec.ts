@@ -1,5 +1,3 @@
-/* tslint:disable:no-let */
-
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
@@ -14,7 +12,7 @@ import {
   getAsn1SequenceItem,
   getPromiseRejection,
 } from '../_test_utils';
-import { dateToASN1DateTimeInUTC, derSerializeHeterogeneousSequence } from '../asn1';
+import { dateToASN1DateTimeInUTC, makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
@@ -999,7 +997,7 @@ describe('MessageSerializer', () => {
       serializer.writeUInt8(stubConcreteMessageVersionOctet);
 
       const signedData = await cmsSignedData.SignedData.sign(
-        derSerializeHeterogeneousSequence(...sequenceItems),
+        makeImplicitlyTaggedSequence(...sequenceItems).toBER(),
         SENDER_PRIVATE_KEY,
         senderCertificate ?? SENDER_CERTIFICATE,
       );

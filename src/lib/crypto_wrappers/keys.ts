@@ -112,16 +112,11 @@ export async function derDeserializeRSAPublicKey(
  * @param curveName
  */
 export async function derDeserializeECDHPublicKey(
-  publicKeyDer: Buffer,
+  publicKeyDer: Buffer | ArrayBuffer,
   curveName: NamedCurve = 'P-256',
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey(
-    'spki',
-    bufferToArray(publicKeyDer),
-    { name: 'ECDH', namedCurve: curveName },
-    true,
-    [],
-  );
+  const keyData = publicKeyDer instanceof Buffer ? bufferToArray(publicKeyDer) : publicKeyDer;
+  return cryptoEngine.importKey('spki', keyData, { name: 'ECDH', namedCurve: curveName }, true, []);
 }
 
 /**

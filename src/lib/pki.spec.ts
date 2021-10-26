@@ -1,4 +1,3 @@
-import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
 import { generateStubCert } from './_test_utils';
@@ -7,13 +6,10 @@ import BasicCertificateIssuanceOptions from './crypto_wrappers/x509/BasicCertifi
 import Certificate from './crypto_wrappers/x509/Certificate';
 import {
   DeliveryAuthorizationIssuanceOptions,
-  DHCertificateError,
-  DHKeyCertificateOptions,
   GatewayCertificateIssuanceOptions,
   issueDeliveryAuthorization,
   issueEndpointCertificate,
   issueGatewayCertificate,
-  issueInitialDHKeyCertificate,
 } from './pki';
 
 let stubSubjectKeyPair: CryptoKeyPair;
@@ -213,137 +209,6 @@ describe('issueDeliveryAuthorization', () => {
 
   test('pathLenConstraint should be 0', async () => {
     await issueDeliveryAuthorization(minimalCertificateOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 0);
-  });
-});
-
-describe('issueInitialDHKeyCertificate', () => {
-  const MAX_VALIDITY_DAYS = 60;
-
-  const stubFutureDate = new Date(2019, 1, 1);
-  stubFutureDate.setDate(stubFutureDate.getDate() + 1);
-
-  let baseIssuanceOptions: DHKeyCertificateOptions;
-  let stubNodeKeyPair: CryptoKeyPair;
-  let stubNodeCertificate: Certificate;
-  beforeAll(async () => {
-    stubNodeKeyPair = await generateRSAKeyPair();
-    stubNodeCertificate = await generateStubCert({
-      issuerPrivateKey: stubNodeKeyPair.privateKey,
-      subjectPublicKey: stubNodeKeyPair.publicKey,
-    });
-    baseIssuanceOptions = {
-      issuerCertificate: stubNodeCertificate,
-      issuerPrivateKey: stubNodeKeyPair.privateKey,
-      subjectPublicKey: stubSubjectKeyPair.publicKey,
-      validityEndDate: stubFutureDate,
-    };
-  });
-
-  afterEach(() => {
-    jestDateMock.clear();
-  });
-
-  test('Certificate should be a valid X.509 certificate', async () => {
-    const dhCertificate = await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(dhCertificate).toBe(stubCertificate);
-  });
-
-  test('Subject name should be that of the node', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0].commonName).toEqual(
-      stubNodeCertificate.getCommonName(),
-    );
-  });
-
-  test('Subject key should be the one specified', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0].subjectPublicKey).toBe(
-      stubSubjectKeyPair.publicKey,
-    );
-  });
-
-  test('Issuer certificate should be that of the node', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0].issuerCertificate).toBe(stubNodeCertificate);
-  });
-
-  test('Issuer private key should be that of the node', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0].issuerPrivateKey).toBe(stubNodeKeyPair.privateKey);
-  });
-
-  test('Serial number should be generated if unset', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('serialNumber', undefined);
-  });
-
-  describe('Validity dates', () => {
-    test('Start date should default to current date', async () => {
-      await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-      expect(mockCertificateIssue.mock.calls[0][0].validityStartDate).toEqual(undefined);
-    });
-
-    test('Custom start date should be honored', async () => {
-      const customStartDate = new Date(stubFutureDate);
-      customStartDate.setDate(customStartDate.getDate() - 1);
-
-      jestDateMock.advanceTo(customStartDate.getTime() - 3_600_000);
-      await issueInitialDHKeyCertificate({
-        issuerCertificate: stubNodeCertificate,
-        issuerPrivateKey: stubNodeKeyPair.privateKey,
-        subjectPublicKey: stubSubjectKeyPair.publicKey,
-        validityEndDate: stubFutureDate,
-        validityStartDate: customStartDate,
-      });
-
-      expect(mockCertificateIssue.mock.calls[0][0].validityStartDate).toEqual(customStartDate);
-    });
-
-    test('End date should be honored', async () => {
-      await issueInitialDHKeyCertificate({
-        ...baseIssuanceOptions,
-        validityEndDate: stubFutureDate,
-      });
-
-      expect(mockCertificateIssue.mock.calls[0][0].validityEndDate).toEqual(stubFutureDate);
-    });
-
-    test(`Certificate should not be valid for over ${MAX_VALIDITY_DAYS} days`, async () => {
-      const startDate = new Date(stubFutureDate);
-      startDate.setDate(stubFutureDate.getDate() - MAX_VALIDITY_DAYS);
-      startDate.setMilliseconds(stubFutureDate.getMilliseconds() - 1);
-
-      await expect(
-        issueInitialDHKeyCertificate({
-          issuerCertificate: stubNodeCertificate,
-          issuerPrivateKey: stubNodeKeyPair.privateKey,
-          subjectPublicKey: stubSubjectKeyPair.publicKey,
-          validityEndDate: stubFutureDate,
-          validityStartDate: startDate,
-        }),
-      ).rejects.toEqual(
-        new DHCertificateError(`DH key may not be valid for more than ${MAX_VALIDITY_DAYS} days`),
-      );
-    });
-  });
-
-  test('Subject should not be marked as CA in Basic Constraints extension', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
-
-    expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('isCA', false);
-  });
-
-  test('pathLenConstraint should be set to 0', async () => {
-    await issueInitialDHKeyCertificate(baseIssuanceOptions);
 
     expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty('pathLenConstraint', 0);
   });

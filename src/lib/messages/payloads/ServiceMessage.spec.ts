@@ -2,7 +2,7 @@ import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { arrayBufferFrom, expectBuffersToEqual, getAsn1SequenceItem } from '../../_test_utils';
-import { derSerializeHeterogeneousSequence } from '../../asn1';
+import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../InvalidMessageError';
 import ServiceMessage from './ServiceMessage';
@@ -45,9 +45,9 @@ describe('ServiceMessage', () => {
     });
 
     test('Sequence should have at least two items', () => {
-      const invalidSerialization = derSerializeHeterogeneousSequence(
+      const invalidSerialization = makeImplicitlyTaggedSequence(
         new asn1js.VisibleString({ value: 'foo' }),
-      );
+      ).toBER();
       expect(() => ServiceMessage.deserialize(invalidSerialization)).toThrowWithMessage(
         InvalidMessageError,
         'Invalid service message serialization',
