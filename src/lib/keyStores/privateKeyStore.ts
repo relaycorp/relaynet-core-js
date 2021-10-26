@@ -6,7 +6,6 @@ import {
   derDeserializeECDHPrivateKey,
   derDeserializeRSAPrivateKey,
   derSerializePrivateKey,
-  getPublicKeyDigestHex,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import RelaynetError from '../RelaynetError';
@@ -39,8 +38,7 @@ export interface InitialSessionPrivateKeyData extends BasePrivateKeyData {
 export interface SubsequentSessionPrivateKeyData extends BasePrivateKeyData {
   readonly type: 'session-subsequent';
 
-  // TODO: This should be the recipient address instead as it includes the type of public key
-  readonly recipientPublicKeyDigest: string;
+  readonly peerPrivateAddress: string;
 }
 
 export type PrivateKeyData =
@@ -104,15 +102,12 @@ export abstract class PrivateKeyStore {
    * Retrieve private session key, regardless of whether it's an initial key or not.
    *
    * @param keyId The key pair id (typically the serial number)
-   * @param recipientCertificate The certificate of the recipient, in case the key is bound to
+   * @param peerPrivateAddress The private address of the recipient, in case the key is bound to
    *    a recipient
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look up could not be done
    */
-  public async fetchSessionKey(
-    keyId: Buffer,
-    recipientCertificate: Certificate,
-  ): Promise<CryptoKey> {
+  public async fetchSessionKey(keyId: Buffer, peerPrivateAddress: string): Promise<CryptoKey> {
     const keyData = await this.fetchKeyOrThrowError(keyId);
     const keyIdHex = keyId.toString('hex');
 
@@ -121,10 +116,7 @@ export abstract class PrivateKeyStore {
     }
 
     if (keyData.type === 'session-subsequent') {
-      const recipientPublicKeyDigest = await getPublicKeyDigestHex(
-        await recipientCertificate.getPublicKey(),
-      );
-      if (recipientPublicKeyDigest !== keyData.recipientPublicKeyDigest) {
+      if (peerPrivateAddress !== keyData.peerPrivateAddress) {
         throw new UnknownKeyError(`Session key ${keyIdHex} is bound to another recipient`);
       }
     }
@@ -154,13 +146,11 @@ export abstract class PrivateKeyStore {
   public async saveSubsequentSessionKey(
     privateKey: CryptoKey,
     keyId: Buffer,
-    recipientCertificate: Certificate,
+    peerPrivateAddress: string,
   ): Promise<void> {
     const privateKeyData: SubsequentSessionPrivateKeyData = {
       keyDer: await derSerializePrivateKey(privateKey),
-      recipientPublicKeyDigest: await getPublicKeyDigestHex(
-        await recipientCertificate.getPublicKey(),
-      ),
+      peerPrivateAddress,
       type: 'session-subsequent',
     };
     await this.saveKeyOrThrowError(privateKeyData, keyId);

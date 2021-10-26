@@ -116,7 +116,7 @@ describe('Gateway', () => {
       const publicKeyStore = new MockPublicKeyStore();
       await publicKeyStore.saveSessionKey(
         { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },
-        RECIPIENT_CERTIFICATE,
+        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
         new Date(),
       );
       const gateway = new Gateway(PRIVATE_KEY_STORE, publicKeyStore);
@@ -142,7 +142,7 @@ describe('Gateway', () => {
       const publicKeyStore = new MockPublicKeyStore();
       await publicKeyStore.saveSessionKey(
         { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },
-        RECIPIENT_CERTIFICATE,
+        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
         new Date(),
       );
       const gateway = new Gateway(PRIVATE_KEY_STORE, publicKeyStore);
@@ -157,7 +157,10 @@ describe('Gateway', () => {
       const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
       const originatorKey = await (cargoPayload as SessionEnvelopedData).getOriginatorKey();
       await expect(
-        PRIVATE_KEY_STORE.fetchSessionKey(originatorKey.keyId, RECIPIENT_CERTIFICATE),
+        PRIVATE_KEY_STORE.fetchSessionKey(
+          originatorKey.keyId,
+          await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
+        ),
       ).toResolve();
     });
 
@@ -166,7 +169,7 @@ describe('Gateway', () => {
       const publicKeyStore = new MockPublicKeyStore();
       await publicKeyStore.saveSessionKey(
         { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },
-        RECIPIENT_CERTIFICATE,
+        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
         new Date(),
       );
       const gateway = new Gateway(PRIVATE_KEY_STORE, publicKeyStore, {

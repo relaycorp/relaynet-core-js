@@ -25,7 +25,7 @@ export abstract class BaseNode<Payload extends PayloadPlaintext> {
     if (unwrapResult.senderSessionKey) {
       await this.publicKeyStore.saveSessionKey(
         unwrapResult.senderSessionKey,
-        message.senderCertificate,
+        await message.senderCertificate.calculateSubjectPrivateAddress(),
         message.creationDate,
       );
     }
