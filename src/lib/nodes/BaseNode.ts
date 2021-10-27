@@ -2,13 +2,13 @@ import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import { PublicKeyStore } from '../keyStores/publicKeyStore';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
-import { NodeOptions } from './NodeOptions';
+import { NodeCryptoOptions } from './NodeCryptoOptions';
 
 export abstract class BaseNode<Payload extends PayloadPlaintext> {
   constructor(
     protected privateKeyStore: PrivateKeyStore,
     protected publicKeyStore: PublicKeyStore,
-    protected cryptoOptions: Partial<NodeOptions> = {},
+    protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
   /**
