@@ -79,6 +79,7 @@ export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistrat
 export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
 // Nodes
 export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
+export { Endpoint } from './lib/nodes/Endpoint';
 
 //endregion
 
