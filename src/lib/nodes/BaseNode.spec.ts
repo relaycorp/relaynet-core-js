@@ -13,7 +13,7 @@ import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks'
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
-import { BaseNode } from './BaseNode';
+import { BaseNodeManager } from './BaseNodeManager';
 import { NodeError } from './errors';
 
 const TOMORROW = new Date();
@@ -72,7 +72,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('There should be a session key for the recipient', async () => {
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
     const peerPrivateAddress = 'non-existing';
 
     await expect(
@@ -84,7 +84,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Payload should be encrypted with the session key of the recipient', async () => {
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
@@ -99,7 +99,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Passing the payload as an ArrayBuffer should be supported', async () => {
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
     const payloadPlaintext = stubPayload.serialize();
 
     const payloadSerialized = await node.wrapMessagePayload(
@@ -114,7 +114,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('The new ephemeral session key of the sender should be stored', async () => {
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
@@ -135,7 +135,9 @@ describe('wrapMessagePayload', () => {
 
   test('Encryption options should be honoured if set', async () => {
     const aesKeySize = 192;
-    const node = new StubNode(privateKeyStore, publicKeyStore, { encryption: { aesKeySize } });
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore, {
+      encryption: { aesKeySize },
+    });
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
@@ -163,7 +165,7 @@ describe('unwrapMessagePayload', () => {
       senderCertificate,
       Buffer.from(payload.serialize()),
     );
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -184,7 +186,7 @@ describe('unwrapMessagePayload', () => {
       senderCertificate,
       Buffer.from(encryptionResult.envelopedData.serialize()),
     );
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -204,4 +206,4 @@ describe('unwrapMessagePayload', () => {
   });
 });
 
-class StubNode extends BaseNode<StubPayload> {}
+class StubNodeManager extends BaseNodeManager<StubPayload> {}
