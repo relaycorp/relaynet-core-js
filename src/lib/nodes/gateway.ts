@@ -1,10 +1,6 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import {
-  EnvelopedData,
-  SessionEnvelopedData,
-  SessionlessEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
+import { SessionlessEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import Cargo from '../messages/Cargo';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
@@ -43,35 +39,22 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
     }
   }
 
-  // TODO: Move to base class
   protected async encryptPayload(
     payloadPlaintext: ArrayBuffer,
     recipientCertificate: Certificate,
   ): Promise<Buffer> {
     const peerPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
 
-    const sessionKey = await this.publicKeyStore.fetchLastSessionKey(peerPrivateAddress);
-    let envelopedData: EnvelopedData;
-    if (sessionKey) {
-      const encryptionResult = await SessionEnvelopedData.encrypt(
-        payloadPlaintext,
-        sessionKey,
-        this.cryptoOptions.encryption,
-      );
-      await this.privateKeyStore.saveSubsequentSessionKey(
-        encryptionResult.dhPrivateKey,
-        Buffer.from(encryptionResult.dhKeyId),
-        peerPrivateAddress,
-      );
-      envelopedData = encryptionResult.envelopedData;
-    } else {
-      envelopedData = await SessionlessEnvelopedData.encrypt(
+    try {
+      return Buffer.from(await this.wrapMessagePayload(payloadPlaintext, peerPrivateAddress));
+    } catch (_) {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(
         payloadPlaintext,
         recipientCertificate,
         this.cryptoOptions.encryption,
       );
+      return Buffer.from(envelopedData.serialize());
     }
-    return Buffer.from(envelopedData.serialize());
   }
 }
 

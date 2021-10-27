@@ -10,7 +10,7 @@ import {
   generateRSAKeyPair,
 } from '../crypto_wrappers/keys';
 import { SessionKey } from '../SessionKey';
-import { InvalidPublicNodeConnectionParams } from './InvalidPublicNodeConnectionParams';
+import { InvalidPublicNodeConnectionParams } from './errors';
 import { PublicNodeConnectionParams } from './PublicNodeConnectionParams';
 
 const PUBLIC_ADDRESS = 'example.com';

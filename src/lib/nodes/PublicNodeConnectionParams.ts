@@ -10,7 +10,7 @@ import {
   derSerializePublicKey,
 } from '../crypto_wrappers/keys';
 import { SessionKey } from '../SessionKey';
-import { InvalidPublicNodeConnectionParams } from './InvalidPublicNodeConnectionParams';
+import { InvalidPublicNodeConnectionParams } from './errors';
 
 export class PublicNodeConnectionParams {
   public static async deserialize(serialization: ArrayBuffer): Promise<PublicNodeConnectionParams> {

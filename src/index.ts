@@ -84,5 +84,5 @@ export { Endpoint } from './lib/nodes/Endpoint';
 //endregion
 
 export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
-export { InvalidPublicNodeConnectionParams } from './lib/nodes/InvalidPublicNodeConnectionParams';
+export * from './lib/nodes/errors';
 export * from './lib/publicAddressing';
