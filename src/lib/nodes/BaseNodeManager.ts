@@ -6,7 +6,7 @@ import RAMFMessage from '../messages/RAMFMessage';
 import { NodeError } from './errors';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 
-export abstract class BaseNode<Payload extends PayloadPlaintext> {
+export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
   constructor(
     protected privateKeyStore: PrivateKeyStore,
     protected publicKeyStore: PublicKeyStore,
