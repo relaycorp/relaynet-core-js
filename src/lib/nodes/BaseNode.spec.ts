@@ -13,7 +13,7 @@ import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks'
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
-import { BaseNode } from './BaseNode';
+import { BaseNodeManager } from './BaseNodeManager';
 import { NodeError } from './errors';
 
 const TOMORROW = new Date();
@@ -163,7 +163,7 @@ describe('unwrapMessagePayload', () => {
       senderCertificate,
       Buffer.from(payload.serialize()),
     );
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -184,7 +184,7 @@ describe('unwrapMessagePayload', () => {
       senderCertificate,
       Buffer.from(encryptionResult.envelopedData.serialize()),
     );
-    const node = new StubNode(privateKeyStore, publicKeyStore);
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -204,4 +204,4 @@ describe('unwrapMessagePayload', () => {
   });
 });
 
-class StubNode extends BaseNode<StubPayload> {}
+class StubNodeManager extends BaseNodeManager<StubPayload> {}
