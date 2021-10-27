@@ -12,7 +12,7 @@ import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
-import { BaseNodeManager } from './BaseNodeManager';
+import { BaseNode } from './BaseNode';
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);
@@ -104,4 +104,4 @@ describe('unwrapMessagePayload', () => {
   });
 });
 
-class StubNode extends BaseNodeManager<StubPayload> {}
+class StubNode extends BaseNode<StubPayload> {}

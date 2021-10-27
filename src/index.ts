@@ -78,8 +78,8 @@ export { PrivateNodeRegistrationAuthorization } from './lib/bindings/gsc/Private
 export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistration';
 export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
 // Nodes
-export { GatewayManager, CargoMessageStream } from './lib/nodes/gatewayManager';
-export { EndpointManager } from './lib/nodes/EndpointManager';
+export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
+export { Endpoint } from './lib/nodes/Endpoint';
 
 //endregion
 

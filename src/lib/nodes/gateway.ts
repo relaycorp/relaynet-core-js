@@ -9,7 +9,7 @@ import Certificate from '../crypto_wrappers/x509/Certificate';
 import Cargo from '../messages/Cargo';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
 import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
-import { BaseNodeManager } from './BaseNodeManager';
+import { BaseNode } from './BaseNode';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
 
@@ -18,7 +18,7 @@ export type CargoMessageStream = AsyncIterable<{
   readonly expiryDate: Date;
 }>;
 
-export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoCollectionRequest> {
+export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> {
   public async *generateCargoes(
     messages: CargoMessageStream,
     recipientCertificate: Certificate,
