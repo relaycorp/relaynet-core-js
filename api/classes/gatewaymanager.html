@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Gateway | @relaycorp/relaynet-core</title>
+	<title>GatewayManager | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">:root {
@@ -2705,19 +2705,19 @@ img {
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class="current tsd-kind-class">
-			<a href="gateway.html" class="tsd-kind-icon">Gateway</a>
+			<a href="gatewaymanager.html" class="tsd-kind-icon">Gateway<wbr>Manager</a>
 			<ul>
 				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-					<a href="gateway.html#constructor" class="tsd-kind-icon">constructor</a>
+					<a href="gatewaymanager.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="gateway.html#generatecargoes" class="tsd-kind-icon">generate<wbr>Cargoes</a>
+					<a href="gatewaymanager.html#generatecargoes" class="tsd-kind-icon">generate<wbr>Cargoes</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
-					<a href="gateway.html#unwrapmessagepayload" class="tsd-kind-icon">unwrap<wbr>Message<wbr>Payload</a>
+					<a href="gatewaymanager.html#unwrapmessagepayload" class="tsd-kind-icon">unwrap<wbr>Message<wbr>Payload</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
-					<a href="gateway.html#wrapmessagepayload" class="tsd-kind-icon">wrap<wbr>Message<wbr>Payload</a>
+					<a href="gatewaymanager.html#wrapmessagepayload" class="tsd-kind-icon">wrap<wbr>Message<wbr>Payload</a>
 				</li>
 			</ul>
 		</li>
@@ -2729,10 +2729,10 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="tsd-signature-type">BaseNode</span><span class="tsd-signature-symbol">&lt;</span><a href="cargomessageset.html" class="tsd-signature-type" data-tsd-kind="Class">CargoMessageSet</a><span class="tsd-signature-symbol"> | </span><a href="cargocollectionrequest.html" class="tsd-signature-type" data-tsd-kind="Class">CargoCollectionRequest</a><span class="tsd-signature-symbol">&gt;</span>
+					<span class="tsd-signature-type">BaseNodeManager</span><span class="tsd-signature-symbol">&lt;</span><a href="cargomessageset.html" class="tsd-signature-type" data-tsd-kind="Class">CargoMessageSet</a><span class="tsd-signature-symbol"> | </span><a href="cargocollectionrequest.html" class="tsd-signature-type" data-tsd-kind="Class">CargoCollectionRequest</a><span class="tsd-signature-symbol">&gt;</span>
 					<ul class="tsd-hierarchy">
 						<li>
-							<span class="target">Gateway</span>
+							<span class="target">GatewayManager</span>
 						</li>
 					</ul>
 				</li>
@@ -2745,15 +2745,15 @@ img {
 					<section class="tsd-index-section tsd-is-inherited">
 						<h3>Constructors</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><a href="gateway.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><a href="gatewaymanager.html#constructor" class="tsd-kind-icon">constructor</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="gateway.html#generatecargoes" class="tsd-kind-icon">generate<wbr>Cargoes</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="gateway.html#unwrapmessagepayload" class="tsd-kind-icon">unwrap<wbr>Message<wbr>Payload</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="gateway.html#wrapmessagepayload" class="tsd-kind-icon">wrap<wbr>Message<wbr>Payload</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="gatewaymanager.html#generatecargoes" class="tsd-kind-icon">generate<wbr>Cargoes</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="gatewaymanager.html#unwrapmessagepayload" class="tsd-kind-icon">unwrap<wbr>Message<wbr>Payload</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="gatewaymanager.html#wrapmessagepayload" class="tsd-kind-icon">wrap<wbr>Message<wbr>Payload</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2765,14 +2765,14 @@ img {
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Gateway<span class="tsd-signature-symbol">(</span>privateKeyStore<span class="tsd-signature-symbol">: </span><a href="privatekeystore.html" class="tsd-signature-type" data-tsd-kind="Class">PrivateKeyStore</a>, publicKeyStore<span class="tsd-signature-symbol">: </span><a href="publickeystore.html" class="tsd-signature-type" data-tsd-kind="Class">PublicKeyStore</a>, cryptoOptions<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NodeCryptoOptions</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="gateway.html" class="tsd-signature-type" data-tsd-kind="Class">Gateway</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Gateway<wbr>Manager<span class="tsd-signature-symbol">(</span>privateKeyStore<span class="tsd-signature-symbol">: </span><a href="privatekeystore.html" class="tsd-signature-type" data-tsd-kind="Class">PrivateKeyStore</a>, publicKeyStore<span class="tsd-signature-symbol">: </span><a href="publickeystore.html" class="tsd-signature-type" data-tsd-kind="Class">PublicKeyStore</a>, cryptoOptions<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NodeCryptoOptions</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="gatewaymanager.html" class="tsd-signature-type" data-tsd-kind="Class">GatewayManager</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Inherited from BaseNode&lt;CargoMessageSet | CargoCollectionRequest&gt;.constructor</p>
+							<p>Inherited from BaseNodeManager&lt;CargoMessageSet | CargoCollectionRequest&gt;.constructor</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce59676c/src/lib/nodes/BaseNode.ts#L9">src/lib/nodes/BaseNode.ts:9</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/abf46aee/src/lib/nodes/BaseNodeManager.ts#L9">src/lib/nodes/BaseNodeManager.ts:9</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2787,7 +2787,7 @@ img {
 								<h5>cryptoOptions: <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NodeCryptoOptions</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = {}</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="gateway.html" class="tsd-signature-type" data-tsd-kind="Class">Gateway</a></h4>
+						<h4 class="tsd-returns-title">Returns <a href="gatewaymanager.html" class="tsd-signature-type" data-tsd-kind="Class">GatewayManager</a></h4>
 					</li>
 				</ul>
 			</section>
@@ -2804,7 +2804,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce59676c/src/lib/nodes/gateway.ts#L18">src/lib/nodes/gateway.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/abf46aee/src/lib/nodes/gateway.ts#L18">src/lib/nodes/gateway.ts:18</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2838,9 +2838,9 @@ img {
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Inherited from BaseNode.unwrapMessagePayload</p>
+							<p>Inherited from BaseNodeManager.unwrapMessagePayload</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce59676c/src/lib/nodes/BaseNode.ts#L52">src/lib/nodes/BaseNode.ts:52</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/abf46aee/src/lib/nodes/BaseNodeManager.ts#L52">src/lib/nodes/BaseNodeManager.ts:52</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2876,9 +2876,9 @@ img {
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Inherited from BaseNode.wrapMessagePayload</p>
+							<p>Inherited from BaseNodeManager.wrapMessagePayload</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/ce59676c/src/lib/nodes/BaseNode.ts#L24">src/lib/nodes/BaseNode.ts:24</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/abf46aee/src/lib/nodes/BaseNodeManager.ts#L24">src/lib/nodes/BaseNodeManager.ts:24</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
