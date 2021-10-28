@@ -3,6 +3,7 @@ import { PrivateKeyStore } from '../keyStores/privateKeyStore';
 import { PublicKeyStore } from '../keyStores/publicKeyStore';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
+import { SessionKey } from '../SessionKey';
 import { NodeError } from './errors';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 
@@ -12,6 +13,27 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
     protected publicKeyStore: PublicKeyStore,
     protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
+
+  /**
+   * Generate and store a new session key.
+   *
+   * @param peerPrivateAddress The peer to bind the key to, unless it's an initial key
+   */
+  public async generateSessionKey(peerPrivateAddress?: string): Promise<SessionKey> {
+    const { sessionKey, privateKey } = await SessionKey.generate();
+
+    if (peerPrivateAddress) {
+      await this.privateKeyStore.saveSubsequentSessionKey(
+        privateKey,
+        sessionKey.keyId,
+        peerPrivateAddress,
+      );
+    } else {
+      await this.privateKeyStore.saveInitialSessionKey(privateKey, sessionKey.keyId);
+    }
+
+    return sessionKey;
+  }
 
   /**
    * Encrypt and serialize the `payload`.
