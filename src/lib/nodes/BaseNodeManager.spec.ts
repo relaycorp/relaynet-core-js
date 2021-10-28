@@ -52,6 +52,12 @@ beforeEach(() => {
 
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
 
+describe('generateSessionKey', () => {
+  test.todo('Generated key should be added to the store');
+
+  test.todo('Key should be bound to the specified peer');
+});
+
 describe('wrapMessagePayload', () => {
   const stubPayload = new StubPayload(PAYLOAD_PLAINTEXT_CONTENT);
 
