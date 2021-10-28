@@ -2713,6 +2713,9 @@ img {
 				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="gatewaymanager.html#generatecargoes" class="tsd-kind-icon">generate<wbr>Cargoes</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="gatewaymanager.html#generatesessionkey" class="tsd-kind-icon">generate<wbr>Session<wbr>Key</a>
+				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
 					<a href="gatewaymanager.html#unwrapmessagepayload" class="tsd-kind-icon">unwrap<wbr>Message<wbr>Payload</a>
 				</li>
@@ -2752,6 +2755,7 @@ img {
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="gatewaymanager.html#generatecargoes" class="tsd-kind-icon">generate<wbr>Cargoes</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="gatewaymanager.html#generatesessionkey" class="tsd-kind-icon">generate<wbr>Session<wbr>Key</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="gatewaymanager.html#unwrapmessagepayload" class="tsd-kind-icon">unwrap<wbr>Message<wbr>Payload</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="gatewaymanager.html#wrapmessagepayload" class="tsd-kind-icon">wrap<wbr>Message<wbr>Payload</a></li>
 						</ul>
@@ -2772,7 +2776,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager&lt;CargoMessageSet | CargoCollectionRequest&gt;.constructor</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b508061d/src/lib/nodes/BaseNodeManager.ts#L9">src/lib/nodes/BaseNodeManager.ts:9</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/3aa06a15/src/lib/nodes/BaseNodeManager.ts#L10">src/lib/nodes/BaseNodeManager.ts:10</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2804,7 +2808,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b508061d/src/lib/nodes/gateway.ts#L18">src/lib/nodes/gateway.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/3aa06a15/src/lib/nodes/gateway.ts#L18">src/lib/nodes/gateway.ts:18</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2829,6 +2833,38 @@ img {
 					</li>
 				</ul>
 			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="generatesessionkey" class="tsd-anchor"></a>
+				<h3>generate<wbr>Session<wbr>Key</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">generate<wbr>Session<wbr>Key<span class="tsd-signature-symbol">(</span>peerPrivateAddress<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="sessionkey.html" class="tsd-signature-type" data-tsd-kind="Class">SessionKey</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from BaseNodeManager.generateSessionKey</p>
+							<ul>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/3aa06a15/src/lib/nodes/BaseNodeManager.ts#L22">src/lib/nodes/BaseNodeManager.ts:22</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Generate and store a new session key.</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> peerPrivateAddress: <span class="tsd-signature-type">string</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<p>The peer to bind the key to, unless it&#39;s an initial key</p>
+								</div>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="sessionkey.html" class="tsd-signature-type" data-tsd-kind="Class">SessionKey</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
 				<a name="unwrapmessagepayload" class="tsd-anchor"></a>
 				<h3>unwrap<wbr>Message<wbr>Payload</h3>
@@ -2840,7 +2876,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager.unwrapMessagePayload</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b508061d/src/lib/nodes/BaseNodeManager.ts#L52">src/lib/nodes/BaseNodeManager.ts:52</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/3aa06a15/src/lib/nodes/BaseNodeManager.ts#L74">src/lib/nodes/BaseNodeManager.ts:74</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2878,7 +2914,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager.wrapMessagePayload</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/b508061d/src/lib/nodes/BaseNodeManager.ts#L24">src/lib/nodes/BaseNodeManager.ts:24</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/3aa06a15/src/lib/nodes/BaseNodeManager.ts#L46">src/lib/nodes/BaseNodeManager.ts:46</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
