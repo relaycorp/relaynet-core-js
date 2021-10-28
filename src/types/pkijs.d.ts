@@ -22,7 +22,6 @@ declare module 'pkijs' {
   export { default as KeyAgreeRecipientInfo } from 'pkijs/src/KeyAgreeRecipientInfo';
   export { default as KeyTransRecipientInfo } from 'pkijs/src/KeyTransRecipientInfo';
   export { default as PublicKeyInfo } from 'pkijs/src/PublicKeyInfo';
-  export { default as RecipientKeyIdentifier } from 'pkijs/src/RecipientKeyIdentifier';
   export { default as RecipientInfo } from 'pkijs/src/RecipientInfo';
   export { default as RelativeDistinguishedNames } from 'pkijs/src/RelativeDistinguishedNames';
   export { default as RSAESOAEPParams } from 'pkijs/src/RSAESOAEPParams';

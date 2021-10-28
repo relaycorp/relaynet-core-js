@@ -108,10 +108,9 @@ export abstract class EnvelopedData {
   public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
     const privateKeyDer = await derSerializePrivateKey(privateKey);
     try {
-      // TODO: Update @types/pkijs
       return await this.pkijsEnvelopedData.decrypt(0, {
         recipientPrivateKey: bufferToArray(privateKeyDer),
-      } as any);
+      });
     } catch (error) {
       throw new CMSError(error, 'Decryption failed');
     }
@@ -211,7 +210,6 @@ export class SessionEnvelopedData extends EnvelopedData {
       unprotectedAttrs: [serialNumberAttribute],
     });
 
-    // @ts-ignore
     pkijsEnvelopedData.addRecipientByKeyIdentifier(
       recipientSessionKey.publicKey,
       recipientSessionKey.keyId,
