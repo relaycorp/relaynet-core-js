@@ -117,7 +117,10 @@ export abstract class PrivateKeyStore {
 
     if (keyData.type === 'session-subsequent') {
       if (peerPrivateAddress !== keyData.peerPrivateAddress) {
-        throw new UnknownKeyError(`Session key ${keyIdHex} is bound to another recipient`);
+        throw new UnknownKeyError(
+          `Session key ${keyIdHex} is bound to another recipient ` +
+            `(${keyData.peerPrivateAddress}, not ${peerPrivateAddress})`,
+        );
       }
     }
 
