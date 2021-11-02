@@ -10,7 +10,7 @@ export interface SessionPublicKeyData {
 
 export abstract class PublicKeyStore {
   public async fetchLastSessionKey(peerPrivateAddress: string): Promise<SessionKey | null> {
-    const keyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
+    const keyData = await this.fetchKeyDataOrWrapError(peerPrivateAddress);
     if (!keyData) {
       return null;
     }
@@ -23,7 +23,7 @@ export abstract class PublicKeyStore {
     peerPrivateAddress: string,
     creationTime: Date,
   ): Promise<void> {
-    const priorKeyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
+    const priorKeyData = await this.fetchKeyDataOrWrapError(peerPrivateAddress);
     if (priorKeyData && creationTime <= priorKeyData.publicKeyCreationTime) {
       return;
     }
@@ -49,7 +49,7 @@ export abstract class PublicKeyStore {
     peerPrivateAddress: string,
   ): Promise<void>;
 
-  private async fetchKeyDataOrThrowError(
+  private async fetchKeyDataOrWrapError(
     peerPrivateAddress: string,
   ): Promise<SessionPublicKeyData | null> {
     try {

@@ -134,7 +134,7 @@ export abstract class PrivateKeyStore {
       keyDer: privateKeyDer,
       type: 'node',
     };
-    await this.saveKeyOrThrowError(privateKeyData, certificate.getSerialNumber());
+    await this.saveKeyOrWrapError(privateKeyData, certificate.getSerialNumber());
   }
 
   public async saveInitialSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
@@ -143,7 +143,7 @@ export abstract class PrivateKeyStore {
       keyDer: privateKeyDer,
       type: 'session-initial',
     };
-    await this.saveKeyOrThrowError(privateKeyData, keyId);
+    await this.saveKeyOrWrapError(privateKeyData, keyId);
   }
 
   public async saveSubsequentSessionKey(
@@ -156,7 +156,7 @@ export abstract class PrivateKeyStore {
       peerPrivateAddress,
       type: 'session-subsequent',
     };
-    await this.saveKeyOrThrowError(privateKeyData, keyId);
+    await this.saveKeyOrWrapError(privateKeyData, keyId);
   }
 
   protected abstract async fetchKey(keyId: string): Promise<PrivateKeyData | null>;
@@ -177,7 +177,7 @@ export abstract class PrivateKeyStore {
     return key;
   }
 
-  private async saveKeyOrThrowError(privateKeyData: PrivateKeyData, keyId: Buffer): Promise<void> {
+  private async saveKeyOrWrapError(privateKeyData: PrivateKeyData, keyId: Buffer): Promise<void> {
     const keyIdString = keyId.toString('hex');
     try {
       await this.saveKey(privateKeyData, keyIdString);
