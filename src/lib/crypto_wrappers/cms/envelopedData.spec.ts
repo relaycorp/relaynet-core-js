@@ -315,7 +315,9 @@ describe('SessionEnvelopedData', () => {
         'type',
         OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
       );
-      expectBuffersToEqual((dhKeyIdAttribute as any).values[0].valueBlock.valueHex, dhKeyId);
+      const dhKeyIdAttributeValue = (dhKeyIdAttribute as any).values[0];
+      expect(dhKeyIdAttributeValue).toBeInstanceOf(asn1js.OctetString);
+      expectBuffersToEqual(dhKeyIdAttributeValue.valueBlock.valueHex, dhKeyId);
     });
 
     test('Recipient key id should be stored in EnvelopedData', async () => {
