@@ -197,17 +197,13 @@ export class SessionEnvelopedData extends EnvelopedData {
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
     const dhKeyId = generateRandom64BitValue();
-    const serialNumberAttrValue = new asn1js.Integer({
-      // @ts-ignore
-      valueHex: dhKeyId,
-    });
-    const serialNumberAttribute = new pkijs.Attribute({
+    const dhKeyIdAttribute = new pkijs.Attribute({
       type: RELAYNET_OIDS.ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-      values: [serialNumberAttrValue],
+      values: [new asn1js.OctetString({ valueHex: dhKeyId })],
     });
 
     const pkijsEnvelopedData = new pkijs.EnvelopedData({
-      unprotectedAttrs: [serialNumberAttribute],
+      unprotectedAttrs: [dhKeyIdAttribute],
     });
 
     pkijsEnvelopedData.addRecipientByKeyIdentifier(

@@ -93,7 +93,7 @@ describe('serialize', () => {
   });
 });
 
-describe('deserialized', () => {
+describe('deserialize', () => {
   let identityKeySerialized: ArrayBuffer;
   let sessionKeySerialized: ArrayBuffer;
   beforeAll(async () => {

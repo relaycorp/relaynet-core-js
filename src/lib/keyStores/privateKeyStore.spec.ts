@@ -210,11 +210,13 @@ describe('PrivateKeyStore', () => {
           PEER_PRIVATE_ADDRESS,
         );
 
+        const invalidPeerPrivateAddress = `not ${PEER_PRIVATE_ADDRESS}`;
         await expect(
-          MOCK_STORE.fetchSessionKey(SESSION_KEY_ID, `not ${PEER_PRIVATE_ADDRESS}`),
+          MOCK_STORE.fetchSessionKey(SESSION_KEY_ID, invalidPeerPrivateAddress),
         ).rejects.toThrowWithMessage(
           UnknownKeyError,
-          `Session key ${SESSION_KEY_ID.toString('hex')} is bound to another recipient`,
+          `Session key ${SESSION_KEY_ID.toString('hex')} is bound to another recipient ` +
+            `(${PEER_PRIVATE_ADDRESS}, not ${invalidPeerPrivateAddress})`,
         );
       });
 

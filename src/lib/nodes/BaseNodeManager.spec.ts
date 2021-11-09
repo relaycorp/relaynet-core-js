@@ -30,27 +30,59 @@ beforeAll(async () => {
   });
 });
 
+let recipientPrivateKey: CryptoKey;
 let recipientCertificate: Certificate;
-let privateKeyStore: MockPrivateKeyStore;
 beforeAll(async () => {
   const recipientKeyPair = await generateRSAKeyPair();
+  recipientPrivateKey = recipientKeyPair.privateKey;
 
   recipientCertificate = await issueGatewayCertificate({
     issuerPrivateKey: recipientKeyPair.privateKey,
     subjectPublicKey: recipientKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
-
-  privateKeyStore = new MockPrivateKeyStore();
-  await privateKeyStore.registerNodeKey(recipientKeyPair.privateKey, recipientCertificate);
 });
 
+let privateKeyStore: MockPrivateKeyStore;
 let publicKeyStore: MockPublicKeyStore;
-beforeEach(() => {
+beforeAll(() => {
+  privateKeyStore = new MockPrivateKeyStore();
   publicKeyStore = new MockPublicKeyStore();
 });
 
+beforeEach(async () => {
+  privateKeyStore.clear();
+  publicKeyStore.clear();
+
+  await privateKeyStore.registerNodeKey(recipientPrivateKey, recipientCertificate);
+});
+
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
+
+describe('generateSessionKey', () => {
+  test('Key should not be bound to any peer by default', async () => {
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+
+    const sessionKey = await node.generateSessionKey();
+
+    await expect(
+      derSerializePublicKey(await privateKeyStore.fetchInitialSessionKey(sessionKey.keyId)),
+    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+  });
+
+  test('Key should be bound to a peer if explicitly set', async () => {
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const peerPrivateAddress = '0deadbeef';
+
+    const sessionKey = await node.generateSessionKey(peerPrivateAddress);
+
+    await expect(
+      derSerializePublicKey(
+        await privateKeyStore.fetchSessionKey(sessionKey.keyId, peerPrivateAddress),
+      ),
+    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+  });
+});
 
 describe('wrapMessagePayload', () => {
   const stubPayload = new StubPayload(PAYLOAD_PLAINTEXT_CONTENT);
