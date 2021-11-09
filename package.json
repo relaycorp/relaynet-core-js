@@ -51,7 +51,7 @@
     "pkijs": "^2.2.1",
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.2",
-    "verror": "^1.10.0"
+    "verror": "^1.10.1"
   },
   "devDependencies": {
     "@relaycorp/shared-config": "^1.6.0",
