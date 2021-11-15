@@ -40,7 +40,7 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@peculiar/webcrypto": "^1.2.0",
+    "@peculiar/webcrypto": "^1.2.2",
     "@types/verror": "^1.10.5",
     "asn1js": "^2.1.1",
     "binary-parser": "^2.0.1",
