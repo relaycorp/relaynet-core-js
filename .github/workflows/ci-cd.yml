@@ -2,7 +2,7 @@ name: Run CI and potentially release
 on:
   pull_request:
   push:
-    branches-ignore: [gh-pages]
+    branches: [master]
 jobs:
   ci:
     strategy:
