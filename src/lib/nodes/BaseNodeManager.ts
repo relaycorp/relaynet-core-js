@@ -4,6 +4,7 @@ import { PublicKeyStore } from '../keyStores/publicKeyStore';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
 import { SessionKey } from '../SessionKey';
+import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeError } from './errors';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 
@@ -20,7 +21,7 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
    * @param peerPrivateAddress The peer to bind the key to, unless it's an initial key
    */
   public async generateSessionKey(peerPrivateAddress?: string): Promise<SessionKey> {
-    const { sessionKey, privateKey } = await SessionKey.generate();
+    const { sessionKey, privateKey } = await SessionKeyPair.generate();
 
     if (peerPrivateAddress) {
       await this.privateKeyStore.saveSubsequentSessionKey(

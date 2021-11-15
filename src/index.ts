@@ -44,6 +44,7 @@ export * from './lib/pki';
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
 export { SessionKey } from './lib/SessionKey';
+export { SessionKeyPair } from './lib/SessionKeyPair';
 export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
 export { default as CMSError } from './lib/crypto_wrappers/cms/CMSError';
 
