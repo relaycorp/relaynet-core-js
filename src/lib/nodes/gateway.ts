@@ -45,16 +45,18 @@ export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoColle
   ): Promise<Buffer> {
     const peerPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
 
+    let ciphertext: ArrayBuffer;
     try {
-      return Buffer.from(await this.wrapMessagePayload(payloadPlaintext, peerPrivateAddress));
+      ciphertext = await this.wrapMessagePayload(payloadPlaintext, peerPrivateAddress);
     } catch (_) {
       const envelopedData = await SessionlessEnvelopedData.encrypt(
         payloadPlaintext,
         recipientCertificate,
         this.cryptoOptions.encryption,
       );
-      return Buffer.from(envelopedData.serialize());
+      ciphertext = envelopedData.serialize();
     }
+    return Buffer.from(ciphertext);
   }
 }
 
