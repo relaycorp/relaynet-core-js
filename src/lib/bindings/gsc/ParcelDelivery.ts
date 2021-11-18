@@ -1,7 +1,7 @@
 import { OctetString, Primitive, verifySchema, VisibleString } from 'asn1js';
 import { TextDecoder } from 'util';
 
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 
 export class ParcelDelivery {
@@ -27,9 +27,9 @@ export class ParcelDelivery {
   constructor(public deliveryId: string, public parcelSerialized: ArrayBuffer) {}
 
   public serialize(): ArrayBuffer {
-    return derSerializeHeterogeneousSequence(
+    return makeImplicitlyTaggedSequence(
       new VisibleString({ value: this.deliveryId }),
       new OctetString({ valueHex: this.parcelSerialized }),
-    );
+    ).toBER();
   }
 }

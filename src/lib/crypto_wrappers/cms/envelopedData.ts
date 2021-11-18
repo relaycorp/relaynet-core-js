@@ -1,9 +1,11 @@
 // tslint:disable:no-object-mutation max-classes-per-file
+
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { CMS_OIDS, RELAYNET_OIDS } from '../../oids';
+import { SessionKey } from '../../SessionKey';
 import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
@@ -35,15 +37,6 @@ export interface SessionEncryptionResult {
   readonly envelopedData: SessionEnvelopedData;
 }
 
-/** Key of the sender/producer of the EnvelopedData value using the Channel Session Protocol */
-export interface OriginatorSessionKey {
-  /** Id of the ECDH key pair */
-  readonly keyId: Buffer;
-
-  /** Public key of the ECDH key pair. */
-  readonly publicKey: CryptoKey; // DH or ECDH key
-}
-
 export abstract class EnvelopedData {
   /**
    * Deserialize an EnvelopedData value into a `SessionlessEnvelopedData` or `SessionEnvelopedData`
@@ -60,7 +53,6 @@ export abstract class EnvelopedData {
         `ContentInfo does not wrap an EnvelopedData value (got OID ${contentInfo.contentType})`,
       );
     }
-    // tslint:disable-next-line:no-let
     let pkijsEnvelopedData;
     try {
       pkijsEnvelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
@@ -113,7 +105,16 @@ export abstract class EnvelopedData {
    *
    * @param privateKey The private key to decrypt the ciphertext.
    */
-  public abstract async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer>;
+  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    try {
+      return await this.pkijsEnvelopedData.decrypt(0, {
+        recipientPrivateKey: bufferToArray(privateKeyDer),
+      });
+    } catch (error) {
+      throw new CMSError(error, 'Decryption failed');
+    }
+  }
 
   /**
    * Return the id of the recipient's key used to encrypt the content.
@@ -162,10 +163,6 @@ export class SessionlessEnvelopedData extends EnvelopedData {
     return new SessionlessEnvelopedData(pkijsEnvelopedData);
   }
 
-  public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
-    return pkijsDecrypt(this.pkijsEnvelopedData, privateKey);
-  }
-
   public getRecipientKeyId(): Buffer {
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const serialNumberBlock = recipientInfo.rid.serialNumber;
@@ -190,31 +187,29 @@ export class SessionEnvelopedData extends EnvelopedData {
    * Return an EnvelopedData value using the Channel Session Protocol.
    *
    * @param plaintext The plaintext whose ciphertext has to be embedded in the EnvelopedData value.
-   * @param certificateOrOriginatorKey The ECDH certificate or public key of the recipient.
+   * @param recipientSessionKey The ECDH public key of the recipient.
    * @param options Any encryption options.
    */
   public static async encrypt(
     plaintext: ArrayBuffer,
-    certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
+    recipientSessionKey: SessionKey,
     options: Partial<EncryptionOptions> = {},
   ): Promise<SessionEncryptionResult> {
     // Generate id for generated (EC)DH key and attach it to unprotectedAttrs per RS-003:
     const dhKeyId = generateRandom64BitValue();
-    const serialNumberAttrValue = new asn1js.Integer({
-      // @ts-ignore
-      valueHex: dhKeyId,
-    });
-    const serialNumberAttribute = new pkijs.Attribute({
+    const dhKeyIdAttribute = new pkijs.Attribute({
       type: RELAYNET_OIDS.ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
-      values: [serialNumberAttrValue],
+      values: [new asn1js.OctetString({ valueHex: dhKeyId })],
     });
 
     const pkijsEnvelopedData = new pkijs.EnvelopedData({
-      unprotectedAttrs: [serialNumberAttribute],
+      unprotectedAttrs: [dhKeyIdAttribute],
     });
 
-    const pkijsCertificate = await getOrMakePkijsCertificate(certificateOrOriginatorKey);
-    pkijsEnvelopedData.addRecipientByCertificate(pkijsCertificate, {}, 2);
+    pkijsEnvelopedData.addRecipientByKeyIdentifier(
+      recipientSessionKey.publicKey,
+      recipientSessionKey.keyId,
+    );
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     const [pkijsEncryptionResult]: ReadonlyArray<{
@@ -225,10 +220,6 @@ export class SessionEnvelopedData extends EnvelopedData {
     )) as any;
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
 
-    // pkijs.EnvelopedData.encrypt() deleted the algorithm params so we should reinstate them:
-    pkijsEnvelopedData.recipientInfos[0].value.originator.value.algorithm.algorithmParams =
-      pkijsCertificate.subjectPublicKeyInfo.algorithm.algorithmParams;
-
     const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
     return { dhPrivateKey, dhKeyId, envelopedData };
   }
@@ -236,7 +227,7 @@ export class SessionEnvelopedData extends EnvelopedData {
   /**
    * Return the key of the ECDH key of the originator/producer of the EnvelopedData value.
    */
-  public async getOriginatorKey(): Promise<OriginatorSessionKey> {
+  public async getOriginatorKey(): Promise<SessionKey> {
     const keyId = extractOriginatorKeyId(this.pkijsEnvelopedData);
 
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0];
@@ -259,59 +250,9 @@ export class SessionEnvelopedData extends EnvelopedData {
   public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
-    const serialNumberBlock = encryptedKey.rid.value.serialNumber;
-    return Buffer.from(serialNumberBlock.valueBlock.valueHex);
+    const subjectKeyIdentifierBlock = encryptedKey.rid.value.subjectKeyIdentifier;
+    return Buffer.from(subjectKeyIdentifierBlock.valueBlock.valueHex);
   }
-
-  public async decrypt(dhPrivateKey: CryptoKey): Promise<ArrayBuffer> {
-    const originator = this.pkijsEnvelopedData.recipientInfos[0].value.originator;
-    const dhCertificate: pkijs.Certificate = {
-      subjectPublicKeyInfo: {
-        // @ts-ignore
-        algorithm: {
-          algorithmParams: originator.value.algorithm.algorithmParams,
-        },
-      },
-    };
-    return pkijsDecrypt(this.pkijsEnvelopedData, dhPrivateKey, dhCertificate);
-  }
-}
-
-async function pkijsDecrypt(
-  envelopedData: pkijs.EnvelopedData,
-  privateKey: CryptoKey,
-  dhCertificate?: pkijs.Certificate,
-): Promise<ArrayBuffer> {
-  const privateKeyDer = await derSerializePrivateKey(privateKey);
-  const encryptArgs = {
-    recipientCertificate: dhCertificate,
-    recipientPrivateKey: bufferToArray(privateKeyDer),
-  };
-  try {
-    // @ts-ignore
-    return await envelopedData.decrypt(0, encryptArgs);
-  } catch (error) {
-    throw new CMSError(error, 'Decryption failed');
-  }
-}
-
-async function getOrMakePkijsCertificate(
-  certificateOrOriginatorKey: Certificate | OriginatorSessionKey,
-): Promise<pkijs.Certificate> {
-  // PKI.js requires the entire recipient's **certificate** to decrypt, but the only thing it
-  // uses it for is to get the public key algorithm. Which you can get from the private key.
-  if (certificateOrOriginatorKey instanceof Certificate) {
-    return certificateOrOriginatorKey.pkijsCertificate;
-  }
-
-  const pkijsCertificate = new pkijs.Certificate({
-    serialNumber: new asn1js.Integer({
-      // @ts-ignore
-      valueHex: bufferToArray(certificateOrOriginatorKey.keyId),
-    }),
-  });
-  await pkijsCertificate.subjectPublicKeyInfo.importKey(certificateOrOriginatorKey.publicKey);
-  return pkijsCertificate;
 }
 
 function extractOriginatorKeyId(envelopedData: pkijs.EnvelopedData): Buffer {

@@ -112,16 +112,11 @@ export async function derDeserializeRSAPublicKey(
  * @param curveName
  */
 export async function derDeserializeECDHPublicKey(
-  publicKeyDer: Buffer,
+  publicKeyDer: Buffer | ArrayBuffer,
   curveName: NamedCurve = 'P-256',
 ): Promise<CryptoKey> {
-  return cryptoEngine.importKey(
-    'spki',
-    bufferToArray(publicKeyDer),
-    { name: 'ECDH', namedCurve: curveName },
-    true,
-    [],
-  );
+  const keyData = publicKeyDer instanceof Buffer ? bufferToArray(publicKeyDer) : publicKeyDer;
+  return cryptoEngine.importKey('spki', keyData, { name: 'ECDH', namedCurve: curveName }, true, []);
 }
 
 /**
@@ -178,4 +173,15 @@ export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuf
 export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<string> {
   const digest = Buffer.from(await getPublicKeyDigest(publicKey));
   return digest.toString('hex');
+}
+
+export async function getPrivateAddressFromIdentityKey(
+  identityPublicKey: CryptoKey,
+): Promise<string> {
+  const algorithmName = identityPublicKey.algorithm.name;
+  if (!algorithmName.startsWith('RSA-')) {
+    throw new Error(`Only RSA keys are supported (got ${algorithmName})`);
+  }
+  const keyDigest = await getPublicKeyDigestHex(identityPublicKey);
+  return `0${keyDigest}`;
 }

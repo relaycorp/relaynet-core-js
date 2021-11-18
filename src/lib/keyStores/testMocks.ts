@@ -1,6 +1,6 @@
 // tslint:disable:max-classes-per-file no-object-mutation
 
-import { derSerializePrivateKey, getPublicKeyDigestHex } from '../crypto_wrappers/keys';
+import { derSerializePrivateKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyData, PrivateKeyStore } from './privateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './publicKeyStore';
@@ -26,12 +26,8 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     };
   }
 
-  public async registerInitialSessionKey(
-    privateKey: CryptoKey,
-    certificate: Certificate,
-  ): Promise<void> {
-    this.keys[certificate.getSerialNumberHex()] = {
-      certificateDer: Buffer.from(certificate.serialize()),
+  public async registerInitialSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
+    this.keys[keyId.toString('hex')] = {
       keyDer: await derSerializePrivateKey(privateKey),
       type: 'session-initial',
     };
@@ -40,13 +36,11 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
   public async registerSubsequentSessionKey(
     privateKey: CryptoKey,
     keyId: string,
-    recipientCertificate: Certificate,
+    peerPrivateAddress: string,
   ): Promise<void> {
     this.keys[keyId] = {
       keyDer: await derSerializePrivateKey(privateKey),
-      recipientPublicKeyDigest: await getPublicKeyDigestHex(
-        await recipientCertificate.getPublicKey(),
-      ),
+      peerPrivateAddress,
       type: 'session-subsequent',
     };
   }

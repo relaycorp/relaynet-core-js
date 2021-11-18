@@ -3,7 +3,7 @@ import moment from 'moment';
 import { generateRSAKeyPair } from '../../../index';
 
 import { arrayBufferFrom } from '../../_test_utils';
-import { dateToASN1DateTimeInUTC, derSerializeHeterogeneousSequence } from '../../asn1';
+import { dateToASN1DateTimeInUTC, makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import { verify } from '../../crypto_wrappers/rsaSigning';
 import InvalidMessageError from '../../messages/InvalidMessageError';
@@ -56,11 +56,11 @@ describe('PrivateNodeRegistrationAuthorization', () => {
       const sequence = derDeserialize(serialization);
       const signatureASN1 = (sequence as Sequence).valueBlock.value[2] as Primitive;
       const signature = signatureASN1.valueBlock.valueHex;
-      const expectedPlaintext = derSerializeHeterogeneousSequence(
+      const expectedPlaintext = makeImplicitlyTaggedSequence(
         new ObjectIdentifier({ value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION }),
         dateToASN1DateTimeInUTC(expiryDate),
         new OctetString({ valueHex: gatewayData }),
-      );
+      ).toBER();
       await expect(
         verify(signature, gatewayKeyPair.publicKey, expectedPlaintext),
       ).resolves.toBeTrue();
@@ -82,10 +82,10 @@ describe('PrivateNodeRegistrationAuthorization', () => {
     });
 
     test('Sequence should have at least 3 items', async () => {
-      const serialization = derSerializeHeterogeneousSequence(
+      const serialization = makeImplicitlyTaggedSequence(
         new VisibleString({ value: 'foo' }),
         new VisibleString({ value: 'bar' }),
-      );
+      ).toBER();
 
       await expect(
         PrivateNodeRegistrationAuthorization.deserialize(serialization, gatewayKeyPair.publicKey),
@@ -109,11 +109,11 @@ describe('PrivateNodeRegistrationAuthorization', () => {
 
     test('Invalid signatures should be refused', async () => {
       const tomorrow = moment().add(1, 'days').toDate();
-      const serialization = derSerializeHeterogeneousSequence(
+      const serialization = makeImplicitlyTaggedSequence(
         dateToASN1DateTimeInUTC(tomorrow),
         new VisibleString({ value: 'gateway data' }),
         new VisibleString({ value: 'invalid signature' }),
-      );
+      ).toBER();
 
       await expect(
         PrivateNodeRegistrationAuthorization.deserialize(serialization, gatewayKeyPair.publicKey),

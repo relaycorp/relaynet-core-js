@@ -1,11 +1,6 @@
 import { getPublicKeyDigest } from './crypto_wrappers/keys';
 import BasicCertificateIssuanceOptions from './crypto_wrappers/x509/BasicCertificateIssuanceOptions';
 import Certificate from './crypto_wrappers/x509/Certificate';
-import CertificateError from './crypto_wrappers/x509/CertificateError';
-
-const MAX_DH_CERT_LENGTH_DAYS = 60;
-const SECONDS_PER_DAY = 86_400;
-const MAX_DH_CERT_LENGTH_MS = MAX_DH_CERT_LENGTH_DAYS * SECONDS_PER_DAY * 1_000;
 
 export interface GatewayCertificateIssuanceOptions extends BasicCertificateIssuanceOptions {
   readonly issuerCertificate?: Certificate; // Absent/self-issued when gateway is public
@@ -59,40 +54,6 @@ export async function issueDeliveryAuthorization(
   options: DeliveryAuthorizationIssuanceOptions,
 ): Promise<Certificate> {
   return issueNodeCertificate({ ...options, isCA: false, pathLenConstraint: 0 });
-}
-
-export class DHCertificateError extends CertificateError {}
-
-/** Issuance options for certificate with (EC)DH subject key */
-export interface DHKeyCertificateOptions extends BasicCertificateIssuanceOptions {
-  readonly issuerCertificate: Certificate;
-}
-
-/**
- * Issue an initial (EC)DH certificate to initiate a channel session.
- *
- * The subject must be the node initiating the session and the issue must be the recipient of the
- * initial message.
- *
- * @param options
- */
-export async function issueInitialDHKeyCertificate(
-  options: DHKeyCertificateOptions,
-): Promise<Certificate> {
-  const startDate = options.validityStartDate || new Date();
-  const certValidityLengthMs = options.validityEndDate.getTime() - startDate.getTime();
-  if (MAX_DH_CERT_LENGTH_MS < certValidityLengthMs) {
-    throw new DHCertificateError(
-      `DH key may not be valid for more than ${MAX_DH_CERT_LENGTH_DAYS} days`,
-    );
-  }
-
-  return Certificate.issue({
-    ...options,
-    commonName: options.issuerCertificate.getCommonName(),
-    isCA: false,
-    pathLenConstraint: 0,
-  });
 }
 
 interface NodeCertificateOptions extends BasicCertificateIssuanceOptions {

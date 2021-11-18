@@ -1,15 +1,11 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import {
-  EnvelopedData,
-  SessionEnvelopedData,
-  SessionlessEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
+import { SessionlessEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import Cargo from '../messages/Cargo';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
 import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
-import { BaseNode } from './BaseNode';
+import { BaseNodeManager } from './BaseNodeManager';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
 
@@ -18,7 +14,7 @@ export type CargoMessageStream = AsyncIterable<{
   readonly expiryDate: Date;
 }>;
 
-export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> {
+export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoCollectionRequest> {
   public async *generateCargoes(
     messages: CargoMessageStream,
     recipientCertificate: Certificate,
@@ -43,34 +39,24 @@ export class Gateway extends BaseNode<CargoMessageSet | CargoCollectionRequest> 
     }
   }
 
-  // TODO: Move to base class
   protected async encryptPayload(
     payloadPlaintext: ArrayBuffer,
     recipientCertificate: Certificate,
   ): Promise<Buffer> {
-    const sessionKey = await this.publicKeyStore.fetchLastSessionKey(recipientCertificate);
+    const peerPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
 
-    let envelopedData: EnvelopedData;
-    if (sessionKey) {
-      const encryptionResult = await SessionEnvelopedData.encrypt(
-        payloadPlaintext,
-        sessionKey,
-        this.cryptoOptions.encryption,
-      );
-      await this.privateKeyStore.saveSubsequentSessionKey(
-        encryptionResult.dhPrivateKey,
-        Buffer.from(encryptionResult.dhKeyId),
-        recipientCertificate,
-      );
-      envelopedData = encryptionResult.envelopedData;
-    } else {
-      envelopedData = await SessionlessEnvelopedData.encrypt(
+    let ciphertext: ArrayBuffer;
+    try {
+      ciphertext = await this.wrapMessagePayload(payloadPlaintext, peerPrivateAddress);
+    } catch (_) {
+      const envelopedData = await SessionlessEnvelopedData.encrypt(
         payloadPlaintext,
         recipientCertificate,
         this.cryptoOptions.encryption,
       );
+      ciphertext = envelopedData.serialize();
     }
-    return Buffer.from(envelopedData.serialize());
+    return Buffer.from(ciphertext);
   }
 }
 

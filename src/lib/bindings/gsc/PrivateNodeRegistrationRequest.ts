@@ -2,7 +2,7 @@ import { ObjectIdentifier, OctetString, Primitive, verifySchema } from 'asn1js';
 
 import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../index';
 import { tryCatchAsync } from '../../_utils';
-import { derSerializeHeterogeneousSequence, makeHeterogeneousSequenceSchema } from '../../asn1';
+import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
 import { sign, verify } from '../../crypto_wrappers/rsaSigning';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
@@ -47,12 +47,12 @@ export class PrivateNodeRegistrationRequest {
   );
 
   private static makePNRACountersignaturePlaintext(pnraSerializedASN1: OctetString): ArrayBuffer {
-    return derSerializeHeterogeneousSequence(
+    return makeImplicitlyTaggedSequence(
       new ObjectIdentifier({
         value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,
       }),
       pnraSerializedASN1,
-    );
+    ).toBER();
   }
 
   constructor(
@@ -68,10 +68,10 @@ export class PrivateNodeRegistrationRequest {
       PrivateNodeRegistrationRequest.makePNRACountersignaturePlaintext(authorizationSerializedASN1);
     const signature = await sign(countersignaturePlaintext, privateNodePrivateKey);
 
-    return derSerializeHeterogeneousSequence(
+    return makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: privateNodePublicKeySerialized }),
       authorizationSerializedASN1,
       new OctetString({ valueHex: signature }),
-    );
+    ).toBER();
   }
 }

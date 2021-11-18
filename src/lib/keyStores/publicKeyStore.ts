@@ -1,6 +1,5 @@
-import { OriginatorSessionKey } from '../crypto_wrappers/cms/envelopedData';
 import { derDeserializeECDHPublicKey, derSerializePublicKey } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { SessionKey } from '../SessionKey';
 import PublicKeyStoreError from './PublicKeyStoreError';
 
 export interface SessionPublicKeyData {
@@ -10,11 +9,8 @@ export interface SessionPublicKeyData {
 }
 
 export abstract class PublicKeyStore {
-  public async fetchLastSessionKey(
-    peerCertificate: Certificate,
-  ): Promise<OriginatorSessionKey | null> {
-    const peerPrivateAddress = await peerCertificate.calculateSubjectPrivateAddress();
-    const keyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
+  public async fetchLastSessionKey(peerPrivateAddress: string): Promise<SessionKey | null> {
+    const keyData = await this.fetchKeyDataOrWrapError(peerPrivateAddress);
     if (!keyData) {
       return null;
     }
@@ -23,13 +19,11 @@ export abstract class PublicKeyStore {
   }
 
   public async saveSessionKey(
-    key: OriginatorSessionKey,
-    peerCertificate: Certificate,
+    key: SessionKey,
+    peerPrivateAddress: string,
     creationTime: Date,
   ): Promise<void> {
-    const peerPrivateAddress = await peerCertificate.calculateSubjectPrivateAddress();
-
-    const priorKeyData = await this.fetchKeyDataOrThrowError(peerPrivateAddress);
+    const priorKeyData = await this.fetchKeyDataOrWrapError(peerPrivateAddress);
     if (priorKeyData && creationTime <= priorKeyData.publicKeyCreationTime) {
       return;
     }
@@ -55,7 +49,7 @@ export abstract class PublicKeyStore {
     peerPrivateAddress: string,
   ): Promise<void>;
 
-  private async fetchKeyDataOrThrowError(
+  private async fetchKeyDataOrWrapError(
     peerPrivateAddress: string,
   ): Promise<SessionPublicKeyData | null> {
     try {

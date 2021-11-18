@@ -26,6 +26,7 @@ export {
   generateRSAKeyPair,
   getPublicKeyDigest,
   getPublicKeyDigestHex,
+  getPrivateAddressFromIdentityKey,
 } from './lib/crypto_wrappers/keys';
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/publicKeyStore';
@@ -42,6 +43,8 @@ export * from './lib/pki';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
+export { SessionKey } from './lib/SessionKey';
+export { SessionKeyPair } from './lib/SessionKeyPair';
 export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
 export { default as CMSError } from './lib/crypto_wrappers/cms/CMSError';
 
@@ -76,8 +79,11 @@ export { PrivateNodeRegistrationAuthorization } from './lib/bindings/gsc/Private
 export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistration';
 export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
 // Nodes
-export { Gateway, CargoMessageStream } from './lib/nodes/gateway';
+export { GatewayManager, CargoMessageStream } from './lib/nodes/gateway';
+export { EndpointManager } from './lib/nodes/EndpointManager';
 
 //endregion
 
+export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
+export * from './lib/nodes/errors';
 export * from './lib/publicAddressing';
