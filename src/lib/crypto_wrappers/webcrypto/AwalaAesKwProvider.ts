@@ -1,8 +1,11 @@
 import { AESKW } from '@stablelib/aes-kw';
-import { AesKwProvider as BaseAesKwProvider, CryptoKey } from 'webcrypto-core';
+import { AesKwProvider, CryptoKey } from 'webcrypto-core';
 
-export class AesKwProvider extends BaseAesKwProvider {
-  constructor(protected readonly originalProvider: BaseAesKwProvider) {
+/**
+ * AES-KW provider that uses pure JavaScript for encryption and decryption.
+ */
+export class AwalaAesKwProvider extends AesKwProvider {
+  constructor(protected readonly originalProvider: AesKwProvider) {
     super();
   }
 

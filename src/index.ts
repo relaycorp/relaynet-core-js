@@ -1,8 +1,8 @@
 //region Configure PKI.js
-import { Crypto } from '@peculiar/webcrypto';
 import { CryptoEngine, setEngine } from 'pkijs';
+import { AwalaCrypto } from './lib/crypto_wrappers/webcrypto/AwalaCrypto';
 
-const crypto = new Crypto();
+const crypto = new AwalaCrypto();
 const cryptoEngine = new CryptoEngine({
   crypto,
   name: 'nodeEngine',
