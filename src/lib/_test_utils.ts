@@ -123,8 +123,12 @@ export function expectBuffersToEqual(
   }
 }
 
+export function getMockInstance(mockedObject: any): jest.MockInstance<any, any> {
+  return mockedObject as any;
+}
+
 export function getMockContext(mockedObject: any): jest.MockContext<any, any> {
-  const mockInstance = mockedObject as unknown as jest.MockInstance<any, any>;
+  const mockInstance = getMockInstance(mockedObject);
   return mockInstance.mock;
 }
 
