@@ -1,10 +1,14 @@
 import { Crypto } from '@peculiar/webcrypto';
-import { AesKwProvider as IAesKwProvider } from 'webcrypto-core';
+import bufferToArray from 'buffer-to-arraybuffer';
+import { AesKwProvider as BaseAesKwProvider, SubtleCrypto } from 'webcrypto-core';
 import { arrayBufferFrom } from '../../_test_utils';
 
 import { AesKwProvider } from './AesKwProvider';
 
 const nodejsCrypto = new Crypto();
+const nodejsAesKwProvider = (nodejsCrypto.subtle as SubtleCrypto).providers.get(
+  'AES-KW',
+) as BaseAesKwProvider;
 
 const algorithm: AesKeyGenParams = { name: 'AES-KW', length: 128 };
 // tslint:disable-next-line:readonly-array
@@ -14,6 +18,10 @@ let cryptoKey: CryptoKey;
 beforeAll(async () => {
   cryptoKey = (await nodejsCrypto.subtle.generateKey(algorithm, true, keyUsages)) as CryptoKey;
 });
+
+const unwrappedKeySerialized = bufferToArray(
+  Buffer.from('00112233445566778899AABBCCDDEEFF', 'hex'),
+);
 
 describe('onGenerateKey', () => {
   test('Method should proxy original provider', async () => {
@@ -71,18 +79,42 @@ describe('onImportKey', () => {
 });
 
 describe('onEncrypt', () => {
-  test.todo('Pure JS implementation should be used');
+  test('Ciphertext should be decryptable with Node.js', async () => {
+    const provider = new AesKwProvider(nodejsAesKwProvider);
 
-  test.todo('Ciphertext should be decryptable with Node.js');
+    const wrappedKey = await provider.onEncrypt(algorithm, cryptoKey, unwrappedKeySerialized);
+
+    const unwrappedKey = await nodejsCrypto.subtle.unwrapKey(
+      'raw',
+      wrappedKey,
+      cryptoKey,
+      algorithm,
+      algorithm,
+      true,
+      keyUsages,
+    );
+    await expect(nodejsAesKwProvider.exportKey('raw', unwrappedKey)).resolves.toEqual(
+      unwrappedKeySerialized,
+    );
+  });
 });
 
 describe('onDecrypt', () => {
-  test.todo('Pure JS implementation should be used');
+  test('Ciphertext produced with Node.js should be decryptable', async () => {
+    const provider = new AesKwProvider(nodejsAesKwProvider);
+    const nodejsWrappedKey = await nodejsAesKwProvider.onEncrypt(
+      algorithm,
+      cryptoKey,
+      unwrappedKeySerialized,
+    );
 
-  test.todo('Ciphertext produced with Node.js should be decryptable');
+    const unwrappedKey = await provider.onDecrypt(algorithm, cryptoKey, nodejsWrappedKey);
+
+    expect(unwrappedKey).toEqual(unwrappedKeySerialized);
+  });
 });
 
-class MockAesKwProvider extends IAesKwProvider {
+class MockAesKwProvider extends BaseAesKwProvider {
   public readonly onGenerateKey = jest.fn();
   public readonly onExportKey = jest.fn();
   public readonly onImportKey = jest.fn();

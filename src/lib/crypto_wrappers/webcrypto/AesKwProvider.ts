@@ -1,7 +1,8 @@
-import { AesKwProvider as IAesKwProvider, CryptoKey } from 'webcrypto-core';
+import { AESKW } from '@stablelib/aes-kw';
+import { AesKwProvider as BaseAesKwProvider, CryptoKey } from 'webcrypto-core';
 
-export class AesKwProvider extends IAesKwProvider {
-  constructor(protected readonly originalProvider: IAesKwProvider) {
+export class AesKwProvider extends BaseAesKwProvider {
+  constructor(protected readonly originalProvider: BaseAesKwProvider) {
     super();
   }
 
@@ -28,4 +29,23 @@ export class AesKwProvider extends IAesKwProvider {
   ): Promise<CryptoKey> {
     return this.originalProvider.onImportKey(format, keyData, algorithm, extractable, keyUsages);
   }
+
+  public async onEncrypt(_algorithm: Algorithm, key: any, data: ArrayBuffer): Promise<ArrayBuffer> {
+    const aesKw = await this.makeAesKw(key);
+    return aesKw.wrapKey(new Uint8Array(data));
+  }
+
+  public async onDecrypt(_algorithm: Algorithm, key: any, data: ArrayBuffer): Promise<ArrayBuffer> {
+    const aesKw = await this.makeAesKw(key);
+    return typedArrayToBuffer(aesKw.unwrapKey(new Uint8Array(data)));
+  }
+
+  private async makeAesKw(key: any): Promise<AESKW> {
+    const keyExported = (await this.onExportKey('raw', key)) as ArrayBuffer;
+    return new AESKW(new Uint8Array(keyExported));
+  }
+}
+
+function typedArrayToBuffer(array: Uint8Array): ArrayBuffer {
+  return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset);
 }
