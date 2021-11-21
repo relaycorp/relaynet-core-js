@@ -10,7 +10,8 @@ export class AwalaCrypto extends BaseCrypto {
 
     const doesNodejsSupportAesKw = getCiphers().includes('id-aes128-wrap');
     if (!doesNodejsSupportAesKw) {
-      // This must be running on Electron: https://github.com/relaycorp/relaynet-core-js/issues/367
+      // This must be running on Electron, so let's use a pure JavaScript implementation of AES-KW:
+      // https://github.com/relaycorp/relaynet-core-js/issues/367
       const providers = (this.subtle as SubtleCrypto).providers;
       const nodejsAesKwProvider = providers.get('AES-KW') as AesKwProvider;
       providers.set(new AwalaAesKwProvider(nodejsAesKwProvider));
