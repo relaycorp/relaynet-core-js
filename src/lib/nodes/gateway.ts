@@ -1,6 +1,5 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { SessionlessEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import Cargo from '../messages/Cargo';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
@@ -17,21 +16,20 @@ export type CargoMessageStream = AsyncIterable<{
 export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoCollectionRequest> {
   public async *generateCargoes(
     messages: CargoMessageStream,
-    recipientCertificate: Certificate,
+    recipientPrivateAddress: string,
     privateKey: CryptoKey,
-    certificate: Certificate,
+    senderCertificate: Certificate,
     recipientPublicAddress?: string,
   ): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
-    const recipientAddress =
-      recipientPublicAddress ?? (await recipientCertificate.calculateSubjectPrivateAddress());
+    const recipientAddress = recipientPublicAddress ?? recipientPrivateAddress;
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
       const creationDate = getCargoCreationTime();
       const cargo = new Cargo(
         recipientAddress,
-        certificate,
-        await this.encryptPayload(messageSerialized, recipientCertificate),
+        senderCertificate,
+        await this.encryptPayload(messageSerialized, recipientPrivateAddress),
         { creationDate, ttl: getSecondsBetweenDates(creationDate, expiryDate) },
       );
       const cargoSerialized = await cargo.serialize(privateKey, this.cryptoOptions.signature);
@@ -41,21 +39,9 @@ export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoColle
 
   protected async encryptPayload(
     payloadPlaintext: ArrayBuffer,
-    recipientCertificate: Certificate,
+    recipientPrivateAddress: string,
   ): Promise<Buffer> {
-    const peerPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
-
-    let ciphertext: ArrayBuffer;
-    try {
-      ciphertext = await this.wrapMessagePayload(payloadPlaintext, peerPrivateAddress);
-    } catch (_) {
-      const envelopedData = await SessionlessEnvelopedData.encrypt(
-        payloadPlaintext,
-        recipientCertificate,
-        this.cryptoOptions.encryption,
-      );
-      ciphertext = envelopedData.serialize();
-    }
+    const ciphertext = await this.wrapMessagePayload(payloadPlaintext, recipientPrivateAddress);
     return Buffer.from(ciphertext);
   }
 }

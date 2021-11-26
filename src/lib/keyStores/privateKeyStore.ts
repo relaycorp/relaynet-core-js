@@ -1,84 +1,77 @@
 /* tslint:disable:max-classes-per-file */
 
-import bufferToArray from 'buffer-to-arraybuffer';
-
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeRSAPrivateKey,
   derSerializePrivateKey,
+  getPrivateAddressFromIdentityKey,
 } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
 import RelaynetError from '../RelaynetError';
 import UnknownKeyError from './UnknownKeyError';
 
-export interface BasePrivateKeyData {
-  readonly keyDer: Buffer;
-}
-
 /**
- * Data for the private key of a node key pair.
+ * Data for a private key of a session key pair.
  */
-export interface NodePrivateKeyData extends BasePrivateKeyData {
-  readonly type: 'node';
-  readonly certificateDer: Buffer;
+export interface SessionPrivateKeyData {
+  readonly keySerialized: Buffer;
+  readonly peerPrivateAddress?: string;
 }
-
-/**
- * Data for a private key of a session key pair not bound to a specific recipient.
- */
-export interface InitialSessionPrivateKeyData extends BasePrivateKeyData {
-  readonly type: 'session-initial';
-}
-
-/**
- * Data for a private key of a session key pair bound to a specific recipient.
- *
- * In other words, this is for subsequent session keys.
- */
-export interface SubsequentSessionPrivateKeyData extends BasePrivateKeyData {
-  readonly type: 'session-subsequent';
-
-  readonly peerPrivateAddress: string;
-}
-
-export type PrivateKeyData =
-  | NodePrivateKeyData
-  | InitialSessionPrivateKeyData
-  | SubsequentSessionPrivateKeyData;
 
 /**
  * Error thrown when there was a failure in the communication with the backing service.
  */
 export class PrivateKeyStoreError extends RelaynetError {}
 
-export interface UnboundKeyPair {
-  readonly privateKey: CryptoKey;
-  readonly certificate: Certificate;
-}
-
 export abstract class PrivateKeyStore {
+  //region Identity keys
+  public async saveIdentityKey(privateKey: CryptoKey): Promise<void> {
+    const privateAddress = await getPrivateAddressFromIdentityKey(privateKey);
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    try {
+      await this.saveIdentityKeySerialized(privateAddress, privateKeyDer);
+    } catch (err) {
+      throw new PrivateKeyStoreError(err, `Failed to save key for ${privateAddress}`);
+    }
+  }
+
   /**
    * Return the private component of a node key pair.
    *
-   * @param keyId The key pair id (typically the serial number)
+   * @param privateAddress
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look up could not be done
    */
-  public async fetchNodeKey(keyId: Buffer): Promise<UnboundKeyPair> {
-    const keyData = await this.fetchKeyOrThrowError(keyId);
-
-    if (keyData.type !== 'node') {
-      throw new UnknownKeyError(`Key ${keyId.toString('hex')} is not a node key`);
+  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey> {
+    let keySerialized: Buffer | null;
+    try {
+      keySerialized = await this.retrieveIdentityKeySerialized(privateAddress);
+    } catch (err) {
+      throw new PrivateKeyStoreError(err, `Failed to retrieve key for ${privateAddress}`);
     }
 
-    const privateKey = await derDeserializeRSAPrivateKey(keyData.keyDer, {
+    if (!keySerialized) {
+      throw new UnknownKeyError(`Identity key for ${privateAddress} doesn't exist`);
+    }
+
+    return derDeserializeRSAPrivateKey(keySerialized, {
       hash: { name: 'SHA-256' },
       name: 'RSA-PSS',
     });
-    return {
-      certificate: Certificate.deserialize(bufferToArray(keyData.certificateDer)),
-      privateKey,
-    };
+  }
+
+  //endregion
+  //region Session keys
+
+  public async saveUnboundSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
+    await this.saveSessionKeyOrWrapError(keyId, privateKey);
+  }
+
+  public async saveBoundSessionKey(
+    privateKey: CryptoKey,
+    keyId: Buffer,
+    peerPrivateAddress: string,
+  ): Promise<void> {
+    await this.saveSessionKeyOrWrapError(keyId, privateKey, peerPrivateAddress);
   }
 
   /**
@@ -88,14 +81,14 @@ export abstract class PrivateKeyStore {
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look up could not be done
    */
-  public async fetchInitialSessionKey(keyId: Buffer): Promise<CryptoKey> {
-    const keyData = await this.fetchKeyOrThrowError(keyId);
+  public async retrieveInitialSessionKey(keyId: Buffer): Promise<CryptoKey> {
+    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId);
 
-    if (keyData.type !== 'session-initial') {
-      throw new UnknownKeyError(`Key ${keyId.toString('hex')} is not an initial session key`);
+    if (keyData.peerPrivateAddress) {
+      throw new UnknownKeyError(`Key ${keyId.toString('hex')} is bound`);
     }
 
-    return derDeserializeECDHPrivateKey(keyData.keyDer, 'P-256');
+    return derDeserializeECDHPrivateKey(keyData.keySerialized, 'P-256');
   }
 
   /**
@@ -108,66 +101,43 @@ export abstract class PrivateKeyStore {
    * @throws PrivateKeyStoreError when the look up could not be done
    */
   public async fetchSessionKey(keyId: Buffer, peerPrivateAddress: string): Promise<CryptoKey> {
-    const keyData = await this.fetchKeyOrThrowError(keyId);
+    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId);
     const keyIdHex = keyId.toString('hex');
 
-    if (keyData.type === 'node') {
-      throw new UnknownKeyError(`Key ${keyIdHex} is not a session key`);
+    if (keyData.peerPrivateAddress && peerPrivateAddress !== keyData.peerPrivateAddress) {
+      throw new UnknownKeyError(
+        `Session key ${keyIdHex} is bound to another recipient ` +
+          `(${keyData.peerPrivateAddress}, not ${peerPrivateAddress})`,
+      );
     }
 
-    if (keyData.type === 'session-subsequent') {
-      if (peerPrivateAddress !== keyData.peerPrivateAddress) {
-        throw new UnknownKeyError(
-          `Session key ${keyIdHex} is bound to another recipient ` +
-            `(${keyData.peerPrivateAddress}, not ${peerPrivateAddress})`,
-        );
-      }
-    }
-
-    return derDeserializeECDHPrivateKey(keyData.keyDer, 'P-256');
+    return derDeserializeECDHPrivateKey(keyData.keySerialized, 'P-256');
   }
 
-  public async saveNodeKey(privateKey: CryptoKey, certificate: Certificate): Promise<void> {
-    const privateKeyDer = await derSerializePrivateKey(privateKey);
-    const privateKeyData: NodePrivateKeyData = {
-      certificateDer: Buffer.from(certificate.serialize()),
-      keyDer: privateKeyDer,
-      type: 'node',
-    };
-    await this.saveKeyOrWrapError(privateKeyData, certificate.getSerialNumber());
-  }
+  //endregion
 
-  public async saveInitialSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
-    const privateKeyDer = await derSerializePrivateKey(privateKey);
-    const privateKeyData: InitialSessionPrivateKeyData = {
-      keyDer: privateKeyDer,
-      type: 'session-initial',
-    };
-    await this.saveKeyOrWrapError(privateKeyData, keyId);
-  }
+  protected abstract async retrieveIdentityKeySerialized(
+    privateAddress: string,
+  ): Promise<Buffer | null>;
+  protected abstract async retrieveSessionKeyData(
+    keyId: string,
+  ): Promise<SessionPrivateKeyData | null>;
 
-  public async saveSubsequentSessionKey(
-    privateKey: CryptoKey,
-    keyId: Buffer,
-    peerPrivateAddress: string,
-  ): Promise<void> {
-    const privateKeyData: SubsequentSessionPrivateKeyData = {
-      keyDer: await derSerializePrivateKey(privateKey),
-      peerPrivateAddress,
-      type: 'session-subsequent',
-    };
-    await this.saveKeyOrWrapError(privateKeyData, keyId);
-  }
+  protected abstract async saveIdentityKeySerialized(
+    privateAddress: string,
+    keySerialized: Buffer,
+  ): Promise<void>;
+  protected abstract async saveSessionKeySerialized(
+    keyId: string,
+    keySerialized: Buffer,
+    peerPrivateAddress?: string,
+  ): Promise<void>;
 
-  protected abstract async fetchKey(keyId: string): Promise<PrivateKeyData | null>;
-
-  protected abstract async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void>;
-
-  private async fetchKeyOrThrowError(keyId: Buffer): Promise<PrivateKeyData> {
+  private async retrieveSessionKeyDataOrThrowError(keyId: Buffer): Promise<SessionPrivateKeyData> {
     const keyIdHex = keyId.toString('hex');
-    let key: PrivateKeyData | null;
+    let key: SessionPrivateKeyData | null;
     try {
-      key = await this.fetchKey(keyIdHex);
+      key = await this.retrieveSessionKeyData(keyIdHex);
     } catch (error) {
       throw new PrivateKeyStoreError(error, `Failed to retrieve key`);
     }
@@ -177,12 +147,17 @@ export abstract class PrivateKeyStore {
     return key;
   }
 
-  private async saveKeyOrWrapError(privateKeyData: PrivateKeyData, keyId: Buffer): Promise<void> {
+  private async saveSessionKeyOrWrapError(
+    keyId: Buffer,
+    privateKey: CryptoKey,
+    peerPrivateAddress?: string,
+  ): Promise<void> {
     const keyIdString = keyId.toString('hex');
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
     try {
-      await this.saveKey(privateKeyData, keyIdString);
+      await this.saveSessionKeySerialized(keyIdString, privateKeyDer, peerPrivateAddress);
     } catch (error) {
-      throw new PrivateKeyStoreError(error, `Failed to save key`);
+      throw new PrivateKeyStoreError(error, `Failed to save key ${keyIdString}`);
     }
   }
 }

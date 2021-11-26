@@ -1,14 +1,9 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { arrayToAsyncIterable, asyncIterableToArray, CRYPTO_OIDS } from '../_test_utils';
-import { generateRandom64BitValue } from '../crypto_wrappers/_utils';
-import {
-  EnvelopedData,
-  SessionEnvelopedData,
-  SessionlessEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
+import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
-import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
+import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
 import Cargo from '../messages/Cargo';
@@ -16,6 +11,8 @@ import Parcel from '../messages/Parcel';
 import CargoMessageSet from '../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../messages/payloads/ServiceMessage';
 import { issueGatewayCertificate } from '../pki';
+import { SessionKey } from '../SessionKey';
+import { SessionKeyPair } from '../SessionKeyPair';
 import { GatewayManager } from './gateway';
 
 describe('Gateway', () => {
@@ -25,70 +22,62 @@ describe('Gateway', () => {
   TOMORROW.setDate(TOMORROW.getDate() + 1);
   TOMORROW.setMilliseconds(0);
 
-  let PRIVATE_KEY: CryptoKey;
-  let CERTIFICATE: Certificate;
+  let senderPrivateKey: CryptoKey;
+  let senderCertificate: Certificate;
   beforeAll(async () => {
     const keyPair = await generateRSAKeyPair();
-    PRIVATE_KEY = keyPair.privateKey;
+    senderPrivateKey = keyPair.privateKey;
 
-    CERTIFICATE = await issueGatewayCertificate({
+    senderCertificate = await issueGatewayCertificate({
       issuerPrivateKey: keyPair.privateKey,
       subjectPublicKey: keyPair.publicKey,
       validityEndDate: TOMORROW,
     });
   });
 
-  let PRIVATE_KEY_STORE: MockPrivateKeyStore;
+  const PRIVATE_KEY_STORE = new MockPrivateKeyStore();
   beforeEach(async () => {
-    PRIVATE_KEY_STORE = new MockPrivateKeyStore();
-    await PRIVATE_KEY_STORE.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
+    PRIVATE_KEY_STORE.clear();
   });
 
   describe('generateCargoes', () => {
-    let RECIPIENT_PRIVATE_KEY: CryptoKey;
-    let RECIPIENT_CERTIFICATE: Certificate;
-    beforeAll(async () => {
-      const recipientKeyPair = await generateRSAKeyPair();
-      RECIPIENT_PRIVATE_KEY = recipientKeyPair.privateKey;
+    const RECIPIENT_PRIVATE_ADDRESS = '0deadbeef';
 
-      RECIPIENT_CERTIFICATE = await issueGatewayCertificate({
-        issuerPrivateKey: recipientKeyPair.privateKey,
-        subjectPublicKey: recipientKeyPair.publicKey,
-        validityEndDate: TOMORROW,
-      });
+    let recipientSessionKeyPair: SessionKeyPair;
+    beforeAll(async () => {
+      recipientSessionKeyPair = await SessionKeyPair.generate();
     });
 
-    let RECIPIENT_PUBLIC_SESSION_KEY: CryptoKey;
-    let RECIPIENT_PUBLIC_SESSION_KEY_ID: Buffer;
-    beforeAll(async () => {
-      const recipientSessionKeyPair = await generateECDHKeyPair();
-      RECIPIENT_PUBLIC_SESSION_KEY = recipientSessionKeyPair.publicKey;
-
-      RECIPIENT_PUBLIC_SESSION_KEY_ID = Buffer.from(await generateRandom64BitValue());
+    const PUBLIC_KEY_STORE = new MockPublicKeyStore();
+    beforeEach(async () => {
+      PUBLIC_KEY_STORE.clear();
+      await PUBLIC_KEY_STORE.saveSessionKey(
+        recipientSessionKeyPair.sessionKey,
+        RECIPIENT_PRIVATE_ADDRESS,
+        new Date(),
+      );
     });
 
     test('Recipient address should be private if public address is unset', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
       const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-      expect(cargo.recipientAddress).toEqual(
-        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
-      );
+      expect(cargo.recipientAddress).toEqual(RECIPIENT_PRIVATE_ADDRESS);
     });
 
     test('Recipient address should be specified public one if set', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
       const publicAddress = 'https://gateway.com';
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
         publicAddress,
       );
@@ -97,29 +86,8 @@ describe('Gateway', () => {
       expect(cargo.recipientAddress).toEqual(publicAddress);
     });
 
-    test('Payload should be encrypted with recipient certificate if there is no session', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
-
-      const cargoesSerialized = await generateCargoesFromMessages(
-        [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
-        gateway,
-      );
-
-      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-      const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
-      expect(cargoPayload).toBeInstanceOf(SessionlessEnvelopedData);
-      expect(cargoPayload.getRecipientKeyId()).toEqual(RECIPIENT_CERTIFICATE.getSerialNumber());
-    });
-
-    test('Payload should be encrypted with session key if there is a session', async () => {
-      const publicKeyStore = new MockPublicKeyStore();
-      await publicKeyStore.saveSessionKey(
-        { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },
-        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
-        new Date(),
-      );
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, publicKeyStore);
+    test('Payload should be encrypted with session key', async () => {
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [
@@ -128,28 +96,22 @@ describe('Gateway', () => {
             message: MESSAGE,
           },
         ],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
       const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
       const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
       expect(cargoPayload).toBeInstanceOf(SessionEnvelopedData);
-      expect(cargoPayload.getRecipientKeyId()).toEqual(RECIPIENT_PUBLIC_SESSION_KEY_ID);
+      expect(cargoPayload.getRecipientKeyId()).toEqual(recipientSessionKeyPair.sessionKey.keyId);
     });
 
     test('New ephemeral session key should be stored when using channel session', async () => {
-      const publicKeyStore = new MockPublicKeyStore();
-      await publicKeyStore.saveSessionKey(
-        { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },
-        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
-        new Date(),
-      );
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, publicKeyStore);
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -157,28 +119,19 @@ describe('Gateway', () => {
       const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
       const originatorKey = await (cargoPayload as SessionEnvelopedData).getOriginatorKey();
       await expect(
-        PRIVATE_KEY_STORE.fetchSessionKey(
-          originatorKey.keyId,
-          await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
-        ),
+        PRIVATE_KEY_STORE.fetchSessionKey(originatorKey.keyId, RECIPIENT_PRIVATE_ADDRESS),
       ).toResolve();
     });
 
     test('Session encryption options should be honored if present', async () => {
       const aesKeySize = 192;
-      const publicKeyStore = new MockPublicKeyStore();
-      await publicKeyStore.saveSessionKey(
-        { keyId: RECIPIENT_PUBLIC_SESSION_KEY_ID, publicKey: RECIPIENT_PUBLIC_SESSION_KEY },
-        await RECIPIENT_CERTIFICATE.calculateSubjectPrivateAddress(),
-        new Date(),
-      );
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, publicKeyStore, {
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE, {
         encryption: { aesKeySize },
       });
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -189,13 +142,13 @@ describe('Gateway', () => {
 
     test('Sessionless encryption options should be honored if present', async () => {
       const aesKeySize = 192;
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore(), {
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE, {
         encryption: { aesKeySize },
       });
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -205,28 +158,28 @@ describe('Gateway', () => {
     });
 
     test('Cargo should be signed with the specified key', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
       const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-      expect(CERTIFICATE.isEqual(cargo.senderCertificate)).toBeTrue();
+      expect(senderCertificate.isEqual(cargo.senderCertificate)).toBeTrue();
     });
 
     test('Signature options should be honored if present', async () => {
       const signatureOptions: SignatureOptions = { hashingAlgorithmName: 'SHA-384' };
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore(), {
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE, {
         signature: signatureOptions,
       });
       const cargoSerializeSpy = jest.spyOn(Cargo.prototype, 'serialize');
 
       await generateCargoesFromMessages(
         [{ expiryDate: TOMORROW, message: MESSAGE }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -235,11 +188,11 @@ describe('Gateway', () => {
     });
 
     test('Cargo creation date should be 3 hours in the past', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [{ message: MESSAGE, expiryDate: TOMORROW }],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -253,14 +206,14 @@ describe('Gateway', () => {
     });
 
     test('Cargo TTL should be that of the message with the latest TTL', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [
           { message: MESSAGE, expiryDate: TOMORROW },
           { message: MESSAGE, expiryDate: new Date() },
         ],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -269,11 +222,11 @@ describe('Gateway', () => {
     });
 
     test('Zero cargoes should be output if there are zero messages', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -281,9 +234,13 @@ describe('Gateway', () => {
     });
 
     test('Messages should be encapsulated into as few cargoes as possible', async () => {
-      const gateway = new GatewayManager(PRIVATE_KEY_STORE, new MockPublicKeyStore());
-      const dummyParcel = await generateDummyParcel(RECIPIENT_CERTIFICATE, CERTIFICATE);
-      const dummyParcelSerialized = await dummyParcel.serialize(PRIVATE_KEY);
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+      const dummyParcel = await generateDummyParcel(
+        RECIPIENT_PRIVATE_ADDRESS,
+        recipientSessionKeyPair.sessionKey,
+        senderCertificate,
+      );
+      const dummyParcelSerialized = await dummyParcel.serialize(senderPrivateKey);
 
       const cargoesSerialized = await generateCargoesFromMessages(
         [
@@ -291,7 +248,7 @@ describe('Gateway', () => {
           { message: Buffer.from(dummyParcelSerialized), expiryDate: TOMORROW },
           { message: Buffer.from(dummyParcelSerialized), expiryDate: TOMORROW },
         ],
-        RECIPIENT_CERTIFICATE,
+        RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
 
@@ -307,27 +264,24 @@ describe('Gateway', () => {
 
     async function generateCargoesFromMessages(
       messages: ReadonlyArray<{ readonly expiryDate: Date; readonly message: Buffer }>,
-      recipientCertificate: Certificate,
+      recipientPrivateAddress1: string,
       gateway: GatewayManager,
       recipientPublicAddress?: string,
     ): Promise<readonly Buffer[]> {
       return asyncIterableToArray(
         gateway.generateCargoes(
           arrayToAsyncIterable(messages),
-          recipientCertificate,
-          PRIVATE_KEY,
-          CERTIFICATE,
+          recipientPrivateAddress1,
+          senderPrivateKey,
+          senderCertificate,
           recipientPublicAddress,
         ),
       );
     }
 
     async function extractMessageSetFromCargo(cargoSerialized: Buffer): Promise<CargoMessageSet> {
-      const recipientPrivateKeyStore = new MockPrivateKeyStore();
-      await recipientPrivateKeyStore.registerNodeKey(RECIPIENT_PRIVATE_KEY, RECIPIENT_CERTIFICATE);
-
       const cargo = await Cargo.deserialize(bufferToArray(cargoSerialized));
-      const { payload } = await cargo.unwrapPayload(recipientPrivateKeyStore);
+      const { payload } = await cargo.unwrapPayload(recipientSessionKeyPair.privateKey);
       return payload;
     }
 
@@ -341,19 +295,16 @@ describe('Gateway', () => {
 });
 
 async function generateDummyParcel(
-  recipientCertificate: Certificate,
+  recipientAddress: string,
+  recipientSessionKey: SessionKey,
   senderCertificate: Certificate,
 ): Promise<Parcel> {
   const serviceMessage = new ServiceMessage('a', Buffer.from('the payload'));
   const serviceMessageSerialized = await serviceMessage.serialize();
-  const serviceMessageEncrypted = await SessionlessEnvelopedData.encrypt(
+  const { envelopedData } = await SessionEnvelopedData.encrypt(
     serviceMessageSerialized,
-    recipientCertificate,
+    recipientSessionKey,
   );
-  const payloadSerialized = Buffer.from(serviceMessageEncrypted.serialize());
-  return new Parcel(
-    await recipientCertificate.calculateSubjectPrivateAddress(),
-    senderCertificate,
-    payloadSerialized,
-  );
+  const payloadSerialized = Buffer.from(envelopedData.serialize());
+  return new Parcel(recipientAddress, senderCertificate, payloadSerialized);
 }
