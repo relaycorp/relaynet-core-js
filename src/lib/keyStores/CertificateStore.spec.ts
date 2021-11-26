@@ -134,7 +134,7 @@ describe('retrieveAll', () => {
   });
 
   test('Expired certificates should be ignored', async () => {
-    const validCertificate = await generateCertificate(addSeconds(new Date(), 1));
+    const validCertificate = await generateCertificate(addSeconds(new Date(), 2));
     await store.save(validCertificate);
     const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
     await store.forceSave(expiredCertificate);
@@ -146,7 +146,7 @@ describe('retrieveAll', () => {
   });
 
   test('Valid certificates should be returned', async () => {
-    const certificate1 = await generateCertificate(addSeconds(new Date(), 1));
+    const certificate1 = await generateCertificate(addSeconds(new Date(), 2));
     await store.save(certificate1);
     const certificate2 = await generateCertificate(addSeconds(new Date(), 5));
     await store.save(certificate2);
