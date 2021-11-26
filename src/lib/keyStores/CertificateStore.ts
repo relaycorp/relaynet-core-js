@@ -19,8 +19,13 @@ export abstract class CertificateStore {
     }
   }
 
-  public async retrieveLatest(subjectPrivateAddress: string): Promise<Certificate> {
-    throw new Error('implement' + subjectPrivateAddress);
+  public async retrieveLatest(subjectPrivateAddress: string): Promise<Certificate | null> {
+    const serialization = await this.retrieveLatestSerialization(subjectPrivateAddress);
+    if (!serialization) {
+      return null;
+    }
+    const certificate = Certificate.deserialize(serialization);
+    return new Date() < certificate.expiryDate ? certificate : null;
   }
 
   public async retrieveAll(subjectPrivateAddress: string): Promise<readonly Certificate[]> {

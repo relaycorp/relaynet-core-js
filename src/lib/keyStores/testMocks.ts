@@ -113,6 +113,14 @@ export class MockCertificateStore extends CertificateStore {
     this.expiredCertificatesDeleted = false;
   }
 
+  public async forceSave(certificate: Certificate): Promise<void> {
+    await this.saveData(
+      await certificate.calculateSubjectPrivateAddress(),
+      certificate.serialize(),
+      certificate.expiryDate,
+    );
+  }
+
   protected async deleteExpiredData(): Promise<void> {
     this.expiredCertificatesDeleted = true;
   }

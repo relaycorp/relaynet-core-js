@@ -1,6 +1,6 @@
 import { addSeconds, subSeconds } from 'date-fns';
 
-import { generateRSAKeyPair } from '../crypto_wrappers/keys';
+import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { issueGatewayCertificate } from '../pki';
 import { MockCertificateStore, MockStoredCertificateData } from './testMocks';
@@ -11,8 +11,10 @@ beforeEach(() => {
 });
 
 let keyPair: CryptoKeyPair;
+let privateAddress: string;
 beforeAll(async () => {
   keyPair = await generateRSAKeyPair();
+  privateAddress = await getPrivateAddressFromIdentityKey(keyPair.publicKey);
 });
 
 describe('save', () => {
@@ -32,18 +34,32 @@ describe('save', () => {
 
     expect(store.dataByPrivateAddress).not.toBeEmpty();
     expect(store.dataByPrivateAddress).toHaveProperty<readonly MockStoredCertificateData[]>(
-      await certificate.calculateSubjectPrivateAddress(),
+      privateAddress,
       [{ expiryDate, certificateSerialized: certificate.serialize() }],
     );
   });
 });
 
 describe('retrieveLatest', () => {
-  test.todo('Nothing should be returned if certificate does not exist');
+  test('Nothing should be returned if certificate does not exist', async () => {
+    await expect(store.retrieveLatest(privateAddress)).resolves.toBeNull();
+  });
 
-  test.todo('Expired certificate should be ignored');
+  test('Expired certificate should be ignored', async () => {
+    const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
+    await store.forceSave(expiredCertificate);
 
-  test.todo('Valid certificate should be returned');
+    await expect(store.retrieveLatest(privateAddress)).resolves.toBeNull();
+  });
+
+  test('Valid certificate should be returned', async () => {
+    const certificate = await generateCertificate(addSeconds(new Date(), 1));
+    await store.save(certificate);
+
+    const retrievedCertificate = await store.retrieveLatest(privateAddress);
+
+    expect(certificate.isEqual(retrievedCertificate!!)).toBeTrue();
+  });
 });
 
 describe('retrieveAll', () => {
