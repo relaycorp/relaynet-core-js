@@ -147,7 +147,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     let privateKey: CryptoKey;
     if (privateKeyOrStore instanceof PrivateKeyStore) {
       const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
-      privateKey = await privateKeyOrStore.fetchSessionKey(keyId, peerPrivateAddress);
+      privateKey = await privateKeyOrStore.retrieveSessionKey(keyId, peerPrivateAddress);
     } else {
       privateKey = privateKeyOrStore;
     }

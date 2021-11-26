@@ -119,7 +119,7 @@ describe('Gateway', () => {
       const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
       const originatorKey = await (cargoPayload as SessionEnvelopedData).getOriginatorKey();
       await expect(
-        PRIVATE_KEY_STORE.fetchSessionKey(originatorKey.keyId, RECIPIENT_PRIVATE_ADDRESS),
+        PRIVATE_KEY_STORE.retrieveSessionKey(originatorKey.keyId, RECIPIENT_PRIVATE_ADDRESS),
       ).toResolve();
     });
 
