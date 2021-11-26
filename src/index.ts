@@ -88,3 +88,5 @@ export { EndpointManager } from './lib/nodes/EndpointManager';
 export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
 export * from './lib/nodes/errors';
 export * from './lib/publicAddressing';
+export { MockCertificateStore } from './lib/keyStores/CertificateStore.spec';
+export { MockStoredCertificateData } from './lib/keyStores/CertificateStore.spec';

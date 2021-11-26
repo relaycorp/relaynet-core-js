@@ -35,9 +35,7 @@ export abstract class CertificateStore {
       .filter((c) => new Date() < c.expiryDate);
   }
 
-  public async deleteExpired(): Promise<void> {
-    throw new Error('implement');
-  }
+  public abstract deleteExpired(): Promise<void>;
 
   protected abstract saveData(
     subjectPrivateAddress: string,
@@ -52,6 +50,4 @@ export abstract class CertificateStore {
   protected abstract retrieveAllSerializations(
     subjectPrivateAddress: string,
   ): Promise<readonly ArrayBuffer[]>;
-
-  protected abstract deleteExpiredData(): Promise<void>;
 }

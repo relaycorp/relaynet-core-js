@@ -3,7 +3,73 @@ import { addSeconds, subSeconds } from 'date-fns';
 import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { issueGatewayCertificate } from '../pki';
-import { MockCertificateStore, MockStoredCertificateData } from './testMocks';
+import { CertificateStore } from './CertificateStore';
+
+export interface MockStoredCertificateData {
+  readonly expiryDate: Date;
+  readonly certificateSerialized: ArrayBuffer;
+}
+
+export class MockCertificateStore extends CertificateStore {
+  public dataByPrivateAddress: {
+    // tslint:disable-next-line:readonly-array readonly-keyword
+    [privateAddress: string]: MockStoredCertificateData[];
+  } = {};
+
+  public clear(): void {
+    // tslint:disable-next-line:no-object-mutation
+    this.dataByPrivateAddress = {};
+  }
+
+  public async forceSave(certificate: Certificate): Promise<void> {
+    await this.saveData(
+      await certificate.calculateSubjectPrivateAddress(),
+      certificate.serialize(),
+      certificate.expiryDate,
+    );
+  }
+
+  public async deleteExpired(): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  protected async retrieveAllSerializations(
+    subjectPrivateAddress: string,
+  ): Promise<readonly ArrayBuffer[]> {
+    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress];
+    if (!certificateData) {
+      return [];
+    }
+    return certificateData.map((d) => d.certificateSerialized);
+  }
+
+  protected async retrieveLatestSerialization(
+    subjectPrivateAddress: string,
+  ): Promise<ArrayBuffer | null> {
+    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
+    if (certificateData.length === 0) {
+      return null;
+    }
+    const dataSorted = certificateData.sort(
+      (a, b) => a.expiryDate.getDate() - b.expiryDate.getDate(),
+    );
+    return dataSorted[0].certificateSerialized;
+  }
+
+  protected async saveData(
+    subjectPrivateAddress: string,
+    subjectCertificateSerialized: ArrayBuffer,
+    subjectCertificateExpiryDate: Date,
+  ): Promise<void> {
+    const mockData: MockStoredCertificateData = {
+      certificateSerialized: subjectCertificateSerialized,
+      expiryDate: subjectCertificateExpiryDate,
+    };
+    const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
+    // tslint:disable-next-line:no-object-mutation
+    this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
+  }
+}
 
 const store = new MockCertificateStore();
 beforeEach(() => {
@@ -91,10 +157,6 @@ describe('retrieveAll', () => {
     expect(allCertificates.filter((c) => certificate1.isEqual(c))).toHaveLength(1);
     expect(allCertificates.filter((c) => certificate2.isEqual(c))).toHaveLength(1);
   });
-});
-
-describe('deleteExpired', () => {
-  test.todo('Backend should be instructed to delete expired certificates');
 });
 
 async function generateCertificate(validityEndDate: Date): Promise<Certificate> {
