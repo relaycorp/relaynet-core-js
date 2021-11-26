@@ -112,7 +112,7 @@ describe('PrivateKeyStore', () => {
           sessionKeyPair.sessionKey.keyId,
         );
 
-        const keySerialized = await MOCK_STORE.retrieveInitialSessionKey(
+        const keySerialized = await MOCK_STORE.retrieveUnboundSessionKey(
           sessionKeyPair.sessionKey.keyId,
         );
 
@@ -123,7 +123,7 @@ describe('PrivateKeyStore', () => {
 
       test('UnknownKeyError should be thrown if key id does not exist', async () => {
         await expect(
-          MOCK_STORE.retrieveInitialSessionKey(sessionKeyPair.sessionKey.keyId),
+          MOCK_STORE.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId),
         ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
@@ -135,7 +135,7 @@ describe('PrivateKeyStore', () => {
         );
 
         await expect(
-          MOCK_STORE.retrieveInitialSessionKey(sessionKeyPair.sessionKey.keyId),
+          MOCK_STORE.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId),
         ).rejects.toThrowWithMessage(UnknownKeyError, `Key ${sessionKeyIdHex} is bound`);
       });
 
@@ -143,7 +143,7 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore(false, true);
 
         await expect(
-          store.retrieveInitialSessionKey(sessionKeyPair.sessionKey.keyId),
+          store.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId),
         ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
       });
     });
@@ -185,7 +185,7 @@ describe('PrivateKeyStore', () => {
           sessionKeyPair.sessionKey.keyId,
         );
 
-        const privateKey = await MOCK_STORE.fetchSessionKey(
+        const privateKey = await MOCK_STORE.retrieveSessionKey(
           sessionKeyPair.sessionKey.keyId,
           PEER_PRIVATE_ADDRESS,
         );
@@ -202,7 +202,7 @@ describe('PrivateKeyStore', () => {
           PEER_PRIVATE_ADDRESS,
         );
 
-        const privateKey = await MOCK_STORE.fetchSessionKey(
+        const privateKey = await MOCK_STORE.retrieveSessionKey(
           sessionKeyPair.sessionKey.keyId,
           PEER_PRIVATE_ADDRESS,
         );
@@ -214,7 +214,7 @@ describe('PrivateKeyStore', () => {
 
       test('UnknownKeyError should be thrown if key pair does not exist', async () => {
         await expect(
-          MOCK_STORE.fetchSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
+          MOCK_STORE.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
         ).rejects.toBeInstanceOf(UnknownKeyError);
       });
 
@@ -227,7 +227,7 @@ describe('PrivateKeyStore', () => {
 
         const invalidPeerPrivateAddress = `not ${PEER_PRIVATE_ADDRESS}`;
         await expect(
-          MOCK_STORE.fetchSessionKey(sessionKeyPair.sessionKey.keyId, invalidPeerPrivateAddress),
+          MOCK_STORE.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, invalidPeerPrivateAddress),
         ).rejects.toThrowWithMessage(
           UnknownKeyError,
           `Session key ${sessionKeyIdHex} is bound to another recipient ` +
@@ -239,7 +239,7 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore(false, true);
 
         await expect(
-          store.fetchSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
+          store.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
         ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
       });
     });

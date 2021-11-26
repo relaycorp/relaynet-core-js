@@ -81,7 +81,7 @@ export abstract class PrivateKeyStore {
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look up could not be done
    */
-  public async retrieveInitialSessionKey(keyId: Buffer): Promise<CryptoKey> {
+  public async retrieveUnboundSessionKey(keyId: Buffer): Promise<CryptoKey> {
     const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId);
 
     if (keyData.peerPrivateAddress) {
@@ -100,7 +100,7 @@ export abstract class PrivateKeyStore {
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look up could not be done
    */
-  public async fetchSessionKey(keyId: Buffer, peerPrivateAddress: string): Promise<CryptoKey> {
+  public async retrieveSessionKey(keyId: Buffer, peerPrivateAddress: string): Promise<CryptoKey> {
     const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId);
     const keyIdHex = keyId.toString('hex');
 

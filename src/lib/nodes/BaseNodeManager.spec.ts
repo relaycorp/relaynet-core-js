@@ -59,7 +59,7 @@ describe('generateSessionKey', () => {
     const sessionKey = await node.generateSessionKey();
 
     await expect(
-      derSerializePublicKey(await privateKeyStore.retrieveInitialSessionKey(sessionKey.keyId)),
+      derSerializePublicKey(await privateKeyStore.retrieveUnboundSessionKey(sessionKey.keyId)),
     ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
   });
 
@@ -71,7 +71,7 @@ describe('generateSessionKey', () => {
 
     await expect(
       derSerializePublicKey(
-        await privateKeyStore.fetchSessionKey(sessionKey.keyId, peerPrivateAddress),
+        await privateKeyStore.retrieveSessionKey(sessionKey.keyId, peerPrivateAddress),
       ),
     ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
   });
@@ -151,7 +151,7 @@ describe('wrapMessagePayload', () => {
     )) as SessionEnvelopedData;
     const originatorSessionKey = await payloadEnvelopedData.getOriginatorKey();
     await expect(
-      privateKeyStore.fetchSessionKey(
+      privateKeyStore.retrieveSessionKey(
         originatorSessionKey.keyId,
         await recipientCertificate.calculateSubjectPrivateAddress(),
       ),
