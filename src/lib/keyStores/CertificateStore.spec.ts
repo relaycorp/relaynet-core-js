@@ -119,7 +119,7 @@ describe('retrieveLatest', () => {
   });
 
   test('Valid certificate should be returned', async () => {
-    const certificate = await generateCertificate(addSeconds(new Date(), 1));
+    const certificate = await generateCertificate(addSeconds(new Date(), 2));
     await store.save(certificate);
 
     const retrievedCertificate = await store.retrieveLatest(privateAddress);
