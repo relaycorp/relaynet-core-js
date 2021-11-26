@@ -1,8 +1,5 @@
 import { arrayBufferFrom, CRYPTO_OIDS, expectBuffersToEqual } from '../_test_utils';
-import {
-  SessionEnvelopedData,
-  SessionlessEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
+import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import {
   derSerializePublicKey,
   generateECDHKeyPair,
@@ -13,6 +10,7 @@ import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks'
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
+import { SessionKeyPair } from '../SessionKeyPair';
 import { BaseNodeManager } from './BaseNodeManager';
 import { NodeError } from './errors';
 
@@ -43,18 +41,13 @@ beforeAll(async () => {
   });
 });
 
-let privateKeyStore: MockPrivateKeyStore;
-let publicKeyStore: MockPublicKeyStore;
-beforeAll(() => {
-  privateKeyStore = new MockPrivateKeyStore();
-  publicKeyStore = new MockPublicKeyStore();
-});
-
+const privateKeyStore = new MockPrivateKeyStore();
+const publicKeyStore = new MockPublicKeyStore();
 beforeEach(async () => {
   privateKeyStore.clear();
   publicKeyStore.clear();
 
-  await privateKeyStore.registerNodeKey(recipientPrivateKey, recipientCertificate);
+  await privateKeyStore.saveIdentityKey(recipientPrivateKey);
 });
 
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
@@ -66,7 +59,7 @@ describe('generateSessionKey', () => {
     const sessionKey = await node.generateSessionKey();
 
     await expect(
-      derSerializePublicKey(await privateKeyStore.fetchInitialSessionKey(sessionKey.keyId)),
+      derSerializePublicKey(await privateKeyStore.retrieveInitialSessionKey(sessionKey.keyId)),
     ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
   });
 
@@ -187,52 +180,52 @@ describe('wrapMessagePayload', () => {
 describe('unwrapMessagePayload', () => {
   const RECIPIENT_ADDRESS = 'https://example.com';
 
-  test('Payload plaintext should be returned when using sessionless encryption', async () => {
-    const payload = await SessionlessEnvelopedData.encrypt(
-      PAYLOAD_PLAINTEXT_CONTENT,
-      recipientCertificate,
+  let sessionKey: SessionKey;
+  beforeEach(async () => {
+    const sessionKeyPair = await SessionKeyPair.generate();
+    sessionKey = sessionKeyPair.sessionKey;
+    await privateKeyStore.saveUnboundSessionKey(
+      sessionKeyPair.privateKey,
+      sessionKeyPair.sessionKey.keyId,
     );
-    const message = new StubMessage(
-      RECIPIENT_ADDRESS,
-      senderCertificate,
-      Buffer.from(payload.serialize()),
-    );
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
-
-    const payloadPlaintext = await node.unwrapMessagePayload(message);
-
-    expectBuffersToEqual(payloadPlaintext.content, PAYLOAD_PLAINTEXT_CONTENT);
-    expect(publicKeyStore.keys).toBeEmpty();
   });
 
-  test('Payload plaintext should be returned and session key stored when using a session', async () => {
-    const sessionKeyPair = await generateECDHKeyPair();
-    const sessionKeyId = Buffer.from('key id');
-    await privateKeyStore.registerInitialSessionKey(sessionKeyPair.privateKey, sessionKeyId);
-    const encryptionResult = await SessionEnvelopedData.encrypt(PAYLOAD_PLAINTEXT_CONTENT, {
-      keyId: sessionKeyId,
-      publicKey: sessionKeyPair.publicKey,
-    });
+  test('Payload plaintext should be returned', async () => {
+    const { envelopedData } = await SessionEnvelopedData.encrypt(
+      PAYLOAD_PLAINTEXT_CONTENT,
+      sessionKey,
+    );
     const message = new StubMessage(
       RECIPIENT_ADDRESS,
       senderCertificate,
-      Buffer.from(encryptionResult.envelopedData.serialize()),
+      Buffer.from(envelopedData.serialize()),
     );
     const node = new StubNodeManager(privateKeyStore, publicKeyStore);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
     expectBuffersToEqual(payloadPlaintext.content, PAYLOAD_PLAINTEXT_CONTENT);
+  });
+
+  test('Originator session key should be stored', async () => {
+    const { envelopedData, dhKeyId } = await SessionEnvelopedData.encrypt(
+      PAYLOAD_PLAINTEXT_CONTENT,
+      sessionKey,
+    );
+    const message = new StubMessage(
+      RECIPIENT_ADDRESS,
+      senderCertificate,
+      Buffer.from(envelopedData.serialize()),
+    );
+    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+
+    await node.unwrapMessagePayload(message);
 
     const storedKey = publicKeyStore.keys[await senderCertificate.calculateSubjectPrivateAddress()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
-    expectBuffersToEqual(Buffer.from(encryptionResult.dhKeyId), storedKey.publicKeyId);
+    expectBuffersToEqual(Buffer.from(dhKeyId), storedKey.publicKeyId);
     expectBuffersToEqual(
-      await derSerializePublicKey(
-        (
-          await encryptionResult.envelopedData.getOriginatorKey()
-        ).publicKey,
-      ),
+      await derSerializePublicKey((await envelopedData.getOriginatorKey()).publicKey),
       storedKey.publicKeyDer,
     );
   });

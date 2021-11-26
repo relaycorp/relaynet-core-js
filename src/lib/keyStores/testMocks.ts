@@ -1,67 +1,64 @@
-// tslint:disable:max-classes-per-file no-object-mutation
+// tslint:disable:max-classes-per-file no-object-mutation readonly-keyword
 
-import { derSerializePrivateKey } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import { PrivateKeyData, PrivateKeyStore } from './privateKeyStore';
+import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './publicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
-  // tslint:disable-next-line:readonly-keyword
-  public keys: { [key: string]: PrivateKeyData } = {};
+  public identityKeys: { [privateAddress: string]: Buffer } = {};
+
+  public sessionKeys: { [keyId: string]: SessionPrivateKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected readonly failOnFetch = false) {
     super();
   }
 
   public clear(): void {
-    this.keys = {};
+    this.identityKeys = {};
+    this.sessionKeys = {};
   }
 
-  public async registerNodeKey(privateKey: CryptoKey, certificate: Certificate): Promise<void> {
-    // tslint:disable-next-line:no-object-mutation
-    this.keys[certificate.getSerialNumberHex()] = {
-      certificateDer: Buffer.from(certificate.serialize()),
-      keyDer: await derSerializePrivateKey(privateKey),
-      type: 'node',
-    };
-  }
-
-  public async registerInitialSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
-    this.keys[keyId.toString('hex')] = {
-      keyDer: await derSerializePrivateKey(privateKey),
-      type: 'session-initial',
-    };
-  }
-
-  public async registerSubsequentSessionKey(
-    privateKey: CryptoKey,
-    keyId: string,
-    peerPrivateAddress: string,
-  ): Promise<void> {
-    this.keys[keyId] = {
-      keyDer: await derSerializePrivateKey(privateKey),
-      peerPrivateAddress,
-      type: 'session-subsequent',
-    };
-  }
-
-  protected async fetchKey(keyId: string): Promise<PrivateKeyData | null> {
+  protected async retrieveIdentityKeySerialized(privateAddress: string): Promise<Buffer | null> {
     if (this.failOnFetch) {
       throw new Error('Denied');
     }
-    return this.keys[keyId] ?? null;
+    return this.identityKeys[privateAddress];
   }
 
-  protected async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void> {
+  protected async saveIdentityKeySerialized(
+    privateAddress: string,
+    keySerialized: Buffer,
+  ): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    this.keys[keyId] = privateKeyData;
+    this.identityKeys[privateAddress] = keySerialized;
+  }
+
+  protected async saveSessionKeySerialized(
+    keyId: string,
+    keySerialized: Buffer,
+    peerPrivateAddress?: string,
+  ): Promise<void> {
+    if (this.failOnSave) {
+      throw new Error('Denied');
+    }
+
+    this.sessionKeys[keyId] = {
+      keySerialized,
+      peerPrivateAddress,
+    };
+  }
+
+  protected async retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null> {
+    if (this.failOnFetch) {
+      throw new Error('Denied');
+    }
+
+    return this.sessionKeys[keyId] ?? null;
   }
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {
-  // tslint:disable-next-line:readonly-keyword
   public keys: { [key: string]: SessionPublicKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected fetchError?: Error) {

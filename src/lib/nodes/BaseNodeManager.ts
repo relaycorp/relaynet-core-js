@@ -24,13 +24,13 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
     const { sessionKey, privateKey } = await SessionKeyPair.generate();
 
     if (peerPrivateAddress) {
-      await this.privateKeyStore.saveSubsequentSessionKey(
+      await this.privateKeyStore.saveBoundSessionKey(
         privateKey,
         sessionKey.keyId,
         peerPrivateAddress,
       );
     } else {
-      await this.privateKeyStore.saveInitialSessionKey(privateKey, sessionKey.keyId);
+      await this.privateKeyStore.saveUnboundSessionKey(privateKey, sessionKey.keyId);
     }
 
     return sessionKey;
@@ -57,7 +57,7 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
       recipientSessionKey,
       this.cryptoOptions.encryption,
     );
-    await this.privateKeyStore.saveSubsequentSessionKey(
+    await this.privateKeyStore.saveBoundSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
       peerPrivateAddress,
@@ -68,21 +68,18 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
   /**
    * Decrypt and return the payload in the `message`.
    *
-   * Also store the session key, if using the channel session protocol.
+   * Also store the session key from the sender.
    *
    * @param message
    */
   public async unwrapMessagePayload<P extends Payload>(message: RAMFMessage<P>): Promise<P> {
     const unwrapResult = await message.unwrapPayload(this.privateKeyStore);
 
-    // If the sender uses channel session, store its public key for later use.
-    if (unwrapResult.senderSessionKey) {
-      await this.publicKeyStore.saveSessionKey(
-        unwrapResult.senderSessionKey,
-        await message.senderCertificate.calculateSubjectPrivateAddress(),
-        message.creationDate,
-      );
-    }
+    await this.publicKeyStore.saveSessionKey(
+      unwrapResult.senderSessionKey,
+      await message.senderCertificate.calculateSubjectPrivateAddress(),
+      message.creationDate,
+    );
 
     return unwrapResult.payload;
   }

@@ -6,6 +6,7 @@ import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/enve
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyStore } from '../keyStores/privateKeyStore';
+import RAMFError from '../ramf/RAMFError';
 import { SessionKey } from '../SessionKey';
 import InvalidMessageError from './InvalidMessageError';
 import PayloadPlaintext from './payloads/PayloadPlaintext';
@@ -90,16 +91,18 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
 
   public async unwrapPayload(
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-  ): Promise<{ readonly payload: Payload; readonly senderSessionKey?: SessionKey }> {
+  ): Promise<{ readonly payload: Payload; readonly senderSessionKey: SessionKey }> {
     const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
+    if (!(payloadEnvelopedData instanceof SessionEnvelopedData)) {
+      throw new RAMFError('Sessionless payloads are no longer supported');
+    }
 
     const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, privateKeyOrStore);
     const payload = await this.deserializePayload(payloadPlaintext);
 
-    const senderSessionKey =
-      payloadEnvelopedData instanceof SessionEnvelopedData
-        ? await payloadEnvelopedData.getOriginatorKey()
-        : undefined;
+    const senderSessionKey = await (
+      payloadEnvelopedData as SessionEnvelopedData
+    ).getOriginatorKey();
 
     return { payload, senderSessionKey };
   }
@@ -132,24 +135,19 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     payloadEnvelopedData: EnvelopedData,
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
   ): Promise<ArrayBuffer> {
-    const keyId = payloadEnvelopedData.getRecipientKeyId();
-    const privateKey = await this.fetchPrivateKey(payloadEnvelopedData, privateKeyOrStore, keyId);
+    const privateKey = await this.fetchPrivateKey(payloadEnvelopedData, privateKeyOrStore);
     return payloadEnvelopedData.decrypt(privateKey);
   }
 
   protected async fetchPrivateKey(
     payloadEnvelopedData: EnvelopedData,
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-    keyId: Buffer,
   ): Promise<CryptoKey> {
+    const keyId = payloadEnvelopedData.getRecipientKeyId();
     let privateKey: CryptoKey;
     if (privateKeyOrStore instanceof PrivateKeyStore) {
-      if (payloadEnvelopedData instanceof SessionEnvelopedData) {
-        const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
-        privateKey = await privateKeyOrStore.fetchSessionKey(keyId, peerPrivateAddress);
-      } else {
-        privateKey = (await privateKeyOrStore.fetchNodeKey(keyId)).privateKey;
-      }
+      const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
+      privateKey = await privateKeyOrStore.fetchSessionKey(keyId, peerPrivateAddress);
     } else {
       privateKey = privateKeyOrStore;
     }

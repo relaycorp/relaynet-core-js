@@ -1,268 +1,246 @@
-import { generateStubCert } from '../_test_utils';
-import * as keys from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
 import {
-  InitialSessionPrivateKeyData,
-  NodePrivateKeyData,
-  PrivateKeyStoreError,
-  SubsequentSessionPrivateKeyData,
-} from './privateKeyStore';
+  derSerializePrivateKey,
+  generateRSAKeyPair,
+  getPrivateAddressFromIdentityKey,
+} from '../crypto_wrappers/keys';
+import { SessionKeyPair } from '../SessionKeyPair';
+import { PrivateKeyStoreError, SessionPrivateKeyData } from './privateKeyStore';
 import { MockPrivateKeyStore } from './testMocks';
 import UnknownKeyError from './UnknownKeyError';
 
 describe('PrivateKeyStore', () => {
-  const SESSION_KEY_ID = Buffer.from('the key id');
-
-  let PRIVATE_KEY: CryptoKey;
-
   const MOCK_STORE = new MockPrivateKeyStore();
   beforeEach(() => {
     MOCK_STORE.clear();
   });
 
-  describe('Node keys', () => {
-    let CERTIFICATE: Certificate;
+  describe('Identity keys', () => {
+    let privateKey: CryptoKey;
+    let privateAddress: string;
     beforeAll(async () => {
-      const keyPair = await keys.generateRSAKeyPair();
-      PRIVATE_KEY = keyPair.privateKey;
-
-      CERTIFICATE = await generateStubCert();
+      const keyPair = await generateRSAKeyPair();
+      privateKey = keyPair.privateKey;
+      privateAddress = await getPrivateAddressFromIdentityKey(keyPair.publicKey);
     });
 
-    describe('fetchNodeKey', () => {
-      test('Existing key pair should be returned', async () => {
-        await MOCK_STORE.registerNodeKey(PRIVATE_KEY, CERTIFICATE);
+    describe('saveIdentityKey', () => {
+      test('Key should be stored', async () => {
+        await MOCK_STORE.saveIdentityKey(privateKey);
 
-        const keyPair = await MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber());
-
-        expect(keyPair).toHaveProperty('privateKey', PRIVATE_KEY);
-        expect(CERTIFICATE.isEqual(keyPair.certificate)).toBeTrue();
-      });
-
-      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
-        await expect(MOCK_STORE.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toBeInstanceOf(
-          UnknownKeyError,
+        expect(MOCK_STORE.identityKeys[privateAddress]).toEqual(
+          await derSerializePrivateKey(privateKey),
         );
       });
 
-      test('Session keys should not be returned', async () => {
-        await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, SESSION_KEY_ID);
+      test('Errors should be wrapped', async () => {
+        const store = new MockPrivateKeyStore(true);
 
-        await expect(MOCK_STORE.fetchNodeKey(SESSION_KEY_ID)).rejects.toThrowWithMessage(
+        await expect(store.saveIdentityKey(privateKey)).rejects.toThrowWithMessage(
+          PrivateKeyStoreError,
+          `Failed to save key for ${privateAddress}: Denied`,
+        );
+      });
+    });
+
+    describe('retrieveIdentityKey', () => {
+      test('Existing key pair should be returned', async () => {
+        await MOCK_STORE.saveIdentityKey(privateKey);
+
+        const privateKeyRetrieved = await MOCK_STORE.retrieveIdentityKey(privateAddress);
+
+        await expect(derSerializePrivateKey(privateKeyRetrieved)).resolves.toEqual(
+          await derSerializePrivateKey(privateKey),
+        );
+      });
+
+      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
+        await expect(MOCK_STORE.retrieveIdentityKey(privateAddress)).rejects.toThrowWithMessage(
           UnknownKeyError,
-          `Key ${SESSION_KEY_ID.toString('hex')} is not a node key`,
+          `Identity key for ${privateAddress} doesn't exist`,
         );
       });
 
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(false, true);
 
-        await expect(store.fetchNodeKey(CERTIFICATE.getSerialNumber())).rejects.toEqual(
-          new PrivateKeyStoreError('Failed to retrieve key: Denied'),
-        );
-      });
-    });
-
-    describe('saveNodeKey', () => {
-      test('Key should be stored', async () => {
-        await MOCK_STORE.saveNodeKey(PRIVATE_KEY, CERTIFICATE);
-
-        const expectedKey: NodePrivateKeyData = {
-          certificateDer: Buffer.from(CERTIFICATE.serialize()),
-          keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
-          type: 'node',
-        };
-        expect(MOCK_STORE.keys[CERTIFICATE.getSerialNumberHex()]).toEqual(expectedKey);
-      });
-
-      test('Key ids should be hex-encoded', async () => {
-        await MOCK_STORE.saveNodeKey(PRIVATE_KEY, CERTIFICATE);
-
-        expect(MOCK_STORE.keys).toHaveProperty(CERTIFICATE.getSerialNumberHex());
-      });
-
-      test('Errors should be wrapped', async () => {
-        const store = new MockPrivateKeyStore(true);
-
-        await expect(store.saveNodeKey(PRIVATE_KEY, CERTIFICATE)).rejects.toEqual(
-          new PrivateKeyStoreError(`Failed to save key: Denied`),
+        await expect(store.retrieveIdentityKey(privateAddress)).rejects.toThrowWithMessage(
+          PrivateKeyStoreError,
+          `Failed to retrieve key for ${privateAddress}: Denied`,
         );
       });
     });
   });
 
   describe('Session keys', () => {
+    let sessionKeyPair: SessionKeyPair;
+    let sessionKeyIdHex: string;
     beforeAll(async () => {
-      const keyPair = await keys.generateECDHKeyPair();
-      PRIVATE_KEY = keyPair.privateKey;
+      sessionKeyPair = await SessionKeyPair.generate();
+      sessionKeyIdHex = sessionKeyPair.sessionKey.keyId.toString('hex');
     });
 
     const PEER_PRIVATE_ADDRESS = '0deadbeef';
 
-    describe('Initial session keys', () => {
-      describe('fetchInitialSessionKey', () => {
-        test('Existing key should be returned', async () => {
-          await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, SESSION_KEY_ID);
+    describe('saveUnboundSessionKey', () => {
+      test('Key should be stored', async () => {
+        await MOCK_STORE.saveUnboundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+        );
 
-          const keySerialized = await MOCK_STORE.fetchInitialSessionKey(SESSION_KEY_ID);
-
-          expect(await keys.derSerializePrivateKey(keySerialized)).toEqual(
-            await keys.derSerializePrivateKey(PRIVATE_KEY),
-          );
+        expect(MOCK_STORE.sessionKeys).toHaveProperty<SessionPrivateKeyData>(sessionKeyIdHex, {
+          keySerialized: await derSerializePrivateKey(sessionKeyPair.privateKey),
         });
-
-        test('UnknownKeyError should be thrown if key id does not exist', async () => {
-          await expect(MOCK_STORE.fetchInitialSessionKey(SESSION_KEY_ID)).rejects.toBeInstanceOf(
-            UnknownKeyError,
-          );
-        });
-
-        test('Node keys should not be returned', async () => {
-          const certificate = await generateStubCert();
-          await MOCK_STORE.registerNodeKey(PRIVATE_KEY, certificate);
-
-          await expect(
-            MOCK_STORE.fetchInitialSessionKey(certificate.getSerialNumber()),
-          ).rejects.toThrowWithMessage(
-            UnknownKeyError,
-            `Key ${certificate.getSerialNumberHex()} is not an initial session key`,
-          );
-        });
-
-        test('Subsequent session keys should not be returned', async () => {
-          const certificate = await generateStubCert();
-          await MOCK_STORE.registerSubsequentSessionKey(
-            PRIVATE_KEY,
-            certificate.getSerialNumberHex(),
-            PEER_PRIVATE_ADDRESS,
-          );
-
-          await expect(
-            MOCK_STORE.fetchInitialSessionKey(certificate.getSerialNumber()),
-          ).rejects.toBeInstanceOf(UnknownKeyError);
-        });
-
-        test('Errors should be wrapped', async () => {
-          const store = new MockPrivateKeyStore(false, true);
-
-          await expect(store.fetchInitialSessionKey(SESSION_KEY_ID)).rejects.toEqual(
-            new PrivateKeyStoreError('Failed to retrieve key: Denied'),
-          );
-        });
-      });
-
-      describe('saveInitialSessionKey', () => {
-        test('Key should be stored', async () => {
-          await MOCK_STORE.saveInitialSessionKey(PRIVATE_KEY, SESSION_KEY_ID);
-
-          const expectedKey: InitialSessionPrivateKeyData = {
-            keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
-            type: 'session-initial',
-          };
-          expect(MOCK_STORE.keys[SESSION_KEY_ID.toString('hex')]).toEqual(expectedKey);
-        });
-
-        test('Errors should be wrapped', async () => {
-          const store = new MockPrivateKeyStore(true);
-
-          await expect(store.saveInitialSessionKey(PRIVATE_KEY, SESSION_KEY_ID)).rejects.toEqual(
-            new PrivateKeyStoreError(`Failed to save key: Denied`),
-          );
-        });
-      });
-    });
-
-    describe('fetchSessionKey', () => {
-      test('Initial session keys should be returned', async () => {
-        await MOCK_STORE.registerInitialSessionKey(PRIVATE_KEY, SESSION_KEY_ID);
-
-        const privateKey = await MOCK_STORE.fetchSessionKey(SESSION_KEY_ID, PEER_PRIVATE_ADDRESS);
-
-        expect(await keys.derSerializePrivateKey(privateKey)).toEqual(
-          await keys.derSerializePrivateKey(PRIVATE_KEY),
-        );
-      });
-
-      test('Subsequent session keys should be returned', async () => {
-        await MOCK_STORE.registerSubsequentSessionKey(
-          PRIVATE_KEY,
-          SESSION_KEY_ID.toString('hex'),
-          PEER_PRIVATE_ADDRESS,
-        );
-
-        const privateKey = await MOCK_STORE.fetchSessionKey(SESSION_KEY_ID, PEER_PRIVATE_ADDRESS);
-
-        expect(await keys.derSerializePrivateKey(privateKey)).toEqual(
-          await keys.derSerializePrivateKey(PRIVATE_KEY),
-        );
-      });
-
-      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
-        await expect(
-          MOCK_STORE.fetchSessionKey(SESSION_KEY_ID, PEER_PRIVATE_ADDRESS),
-        ).rejects.toBeInstanceOf(UnknownKeyError);
-      });
-
-      test('Keys bound to another recipient should not be returned', async () => {
-        await MOCK_STORE.registerSubsequentSessionKey(
-          PRIVATE_KEY,
-          SESSION_KEY_ID.toString('hex'),
-          PEER_PRIVATE_ADDRESS,
-        );
-
-        const invalidPeerPrivateAddress = `not ${PEER_PRIVATE_ADDRESS}`;
-        await expect(
-          MOCK_STORE.fetchSessionKey(SESSION_KEY_ID, invalidPeerPrivateAddress),
-        ).rejects.toThrowWithMessage(
-          UnknownKeyError,
-          `Session key ${SESSION_KEY_ID.toString('hex')} is bound to another recipient ` +
-            `(${PEER_PRIVATE_ADDRESS}, not ${invalidPeerPrivateAddress})`,
-        );
-      });
-
-      test('Node keys should not be returned', async () => {
-        const certificate = await generateStubCert();
-        await MOCK_STORE.registerNodeKey(PRIVATE_KEY, certificate);
-
-        await expect(
-          MOCK_STORE.fetchSessionKey(certificate.getSerialNumber(), PEER_PRIVATE_ADDRESS),
-        ).rejects.toThrowWithMessage(
-          UnknownKeyError,
-          `Key ${certificate.getSerialNumberHex()} is not a session key`,
-        );
-      });
-
-      test('Errors should be wrapped', async () => {
-        const store = new MockPrivateKeyStore(false, true);
-
-        await expect(store.fetchSessionKey(SESSION_KEY_ID, PEER_PRIVATE_ADDRESS)).rejects.toEqual(
-          new PrivateKeyStoreError('Failed to retrieve key: Denied'),
-        );
-      });
-    });
-
-    describe('saveSubsequentSessionKey', () => {
-      test('Bound key should be stored', async () => {
-        await MOCK_STORE.saveSubsequentSessionKey(
-          PRIVATE_KEY,
-          SESSION_KEY_ID,
-          PEER_PRIVATE_ADDRESS,
-        );
-
-        const expectedKey: SubsequentSessionPrivateKeyData = {
-          keyDer: await keys.derSerializePrivateKey(PRIVATE_KEY),
-          peerPrivateAddress: PEER_PRIVATE_ADDRESS,
-          type: 'session-subsequent',
-        };
-        expect(MOCK_STORE.keys[SESSION_KEY_ID.toString('hex')]).toEqual(expectedKey);
       });
 
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(true);
 
         await expect(
-          store.saveSubsequentSessionKey(PRIVATE_KEY, SESSION_KEY_ID, PEER_PRIVATE_ADDRESS),
-        ).rejects.toEqual(new PrivateKeyStoreError(`Failed to save key: Denied`));
+          store.saveUnboundSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId),
+        ).rejects.toThrowWithMessage(
+          PrivateKeyStoreError,
+          `Failed to save key ${sessionKeyIdHex}: Denied`,
+        );
+      });
+    });
+
+    describe('fetchUnboundSessionKey', () => {
+      test('Existing key should be returned', async () => {
+        await MOCK_STORE.saveUnboundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+        );
+
+        const keySerialized = await MOCK_STORE.retrieveInitialSessionKey(
+          sessionKeyPair.sessionKey.keyId,
+        );
+
+        expect(await derSerializePrivateKey(keySerialized)).toEqual(
+          await derSerializePrivateKey(sessionKeyPair.privateKey),
+        );
+      });
+
+      test('UnknownKeyError should be thrown if key id does not exist', async () => {
+        await expect(
+          MOCK_STORE.retrieveInitialSessionKey(sessionKeyPair.sessionKey.keyId),
+        ).rejects.toBeInstanceOf(UnknownKeyError);
+      });
+
+      test('Subsequent session keys should not be returned', async () => {
+        await MOCK_STORE.saveBoundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
+        );
+
+        await expect(
+          MOCK_STORE.retrieveInitialSessionKey(sessionKeyPair.sessionKey.keyId),
+        ).rejects.toThrowWithMessage(UnknownKeyError, `Key ${sessionKeyIdHex} is bound`);
+      });
+
+      test('Errors should be wrapped', async () => {
+        const store = new MockPrivateKeyStore(false, true);
+
+        await expect(
+          store.retrieveInitialSessionKey(sessionKeyPair.sessionKey.keyId),
+        ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
+      });
+    });
+
+    describe('saveBoundSessionKey', () => {
+      test('Bound key should be stored', async () => {
+        await MOCK_STORE.saveBoundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
+        );
+
+        expect(MOCK_STORE.sessionKeys).toHaveProperty<SessionPrivateKeyData>(sessionKeyIdHex, {
+          keySerialized: await derSerializePrivateKey(sessionKeyPair.privateKey),
+          peerPrivateAddress: PEER_PRIVATE_ADDRESS,
+        });
+      });
+
+      test('Errors should be wrapped', async () => {
+        const store = new MockPrivateKeyStore(true);
+
+        await expect(
+          store.saveBoundSessionKey(
+            sessionKeyPair.privateKey,
+            sessionKeyPair.sessionKey.keyId,
+            PEER_PRIVATE_ADDRESS,
+          ),
+        ).rejects.toThrowWithMessage(
+          PrivateKeyStoreError,
+          `Failed to save key ${sessionKeyIdHex}: Denied`,
+        );
+      });
+    });
+
+    describe('fetchBoundKey', () => {
+      test('Initial session keys should be returned', async () => {
+        await MOCK_STORE.saveUnboundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+        );
+
+        const privateKey = await MOCK_STORE.fetchSessionKey(
+          sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
+        );
+
+        expect(await derSerializePrivateKey(privateKey)).toEqual(
+          await derSerializePrivateKey(privateKey),
+        );
+      });
+
+      test('Subsequent session keys should be returned', async () => {
+        await MOCK_STORE.saveBoundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
+        );
+
+        const privateKey = await MOCK_STORE.fetchSessionKey(
+          sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
+        );
+
+        expect(await derSerializePrivateKey(privateKey)).toEqual(
+          await derSerializePrivateKey(privateKey),
+        );
+      });
+
+      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
+        await expect(
+          MOCK_STORE.fetchSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
+        ).rejects.toBeInstanceOf(UnknownKeyError);
+      });
+
+      test('Keys bound to another recipient should not be returned', async () => {
+        await MOCK_STORE.saveBoundSessionKey(
+          sessionKeyPair.privateKey,
+          sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
+        );
+
+        const invalidPeerPrivateAddress = `not ${PEER_PRIVATE_ADDRESS}`;
+        await expect(
+          MOCK_STORE.fetchSessionKey(sessionKeyPair.sessionKey.keyId, invalidPeerPrivateAddress),
+        ).rejects.toThrowWithMessage(
+          UnknownKeyError,
+          `Session key ${sessionKeyIdHex} is bound to another recipient ` +
+            `(${PEER_PRIVATE_ADDRESS}, not ${invalidPeerPrivateAddress})`,
+        );
+      });
+
+      test('Errors should be wrapped', async () => {
+        const store = new MockPrivateKeyStore(false, true);
+
+        await expect(
+          store.fetchSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
+        ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
       });
     });
   });

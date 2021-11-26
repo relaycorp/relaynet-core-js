@@ -8,11 +8,13 @@ import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
-import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto_wrappers/keys';
+import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import CertificateError from '../crypto_wrappers/x509/CertificateError';
 import { MockPrivateKeyStore } from '../keyStores/testMocks';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
+import RAMFError from '../ramf/RAMFError';
+import { SessionKeyPair } from '../SessionKeyPair';
 import InvalidMessageError from './InvalidMessageError';
 import { RecipientAddressType } from './RecipientAddressType';
 
@@ -423,14 +425,14 @@ describe('RAMFMessage', () => {
   });
 
   describe('unwrapPayload', () => {
-    test('SessionlessEnvelopedData payload should be decrypted', async () => {
+    test('SessionlessEnvelopedData payload should be unsupported', async () => {
       const envelopedData = await SessionlessEnvelopedData.encrypt(
         STUB_PAYLOAD_PLAINTEXT,
         recipientCertificate,
       );
 
       const recipientKeyStore = new MockPrivateKeyStore();
-      await recipientKeyStore.registerNodeKey(recipientPrivateKey, recipientCertificate);
+      await recipientKeyStore.saveIdentityKey(recipientPrivateKey);
 
       const stubMessage = new StubMessage(
         '0123',
@@ -438,24 +440,23 @@ describe('RAMFMessage', () => {
         Buffer.from(envelopedData.serialize()),
       );
 
-      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(recipientKeyStore);
-
-      expect(payload).toBeInstanceOf(StubPayload);
-      expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
-
-      expect(senderSessionKey).toBeUndefined();
+      await expect(stubMessage.unwrapPayload(recipientKeyStore)).rejects.toThrowWithMessage(
+        RAMFError,
+        'Sessionless payloads are no longer supported',
+      );
     });
 
-    test('SessionEnvelopedData payload should be decrypted', async () => {
-      const recipientDhKeyPair = await generateECDHKeyPair();
-      const keyId = Buffer.from('key id');
-      const { envelopedData } = await SessionEnvelopedData.encrypt(STUB_PAYLOAD_PLAINTEXT, {
-        keyId,
-        publicKey: recipientDhKeyPair.publicKey,
-      });
-
+    test('Payload should be decrypted', async () => {
+      const recipientSessionKeyPair = await SessionKeyPair.generate();
+      const { envelopedData } = await SessionEnvelopedData.encrypt(
+        STUB_PAYLOAD_PLAINTEXT,
+        recipientSessionKeyPair.sessionKey,
+      );
       const recipientKeyStore = new MockPrivateKeyStore();
-      await recipientKeyStore.registerInitialSessionKey(recipientDhKeyPair.privateKey, keyId);
+      await recipientKeyStore.saveUnboundSessionKey(
+        recipientSessionKeyPair.privateKey,
+        recipientSessionKeyPair.sessionKey.keyId,
+      );
 
       const stubMessage = new StubMessage(
         '0123',
@@ -472,9 +473,10 @@ describe('RAMFMessage', () => {
     });
 
     test('Keystore lookup should be skipped if private key is provided', async () => {
-      const envelopedData = await SessionlessEnvelopedData.encrypt(
+      const recipientSessionKeyPair = await SessionKeyPair.generate();
+      const { envelopedData } = await SessionEnvelopedData.encrypt(
         STUB_PAYLOAD_PLAINTEXT,
-        recipientCertificate,
+        recipientSessionKeyPair.sessionKey,
       );
 
       const stubMessage = new StubMessage(
@@ -483,7 +485,7 @@ describe('RAMFMessage', () => {
         Buffer.from(envelopedData.serialize()),
       );
 
-      const { payload } = await stubMessage.unwrapPayload(recipientPrivateKey);
+      const { payload } = await stubMessage.unwrapPayload(recipientSessionKeyPair.privateKey);
 
       expect(payload).toBeInstanceOf(StubPayload);
       expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
