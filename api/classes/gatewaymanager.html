@@ -2776,7 +2776,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager&lt;CargoMessageSet | CargoCollectionRequest&gt;.constructor</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/nodes/BaseNodeManager.ts#L11">src/lib/nodes/BaseNodeManager.ts:11</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/nodes/BaseNodeManager.ts#L11">src/lib/nodes/BaseNodeManager.ts:11</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2802,13 +2802,13 @@ img {
 				<a name="generatecargoes" class="tsd-anchor"></a>
 				<h3>generate<wbr>Cargoes</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">generate<wbr>Cargoes<span class="tsd-signature-symbol">(</span>messages<span class="tsd-signature-symbol">: </span><a href="../modules.html#cargomessagestream" class="tsd-signature-type" data-tsd-kind="Type alias">CargoMessageStream</a>, recipientCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type" data-tsd-kind="Class">Certificate</a>, privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span>, certificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type" data-tsd-kind="Class">Certificate</a>, recipientPublicAddress<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">generate<wbr>Cargoes<span class="tsd-signature-symbol">(</span>messages<span class="tsd-signature-symbol">: </span><a href="../modules.html#cargomessagestream" class="tsd-signature-type" data-tsd-kind="Type alias">CargoMessageStream</a>, recipientPrivateAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CryptoKey</span>, senderCertificate<span class="tsd-signature-symbol">: </span><a href="certificate.html" class="tsd-signature-type" data-tsd-kind="Class">Certificate</a>, recipientPublicAddress<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AsyncIterable</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/nodes/gateway.ts#L18">src/lib/nodes/gateway.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/nodes/gateway.ts#L17">src/lib/nodes/gateway.ts:17</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2817,13 +2817,13 @@ img {
 								<h5>messages: <a href="../modules.html#cargomessagestream" class="tsd-signature-type" data-tsd-kind="Type alias">CargoMessageStream</a></h5>
 							</li>
 							<li>
-								<h5>recipientCertificate: <a href="certificate.html" class="tsd-signature-type" data-tsd-kind="Class">Certificate</a></h5>
+								<h5>recipientPrivateAddress: <span class="tsd-signature-type">string</span></h5>
 							</li>
 							<li>
 								<h5>privateKey: <span class="tsd-signature-type">CryptoKey</span></h5>
 							</li>
 							<li>
-								<h5>certificate: <a href="certificate.html" class="tsd-signature-type" data-tsd-kind="Class">Certificate</a></h5>
+								<h5>senderCertificate: <a href="certificate.html" class="tsd-signature-type" data-tsd-kind="Class">Certificate</a></h5>
 							</li>
 							<li>
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> recipientPublicAddress: <span class="tsd-signature-type">string</span></h5>
@@ -2844,7 +2844,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager.generateSessionKey</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/nodes/BaseNodeManager.ts#L23">src/lib/nodes/BaseNodeManager.ts:23</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/nodes/BaseNodeManager.ts#L23">src/lib/nodes/BaseNodeManager.ts:23</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2876,14 +2876,14 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager.unwrapMessagePayload</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/nodes/BaseNodeManager.ts#L75">src/lib/nodes/BaseNodeManager.ts:75</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/nodes/BaseNodeManager.ts#L75">src/lib/nodes/BaseNodeManager.ts:75</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
 								<p>Decrypt and return the payload in the <code>message</code>.</p>
 							</div>
-							<p>Also store the session key, if using the channel session protocol.</p>
+							<p>Also store the session key from the sender.</p>
 						</div>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>
 						<ul class="tsd-type-parameters">
@@ -2914,7 +2914,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from BaseNodeManager.wrapMessagePayload</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/nodes/BaseNodeManager.ts#L47">src/lib/nodes/BaseNodeManager.ts:47</a></li>
+								<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/nodes/BaseNodeManager.ts#L47">src/lib/nodes/BaseNodeManager.ts:47</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">

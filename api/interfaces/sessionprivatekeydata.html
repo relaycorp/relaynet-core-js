@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>NodePrivateKeyData | @relaycorp/relaynet-core</title>
+	<title>SessionPrivateKeyData | @relaycorp/relaynet-core</title>
 	<meta name="description" content="Documentation for @relaycorp/relaynet-core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">:root {
@@ -2705,16 +2705,13 @@ img {
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class="current tsd-kind-interface">
-			<a href="nodeprivatekeydata.html" class="tsd-kind-icon">Node<wbr>Private<wbr>Key<wbr>Data</a>
+			<a href="sessionprivatekeydata.html" class="tsd-kind-icon">Session<wbr>Private<wbr>Key<wbr>Data</a>
 			<ul>
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="nodeprivatekeydata.html#certificateder" class="tsd-kind-icon">certificate<wbr>Der</a>
-				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited">
-					<a href="nodeprivatekeydata.html#keyder" class="tsd-kind-icon">key<wbr>Der</a>
+					<a href="sessionprivatekeydata.html#keyserialized" class="tsd-kind-icon">key<wbr>Serialized</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="nodeprivatekeydata.html#type" class="tsd-kind-icon">type</a>
+					<a href="sessionprivatekeydata.html#peerprivateaddress" class="tsd-kind-icon">peer<wbr>Private<wbr>Address</a>
 				</li>
 			</ul>
 		</li>
@@ -2725,7 +2722,7 @@ img {
 		<section class="tsd-panel tsd-comment">
 			<div class="tsd-comment tsd-typography">
 				<div class="lead">
-					<p>Data for the private key of a node key pair.</p>
+					<p>Data for a private key of a session key pair.</p>
 				</div>
 			</div>
 		</section>
@@ -2733,12 +2730,7 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<a href="baseprivatekeydata.html" class="tsd-signature-type" data-tsd-kind="Interface">BasePrivateKeyData</a>
-					<ul class="tsd-hierarchy">
-						<li>
-							<span class="target">NodePrivateKeyData</span>
-						</li>
-					</ul>
+					<span class="target">SessionPrivateKeyData</span>
 				</li>
 			</ul>
 		</section>
@@ -2749,9 +2741,8 @@ img {
 					<section class="tsd-index-section ">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="nodeprivatekeydata.html#certificateder" class="tsd-kind-icon">certificate<wbr>Der</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="nodeprivatekeydata.html#keyder" class="tsd-kind-icon">key<wbr>Der</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="nodeprivatekeydata.html#type" class="tsd-kind-icon">type</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="sessionprivatekeydata.html#keyserialized" class="tsd-kind-icon">key<wbr>Serialized</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="sessionprivatekeydata.html#peerprivateaddress" class="tsd-kind-icon">peer<wbr>Private<wbr>Address</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2760,33 +2751,22 @@ img {
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="certificateder" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> certificate<wbr>Der</h3>
-				<div class="tsd-signature tsd-kind-icon">certificate<wbr>Der<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span></div>
+				<a name="keyserialized" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> key<wbr>Serialized</h3>
+				<div class="tsd-signature tsd-kind-icon">key<wbr>Serialized<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/keyStores/privateKeyStore.ts#L23">src/lib/keyStores/privateKeyStore.ts:23</a></li>
-					</ul>
-				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited">
-				<a name="keyder" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> key<wbr>Der</h3>
-				<div class="tsd-signature tsd-kind-icon">key<wbr>Der<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span></div>
-				<aside class="tsd-sources">
-					<p>Inherited from <a href="baseprivatekeydata.html">BasePrivateKeyData</a>.<a href="baseprivatekeydata.html#keyder">keyDer</a></p>
-					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/keyStores/privateKeyStore.ts#L15">src/lib/keyStores/privateKeyStore.ts:15</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/keyStores/privateKeyStore.ts#L16">src/lib/keyStores/privateKeyStore.ts:16</a></li>
 					</ul>
 				</aside>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="type" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> type</h3>
-				<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;node&quot;</span></div>
+				<a name="peerprivateaddress" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> peer<wbr>Private<wbr>Address</h3>
+				<div class="tsd-signature tsd-kind-icon">peer<wbr>Private<wbr>Address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/efe8c269/src/lib/keyStores/privateKeyStore.ts#L22">src/lib/keyStores/privateKeyStore.ts:22</a></li>
+						<li>Defined in <a href="https://github.com/relaycorp/relaynet-core-js/blob/020e40c3/src/lib/keyStores/privateKeyStore.ts#L17">src/lib/keyStores/privateKeyStore.ts:17</a></li>
 					</ul>
 				</aside>
 			</section>
