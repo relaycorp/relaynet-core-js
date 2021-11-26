@@ -63,11 +63,34 @@ describe('retrieveLatest', () => {
 });
 
 describe('retrieveAll', () => {
-  test.todo('Nothing should be returned if no certificate exists');
+  test('Nothing should be returned if no certificate exists', async () => {
+    await expect(store.retrieveAll(privateAddress)).resolves.toBeEmpty();
+  });
 
-  test.todo('Expired certificates should be ignored');
+  test('Expired certificates should be ignored', async () => {
+    const validCertificate = await generateCertificate(addSeconds(new Date(), 1));
+    await store.save(validCertificate);
+    const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
+    await store.forceSave(expiredCertificate);
 
-  test.todo('Valid certificates should be returned');
+    const allCertificates = await store.retrieveAll(privateAddress);
+
+    expect(allCertificates).toHaveLength(1);
+    expect(validCertificate.isEqual(allCertificates[0])).toBeTrue();
+  });
+
+  test('Valid certificates should be returned', async () => {
+    const certificate1 = await generateCertificate(addSeconds(new Date(), 1));
+    await store.save(certificate1);
+    const certificate2 = await generateCertificate(addSeconds(new Date(), 5));
+    await store.save(certificate2);
+
+    const allCertificates = await store.retrieveAll(privateAddress);
+
+    expect(allCertificates).toHaveLength(2);
+    expect(allCertificates.filter((c) => certificate1.isEqual(c))).toHaveLength(1);
+    expect(allCertificates.filter((c) => certificate2.isEqual(c))).toHaveLength(1);
+  });
 });
 
 describe('deleteExpired', () => {

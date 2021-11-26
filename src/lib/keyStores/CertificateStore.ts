@@ -29,7 +29,10 @@ export abstract class CertificateStore {
   }
 
   public async retrieveAll(subjectPrivateAddress: string): Promise<readonly Certificate[]> {
-    throw new Error('implement' + subjectPrivateAddress);
+    const allCertificatesSerialized = await this.retrieveAllSerializations(subjectPrivateAddress);
+    return allCertificatesSerialized
+      .map((s) => Certificate.deserialize(s))
+      .filter((c) => new Date() < c.expiryDate);
   }
 
   public async deleteExpired(): Promise<void> {
