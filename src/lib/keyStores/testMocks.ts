@@ -101,7 +101,7 @@ export interface MockStoredCertificateData {
 }
 
 export class MockCertificateStore extends CertificateStore {
-  public certificateDataByPrivateAddress: {
+  public dataByPrivateAddress: {
     // tslint:disable-next-line:readonly-array
     [privateAddress: string]: MockStoredCertificateData[];
   } = {};
@@ -109,7 +109,7 @@ export class MockCertificateStore extends CertificateStore {
   public expiredCertificatesDeleted: boolean = false;
 
   public clear(): void {
-    this.certificateDataByPrivateAddress = {};
+    this.dataByPrivateAddress = {};
     this.expiredCertificatesDeleted = false;
   }
 
@@ -120,7 +120,7 @@ export class MockCertificateStore extends CertificateStore {
   protected async retrieveAllSerializations(
     subjectPrivateAddress: string,
   ): Promise<readonly ArrayBuffer[]> {
-    const certificateData = this.certificateDataByPrivateAddress[subjectPrivateAddress];
+    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress];
     if (!certificateData) {
       return [];
     }
@@ -130,7 +130,7 @@ export class MockCertificateStore extends CertificateStore {
   protected async retrieveLatestSerialization(
     subjectPrivateAddress: string,
   ): Promise<ArrayBuffer | null> {
-    const certificateData = this.certificateDataByPrivateAddress[subjectPrivateAddress] ?? [];
+    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
     if (certificateData.length === 0) {
       return null;
     }
@@ -149,11 +149,7 @@ export class MockCertificateStore extends CertificateStore {
       certificateSerialized: subjectCertificateSerialized,
       expiryDate: subjectCertificateExpiryDate,
     };
-    const originalCertificateData =
-      this.certificateDataByPrivateAddress[subjectPrivateAddress] ?? [];
-    this.certificateDataByPrivateAddress[subjectPrivateAddress] = [
-      ...originalCertificateData,
-      mockData,
-    ];
+    const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
+    this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
   }
 }

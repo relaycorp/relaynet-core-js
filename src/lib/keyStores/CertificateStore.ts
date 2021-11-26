@@ -1,8 +1,22 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
 
+/**
+ * Store of certificates.
+ */
 export abstract class CertificateStore {
+  /**
+   * Store `certificate` as long as it's still valid.
+   *
+   * @param certificate
+   */
   public async save(certificate: Certificate): Promise<void> {
-    throw new Error('implement' + certificate);
+    if (new Date() < certificate.expiryDate) {
+      await this.saveData(
+        await certificate.calculateSubjectPrivateAddress(),
+        certificate.serialize(),
+        certificate.expiryDate,
+      );
+    }
   }
 
   public async retrieveLatest(subjectPrivateAddress: string): Promise<Certificate> {
