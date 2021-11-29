@@ -1,5 +1,4 @@
 import * as asn1js from 'asn1js';
-import { Parser } from 'binary-parser';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { TextDecoder } from 'util';
 
@@ -35,11 +34,7 @@ const PRIVATE_ADDRESS_REGEX = /^[a-f0-9]+$/;
  */
 export const MAX_SDU_PLAINTEXT_LENGTH = 8322048;
 
-const FORMAT_SIGNATURE_PARSER = new Parser()
-  .endianess('little')
-  .string('magic', { length: 8, assert: 'Relaynet' })
-  .uint8('concreteMessageType')
-  .uint8('concreteMessageVersion');
+const FORMAT_SIGNATURE_CONSTANT = Buffer.from('Relaynet');
 
 interface MessageFormatSignature {
   readonly concreteMessageType: number;
@@ -249,11 +244,14 @@ function validatePayloadLength(payloadBuffer: ArrayBuffer): void {
 //region Deserialization validation
 
 function parseMessageFormatSignature(serialization: ArrayBuffer): MessageFormatSignature {
-  try {
-    return FORMAT_SIGNATURE_PARSER.parse(Buffer.from(serialization));
-  } catch (error) {
-    throw new RAMFSyntaxError(error, 'Serialization starts with invalid RAMF format signature');
+  if (serialization.byteLength < 10) {
+    throw new RAMFSyntaxError('Serialization is too small to contain RAMF format signature');
   }
+  const formatSignature = Buffer.from(serialization.slice(0, 10));
+  if (!FORMAT_SIGNATURE_CONSTANT.equals(formatSignature.slice(0, 8))) {
+    throw new RAMFSyntaxError('RAMF format signature does not begin with "Relaynet"');
+  }
+  return { concreteMessageType: formatSignature[8], concreteMessageVersion: formatSignature[9] };
 }
 
 function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {

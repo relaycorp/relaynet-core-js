@@ -454,9 +454,10 @@ describe('MessageSerializer', () => {
           stubConcreteMessageVersionOctet,
           StubMessage,
         ),
-      ).rejects.toMatchObject<Partial<RAMFSyntaxError>>({
-        message: expect.stringMatching(/^Serialization starts with invalid RAMF format signature/),
-      });
+      ).rejects.toThrowWithMessage(
+        RAMFSyntaxError,
+        'RAMF format signature does not begin with "Relaynet"',
+      );
     });
 
     test('Messages larger than 9 MiB should be refused', async () => {
@@ -477,7 +478,7 @@ describe('MessageSerializer', () => {
 
     describe('Format signature', () => {
       test('Input should be long enough to contain format signature', async () => {
-        const serialization = bufferToArray(Buffer.from('Relay'));
+        const serialization = bufferToArray(Buffer.from('a'.repeat(9)));
         await expect(
           deserialize(
             serialization,
@@ -485,10 +486,9 @@ describe('MessageSerializer', () => {
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
-        ).rejects.toEqual(
-          new RAMFSyntaxError(
-            'Serialization starts with invalid RAMF format signature: Relaynet is not defined',
-          ),
+        ).rejects.toThrowWithMessage(
+          RAMFSyntaxError,
+          'Serialization is too small to contain RAMF format signature',
         );
       });
 
@@ -501,10 +501,9 @@ describe('MessageSerializer', () => {
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
-        ).rejects.toEqual(
-          new RAMFSyntaxError(
-            'Serialization starts with invalid RAMF format signature: Relaynet is not defined',
-          ),
+        ).rejects.toThrowWithMessage(
+          RAMFSyntaxError,
+          'RAMF format signature does not begin with "Relaynet"',
         );
       });
 
@@ -524,7 +523,10 @@ describe('MessageSerializer', () => {
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
-        ).rejects.toEqual(new RAMFSyntaxError('Expected concrete message type 0x44 but got 0x45'));
+        ).rejects.toThrowWithMessage(
+          RAMFSyntaxError,
+          'Expected concrete message type 0x44 but got 0x45',
+        );
       });
 
       test('A non-matching concrete message version should be refused', async () => {
@@ -543,7 +545,10 @@ describe('MessageSerializer', () => {
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
-        ).rejects.toEqual(new RAMFSyntaxError('Expected concrete message version 0x2 but got 0x3'));
+        ).rejects.toThrowWithMessage(
+          RAMFSyntaxError,
+          'Expected concrete message version 0x2 but got 0x3',
+        );
       });
     });
 
