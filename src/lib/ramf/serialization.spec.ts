@@ -454,9 +454,10 @@ describe('MessageSerializer', () => {
           stubConcreteMessageVersionOctet,
           StubMessage,
         ),
-      ).rejects.toMatchObject<Partial<RAMFSyntaxError>>({
-        message: expect.stringMatching(/^Serialization starts with invalid RAMF format signature/),
-      });
+      ).rejects.toThrowWithMessage(
+        RAMFSyntaxError,
+        'RAMF format signature does not begin with "Relaynet"',
+      );
     });
 
     test('Messages larger than 9 MiB should be refused', async () => {
