@@ -32,6 +32,10 @@ describe('PrivateKeyStore', () => {
         );
       });
 
+      test('Private address should be returned', async () => {
+        await expect(MOCK_STORE.saveIdentityKey(privateKey)).resolves.toEqual(privateAddress);
+      });
+
       test('Errors should be wrapped', async () => {
         const store = new MockPrivateKeyStore(true);
 
