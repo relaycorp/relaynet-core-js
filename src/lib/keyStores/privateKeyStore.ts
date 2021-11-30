@@ -24,7 +24,14 @@ export class PrivateKeyStoreError extends RelaynetError {}
 
 export abstract class PrivateKeyStore {
   //region Identity keys
-  public async saveIdentityKey(privateKey: CryptoKey): Promise<void> {
+
+  /**
+   * Save identity `privateKey`.
+   *
+   * @param privateKey
+   * @return The corresponding private address
+   */
+  public async saveIdentityKey(privateKey: CryptoKey): Promise<string> {
     const privateAddress = await getPrivateAddressFromIdentityKey(privateKey);
     const privateKeyDer = await derSerializePrivateKey(privateKey);
     try {
@@ -32,6 +39,7 @@ export abstract class PrivateKeyStore {
     } catch (err) {
       throw new PrivateKeyStoreError(err, `Failed to save key for ${privateAddress}`);
     }
+    return privateAddress;
   }
 
   /**
