@@ -46,7 +46,7 @@
     "asn1js": "^2.1.1",
     "buffer-to-arraybuffer": "0.0.6",
     "dohdec": "^3.1.0",
-    "is-valid-domain": "^0.1.4",
+    "is-valid-domain": "^0.1.5",
     "moment": "^2.29.1",
     "pkijs": "^2.2.1",
     "smart-buffer": "^4.2.0",
