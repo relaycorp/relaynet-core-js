@@ -5,6 +5,9 @@ updates:
   schedule:
     interval: weekly
   versioning-strategy: increase
+  commit-message:
+    prefix: "fix(deps):"
+    prefix-development: "chore(deps):"
 - package-ecosystem: bundler
   directory: "/docs"
   schedule:
