@@ -6,7 +6,7 @@ on:
       - opened
 
 jobs:
-  dependabot-automerge:
-    uses: relaycorp/shared-workflows/.github/workflows/prs.yml@main
+  pr-ci:
+    uses: relaycorp/shared-workflows/.github/workflows/pr-ci.yml@main
     secrets:
       dependabotPAT: ${{ secrets.IRELAYBOT_PAT_PR_AUTOMATION }}
