@@ -63,6 +63,20 @@ export async function generateECDHKeyPair(
   ]);
 }
 
+export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
+  const jwkPrivateKey = await cryptoEngine.exportKey('jwk', privateKey);
+  const publicKeyData = {
+    alg: jwkPrivateKey.alg,
+    e: jwkPrivateKey.e,
+    ext: jwkPrivateKey.ext,
+    kty: jwkPrivateKey.kty,
+    n: jwkPrivateKey.n,
+  };
+  const hashingAlgoName = (privateKey.algorithm as any).hash.name;
+  const opts = { hash: { name: hashingAlgoName }, name: privateKey.algorithm.name };
+  return cryptoEngine.importKey('jwk', publicKeyData, opts, true, ['verify']);
+}
+
 //endregion
 
 //region Key serialization
