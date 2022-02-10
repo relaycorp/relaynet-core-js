@@ -16,6 +16,7 @@ import {
   getPrivateAddressFromIdentityKey,
   getPublicKeyDigest,
   getPublicKeyDigestHex,
+  getRSAPublicKeyFromPrivate,
 } from './keys';
 
 describe('generateRsaKeyPair', () => {
@@ -129,6 +130,37 @@ describe('generateDHKeyPair', () => {
 
     expect(keyPair.privateKey.usages).toContainValues(['deriveBits', 'deriveKey']);
     expect(keyPair.publicKey.usages).toBeEmpty();
+  });
+});
+
+describe('getRSAPublicKeyFromPrivate', () => {
+  test('Public key should be returned', async () => {
+    const keyPair = await generateRSAKeyPair();
+
+    const publicKey = await getRSAPublicKeyFromPrivate(keyPair.privateKey);
+
+    // It's important to check we got a public key before checking its serialisation. If we try to
+    // serialise a private key with SPKI, it'd internally use the public key first.
+    expect(publicKey.type).toEqual(keyPair.publicKey.type);
+    await expect(derSerializePublicKey(publicKey)).resolves.toEqual(
+      await derSerializePublicKey(keyPair.publicKey),
+    );
+  });
+
+  test('Public key should honour algorithm parameters', async () => {
+    const keyPair = await generateRSAKeyPair();
+
+    const publicKey = await getRSAPublicKeyFromPrivate(keyPair.privateKey);
+
+    expect(publicKey.algorithm).toEqual(keyPair.publicKey.algorithm);
+  });
+
+  test('Public key should only be used to verify signatures', async () => {
+    const keyPair = await generateRSAKeyPair();
+
+    const publicKey = await getRSAPublicKeyFromPrivate(keyPair.privateKey);
+
+    expect(publicKey.usages).toEqual(['verify']);
   });
 });
 
