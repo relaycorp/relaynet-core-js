@@ -14,6 +14,7 @@ import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
 import Cargo from '../Cargo';
+import { CertificateRotation } from '../CertificateRotation';
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
 import { ParcelCollectionAck } from '../ParcelCollectionAck';
@@ -121,6 +122,15 @@ describe('CargoMessageSet', () => {
 
       expect(item).toBeInstanceOf(ParcelCollectionAck);
       expect(item).toMatchObject(PCA);
+    });
+
+    test('Certificate rotations should be returned', async () => {
+      const rotation = new CertificateRotation(certificate, [certificate]);
+      const item = await CargoMessageSet.deserializeItem(rotation.serialize());
+
+      expect(item).toBeInstanceOf(CertificateRotation);
+      expect((item as CertificateRotation).subjectCertificate.isEqual(certificate)).toBeTrue();
+      expect((item as CertificateRotation).chain[0].isEqual(certificate)).toBeTrue();
     });
 
     test('An error should be thrown when non-RAMF message is found', async () => {
