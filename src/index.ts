@@ -80,6 +80,7 @@ export { ParcelDelivery } from './lib/bindings/gsc/ParcelDelivery';
 export { PrivateNodeRegistrationAuthorization } from './lib/bindings/gsc/PrivateNodeRegistrationAuthorization';
 export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistration';
 export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
+export { CertificateRotation } from './lib/messages/CertificateRotation';
 // Nodes
 export { GatewayManager, CargoMessageStream } from './lib/nodes/gateway';
 export { EndpointManager } from './lib/nodes/EndpointManager';

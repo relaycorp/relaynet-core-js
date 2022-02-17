@@ -2,6 +2,7 @@ import * as asn1js from 'asn1js';
 import { derSerializeHomogeneousSequence } from '../../asn1';
 
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
+import { CERTIFICATE_ROTATION_FORMAT_SIGNATURE, CertificateRotation } from '../CertificateRotation';
 import InvalidMessageError from '../InvalidMessageError';
 import Parcel from '../Parcel';
 import { ParcelCollectionAck } from '../ParcelCollectionAck';
@@ -17,7 +18,7 @@ export interface MessageWithExpiryDate {
   readonly expiryDate: Date;
 }
 
-export type CargoMessageSetItem = Parcel | ParcelCollectionAck;
+export type CargoMessageSetItem = Parcel | ParcelCollectionAck | CertificateRotation;
 
 /**
  * Plaintext representation of the payload in a cargo message.
@@ -50,11 +51,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
    * @throws InvalidMessageError If `itemSerialized` is not a legal item in a cargo message set
    */
   public static async deserializeItem(itemSerialized: ArrayBuffer): Promise<CargoMessageSetItem> {
-    const messageFormatSignature = Buffer.from(itemSerialized.slice(0, 10));
-    const messageClass = messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)
-      ? ParcelCollectionAck
-      : Parcel;
-
+    const messageClass = getItemClass(itemSerialized);
     try {
       return await messageClass.deserialize(itemSerialized);
     } catch (error) {
@@ -131,4 +128,19 @@ export default class CargoMessageSet implements PayloadPlaintext {
     );
     return derSerializeHomogeneousSequence(messagesSerialized);
   }
+}
+
+function getItemClass(itemSerialized: ArrayBuffer): {
+  readonly deserialize: (s: ArrayBuffer) => CargoMessageSetItem | Promise<CargoMessageSetItem>;
+} {
+  const messageFormatSignature = Buffer.from(itemSerialized.slice(0, 10));
+
+  if (messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)) {
+    return ParcelCollectionAck;
+  }
+  if (messageFormatSignature.equals(CERTIFICATE_ROTATION_FORMAT_SIGNATURE)) {
+    return CertificateRotation;
+  }
+
+  return Parcel;
 }
