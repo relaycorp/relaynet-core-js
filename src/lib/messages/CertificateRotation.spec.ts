@@ -77,7 +77,11 @@ describe('CertificateRotation', () => {
 
     test.todo('Serialization should contain a sequence of a least 1 item');
 
-    test.todo('Malformed certificate should be refused');
+    test.todo('Malformed subject certificate should be refused');
+
+    test.todo('Malformed chain should be refused');
+
+    test.todo('Malformed chain certificate should be refused');
 
     test.todo('A new instance should be returned if serialization is valid');
   });
