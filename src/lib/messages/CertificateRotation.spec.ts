@@ -1,9 +1,11 @@
-import { Constructed, Primitive, Sequence } from 'asn1js';
+import { Constructed, Integer, OctetString, Primitive, Sequence, Set, VisibleString } from 'asn1js';
 
-import { generateStubCert } from '../_test_utils';
+import { arrayBufferFrom, generateStubCert } from '../_test_utils';
+import { makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { CertificateRotation } from './CertificateRotation';
+import { CERTIFICATE_ROTATION_FORMAT_SIGNATURE, CertificateRotation } from './CertificateRotation';
+import InvalidMessageError from './InvalidMessageError';
 
 describe('CertificateRotation', () => {
   let subjectCertificate: Certificate;
@@ -73,16 +75,93 @@ describe('CertificateRotation', () => {
   });
 
   describe('deserialize', () => {
-    test.todo('Serialization should start with format signature');
+    test('Serialization should start with format signature', () => {
+      const invalidSerialization = arrayBufferFrom('RelaynetA0');
 
-    test.todo('Serialization should contain a sequence of a least 1 item');
+      expect(() => CertificateRotation.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
+        'Format signature should be that of a CertificateRotation',
+      );
+    });
 
-    test.todo('Malformed subject certificate should be refused');
+    test('Serialization should contain a sequence of a least 2 items', async () => {
+      const invalidSerialization = arrayBufferFrom([
+        ...CERTIFICATE_ROTATION_FORMAT_SIGNATURE,
+        ...Buffer.from(
+          makeImplicitlyTaggedSequence(
+            new VisibleString(), // Just one item instead of 2+
+          ).toBER(false),
+        ),
+      ]);
 
-    test.todo('Malformed chain should be refused');
+      expect(() => CertificateRotation.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
+        'Serialization did not meet structure of a CertificateRotation',
+      );
+    });
 
-    test.todo('Malformed chain certificate should be refused');
+    test('Malformed subject certificate should be refused', async () => {
+      const invalidSerialization = arrayBufferFrom([
+        ...CERTIFICATE_ROTATION_FORMAT_SIGNATURE,
+        ...Buffer.from(
+          makeImplicitlyTaggedSequence(
+            new VisibleString({ value: 'This is supposed to be a cert' }),
+            new Set(),
+          ).toBER(false),
+        ),
+      ]);
 
-    test.todo('A new instance should be returned if serialization is valid');
+      expect(() => CertificateRotation.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
+        'Subject certificate is malformed',
+      );
+    });
+
+    test('Malformed chain should be refused', async () => {
+      const invalidSerialization = arrayBufferFrom([
+        ...CERTIFICATE_ROTATION_FORMAT_SIGNATURE,
+        ...Buffer.from(
+          makeImplicitlyTaggedSequence(
+            new OctetString({ valueHex: subjectCertificate.serialize() }),
+            new Integer({ value: 42 }),
+          ).toBER(false),
+        ),
+      ]);
+
+      expect(() => CertificateRotation.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
+        'Serialization did not meet structure of a CertificateRotation',
+      );
+    });
+
+    test('Malformed chain certificate should be refused', async () => {
+      const invalidSerialization = arrayBufferFrom([
+        ...CERTIFICATE_ROTATION_FORMAT_SIGNATURE,
+        ...Buffer.from(
+          makeImplicitlyTaggedSequence(
+            new OctetString({ valueHex: subjectCertificate.serialize() }),
+            makeImplicitlyTaggedSequence(
+              new VisibleString({ value: 'This is a "certificate" ;-)' }),
+            ),
+          ).toBER(false),
+        ),
+      ]);
+
+      expect(() => CertificateRotation.deserialize(invalidSerialization)).toThrowWithMessage(
+        InvalidMessageError,
+        'Chain contains malformed certificate',
+      );
+    });
+
+    test('A new instance should be returned if serialization is valid', async () => {
+      const rotation = new CertificateRotation(subjectCertificate, [issuerCertificate]);
+      const serialization = rotation.serialize();
+
+      const rotationDeserialized = CertificateRotation.deserialize(serialization);
+
+      expect(rotationDeserialized.subjectCertificate.isEqual(subjectCertificate)).toBeTrue();
+      expect(rotationDeserialized.chain).toHaveLength(1);
+      expect(rotationDeserialized.chain[0].isEqual(issuerCertificate));
+    });
   });
 });
