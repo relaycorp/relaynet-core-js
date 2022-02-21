@@ -1,4 +1,5 @@
 import bufferToArray from 'buffer-to-arraybuffer';
+import { addSeconds } from 'date-fns';
 
 import { arrayToAsyncIterable, asyncIterableToArray, CRYPTO_OIDS } from '../_test_utils';
 import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
@@ -11,6 +12,7 @@ import Parcel from '../messages/Parcel';
 import CargoMessageSet from '../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../messages/payloads/ServiceMessage';
 import { issueGatewayCertificate } from '../pki';
+import { RAMF_MAX_TTL } from '../ramf/serialization';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { GatewayManager } from './gateway';
@@ -219,6 +221,20 @@ describe('Gateway', () => {
 
       const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
       expect(cargo.expiryDate).toEqual(TOMORROW);
+    });
+
+    test('Cargo TTL should not exceed maximum RAMF TTL', async () => {
+      const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+
+      const now = new Date();
+      const cargoesSerialized = await generateCargoesFromMessages(
+        [{ message: MESSAGE, expiryDate: addSeconds(now, RAMF_MAX_TTL + 60) }],
+        RECIPIENT_PRIVATE_ADDRESS,
+        gateway,
+      );
+
+      const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
+      expect(cargo.ttl).toEqual(RAMF_MAX_TTL);
     });
 
     test('Zero cargoes should be output if there are zero messages', async () => {

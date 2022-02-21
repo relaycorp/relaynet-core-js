@@ -4,6 +4,7 @@ import Certificate from '../crypto_wrappers/x509/Certificate';
 import Cargo from '../messages/Cargo';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
 import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
+import { RAMF_MAX_TTL } from '../ramf/serialization';
 import { BaseNodeManager } from './BaseNodeManager';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
@@ -26,11 +27,12 @@ export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoColle
     const recipientAddress = recipientPublicAddress ?? recipientPrivateAddress;
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
       const creationDate = getCargoCreationTime();
+      const ttl = getSecondsBetweenDates(creationDate, expiryDate);
       const cargo = new Cargo(
         recipientAddress,
         senderCertificate,
         await this.encryptPayload(messageSerialized, recipientPrivateAddress),
-        { creationDate, ttl: getSecondsBetweenDates(creationDate, expiryDate) },
+        { creationDate, ttl: Math.min(ttl, RAMF_MAX_TTL) },
       );
       const cargoSerialized = await cargo.serialize(privateKey, this.cryptoOptions.signature);
       yield Buffer.from(cargoSerialized);

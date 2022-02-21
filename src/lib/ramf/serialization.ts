@@ -24,7 +24,7 @@ export const MAX_RAMF_MESSAGE_LENGTH = 9437184; // 9 MiB
 
 const MAX_RECIPIENT_ADDRESS_LENGTH = 1024;
 const MAX_ID_LENGTH = 64;
-const MAX_TTL = 15552000;
+export const RAMF_MAX_TTL = 15552000;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
 const PRIVATE_ADDRESS_REGEX = /^[a-f0-9]+$/;
@@ -227,8 +227,8 @@ function validateTtl(ttl: number): void {
   if (ttl < 0) {
     throw new RAMFSyntaxError('TTL cannot be negative');
   }
-  if (MAX_TTL < ttl) {
-    throw new RAMFSyntaxError(`TTL must be less than ${MAX_TTL} (got ${ttl})`);
+  if (RAMF_MAX_TTL < ttl) {
+    throw new RAMFSyntaxError(`TTL must be less than ${RAMF_MAX_TTL} (got ${ttl})`);
   }
 }
 
