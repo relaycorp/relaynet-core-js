@@ -228,7 +228,7 @@ describe('Gateway', () => {
 
       const now = new Date();
       const cargoesSerialized = await generateCargoesFromMessages(
-        [{ message: MESSAGE, expiryDate: addSeconds(now, RAMF_MAX_TTL + 60) }],
+        [{ message: MESSAGE, expiryDate: addSeconds(now, RAMF_MAX_TTL + 10) }],
         RECIPIENT_PRIVATE_ADDRESS,
         gateway,
       );
