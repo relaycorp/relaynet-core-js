@@ -1,4 +1,4 @@
-import * as asn1js from 'asn1js';
+import { BmpString, Integer, LocalBaseBlock, OctetString } from 'asn1js';
 import * as pkijs from 'pkijs';
 import { makeDateWithSecondPrecision } from '../../_utils';
 
@@ -62,17 +62,13 @@ export default class Certificate {
     const issuerPublicKey = options.issuerCertificate
       ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
-    const serialNumberBlock = new asn1js.Integer({
-      // @ts-ignore
-      valueHex: generateRandom64BitValue(),
-    });
     const pkijsCert = new pkijs.Certificate({
       extensions: [
         makeBasicConstraintsExtension(options.isCA === true, options.pathLenConstraint ?? 0),
         await makeAuthorityKeyIdExtension(issuerPublicKey),
         await makeSubjectKeyIdExtension(options.subjectPublicKey),
       ],
-      serialNumber: serialNumberBlock,
+      serialNumber: generatePositiveASN1Integer(),
       version: 2, // 2 = v3
     });
 
@@ -84,7 +80,7 @@ export default class Certificate {
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
         type: oids.COMMON_NAME,
-        value: new asn1js.BmpString({ value: options.commonName }),
+        value: new BmpString({ value: options.commonName }),
       }),
     );
 
@@ -270,6 +266,23 @@ export default class Certificate {
   }
 }
 
+function generatePositiveASN1Integer(): Integer {
+  const signedInteger = generateRandom64BitValue();
+  const signedIntegerView = new Uint8Array(signedInteger);
+
+  let unsignedInteger = signedIntegerView;
+  if (127 < signedIntegerView[0]) {
+    // The integer is negative, so let's flip the sign by prepending a 0x00 octet. See:
+    // https://docs.microsoft.com/en-us/windows/win32/seccertenroll/about-integer
+    unsignedInteger = new Uint8Array(signedIntegerView.byteLength + 1);
+    unsignedInteger.set(signedIntegerView, 1);
+  }
+
+  return new Integer({
+    valueHex: unsignedInteger,
+  } as any);
+}
+
 //region Extensions
 
 function makeBasicConstraintsExtension(cA: boolean, pathLenConstraint: number): pkijs.Extension {
@@ -288,7 +301,7 @@ function makeBasicConstraintsExtension(cA: boolean, pathLenConstraint: number): 
 
 async function makeAuthorityKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Extension> {
   const keyDigest = await getPublicKeyDigest(publicKey);
-  const keyIdEncoded = new asn1js.OctetString({ valueHex: keyDigest });
+  const keyIdEncoded = new OctetString({ valueHex: keyDigest });
   return new pkijs.Extension({
     extnID: oids.AUTHORITY_KEY,
     extnValue: new pkijs.AuthorityKeyIdentifier({ keyIdentifier: keyIdEncoded })
@@ -301,7 +314,7 @@ async function makeSubjectKeyIdExtension(publicKey: CryptoKey): Promise<pkijs.Ex
   const keyDigest = await getPublicKeyDigest(publicKey);
   return new pkijs.Extension({
     extnID: oids.SUBJECT_KEY,
-    extnValue: new asn1js.OctetString({ valueHex: keyDigest }).toBER(false),
+    extnValue: new OctetString({ valueHex: keyDigest }).toBER(false),
   });
 }
 
@@ -329,7 +342,7 @@ interface Asn1jsSerializable {
   readonly toBER: (sizeOnly?: boolean) => ArrayBuffer;
 }
 
-function cloneAsn1jsValue(value: Asn1jsSerializable): asn1js.LocalBaseBlock {
+function cloneAsn1jsValue(value: Asn1jsSerializable): LocalBaseBlock {
   const valueSerialized = value.toBER(false);
   return derDeserialize(valueSerialized);
 }

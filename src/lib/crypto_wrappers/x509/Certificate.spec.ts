@@ -10,7 +10,7 @@ import {
   sha256Hex,
 } from '../../_test_utils';
 import * as oids from '../../oids';
-import * as utils from '../_utils';
+import { derDeserialize, getPkijsCrypto } from '../_utils';
 import {
   derSerializePublicKey,
   generateRSAKeyPair,
@@ -22,7 +22,7 @@ import CertificateError from './CertificateError';
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 1);
 
-const pkijsCrypto = utils.getPkijsCrypto();
+const pkijsCrypto = getPkijsCrypto();
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -104,17 +104,28 @@ describe('issue()', () => {
     );
   });
 
-  test('should generate a serial number', async () => {
-    const generateRandom64BitValueSpy = jest.spyOn(utils, 'generateRandom64BitValue');
-    const cert = await Certificate.issue({
-      ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
-    });
+  test('should generate a positive serial number', async () => {
+    let anySignFlipped = false;
+    for (let index = 0; index < 10; index++) {
+      const cert = await Certificate.issue({
+        ...baseCertificateOptions,
+        issuerPrivateKey: keyPair.privateKey,
+        subjectPublicKey: keyPair.publicKey,
+      });
+      const serialNumberSerialized = new Uint8Array(
+        cert.pkijsCertificate.serialNumber.valueBlock.valueHex,
+      );
+      if (serialNumberSerialized.length === 9) {
+        expect(serialNumberSerialized[0]).toEqual(0);
+        anySignFlipped = true;
+      } else {
+        expect(serialNumberSerialized).toHaveLength(8);
+        expect(serialNumberSerialized[0]).toBeGreaterThan(0);
+        expect(serialNumberSerialized[0]).toBeLessThanOrEqual(127);
+      }
+    }
 
-    expect(generateRandom64BitValueSpy).toBeCalledTimes(1);
-    const generatedNumber = generateRandom64BitValueSpy.mock.results[0].value;
-    expect(cert.pkijsCertificate.serialNumber.valueBlock.valueHex).toEqual(generatedNumber);
+    expect(anySignFlipped).toBeTrue();
   });
 
   test('should create a certificate valid from now by default', async () => {
@@ -437,7 +448,7 @@ describe('issue()', () => {
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
-      const akiExtensionAsn1 = utils.derDeserialize(akiExtension.extnValue.valueBlock.valueHex);
+      const akiExtensionAsn1 = derDeserialize(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1,
       });
@@ -467,7 +478,7 @@ describe('issue()', () => {
       expect(matchingExtensions).toHaveLength(1);
       const akiExtension = matchingExtensions[0];
       expect(akiExtension.critical).toBe(false);
-      const akiExtensionAsn1 = utils.derDeserialize(akiExtension.extnValue.valueBlock.valueHex);
+      const akiExtensionAsn1 = derDeserialize(akiExtension.extnValue.valueBlock.valueHex);
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1,
       });
@@ -500,7 +511,7 @@ describe('issue()', () => {
     expect(matchingExtensions).toHaveLength(1);
     const skiExtension = matchingExtensions[0];
     expect(skiExtension.critical).toBe(false);
-    const skiExtensionAsn1 = utils.derDeserialize(skiExtension.extnValue.valueBlock.valueHex);
+    const skiExtensionAsn1 = derDeserialize(skiExtension.extnValue.valueBlock.valueHex);
     expect(skiExtensionAsn1).toBeInstanceOf(asn1js.OctetString);
     // @ts-ignore
     const keyIdBuffer = Buffer.from(skiExtensionAsn1.valueBlock.valueHex);
@@ -513,7 +524,7 @@ test('serialize() should return a DER-encoded buffer', async () => {
 
   const certDer = cert.serialize();
 
-  const asn1Value = utils.derDeserialize(certDer);
+  const asn1Value = derDeserialize(certDer);
   const pkijsCert = new pkijs.Certificate({ schema: asn1Value });
 
   const subjectDnAttributes = pkijsCert.subject.typesAndValues;
@@ -542,13 +553,12 @@ test('expiryDate should return the expiry date', async () => {
 });
 
 test('getSerialNumber() should return the serial number as a buffer', async () => {
-  const generateRandom64BitValueSpy = jest.spyOn(utils, 'generateRandom64BitValue');
   const cert = await generateStubCert();
 
   const serialNumberBuffer = cert.getSerialNumber();
-  const expectedSerialNumberHex = generateRandom64BitValueSpy.mock.results[0].value;
-  expect(serialNumberBuffer).toEqual(Buffer.from(expectedSerialNumberHex));
-  expect(serialNumberBuffer.equals(Buffer.from(expectedSerialNumberHex))).toBeTrue();
+  expect(serialNumberBuffer).toEqual(
+    Buffer.from(cert.pkijsCertificate.serialNumber.valueBlock.valueHex),
+  );
 });
 
 test('getSerialNumberHex() should return the hex representation of serial number', async () => {
@@ -884,7 +894,7 @@ function getBasicConstraintsExtension(cert: Certificate): pkijs.BasicConstraints
   const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
   const matchingExtensions = extensions.filter((e) => e.extnID === oids.BASIC_CONSTRAINTS);
   const extension = matchingExtensions[0];
-  const basicConstraintsAsn1 = utils.derDeserialize(extension.extnValue.valueBlock.valueHex);
+  const basicConstraintsAsn1 = derDeserialize(extension.extnValue.valueBlock.valueHex);
   return new pkijs.BasicConstraints({ schema: basicConstraintsAsn1 });
 }
 
