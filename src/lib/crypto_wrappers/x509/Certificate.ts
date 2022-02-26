@@ -267,15 +267,14 @@ export default class Certificate {
 }
 
 function generatePositiveASN1Integer(): Integer {
-  const signedInteger = generateRandom64BitValue();
-  const signedIntegerView = new Uint8Array(signedInteger);
+  const signedInteger = new Uint8Array(generateRandom64BitValue());
 
-  let unsignedInteger = signedIntegerView;
-  if (127 < signedIntegerView[0]) {
+  let unsignedInteger = signedInteger;
+  if (127 < signedInteger[0]) {
     // The integer is negative, so let's flip the sign by prepending a 0x00 octet. See:
     // https://docs.microsoft.com/en-us/windows/win32/seccertenroll/about-integer
-    unsignedInteger = new Uint8Array(signedIntegerView.byteLength + 1);
-    unsignedInteger.set(signedIntegerView, 1);
+    unsignedInteger = new Uint8Array(signedInteger.byteLength + 1);
+    unsignedInteger.set(signedInteger, 1);
   }
 
   return new Integer({
