@@ -274,7 +274,7 @@ function generatePositiveASN1Integer(): Integer {
     // The integer is negative, so let's flip the sign by prepending a 0x00 octet. See:
     // https://docs.microsoft.com/en-us/windows/win32/seccertenroll/about-integer
     unsignedInteger = new Uint8Array(signedInteger.byteLength + 1);
-    unsignedInteger.set(signedInteger, 1);
+    unsignedInteger.set(signedInteger, 1); // Skip the first octet, leaving it as 0x00
   }
 
   return new Integer({
