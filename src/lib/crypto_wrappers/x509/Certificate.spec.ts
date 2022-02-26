@@ -120,7 +120,7 @@ describe('issue()', () => {
         anySignFlipped = true;
       } else {
         expect(serialNumberSerialized).toHaveLength(8);
-        expect(serialNumberSerialized[0]).toBeGreaterThan(0);
+        expect(serialNumberSerialized[0]).toBeGreaterThanOrEqual(0);
         expect(serialNumberSerialized[0]).toBeLessThanOrEqual(127);
       }
     }
