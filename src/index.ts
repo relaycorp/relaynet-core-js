@@ -31,7 +31,7 @@ export {
 } from './lib/crypto_wrappers/keys';
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/publicKeyStore';
-export { CertificateStore } from './lib/keyStores/CertificateStore';
+export { CertificateScope, CertificateStore } from './lib/keyStores/CertificateStore';
 export * from './lib/keyStores/testMocks';
 export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
 export { default as UnknownKeyError } from './lib/keyStores/UnknownKeyError';

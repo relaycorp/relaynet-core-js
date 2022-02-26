@@ -1,5 +1,10 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
 
+export enum CertificateScope {
+  PDA = 'pda',
+  CDA = 'cda',
+}
+
 /**
  * Store of certificates.
  */
@@ -8,19 +13,24 @@ export abstract class CertificateStore {
    * Store `certificate` as long as it's still valid.
    *
    * @param certificate
+   * @param scope
    */
-  public async save(certificate: Certificate): Promise<void> {
+  public async save(certificate: Certificate, scope: CertificateScope): Promise<void> {
     if (new Date() < certificate.expiryDate) {
       await this.saveData(
         await certificate.calculateSubjectPrivateAddress(),
         certificate.serialize(),
         certificate.expiryDate,
+        scope,
       );
     }
   }
 
-  public async retrieveLatest(subjectPrivateAddress: string): Promise<Certificate | null> {
-    const serialization = await this.retrieveLatestSerialization(subjectPrivateAddress);
+  public async retrieveLatest(
+    subjectPrivateAddress: string,
+    scope: CertificateScope,
+  ): Promise<Certificate | null> {
+    const serialization = await this.retrieveLatestSerialization(subjectPrivateAddress, scope);
     if (!serialization) {
       return null;
     }
@@ -28,8 +38,14 @@ export abstract class CertificateStore {
     return new Date() < certificate.expiryDate ? certificate : null;
   }
 
-  public async retrieveAll(subjectPrivateAddress: string): Promise<readonly Certificate[]> {
-    const allCertificatesSerialized = await this.retrieveAllSerializations(subjectPrivateAddress);
+  public async retrieveAll(
+    subjectPrivateAddress: string,
+    scope: CertificateScope,
+  ): Promise<readonly Certificate[]> {
+    const allCertificatesSerialized = await this.retrieveAllSerializations(
+      subjectPrivateAddress,
+      scope,
+    );
     return allCertificatesSerialized
       .map((s) => Certificate.deserialize(s))
       .filter((c) => new Date() < c.expiryDate);
@@ -41,13 +57,16 @@ export abstract class CertificateStore {
     subjectPrivateAddress: string,
     subjectCertificateSerialized: ArrayBuffer,
     subjectCertificateExpiryDate: Date,
+    scope: CertificateScope,
   ): Promise<void>;
 
   protected abstract retrieveLatestSerialization(
     subjectPrivateAddress: string,
+    scope: CertificateScope,
   ): Promise<ArrayBuffer | null>;
 
   protected abstract retrieveAllSerializations(
     subjectPrivateAddress: string,
+    scope: CertificateScope,
   ): Promise<readonly ArrayBuffer[]>;
 }
