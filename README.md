@@ -6,7 +6,7 @@ Please note that this documentation is mostly incomplete because the interface e
 
 ## Install
 
-`@relaycorp/relaynet-core` requires Node.js v10 or newer, and the latest stable release can be installed as follows:
+`@relaycorp/relaynet-core` requires Node.js v12 or newer, and the latest stable release can be installed as follows:
 
 ```
 npm install --save @relaycorp/relaynet-core
