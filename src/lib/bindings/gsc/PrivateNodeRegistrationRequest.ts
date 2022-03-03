@@ -1,8 +1,7 @@
 import { ObjectIdentifier, OctetString, Primitive, verifySchema } from 'asn1js';
 
-import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../../index';
-import { tryCatchAsync } from '../../_utils';
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
+import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../crypto_wrappers/keys';
 import { sign, verify } from '../../crypto_wrappers/rsaSigning';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
@@ -18,10 +17,14 @@ export class PrivateNodeRegistrationRequest {
 
     const request = (result.result as any).PrivateNodeRegistrationRequest;
 
-    const privateNodePublicKey = await tryCatchAsync(
-      async () => derDeserializeRSAPublicKey(request.privateNodePublicKey.valueBlock.valueHex),
-      (error) => new InvalidMessageError('Private node public key is not valid', error),
-    );
+    let privateNodePublicKey: CryptoKey;
+    try {
+      privateNodePublicKey = await derDeserializeRSAPublicKey(
+        request.privateNodePublicKey.valueBlock.valueHex,
+      );
+    } catch (err) {
+      throw new InvalidMessageError('Private node public key is not valid', err);
+    }
 
     const authorizationSerializedASN1 = request.pnraSerialized;
     const countersignature = request.countersignature.valueBlock.valueHex;

@@ -67,7 +67,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
    * @param senderPrivateKey
    * @param signatureOptions
    */
-  public abstract async serialize(
+  public abstract serialize(
   // This method would be concrete if TS allowed us to store the message type and version as
   // properties
     senderPrivateKey: CryptoKey,
@@ -179,7 +179,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     try {
       certificationPath = await this.getSenderCertificationPath(trustedCertificates);
     } catch (error) {
-      throw new InvalidMessageError(error, 'Sender is not authorized');
+      throw new InvalidMessageError(error as Error, 'Sender is not authorized');
     }
 
     if (this.isRecipientAddressPrivate) {

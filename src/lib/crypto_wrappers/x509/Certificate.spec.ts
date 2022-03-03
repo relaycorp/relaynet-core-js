@@ -78,7 +78,7 @@ describe('issue()', () => {
   });
 
   test('should import the public key into the certificate', async () => {
-    spyOn(pkijs.PublicKeyInfo.prototype, 'importKey');
+    jest.spyOn(pkijs.PublicKeyInfo.prototype, 'importKey');
     await Certificate.issue({
       ...baseCertificateOptions,
       issuerPrivateKey: keyPair.privateKey,
@@ -90,7 +90,7 @@ describe('issue()', () => {
   });
 
   test('should be signed with the specified private key', async () => {
-    spyOn(pkijs.Certificate.prototype, 'sign');
+    jest.spyOn(pkijs.Certificate.prototype, 'sign');
     await Certificate.issue({
       ...baseCertificateOptions,
       issuerPrivateKey: keyPair.privateKey,

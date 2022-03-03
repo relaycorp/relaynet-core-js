@@ -34,7 +34,7 @@ export class PublicNodeConnectionParams {
     let identityKey: CryptoKey;
     try {
       identityKey = await derDeserializeRSAPublicKey(paramsASN1.identityKey.valueBlock.valueHex);
-    } catch (err) {
+    } catch (err: any) {
       throw new InvalidPublicNodeConnectionParams(
         new Error(err), // The original error could be a string 🤦
         'Identity key is not a valid RSA public key',
@@ -52,7 +52,7 @@ export class PublicNodeConnectionParams {
       sessionPublicKey = await derDeserializeECDHPublicKey(
         sessionPublicKeyASN1.valueBlock.valueHex,
       );
-    } catch (err) {
+    } catch (err: any) {
       throw new InvalidPublicNodeConnectionParams(
         new Error(err), // The original error could be a string 🤦
         'Session key is not a valid ECDH public key',

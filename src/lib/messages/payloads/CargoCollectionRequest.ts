@@ -19,7 +19,7 @@ export class CargoCollectionRequest implements PayloadPlaintext {
       cda = Certificate.deserialize(cdaSerialized);
     } catch (error) {
       throw new InvalidMessageError(
-        error,
+        error as Error,
         'CargoCollectionRequest contains a malformed Cargo Delivery Authorization',
       );
     }

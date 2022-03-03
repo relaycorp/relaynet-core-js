@@ -260,7 +260,7 @@ describe('SessionlessEnvelopedData', () => {
       expect.hasAssertions();
       try {
         await envelopedData.decrypt(nodePrivateKey);
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toStartWith(`Decryption failed: ${error.cause().message}`);
       }
@@ -446,7 +446,7 @@ describe('SessionEnvelopedData', () => {
       expect.hasAssertions();
       try {
         await envelopedData.decrypt(differentDhKeyPair.privateKey);
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toStartWith(`Decryption failed: ${error.cause().message}`);
       }
