@@ -37,7 +37,7 @@ export abstract class PrivateKeyStore {
     try {
       await this.saveIdentityKeySerialized(privateAddress, privateKeyDer);
     } catch (err) {
-      throw new PrivateKeyStoreError(err, `Failed to save key for ${privateAddress}`);
+      throw new PrivateKeyStoreError(err as Error, `Failed to save key for ${privateAddress}`);
     }
     return privateAddress;
   }
@@ -54,7 +54,7 @@ export abstract class PrivateKeyStore {
     try {
       keySerialized = await this.retrieveIdentityKeySerialized(privateAddress);
     } catch (err) {
-      throw new PrivateKeyStoreError(err, `Failed to retrieve key for ${privateAddress}`);
+      throw new PrivateKeyStoreError(err as Error, `Failed to retrieve key for ${privateAddress}`);
     }
 
     if (!keySerialized) {
@@ -124,18 +124,14 @@ export abstract class PrivateKeyStore {
 
   //endregion
 
-  protected abstract async retrieveIdentityKeySerialized(
-    privateAddress: string,
-  ): Promise<Buffer | null>;
-  protected abstract async retrieveSessionKeyData(
-    keyId: string,
-  ): Promise<SessionPrivateKeyData | null>;
+  protected abstract retrieveIdentityKeySerialized(privateAddress: string): Promise<Buffer | null>;
+  protected abstract retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null>;
 
-  protected abstract async saveIdentityKeySerialized(
+  protected abstract saveIdentityKeySerialized(
     privateAddress: string,
     keySerialized: Buffer,
   ): Promise<void>;
-  protected abstract async saveSessionKeySerialized(
+  protected abstract saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
     peerPrivateAddress?: string,
@@ -147,7 +143,7 @@ export abstract class PrivateKeyStore {
     try {
       key = await this.retrieveSessionKeyData(keyIdHex);
     } catch (error) {
-      throw new PrivateKeyStoreError(error, `Failed to retrieve key`);
+      throw new PrivateKeyStoreError(error as Error, `Failed to retrieve key`);
     }
     if (key === null) {
       throw new UnknownKeyError(`Key ${keyIdHex} does not exist`);
@@ -165,7 +161,7 @@ export abstract class PrivateKeyStore {
     try {
       await this.saveSessionKeySerialized(keyIdString, privateKeyDer, peerPrivateAddress);
     } catch (error) {
-      throw new PrivateKeyStoreError(error, `Failed to save key ${keyIdString}`);
+      throw new PrivateKeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
     }
   }
 }

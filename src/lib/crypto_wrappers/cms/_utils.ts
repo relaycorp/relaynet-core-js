@@ -8,6 +8,6 @@ export function deserializeContentInfo(derValue: ArrayBuffer): pkijs.ContentInfo
     const asn1Value = derDeserialize(derValue);
     return new pkijs.ContentInfo({ schema: asn1Value });
   } catch (error) {
-    throw new CMSError(error, 'Could not deserialize CMS ContentInfo');
+    throw new CMSError(error as Error, 'Could not deserialize CMS ContentInfo');
   }
 }

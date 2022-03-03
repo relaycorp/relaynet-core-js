@@ -92,7 +92,7 @@ export async function getPromiseRejection<ErrorType extends Error>(
   try {
     await promise;
   } catch (error) {
-    return error;
+    return error as ErrorType;
   }
   throw new Error('Expected promise to throw');
 }

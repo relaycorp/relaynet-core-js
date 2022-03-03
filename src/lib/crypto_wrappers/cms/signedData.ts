@@ -160,8 +160,8 @@ export class SignedData {
       if (!verificationResult.signatureVerified) {
         throw verificationResult;
       }
-    } catch (e) {
-      throw new CMSError(`Invalid signature: ${e.message} (PKI.js code: ${e.code})`);
+    } catch (err: any) {
+      throw new CMSError(`Invalid signature: ${err.message} (PKI.js code: ${err.code})`);
     }
   }
 }

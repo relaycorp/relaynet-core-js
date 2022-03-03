@@ -20,8 +20,8 @@ export class PrivateNodeRegistration {
       privateNodeCertificate = Certificate.deserialize(
         registrationASN1.privateNodeCertificate.valueBlock.valueHex,
       );
-    } catch (exc) {
-      throw new InvalidMessageError(exc, 'Private node certificate is invalid');
+    } catch (err) {
+      throw new InvalidMessageError(err as Error, 'Private node certificate is invalid');
     }
 
     let gatewayCertificate: Certificate;
@@ -30,7 +30,7 @@ export class PrivateNodeRegistration {
         registrationASN1.gatewayCertificate.valueBlock.valueHex,
       );
     } catch (err) {
-      throw new InvalidMessageError(err, 'Gateway certificate is invalid');
+      throw new InvalidMessageError(err as Error, 'Gateway certificate is invalid');
     }
 
     const sessionKey = await deserializeSessionKey(registrationASN1.sessionKey);
@@ -87,7 +87,7 @@ async function deserializeSessionKey(sessionKeySequence: any): Promise<SessionKe
   let sessionPublicKey: CryptoKey;
   try {
     sessionPublicKey = await derDeserializeECDHPublicKey(sessionPublicKeyASN1.valueBlock.valueHex);
-  } catch (err) {
+  } catch (err: any) {
     throw new InvalidMessageError(
       new Error(err), // The original error could be a string 🤦
       'Session key is not a valid ECDH public key',

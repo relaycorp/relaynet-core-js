@@ -177,7 +177,7 @@ describe('sign', () => {
         await SignedData.sign(plaintext, keyPair.privateKey, certificate, [], {
           hashingAlgorithmName: 'SHA-1',
         });
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toEqual('SHA-1 is disallowed by RS-018');
       }
@@ -354,6 +354,7 @@ describe('verify', () => {
 describe('plaintext', () => {
   test('Nothing should be output if plaintext is absent', async () => {
     const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+    // @ts-ignore
     // tslint:disable-next-line:no-delete
     delete signedData.pkijsSignedData.encapContentInfo.eContent;
 

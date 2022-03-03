@@ -54,7 +54,7 @@ export async function resolvePublicAddress(
   let result: LookupResult;
   try {
     result = await doh.getDNS({ dnssec: true, name, rrtype: 'SRV', decode: true });
-  } catch (error) {
+  } catch (error: any) {
     throw error.errno === 'ENOTFOUND'
       ? new UnreachableResolverError(error, 'Failed to reach DoH resolver')
       : error;
