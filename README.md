@@ -2,7 +2,7 @@
 
 This library implements the core of [Awala](https://awala.network) and is meant to be used by anyone using the network from a Node.js application. [Read the docs online](https://docs.relaycorp.tech/relaynet-core-js/).
 
-Please note that this documentation is mostly incomplete because the interface exposed by this library is changing rapidly as of this writing. Also note that the examples in this documentation won't work until a gateway (e.g., [the desktop one](https://github.com/relaycorp/relaynet-gateway-desktop)) has been implemented. We expect the library to reach a stable status and its documentation to be completed by the end of Q3 2020.
+Please note that this documentation is mostly incomplete because the interface exposed by this library is changing rapidly as of this writing.
 
 ## Install
 
