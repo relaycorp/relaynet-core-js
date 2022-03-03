@@ -55,7 +55,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
     try {
       return await messageClass.deserialize(itemSerialized);
     } catch (error) {
-      throw new InvalidMessageError(error, 'Value is not a valid Cargo Message Set item');
+      throw new InvalidMessageError(error as Error, 'Value is not a valid Cargo Message Set item');
     }
   }
 

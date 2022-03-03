@@ -63,6 +63,6 @@ export function asn1DateTimeToDate(dateASN1: Primitive): Date {
     const generalizedTimeBlock = new GeneralizedTime({ value: dateString });
     return generalizedTimeBlock.toDate();
   } catch (error) {
-    throw new InvalidMessageError(error, 'Date is not serialized as an ASN.1 DATE-TIME');
+    throw new InvalidMessageError(error as Error, 'Date is not serialized as an ASN.1 DATE-TIME');
   }
 }

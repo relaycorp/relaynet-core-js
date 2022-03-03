@@ -274,7 +274,7 @@ function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
   try {
     return asn1DateTimeToDate(block);
   } catch (exc) {
-    throw new RAMFValidationError(exc, 'Message date is invalid');
+    throw new RAMFValidationError(exc as Error, 'Message date is invalid');
   }
 }
 
@@ -293,7 +293,7 @@ async function verifySignature(
   try {
     return await cmsSignedData.verifySignature(cmsSignedDataSerialized);
   } catch (error) {
-    throw new RAMFValidationError(error, 'Invalid RAMF message signature');
+    throw new RAMFValidationError(error as Error, 'Invalid RAMF message signature');
   }
 }
 

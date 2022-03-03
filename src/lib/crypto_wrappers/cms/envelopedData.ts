@@ -57,7 +57,7 @@ export abstract class EnvelopedData {
     try {
       pkijsEnvelopedData = new pkijs.EnvelopedData({ schema: contentInfo.content });
     } catch (error) {
-      throw new CMSError(error, 'Invalid EnvelopedData value');
+      throw new CMSError(error as Error, 'Invalid EnvelopedData value');
     }
     const recipientInfosLength = pkijsEnvelopedData.recipientInfos.length;
     if (recipientInfosLength !== 1) {
@@ -112,7 +112,7 @@ export abstract class EnvelopedData {
         recipientPrivateKey: bufferToArray(privateKeyDer),
       });
     } catch (error) {
-      throw new CMSError(error, 'Decryption failed');
+      throw new CMSError(error as Error, 'Decryption failed');
     }
   }
 

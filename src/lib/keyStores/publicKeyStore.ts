@@ -36,15 +36,13 @@ export abstract class PublicKeyStore {
     try {
       await this.saveKey(keyData, peerPrivateAddress);
     } catch (error) {
-      throw new PublicKeyStoreError(error, 'Failed to save public session key');
+      throw new PublicKeyStoreError(error as Error, 'Failed to save public session key');
     }
   }
 
-  protected abstract async fetchKey(
-    peerPrivateAddress: string,
-  ): Promise<SessionPublicKeyData | null>;
+  protected abstract fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null>;
 
-  protected abstract async saveKey(
+  protected abstract saveKey(
     keyData: SessionPublicKeyData,
     peerPrivateAddress: string,
   ): Promise<void>;
@@ -55,7 +53,7 @@ export abstract class PublicKeyStore {
     try {
       return await this.fetchKey(peerPrivateAddress);
     } catch (error) {
-      throw new PublicKeyStoreError(error, 'Failed to retrieve key');
+      throw new PublicKeyStoreError(error as Error, 'Failed to retrieve key');
     }
   }
 }
