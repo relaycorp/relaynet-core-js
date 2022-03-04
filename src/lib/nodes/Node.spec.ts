@@ -2,7 +2,7 @@ import { arrayBufferFrom, generateStubCert } from '../_test_utils';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
-import { BaseNode } from './BaseNode';
+import { Node } from './Node';
 
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
@@ -37,7 +37,7 @@ describe('getSigner', () => {
   });
 });
 
-class StubNode extends BaseNode {
+class StubNode extends Node {
   constructor(certificate: Certificate, privateKey: CryptoKey) {
     super(certificate, privateKey);
   }

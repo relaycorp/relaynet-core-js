@@ -8,7 +8,7 @@ import { SessionKeyPair } from '../../SessionKeyPair';
 import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 
-export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
+export abstract class NodeManager<Payload extends PayloadPlaintext> {
   constructor(
     protected privateKeyStore: PrivateKeyStore,
     protected publicKeyStore: PublicKeyStore,

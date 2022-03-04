@@ -1,7 +1,7 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { Signer } from './signatures/Signer';
 
-export abstract class BaseNode {
+export abstract class Node {
   protected constructor(public certificate: Certificate, protected privateKey: CryptoKey) {}
 
   public getSigner<S extends Signer>(

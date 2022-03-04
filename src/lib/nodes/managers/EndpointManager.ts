@@ -1,4 +1,4 @@
 import ServiceMessage from '../../messages/payloads/ServiceMessage';
-import { BaseNodeManager } from './BaseNodeManager';
+import { NodeManager } from './NodeManager';
 
-export class EndpointManager extends BaseNodeManager<ServiceMessage> {}
+export class EndpointManager extends NodeManager<ServiceMessage> {}

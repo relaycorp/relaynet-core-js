@@ -1,3 +1,3 @@
-import { BaseNode } from './BaseNode';
+import { Node } from './Node';
 
-export class Endpoint extends BaseNode {}
+export class Endpoint extends Node {}

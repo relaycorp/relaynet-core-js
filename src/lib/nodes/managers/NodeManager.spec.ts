@@ -11,7 +11,7 @@ import { issueGatewayCertificate } from '../../pki';
 import { StubMessage, StubPayload } from '../../ramf/_test_utils';
 import { SessionKey } from '../../SessionKey';
 import { SessionKeyPair } from '../../SessionKeyPair';
-import { BaseNodeManager } from './BaseNodeManager';
+import { NodeManager } from './NodeManager';
 import { NodeError } from '../errors';
 
 const TOMORROW = new Date();
@@ -231,4 +231,4 @@ describe('unwrapMessagePayload', () => {
   });
 });
 
-class StubNodeManager extends BaseNodeManager<StubPayload> {}
+class StubNodeManager extends NodeManager<StubPayload> {}
