@@ -1,4 +1,7 @@
-import { Signer } from '../../messages/bindings/Signer';
+import {
+  ParcelCollectionHandshakeSigner,
+  ParcelDeliverySigner,
+} from '../../messages/bindings/signatures';
 import { ParcelCollection } from './ParcelCollection';
 import { PrivateNodeRegistration } from './PrivateNodeRegistration';
 import { StreamingMode } from './StreamingMode';
@@ -8,10 +11,13 @@ export interface GSCClient {
 
   readonly registerNode: (pnrrSerialized: ArrayBuffer) => Promise<PrivateNodeRegistration>;
 
-  readonly deliverParcel: (parcelSerialized: ArrayBuffer, signer: Signer) => Promise<void>;
+  readonly deliverParcel: (
+    parcelSerialized: ArrayBuffer,
+    signer: ParcelDeliverySigner,
+  ) => Promise<void>;
 
   readonly collectParcels: (
-    nonceSigners: readonly Signer[],
+    nonceSigners: readonly ParcelCollectionHandshakeSigner[],
     streamingMode: StreamingMode,
     handshakeCallback?: () => void,
   ) => AsyncIterable<ParcelCollection>;
