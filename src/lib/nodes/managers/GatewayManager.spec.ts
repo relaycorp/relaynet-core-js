@@ -6,6 +6,8 @@ import { EnvelopedData, SessionEnvelopedData } from '../../crypto_wrappers/cms/e
 import { SignatureOptions } from '../../crypto_wrappers/cms/SignatureOptions';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { MockCertificateStore } from '../../keyStores/CertificateStore.spec';
+import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../../keyStores/testMocks';
 import Cargo from '../../messages/Cargo';
 import Parcel from '../../messages/Parcel';
@@ -59,8 +61,14 @@ describe('generateCargoes', () => {
     );
   });
 
+  const KEY_STORES: KeyStoreSet = {
+    privateKeyStore: PRIVATE_KEY_STORE,
+    publicKeyStore: PUBLIC_KEY_STORE,
+    certificateStore: new MockCertificateStore(),
+  };
+
   test('Recipient address should be private if public address is unset', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [{ expiryDate: TOMORROW, message: MESSAGE }],
@@ -73,7 +81,7 @@ describe('generateCargoes', () => {
   });
 
   test('Recipient address should be specified public one if set', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
     const publicAddress = 'https://gateway.com';
 
     const cargoesSerialized = await generateCargoesFromMessages(
@@ -88,7 +96,7 @@ describe('generateCargoes', () => {
   });
 
   test('Payload should be encrypted with session key', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [
@@ -108,7 +116,7 @@ describe('generateCargoes', () => {
   });
 
   test('New ephemeral session key should be stored when using channel session', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [{ expiryDate: TOMORROW, message: MESSAGE }],
@@ -126,7 +134,7 @@ describe('generateCargoes', () => {
 
   test('Session encryption options should be honored if present', async () => {
     const aesKeySize = 192;
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE, {
+    const gateway = new GatewayManager(KEY_STORES, {
       encryption: { aesKeySize },
     });
 
@@ -143,7 +151,7 @@ describe('generateCargoes', () => {
 
   test('Sessionless encryption options should be honored if present', async () => {
     const aesKeySize = 192;
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE, {
+    const gateway = new GatewayManager(KEY_STORES, {
       encryption: { aesKeySize },
     });
 
@@ -159,7 +167,7 @@ describe('generateCargoes', () => {
   });
 
   test('Cargo should be signed with the specified key', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [{ expiryDate: TOMORROW, message: MESSAGE }],
@@ -173,7 +181,7 @@ describe('generateCargoes', () => {
 
   test('Signature options should be honored if present', async () => {
     const signatureOptions: SignatureOptions = { hashingAlgorithmName: 'SHA-384' };
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE, {
+    const gateway = new GatewayManager(KEY_STORES, {
       signature: signatureOptions,
     });
     const cargoSerializeSpy = jest.spyOn(Cargo.prototype, 'serialize');
@@ -189,7 +197,7 @@ describe('generateCargoes', () => {
   });
 
   test('Cargo creation date should be 3 hours in the past', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [{ message: MESSAGE, expiryDate: TOMORROW }],
@@ -207,7 +215,7 @@ describe('generateCargoes', () => {
   });
 
   test('Cargo TTL should be that of the message with the latest TTL', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [
@@ -223,7 +231,7 @@ describe('generateCargoes', () => {
   });
 
   test('Cargo TTL should not exceed maximum RAMF TTL', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const now = new Date();
     const cargoesSerialized = await generateCargoesFromMessages(
@@ -237,7 +245,7 @@ describe('generateCargoes', () => {
   });
 
   test('Zero cargoes should be output if there are zero messages', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
 
     const cargoesSerialized = await generateCargoesFromMessages(
       [],
@@ -249,7 +257,7 @@ describe('generateCargoes', () => {
   });
 
   test('Messages should be encapsulated into as few cargoes as possible', async () => {
-    const gateway = new GatewayManager(PRIVATE_KEY_STORE, PUBLIC_KEY_STORE);
+    const gateway = new GatewayManager(KEY_STORES);
     const dummyParcel = await generateDummyParcel(
       RECIPIENT_PRIVATE_ADDRESS,
       recipientSessionKeyPair.sessionKey,

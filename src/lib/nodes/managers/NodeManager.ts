@@ -1,6 +1,5 @@
 import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
-import { PrivateKeyStore } from '../../keyStores/privateKeyStore';
-import { PublicKeyStore } from '../../keyStores/publicKeyStore';
+import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../../messages/RAMFMessage';
 import { SessionKey } from '../../SessionKey';
@@ -10,8 +9,7 @@ import { NodeCryptoOptions } from '../NodeCryptoOptions';
 
 export abstract class NodeManager<Payload extends PayloadPlaintext> {
   constructor(
-    protected privateKeyStore: PrivateKeyStore,
-    protected publicKeyStore: PublicKeyStore,
+    protected keyStores: KeyStoreSet,
     protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
@@ -24,13 +22,13 @@ export abstract class NodeManager<Payload extends PayloadPlaintext> {
     const { sessionKey, privateKey } = await SessionKeyPair.generate();
 
     if (peerPrivateAddress) {
-      await this.privateKeyStore.saveBoundSessionKey(
+      await this.keyStores.privateKeyStore.saveBoundSessionKey(
         privateKey,
         sessionKey.keyId,
         peerPrivateAddress,
       );
     } else {
-      await this.privateKeyStore.saveUnboundSessionKey(privateKey, sessionKey.keyId);
+      await this.keyStores.privateKeyStore.saveUnboundSessionKey(privateKey, sessionKey.keyId);
     }
 
     return sessionKey;
@@ -48,7 +46,9 @@ export abstract class NodeManager<Payload extends PayloadPlaintext> {
     payload: P | ArrayBuffer,
     peerPrivateAddress: string,
   ): Promise<ArrayBuffer> {
-    const recipientSessionKey = await this.publicKeyStore.fetchLastSessionKey(peerPrivateAddress);
+    const recipientSessionKey = await this.keyStores.publicKeyStore.fetchLastSessionKey(
+      peerPrivateAddress,
+    );
     if (!recipientSessionKey) {
       throw new NodeError(`Could not find session key for peer ${peerPrivateAddress}`);
     }
@@ -57,7 +57,7 @@ export abstract class NodeManager<Payload extends PayloadPlaintext> {
       recipientSessionKey,
       this.cryptoOptions.encryption,
     );
-    await this.privateKeyStore.saveBoundSessionKey(
+    await this.keyStores.privateKeyStore.saveBoundSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
       peerPrivateAddress,
@@ -73,9 +73,9 @@ export abstract class NodeManager<Payload extends PayloadPlaintext> {
    * @param message
    */
   public async unwrapMessagePayload<P extends Payload>(message: RAMFMessage<P>): Promise<P> {
-    const unwrapResult = await message.unwrapPayload(this.privateKeyStore);
+    const unwrapResult = await message.unwrapPayload(this.keyStores.privateKeyStore);
 
-    await this.publicKeyStore.saveSessionKey(
+    await this.keyStores.publicKeyStore.saveSessionKey(
       unwrapResult.senderSessionKey,
       await message.senderCertificate.calculateSubjectPrivateAddress(),
       message.creationDate,
