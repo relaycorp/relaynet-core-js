@@ -79,6 +79,7 @@ export { PrivateNodeRegistrationAuthorization } from './lib/bindings/gsc/Private
 export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistration';
 export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
 export { CertificateRotation } from './lib/messages/CertificateRotation';
+export * from './lib/messages/bindings/signatures';
 // Nodes
 export { GatewayManager, CargoMessageStream } from './lib/nodes/gateway';
 export { EndpointManager } from './lib/nodes/EndpointManager';
@@ -88,7 +89,3 @@ export { EndpointManager } from './lib/nodes/EndpointManager';
 export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
 export * from './lib/nodes/errors';
 export * from './lib/publicAddressing';
-export { ParcelCollectionHandshakeSigner } from './lib/messages/bindings/signatures';
-export { ParcelDeliverySigner } from './lib/messages/bindings/signatures';
-export { ParcelCollectionHandshakeVerifier } from './lib/messages/bindings/signatures';
-export { ParcelDeliveryVerifier } from './lib/messages/bindings/signatures';
