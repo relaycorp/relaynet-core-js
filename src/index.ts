@@ -68,8 +68,6 @@ export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
 
 // Control messages
 export * from './lib/messages/ParcelCollectionAck';
-export { Signer } from './lib/messages/bindings/Signer';
-export { DETACHED_SIGNATURE_TYPES } from './lib/messages/bindings/DetachedSignatureType';
 // GSC interface (for bindings like PoWeb)
 export { GSCClient } from './lib/bindings/gsc/GSCClient';
 export { StreamingMode } from './lib/bindings/gsc/StreamingMode';
@@ -90,3 +88,7 @@ export { EndpointManager } from './lib/nodes/EndpointManager';
 export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
 export * from './lib/nodes/errors';
 export * from './lib/publicAddressing';
+export { ParcelCollectionHandshakeSigner } from './lib/messages/bindings/signatures';
+export { ParcelDeliverySigner } from './lib/messages/bindings/signatures';
+export { ParcelCollectionHandshakeVerifier } from './lib/messages/bindings/signatures';
+export { ParcelDeliveryVerifier } from './lib/messages/bindings/signatures';
