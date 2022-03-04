@@ -1,10 +1,10 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import Cargo from '../messages/Cargo';
-import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
-import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
-import { RAMF_MAX_TTL } from '../ramf/serialization';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import Cargo from '../../messages/Cargo';
+import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
+import CargoMessageSet, { MessageWithExpiryDate } from '../../messages/payloads/CargoMessageSet';
+import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { BaseNodeManager } from './BaseNodeManager';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;

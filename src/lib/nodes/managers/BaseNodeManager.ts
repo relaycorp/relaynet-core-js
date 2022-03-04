@@ -1,12 +1,12 @@
-import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
-import { PrivateKeyStore } from '../keyStores/privateKeyStore';
-import { PublicKeyStore } from '../keyStores/publicKeyStore';
-import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
-import RAMFMessage from '../messages/RAMFMessage';
-import { SessionKey } from '../SessionKey';
-import { SessionKeyPair } from '../SessionKeyPair';
-import { NodeError } from './errors';
-import { NodeCryptoOptions } from './NodeCryptoOptions';
+import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
+import { PrivateKeyStore } from '../../keyStores/privateKeyStore';
+import { PublicKeyStore } from '../../keyStores/publicKeyStore';
+import PayloadPlaintext from '../../messages/payloads/PayloadPlaintext';
+import RAMFMessage from '../../messages/RAMFMessage';
+import { SessionKey } from '../../SessionKey';
+import { SessionKeyPair } from '../../SessionKeyPair';
+import { NodeError } from '../errors';
+import { NodeCryptoOptions } from '../NodeCryptoOptions';
 
 export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
   constructor(

@@ -1,20 +1,20 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 import { addSeconds } from 'date-fns';
 
-import { arrayToAsyncIterable, asyncIterableToArray, CRYPTO_OIDS } from '../_test_utils';
-import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
-import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
-import { generateRSAKeyPair } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
-import Cargo from '../messages/Cargo';
-import Parcel from '../messages/Parcel';
-import CargoMessageSet from '../messages/payloads/CargoMessageSet';
-import ServiceMessage from '../messages/payloads/ServiceMessage';
-import { issueGatewayCertificate } from '../pki';
-import { RAMF_MAX_TTL } from '../ramf/serialization';
-import { SessionKey } from '../SessionKey';
-import { SessionKeyPair } from '../SessionKeyPair';
+import { arrayToAsyncIterable, asyncIterableToArray, CRYPTO_OIDS } from '../../_test_utils';
+import { EnvelopedData, SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
+import { SignatureOptions } from '../../crypto_wrappers/cms/SignatureOptions';
+import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { MockPrivateKeyStore, MockPublicKeyStore } from '../../keyStores/testMocks';
+import Cargo from '../../messages/Cargo';
+import Parcel from '../../messages/Parcel';
+import CargoMessageSet from '../../messages/payloads/CargoMessageSet';
+import ServiceMessage from '../../messages/payloads/ServiceMessage';
+import { issueGatewayCertificate } from '../../pki';
+import { RAMF_MAX_TTL } from '../../ramf/serialization';
+import { SessionKey } from '../../SessionKey';
+import { SessionKeyPair } from '../../SessionKeyPair';
 import { GatewayManager } from './gateway';
 
 describe('Gateway', () => {

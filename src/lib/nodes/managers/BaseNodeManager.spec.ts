@@ -1,18 +1,18 @@
-import { arrayBufferFrom, CRYPTO_OIDS, expectBuffersToEqual } from '../_test_utils';
-import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
+import { arrayBufferFrom, CRYPTO_OIDS, expectBuffersToEqual } from '../../_test_utils';
+import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
 import {
   derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
-} from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
-import { issueGatewayCertificate } from '../pki';
-import { StubMessage, StubPayload } from '../ramf/_test_utils';
-import { SessionKey } from '../SessionKey';
-import { SessionKeyPair } from '../SessionKeyPair';
+} from '../../crypto_wrappers/keys';
+import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { MockPrivateKeyStore, MockPublicKeyStore } from '../../keyStores/testMocks';
+import { issueGatewayCertificate } from '../../pki';
+import { StubMessage, StubPayload } from '../../ramf/_test_utils';
+import { SessionKey } from '../../SessionKey';
+import { SessionKeyPair } from '../../SessionKeyPair';
 import { BaseNodeManager } from './BaseNodeManager';
-import { NodeError } from './errors';
+import { NodeError } from '../errors';
 
 const TOMORROW = new Date();
 TOMORROW.setDate(TOMORROW.getDate() + 1);

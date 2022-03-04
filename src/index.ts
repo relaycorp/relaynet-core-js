@@ -81,8 +81,8 @@ export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRe
 export { CertificateRotation } from './lib/messages/CertificateRotation';
 export * from './lib/messages/bindings/signatures';
 // Nodes
-export { GatewayManager, CargoMessageStream } from './lib/nodes/gateway';
-export { EndpointManager } from './lib/nodes/EndpointManager';
+export { GatewayManager, CargoMessageStream } from './lib/nodes/managers/gateway';
+export { EndpointManager } from './lib/nodes/managers/EndpointManager';
 
 //endregion
 
