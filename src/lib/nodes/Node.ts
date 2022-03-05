@@ -1,5 +1,7 @@
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
+import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificateScope } from '../keyStores/CertificateStore';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
@@ -9,16 +11,23 @@ import { Signer } from './signatures/Signer';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
-    public certificate: Certificate,
     protected privateKey: CryptoKey,
-    protected keyStores: Omit<KeyStoreSet, 'certificateStore'>,
+    protected keyStores: KeyStoreSet,
     protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
-  public getSigner<S extends Signer>(
+  public async getGSCSigner<S extends Signer>(
     signerClass: new (certificate: Certificate, privateKey: CryptoKey) => S,
-  ): S {
-    return new signerClass(this.certificate, this.privateKey);
+  ): Promise<S | null> {
+    const privateAddress = await getPrivateAddressFromIdentityKey(this.privateKey);
+    const certificate = await this.keyStores.certificateStore.retrieveLatest(
+      privateAddress,
+      CertificateScope.PDA,
+    );
+    if (!certificate) {
+      return null;
+    }
+    return new signerClass(certificate, this.privateKey);
   }
 
   /**

@@ -41,16 +41,6 @@ beforeEach(async () => {
   await CERTIFICATE_STORE.save(nodeCertificate, CertificateScope.PDA);
 });
 
-describe('getNode', () => {
-  test.todo('Node should be of the correct type');
-
-  test.todo('Certificate and private key should be passed on');
-
-  test.todo('Private and public key stores should be passed on');
-
-  test.todo('Encryption options should be passed on');
-});
-
 describe('generateSessionKey', () => {
   test('Key should not be bound to any peer by default', async () => {
     const node = new StubNodeManager(KEY_STORES);

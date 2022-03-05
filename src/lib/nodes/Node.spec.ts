@@ -13,6 +13,9 @@ import {
   generateRSAKeyPair,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificateScope } from '../keyStores/CertificateStore';
+import { MockCertificateStore } from '../keyStores/CertificateStore.spec';
+import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
 import { issueGatewayCertificate } from '../pki';
@@ -59,34 +62,48 @@ beforeAll(async () => {
 
 const PRIVATE_KEY_STORE = new MockPrivateKeyStore();
 const PUBLIC_KEY_STORE = new MockPublicKeyStore();
-const KEY_STORES = {
+const CERTIFICATE_STORE = new MockCertificateStore();
+const KEY_STORES: KeyStoreSet = {
+  certificateStore: CERTIFICATE_STORE,
   privateKeyStore: PRIVATE_KEY_STORE,
   publicKeyStore: PUBLIC_KEY_STORE,
 };
 beforeEach(async () => {
   PRIVATE_KEY_STORE.clear();
   PUBLIC_KEY_STORE.clear();
+  CERTIFICATE_STORE.clear();
 });
 
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
 
-describe('getSigner', () => {
-  test('Signer should be of the type requested', () => {
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+describe('getGSCSigner', () => {
+  beforeEach(async () => {
+    await CERTIFICATE_STORE.save(nodeCertificate, CertificateScope.PDA);
+  });
 
-    const signer = node.getSigner(ParcelDeliverySigner);
+  test('Nothing should be returned if certificate does not exist', async () => {
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
+    CERTIFICATE_STORE.clear();
+
+    await expect(node.getGSCSigner(ParcelDeliverySigner)).resolves.toBeNull();
+  });
+
+  test('Signer should be of the type requested if certificate exists', async () => {
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
+
+    const signer = await node.getGSCSigner(ParcelDeliverySigner);
 
     expect(signer).toBeInstanceOf(ParcelDeliverySigner);
   });
 
   test('Signer should receive the certificate and private key of the node', async () => {
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
-    const signer = node.getSigner(ParcelDeliverySigner);
+    const signer = await node.getGSCSigner(ParcelDeliverySigner);
 
     const plaintext = arrayBufferFrom('hiya');
     const verifier = new ParcelDeliveryVerifier([nodeCertificateIssuer]);
-    const signature = await signer.sign(plaintext);
+    const signature = await signer!.sign(plaintext);
     await verifier.verify(signature, plaintext);
   });
 });
@@ -111,7 +128,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('There should be a session key for the recipient', async () => {
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
     const peerPrivateAddress = 'non-existing';
 
     await expect(
@@ -123,7 +140,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Payload should be encrypted with the session key of the recipient', async () => {
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
@@ -138,7 +155,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Passing the payload as an ArrayBuffer should be supported', async () => {
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
     const payloadPlaintext = stubPayload.serialize();
 
     const payloadSerialized = await node.wrapMessagePayload(
@@ -153,7 +170,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('The new ephemeral session key of the sender should be stored', async () => {
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
@@ -174,7 +191,7 @@ describe('wrapMessagePayload', () => {
 
   test('Encryption options should be honoured if set', async () => {
     const aesKeySize = 192;
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES, {
+    const node = new StubNode(nodePrivateKey, KEY_STORES, {
       encryption: { aesKeySize },
     });
 
@@ -214,7 +231,7 @@ describe('unwrapMessagePayload', () => {
       peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -231,7 +248,7 @@ describe('unwrapMessagePayload', () => {
       peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNode(nodeCertificate, nodePrivateKey, KEY_STORES);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     await node.unwrapMessagePayload(message);
 
