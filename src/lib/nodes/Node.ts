@@ -1,39 +1,33 @@
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
-import { PrivateKeyStore } from '../keyStores/privateKeyStore';
-import { PublicKeyStore } from '../keyStores/publicKeyStore';
+import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
+import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificateScope } from '../keyStores/CertificateStore';
+import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
-import { SessionKey } from '../SessionKey';
-import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeError } from './errors';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
+import { Signer } from './signatures/Signer';
 
-export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
+export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
-    protected privateKeyStore: PrivateKeyStore,
-    protected publicKeyStore: PublicKeyStore,
+    protected privateKey: CryptoKey,
+    protected keyStores: KeyStoreSet,
     protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
-  /**
-   * Generate and store a new session key.
-   *
-   * @param peerPrivateAddress The peer to bind the key to, unless it's an initial key
-   */
-  public async generateSessionKey(peerPrivateAddress?: string): Promise<SessionKey> {
-    const { sessionKey, privateKey } = await SessionKeyPair.generate();
-
-    if (peerPrivateAddress) {
-      await this.privateKeyStore.saveBoundSessionKey(
-        privateKey,
-        sessionKey.keyId,
-        peerPrivateAddress,
-      );
-    } else {
-      await this.privateKeyStore.saveUnboundSessionKey(privateKey, sessionKey.keyId);
+  public async getGSCSigner<S extends Signer>(
+    signerClass: new (certificate: Certificate, privateKey: CryptoKey) => S,
+  ): Promise<S | null> {
+    const privateAddress = await getPrivateAddressFromIdentityKey(this.privateKey);
+    const certificate = await this.keyStores.certificateStore.retrieveLatest(
+      privateAddress,
+      CertificateScope.PDA,
+    );
+    if (!certificate) {
+      return null;
     }
-
-    return sessionKey;
+    return new signerClass(certificate, this.privateKey);
   }
 
   /**
@@ -48,7 +42,9 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
     payload: P | ArrayBuffer,
     peerPrivateAddress: string,
   ): Promise<ArrayBuffer> {
-    const recipientSessionKey = await this.publicKeyStore.fetchLastSessionKey(peerPrivateAddress);
+    const recipientSessionKey = await this.keyStores.publicKeyStore.fetchLastSessionKey(
+      peerPrivateAddress,
+    );
     if (!recipientSessionKey) {
       throw new NodeError(`Could not find session key for peer ${peerPrivateAddress}`);
     }
@@ -57,7 +53,7 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
       recipientSessionKey,
       this.cryptoOptions.encryption,
     );
-    await this.privateKeyStore.saveBoundSessionKey(
+    await this.keyStores.privateKeyStore.saveBoundSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
       peerPrivateAddress,
@@ -73,9 +69,9 @@ export abstract class BaseNodeManager<Payload extends PayloadPlaintext> {
    * @param message
    */
   public async unwrapMessagePayload<P extends Payload>(message: RAMFMessage<P>): Promise<P> {
-    const unwrapResult = await message.unwrapPayload(this.privateKeyStore);
+    const unwrapResult = await message.unwrapPayload(this.keyStores.privateKeyStore);
 
-    await this.publicKeyStore.saveSessionKey(
+    await this.keyStores.publicKeyStore.saveSessionKey(
       unwrapResult.senderSessionKey,
       await message.senderCertificate.calculateSubjectPrivateAddress(),
       message.creationDate,

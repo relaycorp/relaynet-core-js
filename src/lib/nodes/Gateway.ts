@@ -5,16 +5,12 @@ import Cargo from '../messages/Cargo';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
 import CargoMessageSet, { MessageWithExpiryDate } from '../messages/payloads/CargoMessageSet';
 import { RAMF_MAX_TTL } from '../ramf/serialization';
-import { BaseNodeManager } from './BaseNodeManager';
+import { CargoMessageStream } from './CargoMessageStream';
+import { Node } from './Node';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
 
-export type CargoMessageStream = AsyncIterable<{
-  readonly message: Buffer;
-  readonly expiryDate: Date;
-}>;
-
-export class GatewayManager extends BaseNodeManager<CargoMessageSet | CargoCollectionRequest> {
+export class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {
   public async *generateCargoes(
     messages: CargoMessageStream,
     recipientPrivateAddress: string,

@@ -1,4 +1,11 @@
-import { arrayBufferFrom, CRYPTO_OIDS, expectBuffersToEqual } from '../_test_utils';
+import { addDays, setMilliseconds } from 'date-fns';
+
+import {
+  arrayBufferFrom,
+  CRYPTO_OIDS,
+  expectBuffersToEqual,
+  reSerializeCertificate,
+} from '../_test_utils';
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import {
   derSerializePublicKey,
@@ -6,74 +13,98 @@ import {
   generateRSAKeyPair,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificateScope } from '../keyStores/CertificateStore';
+import { MockCertificateStore } from '../keyStores/CertificateStore.spec';
+import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
+import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
-import { BaseNodeManager } from './BaseNodeManager';
 import { NodeError } from './errors';
+import { Node } from './Node';
 
-const TOMORROW = new Date();
-TOMORROW.setDate(TOMORROW.getDate() + 1);
-TOMORROW.setMilliseconds(0);
+const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
-let senderCertificate: Certificate;
+let nodePrivateKey: CryptoKey;
+let nodeCertificate: Certificate;
+let nodeCertificateIssuer: Certificate;
+let peerCertificate: Certificate;
 beforeAll(async () => {
-  const senderKeyPair = await generateRSAKeyPair();
-  senderCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: senderKeyPair.privateKey,
-    subjectPublicKey: senderKeyPair.publicKey,
+  const issuerKeyPair = await generateRSAKeyPair();
+  nodeCertificateIssuer = reSerializeCertificate(
+    await issueGatewayCertificate({
+      issuerPrivateKey: issuerKeyPair.privateKey,
+      subjectPublicKey: issuerKeyPair.publicKey,
+      validityEndDate: TOMORROW,
+    }),
+  );
+
+  const nodeKeyPair = await generateRSAKeyPair();
+  nodePrivateKey = nodeKeyPair.privateKey;
+  nodeCertificate = reSerializeCertificate(
+    await issueGatewayCertificate({
+      issuerCertificate: nodeCertificateIssuer,
+      issuerPrivateKey: issuerKeyPair.privateKey,
+      subjectPublicKey: nodeKeyPair.publicKey,
+      validityEndDate: TOMORROW,
+    }),
+  );
+
+  const peerKeyPair = await generateRSAKeyPair();
+  peerCertificate = await issueGatewayCertificate({
+    issuerPrivateKey: peerKeyPair.privateKey,
+    subjectPublicKey: peerKeyPair.publicKey,
     validityEndDate: TOMORROW,
   });
 });
 
-let recipientPrivateKey: CryptoKey;
-let recipientCertificate: Certificate;
-beforeAll(async () => {
-  const recipientKeyPair = await generateRSAKeyPair();
-  recipientPrivateKey = recipientKeyPair.privateKey;
-
-  recipientCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: recipientKeyPair.privateKey,
-    subjectPublicKey: recipientKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
-});
-
-const privateKeyStore = new MockPrivateKeyStore();
-const publicKeyStore = new MockPublicKeyStore();
+const PRIVATE_KEY_STORE = new MockPrivateKeyStore();
+const PUBLIC_KEY_STORE = new MockPublicKeyStore();
+const CERTIFICATE_STORE = new MockCertificateStore();
+const KEY_STORES: KeyStoreSet = {
+  certificateStore: CERTIFICATE_STORE,
+  privateKeyStore: PRIVATE_KEY_STORE,
+  publicKeyStore: PUBLIC_KEY_STORE,
+};
 beforeEach(async () => {
-  privateKeyStore.clear();
-  publicKeyStore.clear();
-
-  await privateKeyStore.saveIdentityKey(recipientPrivateKey);
+  PRIVATE_KEY_STORE.clear();
+  PUBLIC_KEY_STORE.clear();
+  CERTIFICATE_STORE.clear();
 });
 
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
 
-describe('generateSessionKey', () => {
-  test('Key should not be bound to any peer by default', async () => {
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
-
-    const sessionKey = await node.generateSessionKey();
-
-    await expect(
-      derSerializePublicKey(await privateKeyStore.retrieveUnboundSessionKey(sessionKey.keyId)),
-    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+describe('getGSCSigner', () => {
+  beforeEach(async () => {
+    await CERTIFICATE_STORE.save(nodeCertificate, CertificateScope.PDA);
   });
 
-  test('Key should be bound to a peer if explicitly set', async () => {
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
-    const peerPrivateAddress = '0deadbeef';
+  test('Nothing should be returned if certificate does not exist', async () => {
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
+    CERTIFICATE_STORE.clear();
 
-    const sessionKey = await node.generateSessionKey(peerPrivateAddress);
+    await expect(node.getGSCSigner(ParcelDeliverySigner)).resolves.toBeNull();
+  });
 
-    await expect(
-      derSerializePublicKey(
-        await privateKeyStore.retrieveSessionKey(sessionKey.keyId, peerPrivateAddress),
-      ),
-    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+  test('Signer should be of the type requested if certificate exists', async () => {
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
+
+    const signer = await node.getGSCSigner(ParcelDeliverySigner);
+
+    expect(signer).toBeInstanceOf(ParcelDeliverySigner);
+  });
+
+  test('Signer should receive the certificate and private key of the node', async () => {
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
+
+    const signer = await node.getGSCSigner(ParcelDeliverySigner);
+
+    const plaintext = arrayBufferFrom('hiya');
+    const verifier = new ParcelDeliveryVerifier([nodeCertificateIssuer]);
+    const signature = await signer!.sign(plaintext);
+    await verifier.verify(signature, plaintext);
   });
 });
 
@@ -89,15 +120,15 @@ describe('wrapMessagePayload', () => {
       keyId: Buffer.from('key id'),
       publicKey: recipientSessionKeyPair.publicKey,
     };
-    await publicKeyStore.saveSessionKey(
+    await PUBLIC_KEY_STORE.saveSessionKey(
       recipientSessionKey,
-      await recipientCertificate.calculateSubjectPrivateAddress(),
+      await nodeCertificate.calculateSubjectPrivateAddress(),
       new Date(),
     );
   });
 
   test('There should be a session key for the recipient', async () => {
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
     const peerPrivateAddress = 'non-existing';
 
     await expect(
@@ -109,11 +140,11 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Payload should be encrypted with the session key of the recipient', async () => {
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
-      await recipientCertificate.calculateSubjectPrivateAddress(),
+      await nodeCertificate.calculateSubjectPrivateAddress(),
     );
 
     const payloadEnvelopedData = await SessionEnvelopedData.deserialize(payloadSerialized);
@@ -124,12 +155,12 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Passing the payload as an ArrayBuffer should be supported', async () => {
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
     const payloadPlaintext = stubPayload.serialize();
 
     const payloadSerialized = await node.wrapMessagePayload(
       payloadPlaintext,
-      await recipientCertificate.calculateSubjectPrivateAddress(),
+      await nodeCertificate.calculateSubjectPrivateAddress(),
     );
 
     const payloadEnvelopedData = await SessionEnvelopedData.deserialize(payloadSerialized);
@@ -139,11 +170,11 @@ describe('wrapMessagePayload', () => {
   });
 
   test('The new ephemeral session key of the sender should be stored', async () => {
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
-      await recipientCertificate.calculateSubjectPrivateAddress(),
+      await nodeCertificate.calculateSubjectPrivateAddress(),
     );
 
     const payloadEnvelopedData = (await SessionEnvelopedData.deserialize(
@@ -151,22 +182,22 @@ describe('wrapMessagePayload', () => {
     )) as SessionEnvelopedData;
     const originatorSessionKey = await payloadEnvelopedData.getOriginatorKey();
     await expect(
-      privateKeyStore.retrieveSessionKey(
+      PRIVATE_KEY_STORE.retrieveSessionKey(
         originatorSessionKey.keyId,
-        await recipientCertificate.calculateSubjectPrivateAddress(),
+        await nodeCertificate.calculateSubjectPrivateAddress(),
       ),
     ).resolves.toBeTruthy();
   });
 
   test('Encryption options should be honoured if set', async () => {
     const aesKeySize = 192;
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore, {
+    const node = new StubNode(nodePrivateKey, KEY_STORES, {
       encryption: { aesKeySize },
     });
 
     const payloadSerialized = await node.wrapMessagePayload(
       stubPayload,
-      await recipientCertificate.calculateSubjectPrivateAddress(),
+      await nodeCertificate.calculateSubjectPrivateAddress(),
     );
 
     const payloadEnvelopedData = await SessionEnvelopedData.deserialize(payloadSerialized);
@@ -184,7 +215,7 @@ describe('unwrapMessagePayload', () => {
   beforeEach(async () => {
     const sessionKeyPair = await SessionKeyPair.generate();
     sessionKey = sessionKeyPair.sessionKey;
-    await privateKeyStore.saveUnboundSessionKey(
+    await PRIVATE_KEY_STORE.saveUnboundSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
     );
@@ -197,10 +228,10 @@ describe('unwrapMessagePayload', () => {
     );
     const message = new StubMessage(
       RECIPIENT_ADDRESS,
-      senderCertificate,
+      peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -214,14 +245,14 @@ describe('unwrapMessagePayload', () => {
     );
     const message = new StubMessage(
       RECIPIENT_ADDRESS,
-      senderCertificate,
+      peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNodeManager(privateKeyStore, publicKeyStore);
+    const node = new StubNode(nodePrivateKey, KEY_STORES);
 
     await node.unwrapMessagePayload(message);
 
-    const storedKey = publicKeyStore.keys[await senderCertificate.calculateSubjectPrivateAddress()];
+    const storedKey = PUBLIC_KEY_STORE.keys[await peerCertificate.calculateSubjectPrivateAddress()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
     expectBuffersToEqual(Buffer.from(dhKeyId), storedKey.publicKeyId);
     expectBuffersToEqual(
@@ -231,4 +262,4 @@ describe('unwrapMessagePayload', () => {
   });
 });
 
-class StubNodeManager extends BaseNodeManager<StubPayload> {}
+class StubNode extends Node<StubPayload> {}

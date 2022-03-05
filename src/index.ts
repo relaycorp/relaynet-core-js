@@ -31,6 +31,7 @@ export {
 } from './lib/crypto_wrappers/keys';
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/publicKeyStore';
+export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
 export { CertificateScope, CertificateStore } from './lib/keyStores/CertificateStore';
 export * from './lib/keyStores/testMocks';
 export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
@@ -80,9 +81,13 @@ export { PrivateNodeRegistration } from './lib/bindings/gsc/PrivateNodeRegistrat
 export { PrivateNodeRegistrationRequest } from './lib/bindings/gsc/PrivateNodeRegistrationRequest';
 export { CertificateRotation } from './lib/messages/CertificateRotation';
 export * from './lib/messages/bindings/signatures';
+
 // Nodes
-export { GatewayManager, CargoMessageStream } from './lib/nodes/gateway';
-export { EndpointManager } from './lib/nodes/EndpointManager';
+export { Endpoint } from './lib/nodes/Endpoint';
+export { EndpointManager } from './lib/nodes/managers/EndpointManager';
+export { GatewayManager } from './lib/nodes/managers/GatewayManager';
+export { Gateway } from './lib/nodes/Gateway';
+export { CargoMessageStream } from './lib/nodes/CargoMessageStream';
 
 //endregion
 
