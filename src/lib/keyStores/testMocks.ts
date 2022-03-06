@@ -1,5 +1,8 @@
-// tslint:disable:max-classes-per-file no-object-mutation readonly-keyword
+// tslint:disable:max-classes-per-file no-object-mutation readonly-keyword readonly-array
 
+import { reSerializeCertificate } from '../_test_utils';
+import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificateStore } from './CertificateStore';
 import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './publicKeyStore';
 
@@ -89,5 +92,80 @@ export class MockPublicKeyStore extends PublicKeyStore {
       throw new Error('Denied');
     }
     this.keys[peerPrivateAddress] = keyData;
+  }
+}
+
+interface MockStoredCertificateData {
+  readonly expiryDate: Date;
+  readonly certificateSerialized: ArrayBuffer;
+  readonly issuerPrivateAddress: string;
+}
+
+export class MockCertificateStore extends CertificateStore {
+  public dataByPrivateAddress: {
+    [privateAddress: string]: MockStoredCertificateData[];
+  } = {};
+
+  public clear(): void {
+    this.dataByPrivateAddress = {};
+  }
+
+  public async forceSave(certificate: Certificate): Promise<void> {
+    await this.saveData(
+      await certificate.calculateSubjectPrivateAddress(),
+      certificate.serialize(),
+      certificate.expiryDate,
+      reSerializeCertificate(certificate).getIssuerPrivateAddress()!!,
+    );
+  }
+
+  public async deleteExpired(): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  protected async retrieveAllSerializations(
+    subjectPrivateAddress: string,
+    issuerPrivateAddress: string,
+  ): Promise<readonly ArrayBuffer[]> {
+    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
+    const matchingCertificateData = certificateData.filter(
+      (d) => d.issuerPrivateAddress === issuerPrivateAddress,
+    );
+    if (matchingCertificateData.length === 0) {
+      return [];
+    }
+    return matchingCertificateData.map((d) => d.certificateSerialized);
+  }
+
+  protected async retrieveLatestSerialization(
+    subjectPrivateAddress: string,
+    issuerPrivateAddress: string,
+  ): Promise<ArrayBuffer | null> {
+    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
+    const matchingCertificateData = certificateData.filter(
+      (d) => d.issuerPrivateAddress === issuerPrivateAddress,
+    );
+    if (matchingCertificateData.length === 0) {
+      return null;
+    }
+    const dataSorted = matchingCertificateData.sort(
+      (a, b) => b.expiryDate.getTime() - a.expiryDate.getTime(),
+    );
+    return dataSorted[0].certificateSerialized;
+  }
+
+  protected async saveData(
+    subjectPrivateAddress: string,
+    subjectCertificateSerialized: ArrayBuffer,
+    subjectCertificateExpiryDate: Date,
+    issuerPrivateAddress: string,
+  ): Promise<void> {
+    const mockData: MockStoredCertificateData = {
+      certificateSerialized: subjectCertificateSerialized,
+      expiryDate: subjectCertificateExpiryDate,
+      issuerPrivateAddress,
+    };
+    const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
+    this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
   }
 }
