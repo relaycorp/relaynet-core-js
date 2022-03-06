@@ -1,27 +1,16 @@
-import { addDays, setMilliseconds } from 'date-fns';
-
 import { derSerializePublicKey, generateRSAKeyPair } from '../../crypto_wrappers/keys';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
-import { CertificateScope } from '../../keyStores/CertificateStore';
-import { MockCertificateStore } from '../../keyStores/CertificateStore.spec';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
-import { MockPrivateKeyStore, MockPublicKeyStore } from '../../keyStores/testMocks';
-import { issueGatewayCertificate } from '../../pki';
+import {
+  MockCertificateStore,
+  MockPrivateKeyStore,
+  MockPublicKeyStore,
+} from '../../keyStores/testMocks';
 import { NodeManager } from './NodeManager';
 
-const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
-
 let nodePrivateKey: CryptoKey;
-let nodeCertificate: Certificate;
 beforeAll(async () => {
   const recipientKeyPair = await generateRSAKeyPair();
   nodePrivateKey = recipientKeyPair.privateKey;
-
-  nodeCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: recipientKeyPair.privateKey,
-    subjectPublicKey: recipientKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
 });
 
 const PRIVATE_KEY_STORE = new MockPrivateKeyStore();
@@ -38,7 +27,6 @@ beforeEach(async () => {
   CERTIFICATE_STORE.clear();
 
   await PRIVATE_KEY_STORE.saveIdentityKey(nodePrivateKey);
-  await CERTIFICATE_STORE.save(nodeCertificate, CertificateScope.PDA);
 });
 
 describe('generateSessionKey', () => {

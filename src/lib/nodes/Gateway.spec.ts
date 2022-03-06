@@ -6,9 +6,12 @@ import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/enve
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { MockCertificateStore } from '../keyStores/CertificateStore.spec';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
-import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
+import {
+  MockCertificateStore,
+  MockPrivateKeyStore,
+  MockPublicKeyStore,
+} from '../keyStores/testMocks';
 import Cargo from '../messages/Cargo';
 import Parcel from '../messages/Parcel';
 import CargoMessageSet from '../messages/payloads/CargoMessageSet';

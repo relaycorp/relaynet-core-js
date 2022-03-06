@@ -3,81 +3,7 @@ import { addSeconds, subSeconds } from 'date-fns';
 import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { issueGatewayCertificate } from '../pki';
-import { CertificateScope, CertificateStore } from './CertificateStore';
-
-export interface MockStoredCertificateData {
-  readonly expiryDate: Date;
-  readonly certificateSerialized: ArrayBuffer;
-  readonly scope: CertificateScope;
-}
-
-export class MockCertificateStore extends CertificateStore {
-  public dataByPrivateAddress: {
-    // tslint:disable-next-line:readonly-array readonly-keyword
-    [privateAddress: string]: MockStoredCertificateData[];
-  } = {};
-
-  public clear(): void {
-    // tslint:disable-next-line:no-object-mutation
-    this.dataByPrivateAddress = {};
-  }
-
-  public async forceSave(certificate: Certificate, scope: CertificateScope): Promise<void> {
-    await this.saveData(
-      await certificate.calculateSubjectPrivateAddress(),
-      certificate.serialize(),
-      certificate.expiryDate,
-      scope,
-    );
-  }
-
-  public async deleteExpired(): Promise<void> {
-    throw new Error('Not implemented');
-  }
-
-  protected async retrieveAllSerializations(
-    subjectPrivateAddress: string,
-    scope: CertificateScope,
-  ): Promise<readonly ArrayBuffer[]> {
-    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    const matchingCertificateData = certificateData.filter((d) => d.scope === scope);
-    if (matchingCertificateData.length === 0) {
-      return [];
-    }
-    return matchingCertificateData.map((d) => d.certificateSerialized);
-  }
-
-  protected async retrieveLatestSerialization(
-    subjectPrivateAddress: string,
-    scope: CertificateScope,
-  ): Promise<ArrayBuffer | null> {
-    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    const matchingCertificateData = certificateData.filter((d) => d.scope === scope);
-    if (matchingCertificateData.length === 0) {
-      return null;
-    }
-    const dataSorted = matchingCertificateData.sort(
-      (a, b) => a.expiryDate.getDate() - b.expiryDate.getDate(),
-    );
-    return dataSorted[0].certificateSerialized;
-  }
-
-  protected async saveData(
-    subjectPrivateAddress: string,
-    subjectCertificateSerialized: ArrayBuffer,
-    subjectCertificateExpiryDate: Date,
-    scope: CertificateScope,
-  ): Promise<void> {
-    const mockData: MockStoredCertificateData = {
-      certificateSerialized: subjectCertificateSerialized,
-      expiryDate: subjectCertificateExpiryDate,
-      scope,
-    };
-    const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    // tslint:disable-next-line:no-object-mutation
-    this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
-  }
-}
+import { MockCertificateStore } from './testMocks';
 
 const store = new MockCertificateStore();
 beforeEach(() => {
@@ -95,89 +21,118 @@ describe('save', () => {
   test('Expired certificate should not be saved', async () => {
     const certificate = await generateCertificate(subSeconds(new Date(), 1));
 
-    await store.save(certificate, CertificateScope.PDA);
+    await store.save(certificate, privateAddress);
 
     expect(store.dataByPrivateAddress).toBeEmpty();
   });
 
-  test('Valid certificate should be saved', async () => {
+  test('Serialization should be stored', async () => {
+    const certificate = await generateCertificate(addSeconds(new Date(), 2));
+
+    await store.save(certificate, privateAddress);
+
+    expect(store.dataByPrivateAddress).toHaveProperty(privateAddress);
+    expect(store.dataByPrivateAddress[privateAddress][0].certificateSerialized).toEqual(
+      certificate.serialize(),
+    );
+  });
+
+  test('Expiry date should be taken from certificate', async () => {
     const expiryDate = addSeconds(new Date(), 2);
     const certificate = await generateCertificate(expiryDate);
 
-    await store.save(certificate, CertificateScope.PDA);
+    await store.save(certificate, privateAddress);
 
-    expect(store.dataByPrivateAddress).not.toBeEmpty();
-    expect(store.dataByPrivateAddress).toHaveProperty<readonly MockStoredCertificateData[]>(
-      privateAddress,
-      [{ expiryDate, certificateSerialized: certificate.serialize(), scope: CertificateScope.PDA }],
+    expect(store.dataByPrivateAddress).toHaveProperty(privateAddress);
+    expect(store.dataByPrivateAddress[privateAddress][0].expiryDate).toEqual(expiryDate);
+  });
+
+  test('Specified issuer private address should be honoured', async () => {
+    const certificate = await generateCertificate(addSeconds(new Date(), 2));
+    const issuerPrivateAddress = `not-${privateAddress}`;
+
+    await store.save(certificate, issuerPrivateAddress);
+
+    expect(store.dataByPrivateAddress).toHaveProperty(privateAddress);
+    expect(store.dataByPrivateAddress[privateAddress][0].issuerPrivateAddress).toEqual(
+      issuerPrivateAddress,
     );
   });
 });
 
 describe('retrieveLatest', () => {
   test('Nothing should be returned if certificate does not exist', async () => {
-    await expect(store.retrieveLatest(privateAddress, CertificateScope.PDA)).resolves.toBeNull();
+    await expect(store.retrieveLatest(privateAddress, privateAddress)).resolves.toBeNull();
   });
 
   test('Expired certificate should be ignored', async () => {
     const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
-    await store.forceSave(expiredCertificate, CertificateScope.PDA);
+    await store.forceSave(expiredCertificate);
 
-    await expect(store.retrieveLatest(privateAddress, CertificateScope.PDA)).resolves.toBeNull();
+    await expect(store.retrieveLatest(privateAddress, privateAddress)).resolves.toBeNull();
   });
 
-  test('Valid certificate should be returned', async () => {
-    const certificate = await generateCertificate(addSeconds(new Date(), 3));
-    await store.save(certificate, CertificateScope.PDA);
+  test('Latest certificate should be returned', async () => {
+    const now = new Date();
+    const olderCertificate = await generateCertificate(addSeconds(now, 5));
+    await store.forceSave(olderCertificate);
+    const newerCertificate = await generateCertificate(addSeconds(now, 10));
+    await store.forceSave(newerCertificate);
 
-    const retrievedCertificate = await store.retrieveLatest(privateAddress, CertificateScope.PDA);
+    const retrievedCertificate = await store.retrieveLatest(privateAddress, privateAddress);
 
-    expect(certificate.isEqual(retrievedCertificate!!)).toBeTrue();
+    expect(retrievedCertificate!.isEqual(newerCertificate)).toBeTrue();
   });
 
-  test('Only certificates from specified scope should be returned', async () => {
+  test('Certificates from another issuer should be ignored', async () => {
     const certificate = await generateCertificate(addSeconds(new Date(), 3));
-    await store.save(certificate, CertificateScope.CDA);
+    await store.save(certificate, `not-${privateAddress}`);
 
-    await expect(store.retrieveLatest(privateAddress, CertificateScope.PDA)).resolves.toBeNull();
+    await expect(store.retrieveLatest(privateAddress, privateAddress)).resolves.toBeNull();
   });
 });
 
 describe('retrieveAll', () => {
   test('Nothing should be returned if no certificate exists', async () => {
-    await expect(store.retrieveAll(privateAddress, CertificateScope.PDA)).resolves.toBeEmpty();
+    await expect(store.retrieveAll(privateAddress, privateAddress)).resolves.toBeEmpty();
   });
 
   test('Expired certificates should be ignored', async () => {
     const validCertificate = await generateCertificate(addSeconds(new Date(), 3));
-    await store.save(validCertificate, CertificateScope.PDA);
+    await store.forceSave(validCertificate);
     const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
-    await store.forceSave(expiredCertificate, CertificateScope.PDA);
+    await store.forceSave(expiredCertificate);
 
-    const allCertificates = await store.retrieveAll(privateAddress, CertificateScope.PDA);
+    const allCertificates = await store.retrieveAll(privateAddress, privateAddress);
 
     expect(allCertificates).toHaveLength(1);
     expect(validCertificate.isEqual(allCertificates[0])).toBeTrue();
   });
 
-  test('Valid certificates should be returned', async () => {
+  test('All valid certificates should be returned', async () => {
     const certificate1 = await generateCertificate(addSeconds(new Date(), 3));
-    await store.save(certificate1, CertificateScope.PDA);
+    await store.forceSave(certificate1);
     const certificate2 = await generateCertificate(addSeconds(new Date(), 5));
-    await store.save(certificate2, CertificateScope.PDA);
+    await store.forceSave(certificate2);
 
-    const allCertificates = await store.retrieveAll(privateAddress, CertificateScope.PDA);
+    const allCertificates = await store.retrieveAll(privateAddress, privateAddress);
 
     expect(allCertificates).toHaveLength(2);
     expect(allCertificates.filter((c) => certificate1.isEqual(c))).toHaveLength(1);
     expect(allCertificates.filter((c) => certificate2.isEqual(c))).toHaveLength(1);
   });
 
-  test('Only certificates from specified scope should be returned', async () => {
+  test('Certificates from another issuer should be ignored', async () => {
     const certificate = await generateCertificate(addSeconds(new Date(), 3));
-    await store.save(certificate, CertificateScope.CDA);
+    await store.save(certificate, `not-${privateAddress}`);
 
-    await expect(store.retrieveAll(privateAddress, CertificateScope.PDA)).resolves.toBeEmpty();
+    await expect(store.retrieveAll(privateAddress, privateAddress)).resolves.toBeEmpty();
+  });
+});
+
+describe('deleteExpired', () => {
+  test('Method should be exposed', async () => {
+    await expect(store.deleteExpired()).rejects.toThrowWithMessage(Error, 'Not implemented');
   });
 });
 

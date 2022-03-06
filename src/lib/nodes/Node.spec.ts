@@ -13,10 +13,12 @@ import {
   generateRSAKeyPair,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { CertificateScope } from '../keyStores/CertificateStore';
-import { MockCertificateStore } from '../keyStores/CertificateStore.spec';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
-import { MockPrivateKeyStore, MockPublicKeyStore } from '../keyStores/testMocks';
+import {
+  MockCertificateStore,
+  MockPrivateKeyStore,
+  MockPublicKeyStore,
+} from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
@@ -77,21 +79,32 @@ beforeEach(async () => {
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
 
 describe('getGSCSigner', () => {
+  let nodeCertificateIssuerPrivateAddress: string;
+  beforeAll(async () => {
+    nodeCertificateIssuerPrivateAddress =
+      await nodeCertificateIssuer.calculateSubjectPrivateAddress();
+  });
+
   beforeEach(async () => {
-    await CERTIFICATE_STORE.save(nodeCertificate, CertificateScope.PDA);
+    await CERTIFICATE_STORE.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
   });
 
   test('Nothing should be returned if certificate does not exist', async () => {
     const node = new StubNode(nodePrivateKey, KEY_STORES);
     CERTIFICATE_STORE.clear();
 
-    await expect(node.getGSCSigner(ParcelDeliverySigner)).resolves.toBeNull();
+    await expect(
+      node.getGSCSigner(nodeCertificateIssuerPrivateAddress, ParcelDeliverySigner),
+    ).resolves.toBeNull();
   });
 
   test('Signer should be of the type requested if certificate exists', async () => {
     const node = new StubNode(nodePrivateKey, KEY_STORES);
 
-    const signer = await node.getGSCSigner(ParcelDeliverySigner);
+    const signer = await node.getGSCSigner(
+      nodeCertificateIssuerPrivateAddress,
+      ParcelDeliverySigner,
+    );
 
     expect(signer).toBeInstanceOf(ParcelDeliverySigner);
   });
@@ -99,7 +112,10 @@ describe('getGSCSigner', () => {
   test('Signer should receive the certificate and private key of the node', async () => {
     const node = new StubNode(nodePrivateKey, KEY_STORES);
 
-    const signer = await node.getGSCSigner(ParcelDeliverySigner);
+    const signer = await node.getGSCSigner(
+      nodeCertificateIssuerPrivateAddress,
+      ParcelDeliverySigner,
+    );
 
     const plaintext = arrayBufferFrom('hiya');
     const verifier = new ParcelDeliveryVerifier([nodeCertificateIssuer]);

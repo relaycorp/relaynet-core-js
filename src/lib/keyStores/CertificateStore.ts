@@ -1,10 +1,5 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
 
-export enum CertificateScope {
-  PDA = 'pda',
-  CDA = 'cda',
-}
-
 /**
  * Store of certificates.
  */
@@ -13,24 +8,32 @@ export abstract class CertificateStore {
    * Store `certificate` as long as it's still valid.
    *
    * @param certificate
-   * @param scope
+   * @param issuerPrivateAddress
+   *
+   * Whilst we could take the [issuerPrivateAddress] from the [certificate], we must not rely on
+   * it because we don't have enough information/context here to be certain that the value is
+   * legitimate. Additionally, the value has to be present in an X.509 extension, which could
+   * be absent if produced by a non-compliant implementation.
    */
-  public async save(certificate: Certificate, scope: CertificateScope): Promise<void> {
+  public async save(certificate: Certificate, issuerPrivateAddress: string): Promise<void> {
     if (new Date() < certificate.expiryDate) {
       await this.saveData(
         await certificate.calculateSubjectPrivateAddress(),
         certificate.serialize(),
         certificate.expiryDate,
-        scope,
+        issuerPrivateAddress,
       );
     }
   }
 
   public async retrieveLatest(
     subjectPrivateAddress: string,
-    scope: CertificateScope,
+    issuerPrivateAddress: string,
   ): Promise<Certificate | null> {
-    const serialization = await this.retrieveLatestSerialization(subjectPrivateAddress, scope);
+    const serialization = await this.retrieveLatestSerialization(
+      subjectPrivateAddress,
+      issuerPrivateAddress,
+    );
     if (!serialization) {
       return null;
     }
@@ -40,11 +43,11 @@ export abstract class CertificateStore {
 
   public async retrieveAll(
     subjectPrivateAddress: string,
-    scope: CertificateScope,
+    issuerPrivateAddress: string,
   ): Promise<readonly Certificate[]> {
     const allCertificatesSerialized = await this.retrieveAllSerializations(
       subjectPrivateAddress,
-      scope,
+      issuerPrivateAddress,
     );
     return allCertificatesSerialized
       .map((s) => Certificate.deserialize(s))
@@ -57,16 +60,16 @@ export abstract class CertificateStore {
     subjectPrivateAddress: string,
     subjectCertificateSerialized: ArrayBuffer,
     subjectCertificateExpiryDate: Date,
-    scope: CertificateScope,
+    issuerPrivateAddress: string,
   ): Promise<void>;
 
   protected abstract retrieveLatestSerialization(
     subjectPrivateAddress: string,
-    scope: CertificateScope,
+    issuerPrivateAddress: string,
   ): Promise<ArrayBuffer | null>;
 
   protected abstract retrieveAllSerializations(
     subjectPrivateAddress: string,
-    scope: CertificateScope,
+    issuerPrivateAddress: string,
   ): Promise<readonly ArrayBuffer[]>;
 }
