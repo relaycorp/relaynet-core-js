@@ -61,25 +61,25 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {
-  public keys: { [key: string]: SessionPublicKeyData } = {};
+  public sessionKeys: { [key: string]: SessionPublicKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
     super();
   }
 
   public clear(): void {
-    this.keys = {};
+    this.sessionKeys = {};
   }
 
   public registerKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {
-    this.keys[peerPrivateAddress] = keyData;
+    this.sessionKeys[peerPrivateAddress] = keyData;
   }
 
   protected async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null> {
     if (this.fetchError) {
       throw this.fetchError;
     }
-    const keyData = this.keys[peerPrivateAddress];
+    const keyData = this.sessionKeys[peerPrivateAddress];
     return keyData ?? null;
   }
 
@@ -90,7 +90,7 @@ export class MockPublicKeyStore extends PublicKeyStore {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    this.keys[peerPrivateAddress] = keyData;
+    this.sessionKeys[peerPrivateAddress] = keyData;
   }
 }
 

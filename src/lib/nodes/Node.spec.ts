@@ -268,7 +268,8 @@ describe('unwrapMessagePayload', () => {
 
     await node.unwrapMessagePayload(message);
 
-    const storedKey = PUBLIC_KEY_STORE.keys[await peerCertificate.calculateSubjectPrivateAddress()];
+    const storedKey =
+      PUBLIC_KEY_STORE.sessionKeys[await peerCertificate.calculateSubjectPrivateAddress()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
     expectBuffersToEqual(Buffer.from(dhKeyId), storedKey.publicKeyId);
     expectBuffersToEqual(

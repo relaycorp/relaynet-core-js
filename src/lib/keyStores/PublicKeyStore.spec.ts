@@ -56,7 +56,7 @@ describe('Session keys', () => {
         CREATION_DATE,
       );
 
-      const keyData = MOCK_STORE.keys[peerPrivateAddress];
+      const keyData = MOCK_STORE.sessionKeys[peerPrivateAddress];
       const expectedKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
@@ -83,7 +83,7 @@ describe('Session keys', () => {
         newPublicKeyDate,
       );
 
-      const keyData = MOCK_STORE.keys[peerPrivateAddress];
+      const keyData = MOCK_STORE.sessionKeys[peerPrivateAddress];
       const expectedKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: newPublicKeyDate,
         publicKeyDer: await derSerializePublicKey(newPublicKey),
@@ -110,7 +110,7 @@ describe('Session keys', () => {
         olderPublicKeyDate,
       );
 
-      const keyData = MOCK_STORE.keys[peerPrivateAddress];
+      const keyData = MOCK_STORE.sessionKeys[peerPrivateAddress];
       expect(keyData).toEqual(currentKeyData);
     });
 
