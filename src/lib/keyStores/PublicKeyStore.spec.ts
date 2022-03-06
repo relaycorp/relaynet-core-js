@@ -1,11 +1,56 @@
-/* tslint:disable:no-object-mutation */
-
-import { derSerializePublicKey, generateECDHKeyPair } from '../crypto_wrappers/keys';
-import { SessionPublicKeyData } from './publicKeyStore';
+import {
+  derSerializePublicKey,
+  generateECDHKeyPair,
+  generateRSAKeyPair,
+  getPrivateAddressFromIdentityKey,
+} from '../crypto_wrappers/keys';
+import { SessionPublicKeyData } from './PublicKeyStore';
 import PublicKeyStoreError from './PublicKeyStoreError';
 import { MockPublicKeyStore } from './testMocks';
 
-describe('PublicKeyStore', () => {
+const STORE = new MockPublicKeyStore();
+beforeEach(() => {
+  STORE.clear();
+});
+
+describe('Identity keys', () => {
+  let publicKey: CryptoKey;
+  let peerPrivateAddress: string;
+  beforeAll(async () => {
+    const keyPair = await generateRSAKeyPair();
+    publicKey = keyPair.publicKey;
+    peerPrivateAddress = await getPrivateAddressFromIdentityKey(publicKey);
+  });
+
+  describe('saveIdentityKey', () => {
+    test('Key should be stored', async () => {
+      await STORE.saveIdentityKey(publicKey);
+
+      expect(STORE.identityKeys).toHaveProperty(
+        peerPrivateAddress,
+        await derSerializePublicKey(publicKey),
+      );
+    });
+  });
+
+  describe('retrieveIdentityKey', () => {
+    test('Key should be returned if it exists', async () => {
+      await STORE.saveIdentityKey(publicKey);
+
+      const publicKeyRetrieved = await STORE.retrieveIdentityKey(peerPrivateAddress);
+
+      await expect(derSerializePublicKey(publicKeyRetrieved!)).resolves.toEqual(
+        await derSerializePublicKey(publicKey),
+      );
+    });
+
+    test('Null should be returned if it does not exist', async () => {
+      await expect(STORE.retrieveIdentityKey(peerPrivateAddress)).resolves.toBeNull();
+    });
+  });
+});
+
+describe('Session keys', () => {
   const CREATION_DATE = new Date();
 
   const sessionKeyId = Buffer.from([1, 3, 5, 7, 9]);
@@ -16,27 +61,22 @@ describe('PublicKeyStore', () => {
     sessionPublicKey = keyPair.publicKey;
   });
 
-  const store = new MockPublicKeyStore();
-  beforeEach(() => {
-    store.clear();
-  });
-
-  describe('fetchLastSessionKey', () => {
+  describe('retrieveLastSessionKey', () => {
     test('Key data should be returned if key for recipient exists', async () => {
       const keyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
         publicKeyId: sessionKeyId,
       };
-      store.registerKey(keyData, peerPrivateAddress);
+      STORE.registerSessionKey(keyData, peerPrivateAddress);
 
-      const key = await store.fetchLastSessionKey(peerPrivateAddress);
+      const key = await STORE.retrieveLastSessionKey(peerPrivateAddress);
       expect(key?.keyId).toEqual(sessionKeyId);
       expect(await derSerializePublicKey(key!.publicKey)).toEqual(keyData.publicKeyDer);
     });
 
     test('Null should be returned if key for recipient does not exist', async () => {
-      await expect(store.fetchLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
+      await expect(STORE.retrieveLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
     });
 
     test('Retrieval errors should be wrapped', async () => {
@@ -44,7 +84,7 @@ describe('PublicKeyStore', () => {
 
       const bogusStore = new MockPublicKeyStore(false, fetchError);
 
-      await expect(bogusStore.fetchLastSessionKey(peerPrivateAddress)).rejects.toEqual(
+      await expect(bogusStore.retrieveLastSessionKey(peerPrivateAddress)).rejects.toEqual(
         new PublicKeyStoreError(fetchError, 'Failed to retrieve key'),
       );
     });
@@ -52,13 +92,13 @@ describe('PublicKeyStore', () => {
 
   describe('saveSessionKey', () => {
     test('Key data should be saved if there is no prior key for recipient', async () => {
-      await store.saveSessionKey(
+      await STORE.saveSessionKey(
         { keyId: sessionKeyId, publicKey: sessionPublicKey },
         peerPrivateAddress,
         CREATION_DATE,
       );
 
-      const keyData = store.keys[peerPrivateAddress];
+      const keyData = STORE.sessionKeys[peerPrivateAddress];
       const expectedKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
@@ -73,19 +113,19 @@ describe('PublicKeyStore', () => {
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
         publicKeyId: sessionKeyId,
       };
-      store.registerKey(oldKeyData, peerPrivateAddress);
+      STORE.registerSessionKey(oldKeyData, peerPrivateAddress);
 
       const newPublicKeyId = Buffer.concat([sessionKeyId, Buffer.from([1, 0])]);
       const newPublicKey = (await generateECDHKeyPair()).publicKey;
       const newPublicKeyDate = new Date(CREATION_DATE);
       newPublicKeyDate.setHours(newPublicKeyDate.getHours() + 1);
-      await store.saveSessionKey(
+      await STORE.saveSessionKey(
         { publicKey: newPublicKey, keyId: newPublicKeyId },
         peerPrivateAddress,
         newPublicKeyDate,
       );
 
-      const keyData = store.keys[peerPrivateAddress];
+      const keyData = STORE.sessionKeys[peerPrivateAddress];
       const expectedKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: newPublicKeyDate,
         publicKeyDer: await derSerializePublicKey(newPublicKey),
@@ -100,19 +140,19 @@ describe('PublicKeyStore', () => {
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
         publicKeyId: sessionKeyId,
       };
-      store.registerKey(currentKeyData, peerPrivateAddress);
+      STORE.registerSessionKey(currentKeyData, peerPrivateAddress);
 
       const olderPublicKeyId = Buffer.concat([sessionKeyId, sessionKeyId]);
       const olderPublicKey = (await generateECDHKeyPair()).publicKey;
       const olderPublicKeyDate = new Date(CREATION_DATE);
       olderPublicKeyDate.setHours(olderPublicKeyDate.getHours() - 1);
-      await store.saveSessionKey(
+      await STORE.saveSessionKey(
         { publicKey: olderPublicKey, keyId: olderPublicKeyId },
         peerPrivateAddress,
         olderPublicKeyDate,
       );
 
-      const keyData = store.keys[peerPrivateAddress];
+      const keyData = STORE.sessionKeys[peerPrivateAddress];
       expect(keyData).toEqual(currentKeyData);
     });
 

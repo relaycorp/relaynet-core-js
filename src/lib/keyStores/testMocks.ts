@@ -3,7 +3,7 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificateStore } from './CertificateStore';
 import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
-import { PublicKeyStore, SessionPublicKeyData } from './publicKeyStore';
+import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
   public identityKeys: { [privateAddress: string]: Buffer } = {};
@@ -61,36 +61,54 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {
-  public keys: { [key: string]: SessionPublicKeyData } = {};
+  public identityKeys: { [peerPrivateAddress: string]: Buffer } = {};
+
+  public sessionKeys: { [key: string]: SessionPublicKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
     super();
   }
 
   public clear(): void {
-    this.keys = {};
+    this.sessionKeys = {};
+    this.identityKeys = {};
   }
 
-  public registerKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {
-    this.keys[peerPrivateAddress] = keyData;
+  public registerSessionKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {
+    this.sessionKeys[peerPrivateAddress] = keyData;
   }
 
-  protected async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null> {
+  protected async retrieveIdentityKeySerialized(
+    peerPrivateAddress: string,
+  ): Promise<Buffer | null> {
+    return this.identityKeys[peerPrivateAddress] ?? null;
+  }
+
+  protected async retrieveSessionKeyData(
+    peerPrivateAddress: string,
+  ): Promise<SessionPublicKeyData | null> {
     if (this.fetchError) {
       throw this.fetchError;
     }
-    const keyData = this.keys[peerPrivateAddress];
+    const keyData = this.sessionKeys[peerPrivateAddress];
     return keyData ?? null;
   }
 
-  protected async saveKey(
+  protected async saveIdentityKeySerialized(
+    keySerialized: Buffer,
+    peerPrivateAddress: string,
+  ): Promise<void> {
+    this.identityKeys[peerPrivateAddress] = keySerialized;
+  }
+
+  protected async saveSessionKeyData(
     keyData: SessionPublicKeyData,
     peerPrivateAddress: string,
   ): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    this.keys[peerPrivateAddress] = keyData;
+    this.sessionKeys[peerPrivateAddress] = keyData;
   }
 }
 

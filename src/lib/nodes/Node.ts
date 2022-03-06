@@ -42,7 +42,7 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     payload: P | ArrayBuffer,
     peerPrivateAddress: string,
   ): Promise<ArrayBuffer> {
-    const recipientSessionKey = await this.keyStores.publicKeyStore.fetchLastSessionKey(
+    const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
       peerPrivateAddress,
     );
     if (!recipientSessionKey) {
