@@ -3,7 +3,7 @@
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificateStore } from './CertificateStore';
 import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
-import { PublicKeyStore, SessionPublicKeyData } from './publicKeyStore';
+import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
   public identityKeys: { [privateAddress: string]: Buffer } = {};

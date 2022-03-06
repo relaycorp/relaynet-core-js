@@ -30,7 +30,7 @@ export {
   getPrivateAddressFromIdentityKey,
 } from './lib/crypto_wrappers/keys';
 export * from './lib/keyStores/privateKeyStore';
-export * from './lib/keyStores/publicKeyStore';
+export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
 export { CertificateStore } from './lib/keyStores/CertificateStore';
 export * from './lib/keyStores/testMocks';

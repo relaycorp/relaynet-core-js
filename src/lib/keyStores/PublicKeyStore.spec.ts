@@ -1,7 +1,5 @@
-/* tslint:disable:no-object-mutation */
-
 import { derSerializePublicKey, generateECDHKeyPair } from '../crypto_wrappers/keys';
-import { SessionPublicKeyData } from './publicKeyStore';
+import { SessionPublicKeyData } from './PublicKeyStore';
 import PublicKeyStoreError from './PublicKeyStoreError';
 import { MockPublicKeyStore } from './testMocks';
 
