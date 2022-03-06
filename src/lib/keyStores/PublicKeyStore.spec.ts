@@ -19,7 +19,7 @@ describe('PublicKeyStore', () => {
     store.clear();
   });
 
-  describe('fetchLastSessionKey', () => {
+  describe('retrieveLastSessionKey', () => {
     test('Key data should be returned if key for recipient exists', async () => {
       const keyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
@@ -28,13 +28,13 @@ describe('PublicKeyStore', () => {
       };
       store.registerKey(keyData, peerPrivateAddress);
 
-      const key = await store.fetchLastSessionKey(peerPrivateAddress);
+      const key = await store.retrieveLastSessionKey(peerPrivateAddress);
       expect(key?.keyId).toEqual(sessionKeyId);
       expect(await derSerializePublicKey(key!.publicKey)).toEqual(keyData.publicKeyDer);
     });
 
     test('Null should be returned if key for recipient does not exist', async () => {
-      await expect(store.fetchLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
+      await expect(store.retrieveLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
     });
 
     test('Retrieval errors should be wrapped', async () => {
@@ -42,7 +42,7 @@ describe('PublicKeyStore', () => {
 
       const bogusStore = new MockPublicKeyStore(false, fetchError);
 
-      await expect(bogusStore.fetchLastSessionKey(peerPrivateAddress)).rejects.toEqual(
+      await expect(bogusStore.retrieveLastSessionKey(peerPrivateAddress)).rejects.toEqual(
         new PublicKeyStoreError(fetchError, 'Failed to retrieve key'),
       );
     });

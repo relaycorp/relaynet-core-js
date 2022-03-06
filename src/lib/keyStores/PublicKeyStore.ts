@@ -9,7 +9,7 @@ export interface SessionPublicKeyData {
 }
 
 export abstract class PublicKeyStore {
-  public async fetchLastSessionKey(peerPrivateAddress: string): Promise<SessionKey | null> {
+  public async retrieveLastSessionKey(peerPrivateAddress: string): Promise<SessionKey | null> {
     const keyData = await this.fetchKeyDataOrWrapError(peerPrivateAddress);
     if (!keyData) {
       return null;
@@ -39,6 +39,8 @@ export abstract class PublicKeyStore {
       throw new PublicKeyStoreError(error as Error, 'Failed to save public session key');
     }
   }
+
+  //endregion
 
   protected abstract fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null>;
 
