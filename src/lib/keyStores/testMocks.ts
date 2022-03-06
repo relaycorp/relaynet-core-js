@@ -1,6 +1,5 @@
 // tslint:disable:max-classes-per-file no-object-mutation readonly-keyword readonly-array
 
-import { reSerializeCertificate } from '../_test_utils';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificateStore } from './CertificateStore';
 import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
@@ -110,12 +109,12 @@ export class MockCertificateStore extends CertificateStore {
     this.dataByPrivateAddress = {};
   }
 
-  public async forceSave(certificate: Certificate): Promise<void> {
+  public async forceSave(certificate: Certificate, issuerPrivateAddress: string): Promise<void> {
     await this.saveData(
       await certificate.calculateSubjectPrivateAddress(),
       certificate.serialize(),
       certificate.expiryDate,
-      reSerializeCertificate(certificate).getIssuerPrivateAddress()!!,
+      issuerPrivateAddress,
     );
   }
 

@@ -67,7 +67,7 @@ describe('retrieveLatest', () => {
 
   test('Expired certificate should be ignored', async () => {
     const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
-    await store.forceSave(expiredCertificate);
+    await store.forceSave(expiredCertificate, privateAddress);
 
     await expect(store.retrieveLatest(privateAddress, privateAddress)).resolves.toBeNull();
   });
@@ -75,9 +75,9 @@ describe('retrieveLatest', () => {
   test('Latest certificate should be returned', async () => {
     const now = new Date();
     const olderCertificate = await generateCertificate(addSeconds(now, 5));
-    await store.forceSave(olderCertificate);
+    await store.save(olderCertificate, privateAddress);
     const newerCertificate = await generateCertificate(addSeconds(now, 10));
-    await store.forceSave(newerCertificate);
+    await store.save(newerCertificate, privateAddress);
 
     const retrievedCertificate = await store.retrieveLatest(privateAddress, privateAddress);
 
@@ -99,9 +99,9 @@ describe('retrieveAll', () => {
 
   test('Expired certificates should be ignored', async () => {
     const validCertificate = await generateCertificate(addSeconds(new Date(), 3));
-    await store.forceSave(validCertificate);
+    await store.save(validCertificate, privateAddress);
     const expiredCertificate = await generateCertificate(subSeconds(new Date(), 1));
-    await store.forceSave(expiredCertificate);
+    await store.forceSave(expiredCertificate, privateAddress);
 
     const allCertificates = await store.retrieveAll(privateAddress, privateAddress);
 
@@ -111,9 +111,9 @@ describe('retrieveAll', () => {
 
   test('All valid certificates should be returned', async () => {
     const certificate1 = await generateCertificate(addSeconds(new Date(), 3));
-    await store.forceSave(certificate1);
+    await store.save(certificate1, privateAddress);
     const certificate2 = await generateCertificate(addSeconds(new Date(), 5));
-    await store.forceSave(certificate2);
+    await store.save(certificate2, privateAddress);
 
     const allCertificates = await store.retrieveAll(privateAddress, privateAddress);
 
