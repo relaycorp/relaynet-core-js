@@ -1,4 +1,4 @@
-// tslint:disable:max-classes-per-file no-object-mutation readonly-keyword
+// tslint:disable:max-classes-per-file no-object-mutation readonly-keyword readonly-array
 
 import { reSerializeCertificate } from '../_test_utils';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -103,12 +103,10 @@ interface MockStoredCertificateData {
 
 export class MockCertificateStore extends CertificateStore {
   public dataByPrivateAddress: {
-    // tslint:disable-next-line:readonly-array readonly-keyword
     [privateAddress: string]: MockStoredCertificateData[];
   } = {};
 
   public clear(): void {
-    // tslint:disable-next-line:no-object-mutation
     this.dataByPrivateAddress = {};
   }
 
@@ -168,7 +166,6 @@ export class MockCertificateStore extends CertificateStore {
       issuerPrivateAddress,
     };
     const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    // tslint:disable-next-line:no-object-mutation
     this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
   }
 }
