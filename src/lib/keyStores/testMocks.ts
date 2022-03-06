@@ -95,7 +95,7 @@ export class MockPublicKeyStore extends PublicKeyStore {
   }
 }
 
-export interface MockStoredCertificateData {
+interface MockStoredCertificateData {
   readonly expiryDate: Date;
   readonly certificateSerialized: ArrayBuffer;
   readonly issuerPrivateAddress: string;
