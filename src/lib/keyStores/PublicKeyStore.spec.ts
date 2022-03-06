@@ -3,7 +3,12 @@ import { SessionPublicKeyData } from './PublicKeyStore';
 import PublicKeyStoreError from './PublicKeyStoreError';
 import { MockPublicKeyStore } from './testMocks';
 
-describe('PublicKeyStore', () => {
+const store = new MockPublicKeyStore();
+beforeEach(() => {
+  store.clear();
+});
+
+describe('Session keys', () => {
   const CREATION_DATE = new Date();
 
   const sessionKeyId = Buffer.from([1, 3, 5, 7, 9]);
@@ -12,11 +17,6 @@ describe('PublicKeyStore', () => {
   beforeAll(async () => {
     const keyPair = await generateECDHKeyPair();
     sessionPublicKey = keyPair.publicKey;
-  });
-
-  const store = new MockPublicKeyStore();
-  beforeEach(() => {
-    store.clear();
   });
 
   describe('retrieveLastSessionKey', () => {
