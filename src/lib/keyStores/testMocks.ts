@@ -61,6 +61,8 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {
+  public identityKeys: { [peerPrivateAddress: string]: Buffer } = {};
+
   public sessionKeys: { [key: string]: SessionPublicKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
@@ -69,13 +71,22 @@ export class MockPublicKeyStore extends PublicKeyStore {
 
   public clear(): void {
     this.sessionKeys = {};
+    this.identityKeys = {};
   }
 
-  public registerKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {
+  public registerSessionKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {
     this.sessionKeys[peerPrivateAddress] = keyData;
   }
 
-  protected async fetchKey(peerPrivateAddress: string): Promise<SessionPublicKeyData | null> {
+  protected async retrieveIdentityKeySerialized(
+    peerPrivateAddress: string,
+  ): Promise<Buffer | null> {
+    return this.identityKeys[peerPrivateAddress] ?? null;
+  }
+
+  protected async retrieveSessionKeyData(
+    peerPrivateAddress: string,
+  ): Promise<SessionPublicKeyData | null> {
     if (this.fetchError) {
       throw this.fetchError;
     }
@@ -83,7 +94,14 @@ export class MockPublicKeyStore extends PublicKeyStore {
     return keyData ?? null;
   }
 
-  protected async saveKey(
+  protected async saveIdentityKeySerialized(
+    keySerialized: Buffer,
+    peerPrivateAddress: string,
+  ): Promise<void> {
+    this.identityKeys[peerPrivateAddress] = keySerialized;
+  }
+
+  protected async saveSessionKeyData(
     keyData: SessionPublicKeyData,
     peerPrivateAddress: string,
   ): Promise<void> {
