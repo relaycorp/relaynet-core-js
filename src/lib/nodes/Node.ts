@@ -1,10 +1,8 @@
-import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
-import { NodeError } from './errors';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
 
@@ -28,37 +26,6 @@ export abstract class Node<Payload extends PayloadPlaintext> {
       return null;
     }
     return new signerClass(certificate, this.privateKey);
-  }
-
-  /**
-   * Encrypt and serialize the `payload`.
-   *
-   * Also store the new ephemeral session key.
-   *
-   * @param payload
-   * @param peerPrivateAddress
-   */
-  public async wrapMessagePayload<P extends Payload>(
-    payload: P | ArrayBuffer,
-    peerPrivateAddress: string,
-  ): Promise<ArrayBuffer> {
-    const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
-      peerPrivateAddress,
-    );
-    if (!recipientSessionKey) {
-      throw new NodeError(`Could not find session key for peer ${peerPrivateAddress}`);
-    }
-    const { envelopedData, dhKeyId, dhPrivateKey } = await SessionEnvelopedData.encrypt(
-      payload instanceof ArrayBuffer ? payload : payload.serialize(),
-      recipientSessionKey,
-      this.cryptoOptions.encryption,
-    );
-    await this.keyStores.privateKeyStore.saveBoundSessionKey(
-      dhPrivateKey,
-      Buffer.from(dhKeyId),
-      peerPrivateAddress,
-    );
-    return envelopedData.serialize();
   }
 
   /**

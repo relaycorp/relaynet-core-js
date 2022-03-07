@@ -2,6 +2,7 @@
 
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificateStore } from './CertificateStore';
+import { KeyStoreSet } from './KeyStoreSet';
 import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
@@ -184,5 +185,17 @@ export class MockCertificateStore extends CertificateStore {
     };
     const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
     this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
+  }
+}
+
+export class MockKeyStoreSet implements KeyStoreSet {
+  public readonly certificateStore = new MockCertificateStore();
+  public readonly privateKeyStore = new MockPrivateKeyStore();
+  public readonly publicKeyStore = new MockPublicKeyStore();
+
+  public clear(): void {
+    this.certificateStore.clear();
+    this.privateKeyStore.clear();
+    this.publicKeyStore.clear();
   }
 }
