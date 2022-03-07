@@ -10,7 +10,6 @@ import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { issueGatewayCertificate } from '../../pki';
 import { SessionKeyPair } from '../../SessionKeyPair';
-import { PrivateGateway } from '../PrivateGateway';
 import { PrivatePublicGatewayChannel } from './PrivatePublicGatewayChannel';
 
 let publicGatewayPrivateAddress: string;
@@ -64,18 +63,12 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
-let privateGateway: PrivateGateway;
-beforeAll(() => {
-  privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES);
-});
-
 describe('generateCCA', () => {
   const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
 
   let channel: PrivatePublicGatewayChannel;
   beforeEach(() => {
     channel = new PrivatePublicGatewayChannel(
-      privateGateway,
       privateGatewayPrivateKey,
       privateGatewayPDCCertificate,
       publicGatewayPrivateAddress,

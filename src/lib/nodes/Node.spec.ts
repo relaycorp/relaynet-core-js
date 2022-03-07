@@ -1,17 +1,8 @@
 import { addDays, setMilliseconds } from 'date-fns';
 
-import {
-  arrayBufferFrom,
-  CRYPTO_OIDS,
-  expectBuffersToEqual,
-  reSerializeCertificate,
-} from '../_test_utils';
+import { arrayBufferFrom, expectBuffersToEqual, reSerializeCertificate } from '../_test_utils';
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
-import {
-  derSerializePublicKey,
-  generateECDHKeyPair,
-  generateRSAKeyPair,
-} from '../crypto_wrappers/keys';
+import { derSerializePublicKey, generateRSAKeyPair } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import {
@@ -24,7 +15,6 @@ import { issueGatewayCertificate } from '../pki';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
-import { NodeError } from './errors';
 import { Node } from './Node';
 
 const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
@@ -121,106 +111,6 @@ describe('getGSCSigner', () => {
     const verifier = new ParcelDeliveryVerifier([nodeCertificateIssuer]);
     const signature = await signer!.sign(plaintext);
     await verifier.verify(signature, plaintext);
-  });
-});
-
-describe('wrapMessagePayload', () => {
-  const stubPayload = new StubPayload(PAYLOAD_PLAINTEXT_CONTENT);
-
-  let recipientSessionKey: SessionKey;
-  let recipientSessionPrivateKey: CryptoKey;
-  beforeEach(async () => {
-    const recipientSessionKeyPair = await generateECDHKeyPair();
-    recipientSessionPrivateKey = recipientSessionKeyPair.privateKey;
-    recipientSessionKey = {
-      keyId: Buffer.from('key id'),
-      publicKey: recipientSessionKeyPair.publicKey,
-    };
-    await PUBLIC_KEY_STORE.saveSessionKey(
-      recipientSessionKey,
-      await nodeCertificate.calculateSubjectPrivateAddress(),
-      new Date(),
-    );
-  });
-
-  test('There should be a session key for the recipient', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES);
-    const peerPrivateAddress = 'non-existing';
-
-    await expect(
-      node.wrapMessagePayload(stubPayload, peerPrivateAddress),
-    ).rejects.toThrowWithMessage(
-      NodeError,
-      `Could not find session key for peer ${peerPrivateAddress}`,
-    );
-  });
-
-  test('Payload should be encrypted with the session key of the recipient', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES);
-
-    const payloadSerialized = await node.wrapMessagePayload(
-      stubPayload,
-      await nodeCertificate.calculateSubjectPrivateAddress(),
-    );
-
-    const payloadEnvelopedData = await SessionEnvelopedData.deserialize(payloadSerialized);
-    expect(payloadEnvelopedData.getRecipientKeyId()).toEqual(recipientSessionKey.keyId);
-    await expect(payloadEnvelopedData.decrypt(recipientSessionPrivateKey)).resolves.toEqual(
-      stubPayload.serialize(),
-    );
-  });
-
-  test('Passing the payload as an ArrayBuffer should be supported', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES);
-    const payloadPlaintext = stubPayload.serialize();
-
-    const payloadSerialized = await node.wrapMessagePayload(
-      payloadPlaintext,
-      await nodeCertificate.calculateSubjectPrivateAddress(),
-    );
-
-    const payloadEnvelopedData = await SessionEnvelopedData.deserialize(payloadSerialized);
-    await expect(payloadEnvelopedData.decrypt(recipientSessionPrivateKey)).resolves.toEqual(
-      payloadPlaintext,
-    );
-  });
-
-  test('The new ephemeral session key of the sender should be stored', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES);
-
-    const payloadSerialized = await node.wrapMessagePayload(
-      stubPayload,
-      await nodeCertificate.calculateSubjectPrivateAddress(),
-    );
-
-    const payloadEnvelopedData = (await SessionEnvelopedData.deserialize(
-      payloadSerialized,
-    )) as SessionEnvelopedData;
-    const originatorSessionKey = await payloadEnvelopedData.getOriginatorKey();
-    await expect(
-      PRIVATE_KEY_STORE.retrieveSessionKey(
-        originatorSessionKey.keyId,
-        await nodeCertificate.calculateSubjectPrivateAddress(),
-      ),
-    ).resolves.toBeTruthy();
-  });
-
-  test('Encryption options should be honoured if set', async () => {
-    const aesKeySize = 192;
-    const node = new StubNode(nodePrivateKey, KEY_STORES, {
-      encryption: { aesKeySize },
-    });
-
-    const payloadSerialized = await node.wrapMessagePayload(
-      stubPayload,
-      await nodeCertificate.calculateSubjectPrivateAddress(),
-    );
-
-    const payloadEnvelopedData = await SessionEnvelopedData.deserialize(payloadSerialized);
-    const encryptedContentInfo = payloadEnvelopedData.pkijsEnvelopedData.encryptedContentInfo;
-    expect(encryptedContentInfo.contentEncryptionAlgorithm.algorithmId).toEqual(
-      CRYPTO_OIDS.AES_CBC_192,
-    );
   });
 });
 
