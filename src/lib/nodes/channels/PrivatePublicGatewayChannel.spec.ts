@@ -78,6 +78,7 @@ describe('generateCCA', () => {
       privateGateway,
       privateGatewayPrivateKey,
       privateGatewayPDCCertificate,
+      publicGatewayPrivateAddress,
       publicGatewayPublicKey,
       PUBLIC_GATEWAY_PUBLIC_ADDRESS,
       KEY_STORES,

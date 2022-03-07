@@ -16,21 +16,26 @@ const OUTBOUND_CARGO_TTL_DAYS = 14;
  * Channel between a private gateway (the node) and its public gateway (the peer).
  */
 export class PrivatePublicGatewayChannel extends Channel<PrivateGateway> {
-  protected readonly publicGatewayPublicAddress: string;
   /**
    * @internal
    */
   constructor(
     node: PrivateGateway,
-    nodePrivateKey: CryptoKey,
-    nodeDeliveryAuth: Certificate,
+    privateGatewayPrivateKey: CryptoKey,
+    privateGatewayDeliveryAuth: Certificate,
+    publicGatewayPrivateAddress: string,
     publicGatewayPublicKey: CryptoKey,
-    publicGatewayPublicAddress: string,
+    public readonly publicGatewayPublicAddress: string,
     keyStores: KeyStoreSet,
   ) {
-    super(node, nodePrivateKey, nodeDeliveryAuth, publicGatewayPublicKey, keyStores);
-
-    this.publicGatewayPublicAddress = `https://${publicGatewayPublicAddress}`;
+    super(
+      node,
+      privateGatewayPrivateKey,
+      privateGatewayDeliveryAuth,
+      publicGatewayPrivateAddress,
+      publicGatewayPublicKey,
+      keyStores,
+    );
   }
 
   public async generateCCA(): Promise<ArrayBuffer> {
@@ -51,7 +56,7 @@ export class PrivatePublicGatewayChannel extends Channel<PrivateGateway> {
       await getPrivateAddressFromIdentityKey(this.peerPublicKey),
     );
     const cca = new CargoCollectionAuthorization(
-      this.publicGatewayPublicAddress,
+      `https://${this.publicGatewayPublicAddress}`,
       this.nodeDeliveryAuth,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },

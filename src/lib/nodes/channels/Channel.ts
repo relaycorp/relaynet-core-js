@@ -8,10 +8,11 @@ export abstract class Channel<N extends Node<any>> {
    * @internal
    */
   constructor(
-    protected readonly node: N,
+    public readonly node: N,
     protected readonly nodePrivateKey: CryptoKey,
-    protected readonly nodeDeliveryAuth: Certificate,
-    protected readonly peerPublicKey: CryptoKey,
+    public readonly nodeDeliveryAuth: Certificate,
+    public readonly peerPrivateAddress: string,
+    public readonly peerPublicKey: CryptoKey,
     protected readonly keyStores: KeyStoreSet,
   ) {}
 }
