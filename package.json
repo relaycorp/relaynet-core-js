@@ -48,7 +48,7 @@
     "dohdec": "^3.1.0",
     "is-valid-domain": "^0.1.6",
     "moment": "^2.29.1",
-    "pkijs": "^2.2.2",
+    "pkijs": "^2.3.0",
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.2",
     "verror": "^1.10.1",
@@ -69,7 +69,7 @@
     "ts-jest": "^27.1.3",
     "ts-node": "^10.6.0",
     "tslint": "^6.1.3",
-    "typedoc": "^0.22.12",
+    "typedoc": "^0.22.13",
     "typescript": "^4.6.2"
   },
   "prettier": "@relaycorp/shared-config/.prettierrc.json",
