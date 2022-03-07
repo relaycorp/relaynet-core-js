@@ -9,6 +9,9 @@ import { issueGatewayCertificate } from '../pki';
 import { Gateway } from './Gateway';
 
 export class PrivateGateway extends Gateway {
+  /**
+   * @internal
+   */
   public async getOrCreateCDAIssuer(): Promise<Certificate> {
     const now = new Date();
 
