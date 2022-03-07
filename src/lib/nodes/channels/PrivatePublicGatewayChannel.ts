@@ -35,7 +35,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
   }
 
   getOutboundRAMFAddress(): string {
-    return this.publicGatewayPublicAddress;
+    return `https://${this.publicGatewayPublicAddress}`;
   }
 
   public async generateCCA(): Promise<ArrayBuffer> {
@@ -53,7 +53,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     const ccr = new CargoCollectionRequest(cargoDeliveryAuthorization);
     const ccaPayload = await this.wrapMessagePayload(ccr);
     const cca = new CargoCollectionAuthorization(
-      `https://${this.publicGatewayPublicAddress}`,
+      this.getOutboundRAMFAddress(),
       this.nodeDeliveryAuth,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },

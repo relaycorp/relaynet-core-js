@@ -159,5 +159,5 @@ describe('generateCCA', () => {
 });
 
 test('getOutboundRAMFAddress should return public address of public gateway', () => {
-  expect(channel.getOutboundRAMFAddress()).toEqual(PUBLIC_GATEWAY_PUBLIC_ADDRESS);
+  expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
 });
