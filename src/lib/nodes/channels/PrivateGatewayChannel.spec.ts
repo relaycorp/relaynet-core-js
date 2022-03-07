@@ -9,6 +9,7 @@ import {
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { issueGatewayCertificate } from '../../pki';
+import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 
 let publicGatewayPrivateAddress: string;
@@ -52,20 +53,10 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
-let channel: PrivateGatewayChannel;
-beforeEach(() => {
-  channel = new PrivateGatewayChannel(
-    privateGatewayPrivateKey,
-    privateGatewayPDCCertificate,
-    publicGatewayPrivateAddress,
-    publicGatewayPublicKey,
-    KEY_STORES,
-  );
-});
-
 describe('getOrCreateCDAIssuer', () => {
   test('Certificate should be generated if none exists', async () => {
     await expect(retrieveCDAIssuer()).resolves.toBeNull();
+    const channel = new StubPrivateGatewayChannel();
 
     const issuer = await channel.getOrCreateCDAIssuer();
 
@@ -80,6 +71,7 @@ describe('getOrCreateCDAIssuer', () => {
       validityEndDate: subSeconds(cutoffDate, 1),
     });
     await saveCDAIssuer(expiringIssuer);
+    const channel = new StubPrivateGatewayChannel();
 
     const issuer = await channel.getOrCreateCDAIssuer();
 
@@ -89,6 +81,7 @@ describe('getOrCreateCDAIssuer', () => {
   });
 
   test('Existing certificate should be reused if it will be valid for 90+ days', async () => {
+    const channel = new StubPrivateGatewayChannel();
     const originalIssuer = await channel.getOrCreateCDAIssuer();
 
     const latestIssuer = await channel.getOrCreateCDAIssuer();
@@ -97,6 +90,8 @@ describe('getOrCreateCDAIssuer', () => {
   });
 
   test('Subject key should be that of private gateway', async () => {
+    const channel = new StubPrivateGatewayChannel();
+
     const issuer = await channel.getOrCreateCDAIssuer();
 
     await expect(derSerializePublicKey(await issuer.getPublicKey())).resolves.toEqual(
@@ -105,6 +100,8 @@ describe('getOrCreateCDAIssuer', () => {
   });
 
   test('Certificate should be self-issued', async () => {
+    const channel = new StubPrivateGatewayChannel();
+
     const issuer = await channel.getOrCreateCDAIssuer();
 
     await expect(issuer.calculateSubjectPrivateAddress()).resolves.toEqual(
@@ -113,6 +110,8 @@ describe('getOrCreateCDAIssuer', () => {
   });
 
   test('Certificate should be valid from 90 minutes in the past', async () => {
+    const channel = new StubPrivateGatewayChannel();
+
     const issuer = await channel.getOrCreateCDAIssuer();
 
     const expectedStartDate = subMinutes(new Date(), 90);
@@ -121,6 +120,8 @@ describe('getOrCreateCDAIssuer', () => {
   });
 
   test('Certificate should expire in 180 days when generated', async () => {
+    const channel = new StubPrivateGatewayChannel();
+
     const issuer = await channel.getOrCreateCDAIssuer();
 
     const expectedExpiryDate = addDays(new Date(), 180);
@@ -142,3 +143,20 @@ describe('getOrCreateCDAIssuer', () => {
     );
   }
 });
+
+class StubPrivateGatewayChannel extends PrivateGatewayChannel {
+  constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
+    super(
+      privateGatewayPrivateKey,
+      privateGatewayPDCCertificate,
+      publicGatewayPrivateAddress,
+      publicGatewayPublicKey,
+      KEY_STORES,
+      cryptoOptions,
+    );
+  }
+
+  public getOutboundRAMFAddress(): string {
+    throw new Error('not implemented');
+  }
+}

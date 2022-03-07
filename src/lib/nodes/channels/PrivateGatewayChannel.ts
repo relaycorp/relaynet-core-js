@@ -6,12 +6,12 @@ import {
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { issueGatewayCertificate } from '../../pki';
-import { Channel } from './Channel';
+import { GatewayChannel } from './GatewayChannel';
 
 /**
  * Channel whose node is a private gateway.
  */
-export class PrivateGatewayChannel extends Channel {
+export abstract class PrivateGatewayChannel extends GatewayChannel {
   public async getOrCreateCDAIssuer(): Promise<Certificate> {
     const now = new Date();
 

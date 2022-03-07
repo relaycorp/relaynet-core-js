@@ -63,21 +63,21 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
+const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
+
+let channel: PrivatePublicGatewayChannel;
+beforeEach(() => {
+  channel = new PrivatePublicGatewayChannel(
+    privateGatewayPrivateKey,
+    privateGatewayPDCCertificate,
+    publicGatewayPrivateAddress,
+    publicGatewayPublicKey,
+    PUBLIC_GATEWAY_PUBLIC_ADDRESS,
+    KEY_STORES,
+  );
+});
+
 describe('generateCCA', () => {
-  const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
-
-  let channel: PrivatePublicGatewayChannel;
-  beforeEach(() => {
-    channel = new PrivatePublicGatewayChannel(
-      privateGatewayPrivateKey,
-      privateGatewayPDCCertificate,
-      publicGatewayPrivateAddress,
-      publicGatewayPublicKey,
-      PUBLIC_GATEWAY_PUBLIC_ADDRESS,
-      KEY_STORES,
-    );
-  });
-
   test('Recipient should be public gateway', async () => {
     const ccaSerialized = await channel.generateCCA();
 
@@ -156,4 +156,8 @@ describe('generateCCA', () => {
       return ccr.cargoDeliveryAuthorization;
     }
   });
+});
+
+test('getOutboundRAMFAddress should return public address of public gateway', () => {
+  expect(channel.getOutboundRAMFAddress()).toEqual(PUBLIC_GATEWAY_PUBLIC_ADDRESS);
 });

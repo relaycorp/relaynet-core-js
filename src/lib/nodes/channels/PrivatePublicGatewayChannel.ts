@@ -34,6 +34,10 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     );
   }
 
+  getOutboundRAMFAddress(): string {
+    return this.publicGatewayPublicAddress;
+  }
+
   public async generateCCA(): Promise<ArrayBuffer> {
     const now = new Date();
     const startDate = subMinutes(now, CLOCK_DRIFT_TOLERANCE_MINUTES);

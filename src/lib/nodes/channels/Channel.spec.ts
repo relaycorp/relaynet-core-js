@@ -160,4 +160,8 @@ describe('wrapMessagePayload', () => {
   });
 });
 
-class StubChannel extends Channel {}
+class StubChannel extends Channel {
+  getOutboundRAMFAddress(): string {
+    throw new Error('not implemented');
+  }
+}

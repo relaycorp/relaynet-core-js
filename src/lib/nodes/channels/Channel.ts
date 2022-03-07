@@ -22,9 +22,9 @@ export abstract class Channel {
   /**
    * Encrypt and serialize the `payload`.
    *
-   * Also store the new ephemeral session key.
-   *
    * @param payload
+   *
+   * Also store the new ephemeral session key.
    */
   public async wrapMessagePayload(payload: PayloadPlaintext | ArrayBuffer): Promise<ArrayBuffer> {
     const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
@@ -45,4 +45,9 @@ export abstract class Channel {
     );
     return envelopedData.serialize();
   }
+
+  /**
+   * @internal
+   */
+  public abstract getOutboundRAMFAddress(): string;
 }
