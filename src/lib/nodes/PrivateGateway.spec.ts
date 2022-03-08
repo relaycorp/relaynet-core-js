@@ -55,7 +55,7 @@ describe('getChannelWithPublicGateway', () => {
       privateGatewayPDCCertificate,
       publicGatewayPrivateAddress,
     );
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES);
+    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, {});
 
     await expect(
       privateGateway.getChannelWithPublicGateway(
@@ -67,7 +67,7 @@ describe('getChannelWithPublicGateway', () => {
 
   test('Null should be returned if delivery authorization is not found', async () => {
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES);
+    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, {});
 
     await expect(
       privateGateway.getChannelWithPublicGateway(
@@ -83,7 +83,7 @@ describe('getChannelWithPublicGateway', () => {
       publicGatewayPrivateAddress,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES);
+    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, {});
 
     const channel = await privateGateway.getChannelWithPublicGateway(
       publicGatewayPrivateAddress,
@@ -98,7 +98,7 @@ describe('getChannelWithPublicGateway', () => {
     );
   });
 
-  test('Crypto options should be passed if set', async () => {
+  test('Crypto options should be passed', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
       publicGatewayPrivateAddress,

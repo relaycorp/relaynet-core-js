@@ -47,20 +47,17 @@ describe('PrivateKeyStore', () => {
     });
 
     describe('retrieveIdentityKey', () => {
+      test('Null should be returned if key pair does not exist', async () => {
+        await expect(MOCK_STORE.retrieveIdentityKey(privateAddress)).resolves.toBeNull();
+      });
+
       test('Existing key pair should be returned', async () => {
         await MOCK_STORE.saveIdentityKey(privateKey);
 
         const privateKeyRetrieved = await MOCK_STORE.retrieveIdentityKey(privateAddress);
 
-        await expect(derSerializePrivateKey(privateKeyRetrieved)).resolves.toEqual(
+        await expect(derSerializePrivateKey(privateKeyRetrieved!)).resolves.toEqual(
           await derSerializePrivateKey(privateKey),
-        );
-      });
-
-      test('UnknownKeyError should be thrown if key pair does not exist', async () => {
-        await expect(MOCK_STORE.retrieveIdentityKey(privateAddress)).rejects.toThrowWithMessage(
-          UnknownKeyError,
-          `Identity key for ${privateAddress} doesn't exist`,
         );
       });
 
