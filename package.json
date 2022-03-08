@@ -55,7 +55,7 @@
     "webcrypto-core": "^1.7.1"
   },
   "devDependencies": {
-    "@relaycorp/shared-config": "^1.6.1",
+    "@relaycorp/shared-config": "^1.7.0",
     "@types/asn1js": "2.0.2",
     "@types/jest": "^27.4.1",
     "@types/pkijs": "0.0.12",

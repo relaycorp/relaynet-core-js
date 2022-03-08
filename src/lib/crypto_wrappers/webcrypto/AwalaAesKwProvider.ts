@@ -33,12 +33,20 @@ export class AwalaAesKwProvider extends AesKwProvider {
     return this.originalProvider.onImportKey(format, keyData, algorithm, extractable, keyUsages);
   }
 
-  public async onEncrypt(_algorithm: Algorithm, key: any, data: ArrayBuffer): Promise<ArrayBuffer> {
+  public override async onEncrypt(
+    _algorithm: Algorithm,
+    key: any,
+    data: ArrayBuffer,
+  ): Promise<ArrayBuffer> {
     const aesKw = await this.makeAesKw(key);
     return aesKw.wrapKey(new Uint8Array(data));
   }
 
-  public async onDecrypt(_algorithm: Algorithm, key: any, data: ArrayBuffer): Promise<ArrayBuffer> {
+  public override async onDecrypt(
+    _algorithm: Algorithm,
+    key: any,
+    data: ArrayBuffer,
+  ): Promise<ArrayBuffer> {
     const aesKw = await this.makeAesKw(key);
     return typedArrayToBuffer(aesKw.unwrapKey(new Uint8Array(data)));
   }
