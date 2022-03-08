@@ -16,7 +16,7 @@ export abstract class Channel {
     public readonly peerPrivateAddress: string,
     public readonly peerPublicKey: CryptoKey,
     protected readonly keyStores: KeyStoreSet,
-    protected cryptoOptions: Partial<NodeCryptoOptions> = {},
+    public cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
   /**

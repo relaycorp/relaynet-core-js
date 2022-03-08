@@ -97,4 +97,21 @@ describe('getChannelWithPublicGateway', () => {
       await derSerializePublicKey(publicGatewayPublicKey),
     );
   });
+
+  test('Crypto options should be passed if set', async () => {
+    await KEY_STORES.certificateStore.save(
+      privateGatewayPDCCertificate,
+      publicGatewayPrivateAddress,
+    );
+    await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
+    const cryptoOptions = { encryption: { aesKeySize: 256 } };
+    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, cryptoOptions);
+
+    const channel = await privateGateway.getChannelWithPublicGateway(
+      publicGatewayPrivateAddress,
+      PUBLIC_GATEWAY_PUBLIC_ADDRESS,
+    );
+
+    expect(channel?.cryptoOptions).toEqual(cryptoOptions);
+  });
 });
