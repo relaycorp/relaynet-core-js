@@ -5,6 +5,7 @@ import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
 import { issueGatewayCertificate } from '../../pki';
+import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 
 const CLOCK_DRIFT_TOLERANCE_MINUTES = 90;
@@ -24,6 +25,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     publicGatewayPublicKey: CryptoKey,
     public readonly publicGatewayPublicAddress: string,
     keyStores: KeyStoreSet,
+    cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
     super(
       privateGatewayPrivateKey,
@@ -31,6 +33,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
       publicGatewayPrivateAddress,
       publicGatewayPublicKey,
       keyStores,
+      cryptoOptions,
     );
   }
 
