@@ -29,6 +29,7 @@ export class PrivateGateway extends Gateway {
       publicGatewayPublicKey,
       publicGatewayPublicAddress,
       this.keyStores,
+      this.cryptoOptions,
     );
   }
 }
