@@ -6,6 +6,7 @@ import { NodeCryptoOptions } from '../NodeCryptoOptions';
 
 export abstract class NodeManager<N extends Node<any>> {
   protected abstract readonly nodeClass: new (
+    privateAddress: string,
     privateKey: CryptoKey,
     keyStores: KeyStoreSet,
     cryptoOptions: Partial<NodeCryptoOptions>,
@@ -23,7 +24,12 @@ export abstract class NodeManager<N extends Node<any>> {
     if (!nodePrivateKey) {
       return null;
     }
-    return new this.nodeClass(nodePrivateKey, this.keyStores, this.cryptoOptions);
+    return new this.nodeClass(
+      nodePrivateAddress,
+      nodePrivateKey,
+      this.keyStores,
+      this.cryptoOptions,
+    );
   }
 
   /**

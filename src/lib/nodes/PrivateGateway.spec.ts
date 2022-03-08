@@ -13,6 +13,7 @@ import { PrivateGateway } from './PrivateGateway';
 let publicGatewayPrivateAddress: string;
 let publicGatewayPublicKey: CryptoKey;
 let publicGatewayCertificate: Certificate;
+let privateGatewayPrivateAddress: string;
 let privateGatewayPrivateKey: CryptoKey;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
@@ -31,6 +32,9 @@ beforeAll(async () => {
   // Private gateway
   const privateGatewayKeyPair = await generateRSAKeyPair();
   privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
+  privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(
+    privateGatewayKeyPair.publicKey,
+  );
   privateGatewayPDCCertificate = await issueGatewayCertificate({
     issuerCertificate: publicGatewayCertificate,
     issuerPrivateKey: publicGatewayKeyPair.privateKey,
@@ -55,7 +59,12 @@ describe('getChannelWithPublicGateway', () => {
       privateGatewayPDCCertificate,
       publicGatewayPrivateAddress,
     );
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, {});
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
 
     await expect(
       privateGateway.getChannelWithPublicGateway(
@@ -67,7 +76,12 @@ describe('getChannelWithPublicGateway', () => {
 
   test('Null should be returned if delivery authorization is not found', async () => {
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, {});
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
 
     await expect(
       privateGateway.getChannelWithPublicGateway(
@@ -83,7 +97,12 @@ describe('getChannelWithPublicGateway', () => {
       publicGatewayPrivateAddress,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, {});
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
 
     const channel = await privateGateway.getChannelWithPublicGateway(
       publicGatewayPrivateAddress,
@@ -105,7 +124,12 @@ describe('getChannelWithPublicGateway', () => {
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
     const cryptoOptions = { encryption: { aesKeySize: 256 } };
-    const privateGateway = new PrivateGateway(privateGatewayPrivateKey, KEY_STORES, cryptoOptions);
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      cryptoOptions,
+    );
 
     const channel = await privateGateway.getChannelWithPublicGateway(
       publicGatewayPrivateAddress,
