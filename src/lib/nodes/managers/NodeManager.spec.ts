@@ -48,6 +48,7 @@ describe('getPrivate', () => {
 
     const node = await manager.getPrivate(nodePrivateAddress);
 
+    expect(node?.privateAddress).toEqual(nodePrivateAddress);
     await expect(derSerializePrivateKey(node!.getPrivateKey())).resolves.toEqual(
       await derSerializePrivateKey(nodePrivateKey),
     );
@@ -61,7 +62,7 @@ describe('getPrivate', () => {
 
     const node = await manager.getPrivate(nodePrivateAddress);
 
-    expect(node?.cryptoOptions).toEqual(cryptoOptions);
+    expect(node?.getCryptoOptions()).toEqual(cryptoOptions);
   });
 });
 

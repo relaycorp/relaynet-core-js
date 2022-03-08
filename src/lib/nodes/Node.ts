@@ -8,9 +8,10 @@ import { Signer } from './signatures/Signer';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
-    protected privateKey: CryptoKey,
-    protected keyStores: KeyStoreSet,
-    public cryptoOptions: Partial<NodeCryptoOptions>,
+    public readonly privateAddress: string,
+    protected readonly privateKey: CryptoKey,
+    protected readonly keyStores: KeyStoreSet,
+    protected readonly cryptoOptions: Partial<NodeCryptoOptions>,
   ) {}
 
   public async getGSCSigner<S extends Signer>(

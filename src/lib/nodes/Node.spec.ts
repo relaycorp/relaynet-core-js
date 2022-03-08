@@ -2,7 +2,11 @@ import { addDays, setMilliseconds } from 'date-fns';
 
 import { arrayBufferFrom, expectBuffersToEqual, reSerializeCertificate } from '../_test_utils';
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
-import { derSerializePublicKey, generateRSAKeyPair } from '../crypto_wrappers/keys';
+import {
+  derSerializePublicKey,
+  generateRSAKeyPair,
+  getPrivateAddressFromIdentityKey,
+} from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import {
@@ -19,6 +23,7 @@ import { StubNode } from './_test_utils';
 
 const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
+let nodePrivateAddress: string;
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
 let nodeCertificateIssuer: Certificate;
@@ -43,6 +48,7 @@ beforeAll(async () => {
       validityEndDate: TOMORROW,
     }),
   );
+  nodePrivateAddress = await getPrivateAddressFromIdentityKey(nodeKeyPair.publicKey);
 
   const peerKeyPair = await generateRSAKeyPair();
   peerCertificate = await issueGatewayCertificate({
@@ -80,7 +86,7 @@ describe('getGSCSigner', () => {
   });
 
   test('Nothing should be returned if certificate does not exist', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     CERTIFICATE_STORE.clear();
 
     await expect(
@@ -89,7 +95,7 @@ describe('getGSCSigner', () => {
   });
 
   test('Signer should be of the type requested if certificate exists', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     const signer = await node.getGSCSigner(
       nodeCertificateIssuerPrivateAddress,
@@ -100,7 +106,7 @@ describe('getGSCSigner', () => {
   });
 
   test('Signer should receive the certificate and private key of the node', async () => {
-    const node = new StubNode(nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     const signer = await node.getGSCSigner(
       nodeCertificateIssuerPrivateAddress,
@@ -137,7 +143,7 @@ describe('unwrapMessagePayload', () => {
       peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNode(nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -154,7 +160,7 @@ describe('unwrapMessagePayload', () => {
       peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNode(nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     await node.unwrapMessagePayload(message);
 
