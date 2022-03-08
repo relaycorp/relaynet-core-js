@@ -43,13 +43,12 @@ export abstract class PrivateKeyStore {
   }
 
   /**
-   * Return the private component of a node key pair.
+   * Return the private component of a node key pair if it exists.
    *
    * @param privateAddress
-   * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look up could not be done
    */
-  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey> {
+  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
     let keySerialized: Buffer | null;
     try {
       keySerialized = await this.retrieveIdentityKeySerialized(privateAddress);
@@ -58,7 +57,7 @@ export abstract class PrivateKeyStore {
     }
 
     if (!keySerialized) {
-      throw new UnknownKeyError(`Identity key for ${privateAddress} doesn't exist`);
+      return null;
     }
 
     return derDeserializeRSAPrivateKey(keySerialized, {

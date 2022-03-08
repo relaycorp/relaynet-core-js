@@ -10,7 +10,7 @@ export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
     protected privateKey: CryptoKey,
     protected keyStores: KeyStoreSet,
-    protected cryptoOptions: Partial<NodeCryptoOptions> = {},
+    public cryptoOptions: Partial<NodeCryptoOptions>,
   ) {}
 
   public async getGSCSigner<S extends Signer>(
