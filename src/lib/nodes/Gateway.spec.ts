@@ -45,11 +45,11 @@ beforeEach(async () => {
   KEY_STORES.clear();
 });
 
-describe('getGCSVerifier', () => {
+describe('getGSCVerifier', () => {
   test('Null should be returned if there are no trusted certificates', async () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
-    const verifier = await gateway.getGCSVerifier(
+    const verifier = await gateway.getGSCVerifier(
       nodeCertificateIssuerPrivateAddress,
       StubVerifier,
     );
@@ -61,7 +61,7 @@ describe('getGCSVerifier', () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
 
-    const verifier = await gateway.getGCSVerifier(
+    const verifier = await gateway.getGSCVerifier(
       `not-${nodeCertificateIssuerPrivateAddress}`,
       StubVerifier,
     );
@@ -73,7 +73,7 @@ describe('getGCSVerifier', () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
 
-    const verifier = await gateway.getGCSVerifier(
+    const verifier = await gateway.getGSCVerifier(
       nodeCertificateIssuerPrivateAddress,
       StubVerifier,
     );

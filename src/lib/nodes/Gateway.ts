@@ -5,7 +5,7 @@ import { Node } from './Node';
 import { Verifier } from './signatures/Verifier';
 
 export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {
-  public async getGCSVerifier<V extends Verifier>(
+  public async getGSCVerifier<V extends Verifier>(
     peerPrivateAddress: string,
     verifierClass: new (trustedCertificates: readonly Certificate[]) => V,
   ): Promise<V | null> {
