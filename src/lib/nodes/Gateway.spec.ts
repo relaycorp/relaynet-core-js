@@ -50,7 +50,7 @@ describe('getGCSVerifier', () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     const verifier = await gateway.getGCSVerifier(
-      `not-${nodeCertificateIssuerPrivateAddress}`,
+      nodeCertificateIssuerPrivateAddress,
       StubVerifier,
     );
 
