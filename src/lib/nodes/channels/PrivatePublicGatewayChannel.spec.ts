@@ -78,6 +78,10 @@ beforeEach(() => {
   );
 });
 
+test('getOutboundRAMFAddress should return public address of public gateway', () => {
+  expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
+});
+
 describe('generateCCA', () => {
   test('Recipient should be public gateway', async () => {
     const ccaSerialized = await channel.generateCCA();
@@ -157,8 +161,4 @@ describe('generateCCA', () => {
       return ccr.cargoDeliveryAuthorization;
     }
   });
-});
-
-test('getOutboundRAMFAddress should return public address of public gateway', () => {
-  expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
 });
