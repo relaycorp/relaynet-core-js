@@ -10,6 +10,8 @@ import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { issueGatewayCertificate } from '../pki';
 import { PrivateGateway } from './PrivateGateway';
 
+const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
+
 let publicGatewayPrivateAddress: string;
 let publicGatewayPublicKey: CryptoKey;
 let publicGatewayCertificate: Certificate;
@@ -51,9 +53,15 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
-describe('getChannelWithPublicGateway', () => {
-  const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
+describe('savePublicGatewayChannel', () => {
+  test.todo('Delivery authorisation should be stored');
 
+  test.todo('Public key of public gateway should be stored');
+
+  test.todo('Session public key of public gateway should be stored');
+});
+
+describe('retrievePublicGatewayChannel', () => {
   test('Null should be returned if public gateway public key is not found', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
@@ -67,7 +75,7 @@ describe('getChannelWithPublicGateway', () => {
     );
 
     await expect(
-      privateGateway.getChannelWithPublicGateway(
+      privateGateway.retrievePublicGatewayChannel(
         publicGatewayPrivateAddress,
         PUBLIC_GATEWAY_PUBLIC_ADDRESS,
       ),
@@ -84,7 +92,7 @@ describe('getChannelWithPublicGateway', () => {
     );
 
     await expect(
-      privateGateway.getChannelWithPublicGateway(
+      privateGateway.retrievePublicGatewayChannel(
         publicGatewayPrivateAddress,
         PUBLIC_GATEWAY_PUBLIC_ADDRESS,
       ),
@@ -104,7 +112,7 @@ describe('getChannelWithPublicGateway', () => {
       {},
     );
 
-    const channel = await privateGateway.getChannelWithPublicGateway(
+    const channel = await privateGateway.retrievePublicGatewayChannel(
       publicGatewayPrivateAddress,
       PUBLIC_GATEWAY_PUBLIC_ADDRESS,
     );
@@ -131,7 +139,7 @@ describe('getChannelWithPublicGateway', () => {
       cryptoOptions,
     );
 
-    const channel = await privateGateway.getChannelWithPublicGateway(
+    const channel = await privateGateway.retrievePublicGatewayChannel(
       publicGatewayPrivateAddress,
       PUBLIC_GATEWAY_PUBLIC_ADDRESS,
     );
