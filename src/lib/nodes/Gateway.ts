@@ -2,4 +2,4 @@ import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequ
 import CargoMessageSet from '../messages/payloads/CargoMessageSet';
 import { Node } from './Node';
 
-export class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {}
+export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {}

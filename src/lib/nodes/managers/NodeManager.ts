@@ -1,36 +1,13 @@
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { SessionKey } from '../../SessionKey';
 import { SessionKeyPair } from '../../SessionKeyPair';
-import { Node } from '../Node';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 
-export abstract class NodeManager<N extends Node<any>> {
-  protected abstract readonly nodeClass: new (
-    privateAddress: string,
-    privateKey: CryptoKey,
-    keyStores: KeyStoreSet,
-    cryptoOptions: Partial<NodeCryptoOptions>,
-  ) => N;
-
+export abstract class NodeManager {
   constructor(
     protected keyStores: KeyStoreSet,
     protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
-
-  public async getPrivate(nodePrivateAddress: string): Promise<N | null> {
-    const nodePrivateKey = await this.keyStores.privateKeyStore.retrieveIdentityKey(
-      nodePrivateAddress,
-    );
-    if (!nodePrivateKey) {
-      return null;
-    }
-    return new this.nodeClass(
-      nodePrivateAddress,
-      nodePrivateKey,
-      this.keyStores,
-      this.cryptoOptions,
-    );
-  }
 
   /**
    * Generate and store a new session key.
