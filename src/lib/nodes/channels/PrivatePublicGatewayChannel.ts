@@ -1,4 +1,5 @@
 import { addDays, differenceInSeconds, subMinutes } from 'date-fns';
+import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
@@ -40,6 +41,18 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
   getOutboundRAMFAddress(): string {
     return `https://${this.publicGatewayPublicAddress}`;
   }
+
+  //region Private endpoint registration
+
+  public async authorizeEndpointRegistration(
+    gatewayData: ArrayBuffer,
+    expiryDate: Date,
+  ): Promise<ArrayBuffer> {
+    const authorization = new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
+    return authorization.serialize(this.nodePrivateKey);
+  }
+
+  //endregion
 
   public async generateCCA(): Promise<ArrayBuffer> {
     const now = new Date();

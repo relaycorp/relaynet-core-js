@@ -1,4 +1,6 @@
 import { addDays, setMilliseconds, subMinutes } from 'date-fns';
+import { arrayBufferFrom } from '../../_test_utils';
+import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 
 import {
   derSerializePublicKey,
@@ -16,7 +18,7 @@ let publicGatewayPrivateAddress: string;
 let publicGatewayPublicKey: CryptoKey;
 let publicGatewayCertificate: Certificate;
 let privateGatewayPrivateAddress: string;
-let privateGatewayPrivateKey: CryptoKey;
+let privateGatewayKeyPair: CryptoKeyPair;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
@@ -32,8 +34,7 @@ beforeAll(async () => {
   });
 
   // Private gateway
-  const privateGatewayKeyPair = await generateRSAKeyPair();
-  privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
+  privateGatewayKeyPair = await generateRSAKeyPair();
   privateGatewayPDCCertificate = await issueGatewayCertificate({
     issuerCertificate: publicGatewayCertificate,
     issuerPrivateKey: publicGatewayKeyPair.privateKey,
@@ -68,7 +69,7 @@ const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
 let channel: PrivatePublicGatewayChannel;
 beforeEach(() => {
   channel = new PrivatePublicGatewayChannel(
-    privateGatewayPrivateKey,
+    privateGatewayKeyPair.privateKey!,
     privateGatewayPDCCertificate,
     publicGatewayPrivateAddress,
     publicGatewayPublicKey,
@@ -80,6 +81,37 @@ beforeEach(() => {
 
 test('getOutboundRAMFAddress should return public address of public gateway', () => {
   expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
+});
+
+describe('authorizeEndpointRegistration', () => {
+  const GATEWAY_DATA = arrayBufferFrom('the gw data');
+  const EXPIRY_DATE = setMilliseconds(addDays(new Date(), 1), 0);
+
+  test('Gateway data should be honoured', async () => {
+    const authorizationSerialized = await channel.authorizeEndpointRegistration(
+      GATEWAY_DATA,
+      EXPIRY_DATE,
+    );
+
+    const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+      authorizationSerialized,
+      privateGatewayKeyPair.publicKey,
+    );
+    expect(authorization.gatewayData).toEqual(GATEWAY_DATA);
+  });
+
+  test('Expiry date should be honoured', async () => {
+    const authorizationSerialized = await channel.authorizeEndpointRegistration(
+      GATEWAY_DATA,
+      EXPIRY_DATE,
+    );
+
+    const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+      authorizationSerialized,
+      privateGatewayKeyPair.publicKey,
+    );
+    expect(authorization.expiryDate).toEqual(EXPIRY_DATE);
+  });
 });
 
 describe('generateCCA', () => {
