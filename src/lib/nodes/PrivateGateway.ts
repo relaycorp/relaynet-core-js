@@ -1,9 +1,44 @@
 import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
+import Certificate from '../crypto_wrappers/x509/Certificate';
+import { SessionKey } from '../SessionKey';
 import { PrivatePublicGatewayChannel } from './channels/PrivatePublicGatewayChannel';
+import { NodeError } from './errors';
 import { Gateway } from './Gateway';
 
 export class PrivateGateway extends Gateway {
-  public async getChannelWithPublicGateway(
+  /**
+   * Create channel with public gateway using registration details.
+   *
+   * @param deliveryAuthorization
+   * @param publicGatewayIdentityCertificate
+   * @param publicGatewaySessionPublicKey
+   * @throws NodeError if the `publicGatewayIdentityCertificate` didn't issue
+   *    `deliveryAuthorization`
+   */
+  public async savePublicGatewayChannel(
+    deliveryAuthorization: Certificate,
+    publicGatewayIdentityCertificate: Certificate,
+    publicGatewaySessionPublicKey: SessionKey,
+  ): Promise<void> {
+    try {
+      await deliveryAuthorization.getCertificationPath([], [publicGatewayIdentityCertificate]);
+    } catch (_) {
+      throw new NodeError('Delivery authorization was not issued by public gateway');
+    }
+
+    const publicGatewayPrivateAddress = deliveryAuthorization.getIssuerPrivateAddress()!;
+    await this.keyStores.certificateStore.save(deliveryAuthorization, publicGatewayPrivateAddress);
+    await this.keyStores.publicKeyStore.saveIdentityKey(
+      await publicGatewayIdentityCertificate.getPublicKey(),
+    );
+    await this.keyStores.publicKeyStore.saveSessionKey(
+      publicGatewaySessionPublicKey,
+      publicGatewayPrivateAddress,
+      new Date(),
+    );
+  }
+
+  public async retrievePublicGatewayChannel(
     publicGatewayPrivateAddress: string,
     publicGatewayPublicAddress: string,
   ): Promise<PrivatePublicGatewayChannel | null> {

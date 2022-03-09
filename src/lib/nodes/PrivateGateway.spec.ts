@@ -1,5 +1,6 @@
-import { addDays, setMilliseconds } from 'date-fns';
+import { addDays, setMilliseconds, subSeconds } from 'date-fns';
 
+import { reSerializeCertificate } from '../_test_utils';
 import {
   derSerializePublicKey,
   generateRSAKeyPair,
@@ -8,7 +9,12 @@ import {
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { issueGatewayCertificate } from '../pki';
+import { SessionKey } from '../SessionKey';
+import { SessionKeyPair } from '../SessionKeyPair';
+import { NodeError } from './errors';
 import { PrivateGateway } from './PrivateGateway';
+
+const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
 
 let publicGatewayPrivateAddress: string;
 let publicGatewayPublicKey: CryptoKey;
@@ -23,11 +29,13 @@ beforeAll(async () => {
   const publicGatewayKeyPair = await generateRSAKeyPair();
   publicGatewayPublicKey = publicGatewayKeyPair.publicKey;
   publicGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(publicGatewayPublicKey);
-  publicGatewayCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: publicGatewayKeyPair.privateKey,
-    subjectPublicKey: publicGatewayPublicKey,
-    validityEndDate: tomorrow,
-  });
+  publicGatewayCertificate = reSerializeCertificate(
+    await issueGatewayCertificate({
+      issuerPrivateKey: publicGatewayKeyPair.privateKey,
+      subjectPublicKey: publicGatewayPublicKey,
+      validityEndDate: tomorrow,
+    }),
+  );
 
   // Private gateway
   const privateGatewayKeyPair = await generateRSAKeyPair();
@@ -35,25 +43,118 @@ beforeAll(async () => {
   privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(
     privateGatewayKeyPair.publicKey,
   );
-  privateGatewayPDCCertificate = await issueGatewayCertificate({
-    issuerCertificate: publicGatewayCertificate,
-    issuerPrivateKey: publicGatewayKeyPair.privateKey,
-    subjectPublicKey: privateGatewayKeyPair.publicKey,
-    validityEndDate: tomorrow,
-  });
+  privateGatewayPDCCertificate = reSerializeCertificate(
+    await issueGatewayCertificate({
+      issuerCertificate: publicGatewayCertificate,
+      issuerPrivateKey: publicGatewayKeyPair.privateKey,
+      subjectPublicKey: privateGatewayKeyPair.publicKey,
+      validityEndDate: tomorrow,
+    }),
+  );
 });
 
 const KEY_STORES = new MockKeyStoreSet();
-beforeEach(async () => {
-  await KEY_STORES.privateKeyStore.saveIdentityKey(privateGatewayPrivateKey);
-});
 afterEach(() => {
   KEY_STORES.clear();
 });
 
-describe('getChannelWithPublicGateway', () => {
-  const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
+describe('savePublicGatewayChannel', () => {
+  let publicGatewaySessionPublicKey: SessionKey;
+  beforeAll(async () => {
+    const publicGatewaySessionKeyPair = await SessionKeyPair.generate();
+    publicGatewaySessionPublicKey = publicGatewaySessionKeyPair.sessionKey;
+  });
 
+  test('Registration should be refused if public gateway did not issue authorization', async () => {
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
+
+    await expect(
+      privateGateway.savePublicGatewayChannel(
+        privateGatewayPDCCertificate,
+        privateGatewayPDCCertificate, // Invalid
+        publicGatewaySessionPublicKey,
+      ),
+    ).rejects.toThrowWithMessage(
+      NodeError,
+      'Delivery authorization was not issued by public gateway',
+    );
+  });
+
+  test('Delivery authorisation should be stored', async () => {
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
+
+    await privateGateway.savePublicGatewayChannel(
+      privateGatewayPDCCertificate,
+      publicGatewayCertificate,
+      publicGatewaySessionPublicKey,
+    );
+
+    await expect(
+      KEY_STORES.certificateStore.retrieveLatest(
+        privateGatewayPrivateAddress,
+        publicGatewayPrivateAddress,
+      ),
+    ).resolves.toSatisfy((c) => c.isEqual(privateGatewayPDCCertificate));
+  });
+
+  test('Public key of public gateway should be stored', async () => {
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
+
+    await privateGateway.savePublicGatewayChannel(
+      privateGatewayPDCCertificate,
+      publicGatewayCertificate,
+      publicGatewaySessionPublicKey,
+    );
+
+    const publicGatewayPublicKeyRetrieved = await KEY_STORES.publicKeyStore.retrieveIdentityKey(
+      publicGatewayPrivateAddress,
+    );
+    expect(publicGatewayPublicKeyRetrieved).toBeTruthy();
+    await expect(derSerializePublicKey(publicGatewayPublicKeyRetrieved!)).resolves.toEqual(
+      await derSerializePublicKey(publicGatewayPublicKey),
+    );
+  });
+
+  test('Session public key of public gateway should be stored', async () => {
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
+
+    await privateGateway.savePublicGatewayChannel(
+      privateGatewayPDCCertificate,
+      publicGatewayCertificate,
+      publicGatewaySessionPublicKey,
+    );
+
+    const keyData = KEY_STORES.publicKeyStore.sessionKeys[publicGatewayPrivateAddress];
+    expect(keyData.publicKeyDer).toEqual(
+      await derSerializePublicKey(publicGatewaySessionPublicKey.publicKey),
+    );
+    expect(keyData.publicKeyId).toEqual(publicGatewaySessionPublicKey.keyId);
+    expect(keyData.publicKeyCreationTime).toBeBeforeOrEqualTo(new Date());
+    expect(keyData.publicKeyCreationTime).toBeAfter(subSeconds(new Date(), 10));
+  });
+});
+
+describe('retrievePublicGatewayChannel', () => {
   test('Null should be returned if public gateway public key is not found', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
@@ -67,7 +168,7 @@ describe('getChannelWithPublicGateway', () => {
     );
 
     await expect(
-      privateGateway.getChannelWithPublicGateway(
+      privateGateway.retrievePublicGatewayChannel(
         publicGatewayPrivateAddress,
         PUBLIC_GATEWAY_PUBLIC_ADDRESS,
       ),
@@ -84,7 +185,7 @@ describe('getChannelWithPublicGateway', () => {
     );
 
     await expect(
-      privateGateway.getChannelWithPublicGateway(
+      privateGateway.retrievePublicGatewayChannel(
         publicGatewayPrivateAddress,
         PUBLIC_GATEWAY_PUBLIC_ADDRESS,
       ),
@@ -104,7 +205,7 @@ describe('getChannelWithPublicGateway', () => {
       {},
     );
 
-    const channel = await privateGateway.getChannelWithPublicGateway(
+    const channel = await privateGateway.retrievePublicGatewayChannel(
       publicGatewayPrivateAddress,
       PUBLIC_GATEWAY_PUBLIC_ADDRESS,
     );
@@ -131,7 +232,7 @@ describe('getChannelWithPublicGateway', () => {
       cryptoOptions,
     );
 
-    const channel = await privateGateway.getChannelWithPublicGateway(
+    const channel = await privateGateway.retrievePublicGatewayChannel(
       publicGatewayPrivateAddress,
       PUBLIC_GATEWAY_PUBLIC_ADDRESS,
     );
