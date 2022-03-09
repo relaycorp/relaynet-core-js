@@ -13,7 +13,7 @@ export class PrivateGateway extends Gateway {
   ): Promise<void> {
     try {
       await deliveryAuthorization.getCertificationPath([], [publicGatewayIdentityCertificate]);
-    } catch (err) {
+    } catch (_) {
       throw new NodeError('Delivery authorization was not issued by public gateway');
     }
 
