@@ -9,9 +9,6 @@ import { makeSafePlaintext } from './utils';
  * Object to verify detached signatures given a key pair.
  */
 export abstract class Verifier {
-  /**
-   * @internal
-   */
   public abstract readonly oid: string;
 
   constructor(protected trustedCertificates: readonly Certificate[]) {}

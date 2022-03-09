@@ -7,9 +7,6 @@ import { makeSafePlaintext } from './utils';
  * Object to produce detached signatures given a key pair.
  */
 export abstract class Signer {
-  /**
-   * @internal
-   */
   public abstract readonly oid: string;
 
   /**
