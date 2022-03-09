@@ -4,7 +4,6 @@ import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
-import { Verifier } from './signatures/Verifier';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
@@ -26,20 +25,6 @@ export abstract class Node<Payload extends PayloadPlaintext> {
       return null;
     }
     return new signerClass(certificate, this.privateKey);
-  }
-
-  public async getGCSVerifier<V extends Verifier>(
-    peerPrivateAddress: string,
-    verifierClass: new (trustedCertificates: readonly Certificate[]) => V,
-  ): Promise<V | null> {
-    const trustedCertificates = await this.keyStores.certificateStore.retrieveAll(
-      this.privateAddress,
-      peerPrivateAddress,
-    );
-    if (trustedCertificates.length === 0) {
-      return null;
-    }
-    return new verifierClass(trustedCertificates);
   }
 
   /**

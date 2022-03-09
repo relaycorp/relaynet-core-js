@@ -15,7 +15,6 @@ import { StubMessage } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { StubNode } from './_test_utils';
-import { StubVerifier } from './signatures/_test_utils';
 
 let nodePrivateAddress: string;
 let nodePrivateKey: CryptoKey;
@@ -54,8 +53,6 @@ beforeEach(async () => {
   KEY_STORES.clear();
 });
 
-const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
-
 describe('getGSCSigner', () => {
   test('Nothing should be returned if certificate does not exist', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
@@ -93,43 +90,8 @@ describe('getGSCSigner', () => {
   });
 });
 
-describe('getGCSVerifier', () => {
-  test('Null should be returned if there are no trusted certificates', async () => {
-    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-
-    const verifier = await node.getGCSVerifier(
-      `not-${nodeCertificateIssuerPrivateAddress}`,
-      StubVerifier,
-    );
-
-    expect(verifier).toBeNull();
-  });
-
-  test('Certificates from a different issuer should be ignored', async () => {
-    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
-
-    const verifier = await node.getGCSVerifier(
-      `not-${nodeCertificateIssuerPrivateAddress}`,
-      StubVerifier,
-    );
-
-    expect(verifier).toBeNull();
-  });
-
-  test('All certificates should be set as trusted', async () => {
-    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
-
-    const verifier = await node.getGCSVerifier(nodeCertificateIssuerPrivateAddress, StubVerifier);
-
-    const trustedCertificates = verifier!.getTrustedCertificates();
-    expect(trustedCertificates).toHaveLength(1);
-    expect(nodeCertificate.isEqual(trustedCertificates[0])).toBeTrue();
-  });
-});
-
 describe('unwrapMessagePayload', () => {
+  const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
   const RECIPIENT_ADDRESS = 'https://example.com';
 
   let peerCertificate: Certificate;
