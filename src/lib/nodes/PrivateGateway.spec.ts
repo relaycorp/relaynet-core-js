@@ -149,7 +149,7 @@ describe('savePublicGatewayChannel', () => {
       await derSerializePublicKey(publicGatewaySessionPublicKey.publicKey),
     );
     expect(keyData.publicKeyId).toEqual(publicGatewaySessionPublicKey.keyId);
-    expect(keyData.publicKeyCreationTime).toBeBefore(new Date());
+    expect(keyData.publicKeyCreationTime).toBeBeforeOrEqualTo(new Date());
     expect(keyData.publicKeyCreationTime).toBeAfter(subSeconds(new Date(), 10));
   });
 });
