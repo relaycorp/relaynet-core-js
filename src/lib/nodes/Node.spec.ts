@@ -8,35 +8,33 @@ import {
   getPrivateAddressFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { KeyStoreSet } from '../keyStores/KeyStoreSet';
-import {
-  MockCertificateStore,
-  MockPrivateKeyStore,
-  MockPublicKeyStore,
-} from '../keyStores/testMocks';
+import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
 import { issueGatewayCertificate } from '../pki';
 import { StubMessage } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { StubNode } from './_test_utils';
-
-const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
+import { StubVerifier } from './signatures/_test_utils';
 
 let nodePrivateAddress: string;
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
 let nodeCertificateIssuer: Certificate;
-let peerCertificate: Certificate;
+let nodeCertificateIssuerPrivateAddress: string;
 beforeAll(async () => {
+  const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
+
   const issuerKeyPair = await generateRSAKeyPair();
   nodeCertificateIssuer = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerPrivateKey: issuerKeyPair.privateKey,
       subjectPublicKey: issuerKeyPair.publicKey,
-      validityEndDate: TOMORROW,
+      validityEndDate: tomorrow,
     }),
   );
+  nodeCertificateIssuerPrivateAddress =
+    await nodeCertificateIssuer.calculateSubjectPrivateAddress();
 
   const nodeKeyPair = await generateRSAKeyPair();
   nodePrivateKey = nodeKeyPair.privateKey;
@@ -45,49 +43,22 @@ beforeAll(async () => {
       issuerCertificate: nodeCertificateIssuer,
       issuerPrivateKey: issuerKeyPair.privateKey,
       subjectPublicKey: nodeKeyPair.publicKey,
-      validityEndDate: TOMORROW,
+      validityEndDate: tomorrow,
     }),
   );
   nodePrivateAddress = await getPrivateAddressFromIdentityKey(nodeKeyPair.publicKey);
-
-  const peerKeyPair = await generateRSAKeyPair();
-  peerCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: peerKeyPair.privateKey,
-    subjectPublicKey: peerKeyPair.publicKey,
-    validityEndDate: TOMORROW,
-  });
 });
 
-const PRIVATE_KEY_STORE = new MockPrivateKeyStore();
-const PUBLIC_KEY_STORE = new MockPublicKeyStore();
-const CERTIFICATE_STORE = new MockCertificateStore();
-const KEY_STORES: KeyStoreSet = {
-  certificateStore: CERTIFICATE_STORE,
-  privateKeyStore: PRIVATE_KEY_STORE,
-  publicKeyStore: PUBLIC_KEY_STORE,
-};
+const KEY_STORES = new MockKeyStoreSet();
 beforeEach(async () => {
-  PRIVATE_KEY_STORE.clear();
-  PUBLIC_KEY_STORE.clear();
-  CERTIFICATE_STORE.clear();
+  KEY_STORES.clear();
 });
 
 const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
 
 describe('getGSCSigner', () => {
-  let nodeCertificateIssuerPrivateAddress: string;
-  beforeAll(async () => {
-    nodeCertificateIssuerPrivateAddress =
-      await nodeCertificateIssuer.calculateSubjectPrivateAddress();
-  });
-
-  beforeEach(async () => {
-    await CERTIFICATE_STORE.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
-  });
-
   test('Nothing should be returned if certificate does not exist', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    CERTIFICATE_STORE.clear();
 
     await expect(
       node.getGSCSigner(nodeCertificateIssuerPrivateAddress, ParcelDeliverySigner),
@@ -96,6 +67,7 @@ describe('getGSCSigner', () => {
 
   test('Signer should be of the type requested if certificate exists', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
 
     const signer = await node.getGSCSigner(
       nodeCertificateIssuerPrivateAddress,
@@ -107,6 +79,7 @@ describe('getGSCSigner', () => {
 
   test('Signer should receive the certificate and private key of the node', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
 
     const signer = await node.getGSCSigner(
       nodeCertificateIssuerPrivateAddress,
@@ -120,14 +93,60 @@ describe('getGSCSigner', () => {
   });
 });
 
+describe('getGCSVerifier', () => {
+  test('Null should be returned if there are no trusted certificates', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+
+    const verifier = await node.getGCSVerifier(
+      `not-${nodeCertificateIssuerPrivateAddress}`,
+      StubVerifier,
+    );
+
+    expect(verifier).toBeNull();
+  });
+
+  test('Certificates from a different issuer should be ignored', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
+
+    const verifier = await node.getGCSVerifier(
+      `not-${nodeCertificateIssuerPrivateAddress}`,
+      StubVerifier,
+    );
+
+    expect(verifier).toBeNull();
+  });
+
+  test('All certificates should be set as trusted', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
+
+    const verifier = await node.getGCSVerifier(nodeCertificateIssuerPrivateAddress, StubVerifier);
+
+    const trustedCertificates = verifier!.getTrustedCertificates();
+    expect(trustedCertificates).toHaveLength(1);
+    expect(nodeCertificate.isEqual(trustedCertificates[0])).toBeTrue();
+  });
+});
+
 describe('unwrapMessagePayload', () => {
   const RECIPIENT_ADDRESS = 'https://example.com';
+
+  let peerCertificate: Certificate;
+  beforeAll(async () => {
+    const peerKeyPair = await generateRSAKeyPair();
+    peerCertificate = await issueGatewayCertificate({
+      issuerPrivateKey: peerKeyPair.privateKey,
+      subjectPublicKey: peerKeyPair.publicKey,
+      validityEndDate: addDays(new Date(), 1),
+    });
+  });
 
   let sessionKey: SessionKey;
   beforeEach(async () => {
     const sessionKeyPair = await SessionKeyPair.generate();
     sessionKey = sessionKeyPair.sessionKey;
-    await PRIVATE_KEY_STORE.saveUnboundSessionKey(
+    await KEY_STORES.privateKeyStore.saveUnboundSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
     );
@@ -165,7 +184,7 @@ describe('unwrapMessagePayload', () => {
     await node.unwrapMessagePayload(message);
 
     const storedKey =
-      PUBLIC_KEY_STORE.sessionKeys[await peerCertificate.calculateSubjectPrivateAddress()];
+      KEY_STORES.publicKeyStore.sessionKeys[await peerCertificate.calculateSubjectPrivateAddress()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
     expectBuffersToEqual(Buffer.from(dhKeyId), storedKey.publicKeyId);
     expectBuffersToEqual(

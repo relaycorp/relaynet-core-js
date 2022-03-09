@@ -1,10 +1,10 @@
-import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
+import { Verifier } from './signatures/Verifier';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
@@ -18,15 +18,28 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     peerPrivateAddress: string,
     signerClass: new (certificate: Certificate, privateKey: CryptoKey) => S,
   ): Promise<S | null> {
-    const privateAddress = await getPrivateAddressFromIdentityKey(this.privateKey);
     const certificate = await this.keyStores.certificateStore.retrieveLatest(
-      privateAddress,
+      this.privateAddress,
       peerPrivateAddress,
     );
     if (!certificate) {
       return null;
     }
     return new signerClass(certificate, this.privateKey);
+  }
+
+  public async getGCSVerifier<V extends Verifier>(
+    peerPrivateAddress: string,
+    verifierClass: new (trustedCertificates: readonly Certificate[]) => V,
+  ): Promise<V | null> {
+    const trustedCertificates = await this.keyStores.certificateStore.retrieveAll(
+      this.privateAddress,
+      peerPrivateAddress,
+    );
+    if (trustedCertificates.length === 0) {
+      return null;
+    }
+    return new verifierClass(trustedCertificates);
   }
 
   /**
