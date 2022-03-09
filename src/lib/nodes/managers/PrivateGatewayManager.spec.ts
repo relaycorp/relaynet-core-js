@@ -23,7 +23,7 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
-describe('getPrivate', () => {
+describe('get', () => {
   test('Null should be returned if the private key does not exist', async () => {
     const manager = new PrivateGatewayManager(KEY_STORES);
 
