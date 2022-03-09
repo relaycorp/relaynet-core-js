@@ -6,6 +6,15 @@ import { NodeError } from './errors';
 import { Gateway } from './Gateway';
 
 export class PrivateGateway extends Gateway {
+  /**
+   * Create channel with public gateway using registration details.
+   *
+   * @param deliveryAuthorization
+   * @param publicGatewayIdentityCertificate
+   * @param publicGatewaySessionPublicKey
+   * @throws NodeError if the `publicGatewayIdentityCertificate` didn't issue
+   *    `deliveryAuthorization`
+   */
   public async savePublicGatewayChannel(
     deliveryAuthorization: Certificate,
     publicGatewayIdentityCertificate: Certificate,
