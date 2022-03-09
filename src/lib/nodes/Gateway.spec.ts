@@ -46,17 +46,6 @@ beforeEach(async () => {
 });
 
 describe('getGSCVerifier', () => {
-  test('Null should be returned if there are no trusted certificates', async () => {
-    const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-
-    const verifier = await gateway.getGSCVerifier(
-      nodeCertificateIssuerPrivateAddress,
-      StubVerifier,
-    );
-
-    expect(verifier).toBeNull();
-  });
-
   test('Certificates from a different issuer should be ignored', async () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
@@ -66,7 +55,7 @@ describe('getGSCVerifier', () => {
       StubVerifier,
     );
 
-    expect(verifier).toBeNull();
+    expect(verifier.getTrustedCertificates()).toBeEmpty();
   });
 
   test('All certificates should be set as trusted', async () => {

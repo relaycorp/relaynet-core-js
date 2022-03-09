@@ -8,14 +8,11 @@ export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequ
   public async getGSCVerifier<V extends Verifier>(
     peerPrivateAddress: string,
     verifierClass: new (trustedCertificates: readonly Certificate[]) => V,
-  ): Promise<V | null> {
+  ): Promise<V> {
     const trustedCertificates = await this.keyStores.certificateStore.retrieveAll(
       this.privateAddress,
       peerPrivateAddress,
     );
-    if (trustedCertificates.length === 0) {
-      return null;
-    }
     return new verifierClass(trustedCertificates);
   }
 }
