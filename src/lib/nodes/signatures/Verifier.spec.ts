@@ -3,8 +3,7 @@ import CMSError from '../../crypto_wrappers/cms/CMSError';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import CertificateError from '../../crypto_wrappers/x509/CertificateError';
-import { STUB_OID_VALUE, StubSigner } from './_test_utils';
-import { Verifier } from './Verifier';
+import { StubSigner, StubVerifier } from './_test_utils';
 
 let signerPrivateKey: CryptoKey;
 let signerCertificate: Certificate;
@@ -97,7 +96,3 @@ describe('verify', () => {
     await verifier.verify(signedDataSerialized, PLAINTEXT);
   });
 });
-
-class StubVerifier extends Verifier {
-  public readonly oid = STUB_OID_VALUE;
-}

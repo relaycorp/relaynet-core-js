@@ -1,4 +1,3 @@
-import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
@@ -18,9 +17,8 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     peerPrivateAddress: string,
     signerClass: new (certificate: Certificate, privateKey: CryptoKey) => S,
   ): Promise<S | null> {
-    const privateAddress = await getPrivateAddressFromIdentityKey(this.privateKey);
     const certificate = await this.keyStores.certificateStore.retrieveLatest(
-      privateAddress,
+      this.privateAddress,
       peerPrivateAddress,
     );
     if (!certificate) {
