@@ -1,12 +1,13 @@
-import { addDays, differenceInSeconds, subMinutes } from 'date-fns';
+import { addDays, addMonths, differenceInSeconds, subMinutes } from 'date-fns';
+
+import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 import { getRSAPublicKeyFromPrivate } from '../../crypto_wrappers/keys';
-
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
-import { issueGatewayCertificate } from '../../pki';
+import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 
@@ -74,6 +75,23 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
       publicKey,
     );
     return authorization.gatewayData;
+  }
+
+  /**
+   * Return a `PrivateNodeRegistration` including a new certificate for `endpointPublicKey`.
+   *
+   * @param endpointPublicKey
+   * @return The serialization of the registration
+   */
+  public async registerEndpoint(endpointPublicKey: CryptoKey): Promise<ArrayBuffer> {
+    const endpointCertificate = await issueEndpointCertificate({
+      issuerCertificate: this.nodeDeliveryAuth,
+      issuerPrivateKey: this.nodePrivateKey,
+      subjectPublicKey: endpointPublicKey,
+      validityEndDate: addMonths(new Date(), 6),
+    });
+    const registration = new PrivateNodeRegistration(endpointCertificate, this.nodeDeliveryAuth);
+    return registration.serialize();
   }
 
   //endregion

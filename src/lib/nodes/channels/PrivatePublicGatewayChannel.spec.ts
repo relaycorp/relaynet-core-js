@@ -1,5 +1,7 @@
-import { addDays, setMilliseconds, subMinutes } from 'date-fns';
-import { arrayBufferFrom } from '../../_test_utils';
+import { addDays, addMonths, setMilliseconds, subMinutes } from 'date-fns';
+
+import { arrayBufferFrom, reSerializeCertificate } from '../../_test_utils';
+import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 
 import {
@@ -36,12 +38,14 @@ beforeAll(async () => {
 
   // Private gateway
   privateGatewayKeyPair = await generateRSAKeyPair();
-  privateGatewayPDCCertificate = await issueGatewayCertificate({
-    issuerCertificate: publicGatewayCertificate,
-    issuerPrivateKey: publicGatewayKeyPair.privateKey,
-    subjectPublicKey: privateGatewayKeyPair.publicKey,
-    validityEndDate: tomorrow,
-  });
+  privateGatewayPDCCertificate = reSerializeCertificate(
+    await issueGatewayCertificate({
+      issuerCertificate: publicGatewayCertificate,
+      issuerPrivateKey: publicGatewayKeyPair.privateKey,
+      subjectPublicKey: privateGatewayKeyPair.publicKey,
+      validityEndDate: tomorrow,
+    }),
+  );
   privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(
     privateGatewayKeyPair.publicKey,
   );
@@ -139,6 +143,71 @@ describe('Endpoint registration', () => {
         channel.verifyEndpointRegistrationAuthorization(authorizationSerialized),
       ).resolves.toEqual(GATEWAY_DATA);
     });
+  });
+});
+
+describe('registerEndpoint', () => {
+  let endpointPublicKey: CryptoKey;
+  beforeAll(async () => {
+    const endpointKeyPair = await generateRSAKeyPair();
+    endpointPublicKey = endpointKeyPair.publicKey;
+  });
+
+  test('Endpoint certificate should be issued by public gateway', async () => {
+    const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+    const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+    const endpointCertificate = reSerializeCertificate(registration.privateNodeCertificate);
+    await expect(
+      endpointCertificate.getCertificationPath([], [privateGatewayPDCCertificate]),
+    ).resolves.toHaveLength(2);
+  });
+
+  test('Endpoint certificate should be valid starting now', async () => {
+    const preRegistrationDate = setMilliseconds(new Date(), 0);
+
+    const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+    const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+    expect(registration.privateNodeCertificate.startDate).toBeAfterOrEqualTo(preRegistrationDate);
+    expect(registration.privateNodeCertificate.startDate).toBeBeforeOrEqualTo(new Date());
+  });
+
+  test('Endpoint certificate should be valid for 6 months', async () => {
+    const preRegistrationDate = setMilliseconds(new Date(), 0);
+
+    const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+    const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+    expect(registration.privateNodeCertificate.expiryDate).toBeAfterOrEqualTo(
+      addMonths(preRegistrationDate, 6),
+    );
+    expect(registration.privateNodeCertificate.expiryDate).toBeBeforeOrEqualTo(
+      addMonths(new Date(), 6),
+    );
+  });
+
+  test('Endpoint certificate should honor subject public key', async () => {
+    const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+    const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+    await expect(
+      derSerializePublicKey(await registration.privateNodeCertificate.getPublicKey()),
+    ).resolves.toEqual(await derSerializePublicKey(endpointPublicKey));
+  });
+
+  test('Gateway certificate should be included in registration', async () => {
+    const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+    const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+    expect(registration.gatewayCertificate.isEqual(privateGatewayPDCCertificate)).toBeTrue();
+  });
+
+  test('Session key should be absent from registration', async () => {
+    const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+    const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+    expect(registration.sessionKey).toBeNull();
   });
 });
 
