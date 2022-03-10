@@ -10,6 +10,7 @@ import {
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 import { issueGatewayCertificate } from '../../pki';
 import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivatePublicGatewayChannel } from './PrivatePublicGatewayChannel';
@@ -83,34 +84,61 @@ test('getOutboundRAMFAddress should return public address of public gateway', ()
   expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
 });
 
-describe('authorizeEndpointRegistration', () => {
+describe('Endpoint registration', () => {
   const GATEWAY_DATA = arrayBufferFrom('the gw data');
   const EXPIRY_DATE = setMilliseconds(addDays(new Date(), 1), 0);
 
-  test('Gateway data should be honoured', async () => {
-    const authorizationSerialized = await channel.authorizeEndpointRegistration(
-      GATEWAY_DATA,
-      EXPIRY_DATE,
-    );
+  describe('authorizeEndpointRegistration', () => {
+    test('Gateway data should be honoured', async () => {
+      const authorizationSerialized = await channel.authorizeEndpointRegistration(
+        GATEWAY_DATA,
+        EXPIRY_DATE,
+      );
 
-    const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
-      authorizationSerialized,
-      privateGatewayKeyPair.publicKey,
-    );
-    expect(authorization.gatewayData).toEqual(GATEWAY_DATA);
+      const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+        authorizationSerialized,
+        privateGatewayKeyPair.publicKey,
+      );
+      expect(authorization.gatewayData).toEqual(GATEWAY_DATA);
+    });
+
+    test('Expiry date should be honoured', async () => {
+      const authorizationSerialized = await channel.authorizeEndpointRegistration(
+        GATEWAY_DATA,
+        EXPIRY_DATE,
+      );
+
+      const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+        authorizationSerialized,
+        privateGatewayKeyPair.publicKey,
+      );
+      expect(authorization.expiryDate).toEqual(EXPIRY_DATE);
+    });
   });
 
-  test('Expiry date should be honoured', async () => {
-    const authorizationSerialized = await channel.authorizeEndpointRegistration(
-      GATEWAY_DATA,
-      EXPIRY_DATE,
-    );
+  describe('verifyEndpointRegistrationAuthorization', () => {
+    test('Error should be thrown if authorization is invalid', async () => {
+      const authorization = new PrivateNodeRegistrationAuthorization(EXPIRY_DATE, GATEWAY_DATA);
+      const differentKeyPair = await generateRSAKeyPair();
+      const authorizationSerialized = await authorization.serialize(
+        differentKeyPair.privateKey, // Wrong key
+      );
 
-    const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
-      authorizationSerialized,
-      privateGatewayKeyPair.publicKey,
-    );
-    expect(authorization.expiryDate).toEqual(EXPIRY_DATE);
+      await expect(
+        channel.verifyEndpointRegistrationAuthorization(authorizationSerialized),
+      ).rejects.toBeInstanceOf(InvalidMessageError);
+    });
+
+    test('Gateway data should be returned if signed with right key', async () => {
+      const authorizationSerialized = await channel.authorizeEndpointRegistration(
+        GATEWAY_DATA,
+        EXPIRY_DATE,
+      );
+
+      await expect(
+        channel.verifyEndpointRegistrationAuthorization(authorizationSerialized),
+      ).resolves.toEqual(GATEWAY_DATA);
+    });
   });
 });
 

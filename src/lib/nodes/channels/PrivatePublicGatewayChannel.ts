@@ -1,5 +1,6 @@
 import { addDays, differenceInSeconds, subMinutes } from 'date-fns';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
+import { getRSAPublicKeyFromPrivate } from '../../crypto_wrappers/keys';
 
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
@@ -44,12 +45,35 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
 
   //region Private endpoint registration
 
+  /**
+   * Generate a `PrivateNodeRegistrationAuthorization` with the `gatewayData` and `expiryDate`.
+   *
+   * @param gatewayData
+   * @param expiryDate
+   */
   public async authorizeEndpointRegistration(
     gatewayData: ArrayBuffer,
     expiryDate: Date,
   ): Promise<ArrayBuffer> {
     const authorization = new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
     return authorization.serialize(this.nodePrivateKey);
+  }
+
+  /**
+   * Parse `PrivateNodeRegistrationAuthorization` and return its `gatewayData` if valid.
+   *
+   * @param authorizationSerialized
+   * @throws InvalidMessageError if the authorization is malformed, invalid or expired
+   */
+  public async verifyEndpointRegistrationAuthorization(
+    authorizationSerialized: ArrayBuffer,
+  ): Promise<ArrayBuffer> {
+    const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
+    const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+      authorizationSerialized,
+      publicKey,
+    );
+    return authorization.gatewayData;
   }
 
   //endregion
