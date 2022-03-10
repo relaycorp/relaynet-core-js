@@ -1,4 +1,3 @@
-import { getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { SessionKey } from '../SessionKey';
 import { PrivatePublicGatewayChannel } from './channels/PrivatePublicGatewayChannel';
@@ -50,7 +49,7 @@ export class PrivateGateway extends Gateway {
     }
 
     const privateGatewayDeliveryAuth = await this.keyStores.certificateStore.retrieveLatest(
-      await getPrivateAddressFromIdentityKey(this.privateKey),
+      this.privateAddress,
       publicGatewayPrivateAddress,
     );
     if (!privateGatewayDeliveryAuth) {
@@ -58,7 +57,7 @@ export class PrivateGateway extends Gateway {
     }
 
     return new PrivatePublicGatewayChannel(
-      this.privateKey,
+      this.identityPrivateKey,
       privateGatewayDeliveryAuth,
       publicGatewayPrivateAddress,
       publicGatewayPublicKey,

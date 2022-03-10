@@ -1,3 +1,4 @@
+import { getRSAPublicKeyFromPrivate } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
@@ -8,10 +9,14 @@ import { Signer } from './signatures/Signer';
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
     public readonly privateAddress: string,
-    protected readonly privateKey: CryptoKey,
+    protected readonly identityPrivateKey: CryptoKey,
     protected readonly keyStores: KeyStoreSet,
     protected readonly cryptoOptions: Partial<NodeCryptoOptions>,
   ) {}
+
+  public async getIdentityPublicKey(): Promise<CryptoKey> {
+    return getRSAPublicKeyFromPrivate(this.identityPrivateKey);
+  }
 
   public async getGSCSigner<S extends Signer>(
     peerPrivateAddress: string,
@@ -24,7 +29,7 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     if (!certificate) {
       return null;
     }
-    return new signerClass(certificate, this.privateKey);
+    return new signerClass(certificate, this.identityPrivateKey);
   }
 
   /**

@@ -53,6 +53,16 @@ beforeEach(async () => {
   KEY_STORES.clear();
 });
 
+describe('getIdentityPublicKey', () => {
+  test('Public key should be returned', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+
+    await expect(derSerializePublicKey(await node.getIdentityPublicKey())).resolves.toEqual(
+      await derSerializePublicKey(nodePrivateKey),
+    );
+  });
+});
+
 describe('getGSCSigner', () => {
   test('Nothing should be returned if certificate does not exist', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
