@@ -1,10 +1,12 @@
 import { addDays, setMilliseconds, subSeconds } from 'date-fns';
 
-import { reSerializeCertificate } from '../_test_utils';
+import { arrayBufferFrom, reSerializeCertificate } from '../_test_utils';
+import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegistrationRequest';
 import {
   derSerializePublicKey,
   generateRSAKeyPair,
   getPrivateAddressFromIdentityKey,
+  getRSAPublicKeyFromPrivate,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
@@ -56,6 +58,44 @@ beforeAll(async () => {
 const KEY_STORES = new MockKeyStoreSet();
 afterEach(() => {
   KEY_STORES.clear();
+});
+
+describe('requestPublicGatewayRegistration', () => {
+  const AUTHORIZATION_SERIALIZED = arrayBufferFrom('Go ahead');
+
+  test('Registration authorization should be honoured', async () => {
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
+
+    const requestSerialized = await privateGateway.requestPublicGatewayRegistration(
+      AUTHORIZATION_SERIALIZED,
+    );
+
+    const request = await PrivateNodeRegistrationRequest.deserialize(requestSerialized);
+    expect(request.pnraSerialized).toEqual(AUTHORIZATION_SERIALIZED);
+  });
+
+  test('Public key should be honoured', async () => {
+    const privateGateway = new PrivateGateway(
+      privateGatewayPrivateAddress,
+      privateGatewayPrivateKey,
+      KEY_STORES,
+      {},
+    );
+
+    const requestSerialized = await privateGateway.requestPublicGatewayRegistration(
+      AUTHORIZATION_SERIALIZED,
+    );
+
+    const request = await PrivateNodeRegistrationRequest.deserialize(requestSerialized);
+    await expect(derSerializePublicKey(request.privateNodePublicKey)).resolves.toEqual(
+      await derSerializePublicKey(await getRSAPublicKeyFromPrivate(privateGatewayPrivateKey)),
+    );
+  });
 });
 
 describe('savePublicGatewayChannel', () => {

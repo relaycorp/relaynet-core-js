@@ -1,3 +1,4 @@
+import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegistrationRequest';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { SessionKey } from '../SessionKey';
 import { PrivatePublicGatewayChannel } from './channels/PrivatePublicGatewayChannel';
@@ -5,6 +6,21 @@ import { NodeError } from './errors';
 import { Gateway } from './Gateway';
 
 export class PrivateGateway extends Gateway {
+  /**
+   * Produce a `PrivateNodeRegistrationRequest` to register with a public gateway.
+   *
+   * @param authorizationSerialized
+   */
+  public async requestPublicGatewayRegistration(
+    authorizationSerialized: ArrayBuffer,
+  ): Promise<ArrayBuffer> {
+    const request = new PrivateNodeRegistrationRequest(
+      await this.getIdentityPublicKey(),
+      authorizationSerialized,
+    );
+    return request.serialize(this.identityPrivateKey);
+  }
+
   /**
    * Create channel with public gateway using registration details.
    *
