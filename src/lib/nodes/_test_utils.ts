@@ -5,7 +5,7 @@ import { NodeCryptoOptions } from './NodeCryptoOptions';
 
 export class StubNode extends Node<StubPayload> {
   public getPrivateKey(): CryptoKey {
-    return this.privateKey;
+    return this.identityPrivateKey;
   }
 
   public getKeyStores(): KeyStoreSet {

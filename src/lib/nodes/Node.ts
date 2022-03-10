@@ -8,7 +8,7 @@ import { Signer } from './signatures/Signer';
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
     public readonly privateAddress: string,
-    protected readonly privateKey: CryptoKey,
+    protected readonly identityPrivateKey: CryptoKey,
     protected readonly keyStores: KeyStoreSet,
     protected readonly cryptoOptions: Partial<NodeCryptoOptions>,
   ) {}
@@ -24,7 +24,7 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     if (!certificate) {
       return null;
     }
-    return new signerClass(certificate, this.privateKey);
+    return new signerClass(certificate, this.identityPrivateKey);
   }
 
   /**
