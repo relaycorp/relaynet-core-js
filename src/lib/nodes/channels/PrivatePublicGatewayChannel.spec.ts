@@ -1,4 +1,8 @@
-import { addDays, setMilliseconds, subMinutes } from 'date-fns';
+import { addDays, addMonths, setMilliseconds, subMinutes } from 'date-fns';
+
+import { arrayBufferFrom, reSerializeCertificate } from '../../_test_utils';
+import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
+import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 
 import {
   derSerializePublicKey,
@@ -8,6 +12,7 @@ import {
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
+import InvalidMessageError from '../../messages/InvalidMessageError';
 import { issueGatewayCertificate } from '../../pki';
 import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivatePublicGatewayChannel } from './PrivatePublicGatewayChannel';
@@ -16,7 +21,7 @@ let publicGatewayPrivateAddress: string;
 let publicGatewayPublicKey: CryptoKey;
 let publicGatewayCertificate: Certificate;
 let privateGatewayPrivateAddress: string;
-let privateGatewayPrivateKey: CryptoKey;
+let privateGatewayKeyPair: CryptoKeyPair;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
@@ -32,14 +37,15 @@ beforeAll(async () => {
   });
 
   // Private gateway
-  const privateGatewayKeyPair = await generateRSAKeyPair();
-  privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
-  privateGatewayPDCCertificate = await issueGatewayCertificate({
-    issuerCertificate: publicGatewayCertificate,
-    issuerPrivateKey: publicGatewayKeyPair.privateKey,
-    subjectPublicKey: privateGatewayKeyPair.publicKey,
-    validityEndDate: tomorrow,
-  });
+  privateGatewayKeyPair = await generateRSAKeyPair();
+  privateGatewayPDCCertificate = reSerializeCertificate(
+    await issueGatewayCertificate({
+      issuerCertificate: publicGatewayCertificate,
+      issuerPrivateKey: publicGatewayKeyPair.privateKey,
+      subjectPublicKey: privateGatewayKeyPair.publicKey,
+      validityEndDate: tomorrow,
+    }),
+  );
   privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(
     privateGatewayKeyPair.publicKey,
   );
@@ -68,7 +74,7 @@ const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
 let channel: PrivatePublicGatewayChannel;
 beforeEach(() => {
   channel = new PrivatePublicGatewayChannel(
-    privateGatewayPrivateKey,
+    privateGatewayKeyPair.privateKey!,
     privateGatewayPDCCertificate,
     publicGatewayPrivateAddress,
     publicGatewayPublicKey,
@@ -76,6 +82,133 @@ beforeEach(() => {
     KEY_STORES,
     {},
   );
+});
+
+test('getOutboundRAMFAddress should return public address of public gateway', () => {
+  expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
+});
+
+describe('Endpoint registration', () => {
+  const GATEWAY_DATA = arrayBufferFrom('the gw data');
+  const EXPIRY_DATE = setMilliseconds(addDays(new Date(), 1), 0);
+
+  describe('authorizeEndpointRegistration', () => {
+    test('Gateway data should be honoured', async () => {
+      const authorizationSerialized = await channel.authorizeEndpointRegistration(
+        GATEWAY_DATA,
+        EXPIRY_DATE,
+      );
+
+      const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+        authorizationSerialized,
+        privateGatewayKeyPair.publicKey,
+      );
+      expect(authorization.gatewayData).toEqual(GATEWAY_DATA);
+    });
+
+    test('Expiry date should be honoured', async () => {
+      const authorizationSerialized = await channel.authorizeEndpointRegistration(
+        GATEWAY_DATA,
+        EXPIRY_DATE,
+      );
+
+      const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
+        authorizationSerialized,
+        privateGatewayKeyPair.publicKey,
+      );
+      expect(authorization.expiryDate).toEqual(EXPIRY_DATE);
+    });
+  });
+
+  describe('verifyEndpointRegistrationAuthorization', () => {
+    test('Error should be thrown if authorization is invalid', async () => {
+      const authorization = new PrivateNodeRegistrationAuthorization(EXPIRY_DATE, GATEWAY_DATA);
+      const differentKeyPair = await generateRSAKeyPair();
+      const authorizationSerialized = await authorization.serialize(
+        differentKeyPair.privateKey, // Wrong key
+      );
+
+      await expect(
+        channel.verifyEndpointRegistrationAuthorization(authorizationSerialized),
+      ).rejects.toBeInstanceOf(InvalidMessageError);
+    });
+
+    test('Gateway data should be returned if signed with right key', async () => {
+      const authorizationSerialized = await channel.authorizeEndpointRegistration(
+        GATEWAY_DATA,
+        EXPIRY_DATE,
+      );
+
+      await expect(
+        channel.verifyEndpointRegistrationAuthorization(authorizationSerialized),
+      ).resolves.toEqual(GATEWAY_DATA);
+    });
+  });
+
+  describe('registerEndpoint', () => {
+    let endpointPublicKey: CryptoKey;
+    beforeAll(async () => {
+      const endpointKeyPair = await generateRSAKeyPair();
+      endpointPublicKey = endpointKeyPair.publicKey;
+    });
+
+    test('Endpoint certificate should be issued by public gateway', async () => {
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+      const endpointCertificate = reSerializeCertificate(registration.privateNodeCertificate);
+      await expect(
+        endpointCertificate.getCertificationPath([], [privateGatewayPDCCertificate]),
+      ).resolves.toHaveLength(2);
+    });
+
+    test('Endpoint certificate should be valid starting now', async () => {
+      const preRegistrationDate = setMilliseconds(new Date(), 0);
+
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+      expect(registration.privateNodeCertificate.startDate).toBeAfterOrEqualTo(preRegistrationDate);
+      expect(registration.privateNodeCertificate.startDate).toBeBeforeOrEqualTo(new Date());
+    });
+
+    test('Endpoint certificate should be valid for 6 months', async () => {
+      const preRegistrationDate = setMilliseconds(new Date(), 0);
+
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+      expect(registration.privateNodeCertificate.expiryDate).toBeAfterOrEqualTo(
+        addMonths(preRegistrationDate, 6),
+      );
+      expect(registration.privateNodeCertificate.expiryDate).toBeBeforeOrEqualTo(
+        addMonths(new Date(), 6),
+      );
+    });
+
+    test('Endpoint certificate should honor subject public key', async () => {
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+      await expect(
+        derSerializePublicKey(await registration.privateNodeCertificate.getPublicKey()),
+      ).resolves.toEqual(await derSerializePublicKey(endpointPublicKey));
+    });
+
+    test('Gateway certificate should be included in registration', async () => {
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+      expect(registration.gatewayCertificate.isEqual(privateGatewayPDCCertificate)).toBeTrue();
+    });
+
+    test('Session key should be absent from registration', async () => {
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+      expect(registration.sessionKey).toBeNull();
+    });
+  });
 });
 
 describe('generateCCA', () => {
@@ -157,8 +290,4 @@ describe('generateCCA', () => {
       return ccr.cargoDeliveryAuthorization;
     }
   });
-});
-
-test('getOutboundRAMFAddress should return public address of public gateway', () => {
-  expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
 });
