@@ -38,4 +38,13 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
     await this.keyStores.certificateStore.save(issuer, privateAddress);
     return issuer;
   }
+
+  /**
+   * Get all CDA issuers in the channel.
+   */
+  public async getCDAIssuers(): Promise<readonly Certificate[]> {
+    const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
+    const privateAddress = await getPrivateAddressFromIdentityKey(publicKey);
+    return this.keyStores.certificateStore.retrieveAll(privateAddress, privateAddress);
+  }
 }

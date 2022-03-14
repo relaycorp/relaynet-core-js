@@ -144,6 +144,51 @@ describe('getOrCreateCDAIssuer', () => {
   }
 });
 
+describe('getCDAIssuers', () => {
+  test('Nothing should be returned if there are no issuers', async () => {
+    const channel = new StubPrivateGatewayChannel();
+
+    await expect(channel.getCDAIssuers()).resolves.toHaveLength(0);
+  });
+
+  test('Other subjects should be ignored', async () => {
+    const differentSubjectKeyPair = await generateRSAKeyPair();
+    const differentSubjectCertificate = await issueGatewayCertificate({
+      issuerCertificate: privateGatewayPDCCertificate,
+      issuerPrivateKey: privateGatewayPrivateKey,
+      subjectPublicKey: differentSubjectKeyPair.publicKey,
+      validityEndDate: privateGatewayPDCCertificate.expiryDate,
+    });
+    await KEY_STORES.certificateStore.save(
+      differentSubjectCertificate,
+      privateGatewayPrivateAddress,
+    );
+    const channel = new StubPrivateGatewayChannel();
+
+    await expect(channel.getCDAIssuers()).resolves.toHaveLength(0);
+  });
+
+  test('Other issuers should be ignored', async () => {
+    await KEY_STORES.certificateStore.save(
+      privateGatewayPDCCertificate,
+      `not-${privateGatewayPrivateAddress}`,
+    );
+    const channel = new StubPrivateGatewayChannel();
+
+    await expect(channel.getCDAIssuers()).resolves.toHaveLength(0);
+  });
+
+  test('CDA issuers should be returned', async () => {
+    const channel = new StubPrivateGatewayChannel();
+    const issuer = await channel.getOrCreateCDAIssuer();
+
+    const issuers = await channel.getCDAIssuers();
+
+    expect(issuers).toHaveLength(1);
+    expect(issuers[0].isEqual(issuer)).toBeTrue();
+  });
+});
+
 class StubPrivateGatewayChannel extends PrivateGatewayChannel {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
     super(
