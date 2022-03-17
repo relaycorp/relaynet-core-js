@@ -24,7 +24,7 @@ let privateGatewayPrivateAddress: string;
 let privateGatewayKeyPair: CryptoKeyPair;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
-  const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
+  const nextYear = setMilliseconds(addDays(new Date(), 360), 0);
 
   // Public gateway
   const publicGatewayKeyPair = await generateRSAKeyPair();
@@ -33,7 +33,7 @@ beforeAll(async () => {
   publicGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: publicGatewayKeyPair.privateKey,
     subjectPublicKey: publicGatewayPublicKey,
-    validityEndDate: tomorrow,
+    validityEndDate: nextYear,
   });
 
   // Private gateway
@@ -43,7 +43,7 @@ beforeAll(async () => {
       issuerCertificate: publicGatewayCertificate,
       issuerPrivateKey: publicGatewayKeyPair.privateKey,
       subjectPublicKey: privateGatewayKeyPair.publicKey,
-      validityEndDate: tomorrow,
+      validityEndDate: nextYear,
     }),
   );
   privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(

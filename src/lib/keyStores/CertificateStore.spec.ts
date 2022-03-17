@@ -1,4 +1,4 @@
-import { addSeconds, subSeconds } from 'date-fns';
+import { addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 
 import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -44,7 +44,9 @@ describe('save', () => {
     await store.save(certificate, privateAddress);
 
     expect(store.dataByPrivateAddress).toHaveProperty(privateAddress);
-    expect(store.dataByPrivateAddress[privateAddress][0].expiryDate).toEqual(expiryDate);
+    expect(store.dataByPrivateAddress[privateAddress][0].expiryDate).toEqual(
+      setMilliseconds(expiryDate, 0),
+    );
   });
 
   test('Specified issuer private address should be honoured', async () => {
