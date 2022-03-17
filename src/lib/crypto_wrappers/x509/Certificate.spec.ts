@@ -1,5 +1,6 @@
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
+import { addDays, subSeconds } from 'date-fns';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
@@ -161,8 +162,7 @@ describe('issue()', () => {
 
   describe('Validity end date', () => {
     test('should honor explicit one', async () => {
-      const endDate = new Date(futureDate);
-      endDate.setDate(futureDate.getDate() + 1);
+      const endDate = addDays(new Date(futureDate), 1);
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
         issuerPrivateKey: keyPair.privateKey,
@@ -175,8 +175,7 @@ describe('issue()', () => {
 
     test('should be refused if before the start date', async () => {
       const startDate = new Date(2019, 1, 1);
-      const invalidEndDate = new Date(startDate);
-      invalidEndDate.setDate(startDate.getDate() - 1);
+      const invalidEndDate = subSeconds(new Date(startDate), 1);
 
       await expect(
         Certificate.issue({
