@@ -1,6 +1,6 @@
 import { BmpString, Integer, LocalBaseBlock, OctetString } from 'asn1js';
+import { min, setMilliseconds } from 'date-fns';
 import * as pkijs from 'pkijs';
-import { makeDateWithSecondPrecision } from '../../_utils';
 
 import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
@@ -47,20 +47,28 @@ export default class Certificate {
    * @param options
    */
   public static async issue(options: FullCertificateIssuanceOptions): Promise<Certificate> {
-    const validityStartDate = makeDateWithSecondPrecision(options.validityStartDate);
+    // PKI.js should round down to the nearest second per X.509. We should do it ourselves to
+    // avoid discrepancies when the validity dates of a freshly-issued certificate are used.
+    const validityStartDate = setMilliseconds(options.validityStartDate ?? new Date(), 0);
+    const issuerCertificate = options.issuerCertificate;
+    const validityEndDate = setMilliseconds(
+      issuerCertificate
+        ? min([issuerCertificate.expiryDate, options.validityEndDate])
+        : options.validityEndDate,
+      0,
+    );
 
     //region Validation
-    if (options.validityEndDate < validityStartDate) {
+    if (validityEndDate < validityStartDate) {
       throw new CertificateError('The end date must be later than the start date');
     }
-
-    if (options.issuerCertificate) {
-      validateIssuerCertificate(options.issuerCertificate);
+    if (issuerCertificate) {
+      validateIssuerCertificate(issuerCertificate);
     }
     //endregion
 
-    const issuerPublicKey = options.issuerCertificate
-      ? await options.issuerCertificate.pkijsCertificate.getPublicKey()
+    const issuerPublicKey = issuerCertificate
+      ? await issuerCertificate.pkijsCertificate.getPublicKey()
       : options.subjectPublicKey;
     const pkijsCert = new pkijs.Certificate({
       extensions: [
@@ -75,7 +83,7 @@ export default class Certificate {
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.notBefore.value = validityStartDate;
     // tslint:disable-next-line:no-object-mutation
-    pkijsCert.notAfter.value = options.validityEndDate;
+    pkijsCert.notAfter.value = validityEndDate;
 
     pkijsCert.subject.typesAndValues.push(
       new pkijs.AttributeTypeAndValue({
@@ -84,8 +92,8 @@ export default class Certificate {
       }),
     );
 
-    const issuerDn = options.issuerCertificate
-      ? options.issuerCertificate.pkijsCertificate.subject.typesAndValues
+    const issuerDn = issuerCertificate
+      ? issuerCertificate.pkijsCertificate.subject.typesAndValues
       : pkijsCert.subject.typesAndValues;
     // tslint:disable-next-line:no-object-mutation
     pkijsCert.issuer.typesAndValues = issuerDn.map(

@@ -42,6 +42,9 @@ interface StubCertConfig {
   readonly subjectPublicKey: CryptoKey;
 }
 
+/**
+ * @deprecated Use {Certificate.issue} instead
+ */
 export async function generateStubCert(config: Partial<StubCertConfig> = {}): Promise<Certificate> {
   const keyPair = await generateRSAKeyPair();
   const futureDate = new Date();
