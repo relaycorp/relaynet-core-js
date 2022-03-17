@@ -159,33 +159,35 @@ describe('issue()', () => {
     expect(cert.startDate).toEqual(expectedDate);
   });
 
-  test('should honor a custom end validity date', async () => {
-    const endDate = new Date(futureDate);
-    endDate.setDate(futureDate.getDate() + 1);
-    const cert = await Certificate.issue({
-      ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
-      validityEndDate: endDate,
-    });
-
-    expect(cert.pkijsCertificate.notAfter.value).toBe(endDate);
-  });
-
-  test('should not accept an end date before the start date', async () => {
-    const startDate = new Date(2019, 1, 1);
-    const invalidEndDate = new Date(startDate);
-    invalidEndDate.setDate(startDate.getDate() - 1);
-
-    await expect(
-      Certificate.issue({
+  describe('Validity end date', () => {
+    test('should honor explicit one', async () => {
+      const endDate = new Date(futureDate);
+      endDate.setDate(futureDate.getDate() + 1);
+      const cert = await Certificate.issue({
         ...baseCertificateOptions,
         issuerPrivateKey: keyPair.privateKey,
         subjectPublicKey: keyPair.publicKey,
-        validityEndDate: invalidEndDate,
-        validityStartDate: startDate,
-      }),
-    ).rejects.toThrow('The end date must be later than the start date');
+        validityEndDate: endDate,
+      });
+
+      expect(cert.pkijsCertificate.notAfter.value).toBe(endDate);
+    });
+
+    test('should be refused if before the start date', async () => {
+      const startDate = new Date(2019, 1, 1);
+      const invalidEndDate = new Date(startDate);
+      invalidEndDate.setDate(startDate.getDate() - 1);
+
+      await expect(
+        Certificate.issue({
+          ...baseCertificateOptions,
+          issuerPrivateKey: keyPair.privateKey,
+          subjectPublicKey: keyPair.publicKey,
+          validityEndDate: invalidEndDate,
+          validityStartDate: startDate,
+        }),
+      ).rejects.toThrow('The end date must be later than the start date');
+    });
   });
 
   test('should store the specified Common Name (CN) in the subject', async () => {
