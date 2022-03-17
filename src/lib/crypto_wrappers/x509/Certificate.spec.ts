@@ -61,17 +61,26 @@ describe('issue()', () => {
     validityEndDate: futureDate,
   };
 
-  // tslint:disable-next-line:no-let
-  let keyPair: CryptoKeyPair;
+  let issuerKeyPair: CryptoKeyPair;
+  let issuerCertificate: Certificate;
+  let subjectKeyPair: CryptoKeyPair;
   beforeAll(async () => {
-    keyPair = await generateRSAKeyPair();
+    issuerKeyPair = await generateRSAKeyPair();
+    issuerCertificate = await Certificate.issue({
+      ...baseCertificateOptions,
+      isCA: true,
+      issuerPrivateKey: issuerKeyPair.privateKey,
+      subjectPublicKey: issuerKeyPair.publicKey,
+    });
+
+    subjectKeyPair = await generateRSAKeyPair();
   });
 
   test('should create an X.509 v3 certificate', async () => {
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      subjectPublicKey: subjectKeyPair.publicKey,
     });
 
     // v3 is serialized as integer 2
@@ -82,26 +91,26 @@ describe('issue()', () => {
     jest.spyOn(pkijs.PublicKeyInfo.prototype, 'importKey');
     await Certificate.issue({
       ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      subjectPublicKey: subjectKeyPair.publicKey,
     });
 
     expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledTimes(1);
-    expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledWith(keyPair.publicKey);
+    expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledWith(subjectKeyPair.publicKey);
   });
 
   test('should be signed with the specified private key', async () => {
     jest.spyOn(pkijs.Certificate.prototype, 'sign');
     await Certificate.issue({
       ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      subjectPublicKey: subjectKeyPair.publicKey,
     });
 
     expect(pkijs.Certificate.prototype.sign).toBeCalledTimes(1);
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
-      keyPair.privateKey,
-      ((keyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name,
+      subjectKeyPair.privateKey,
+      ((subjectKeyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name,
     );
   });
 
@@ -110,8 +119,8 @@ describe('issue()', () => {
     for (let index = 0; index < 10; index++) {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
       const serialNumberSerialized = new Uint8Array(
         cert.pkijsCertificate.serialNumber.valueBlock.valueHex,
@@ -136,8 +145,8 @@ describe('issue()', () => {
 
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      subjectPublicKey: subjectKeyPair.publicKey,
     });
 
     const expectedDate = new Date(now.getTime());
@@ -150,8 +159,8 @@ describe('issue()', () => {
 
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: keyPair.publicKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      subjectPublicKey: subjectKeyPair.publicKey,
       validityStartDate: startDate,
     });
 
@@ -165,8 +174,8 @@ describe('issue()', () => {
       const endDate = addDays(new Date(futureDate), 1);
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
         validityEndDate: endDate,
       });
 
@@ -180,8 +189,8 @@ describe('issue()', () => {
       await expect(
         Certificate.issue({
           ...baseCertificateOptions,
-          issuerPrivateKey: keyPair.privateKey,
-          subjectPublicKey: keyPair.publicKey,
+          issuerPrivateKey: subjectKeyPair.privateKey,
+          subjectPublicKey: subjectKeyPair.publicKey,
           validityEndDate: invalidEndDate,
           validityStartDate: startDate,
         }),
@@ -190,12 +199,11 @@ describe('issue()', () => {
   });
 
   test('should store the specified Common Name (CN) in the subject', async () => {
-    const { privateKey, publicKey } = await generateRSAKeyPair();
     const commonName = 'this is the CN';
     const cert = await Certificate.issue({
       commonName,
-      issuerPrivateKey: privateKey,
-      subjectPublicKey: publicKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
+      subjectPublicKey: subjectKeyPair.publicKey,
       validityEndDate: futureDate,
     });
 
@@ -206,7 +214,6 @@ describe('issue()', () => {
   });
 
   test('should set issuer DN to that of subject when self-issuing certificates', async () => {
-    const subjectKeyPair = await generateRSAKeyPair();
     const cert = await Certificate.issue({
       ...baseCertificateOptions,
       issuerPrivateKey: subjectKeyPair.privateKey,
@@ -221,7 +228,6 @@ describe('issue()', () => {
   });
 
   test('should accept an issuer marked as CA', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
     const issuerCert = await Certificate.issue({
       ...baseCertificateOptions,
       isCA: true,
@@ -234,28 +240,27 @@ describe('issue()', () => {
         ...baseCertificateOptions,
         issuerCertificate: issuerCert,
         issuerPrivateKey: issuerKeyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       }),
     ).toResolve();
   });
 
   test('should refuse an issuer certificate without extensions', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue({
+    const invalidIssuerCertificate = await Certificate.issue({
       ...baseCertificateOptions,
       isCA: false,
       issuerPrivateKey: issuerKeyPair.privateKey,
       subjectPublicKey: issuerKeyPair.publicKey,
     });
     // tslint:disable-next-line:no-object-mutation
-    issuerCert.pkijsCertificate.extensions = undefined;
+    invalidIssuerCertificate.pkijsCertificate.extensions = undefined;
 
     await expect(
       Certificate.issue({
         ...baseCertificateOptions,
-        issuerCertificate: issuerCert,
+        issuerCertificate: invalidIssuerCertificate,
         issuerPrivateKey: issuerKeyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       }),
     ).rejects.toEqual(
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
@@ -263,22 +268,21 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer certificate with an empty set of extensions', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue({
+    const invalidIssuerCertificate = await Certificate.issue({
       ...baseCertificateOptions,
       isCA: false,
       issuerPrivateKey: issuerKeyPair.privateKey,
       subjectPublicKey: issuerKeyPair.publicKey,
     });
     // tslint:disable-next-line:no-object-mutation
-    issuerCert.pkijsCertificate.extensions = [];
+    invalidIssuerCertificate.pkijsCertificate.extensions = [];
 
     await expect(
       Certificate.issue({
         ...baseCertificateOptions,
-        issuerCertificate: issuerCert,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerCertificate: invalidIssuerCertificate,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       }),
     ).rejects.toEqual(
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
@@ -286,24 +290,23 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer certificate without basic constraints extension', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue({
+    const invalidIssuerCertificate = await Certificate.issue({
       ...baseCertificateOptions,
       isCA: false,
-      issuerPrivateKey: keyPair.privateKey,
+      issuerPrivateKey: subjectKeyPair.privateKey,
       subjectPublicKey: issuerKeyPair.publicKey,
     });
     // tslint:disable-next-line:no-object-mutation
-    issuerCert.pkijsCertificate.extensions = (
-      issuerCert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>
+    invalidIssuerCertificate.pkijsCertificate.extensions = (
+      invalidIssuerCertificate.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>
     ).filter((e) => e.extnID !== oids.BASIC_CONSTRAINTS);
 
     await expect(
       Certificate.issue({
         ...baseCertificateOptions,
-        issuerCertificate: issuerCert,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerCertificate: invalidIssuerCertificate,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       }),
     ).rejects.toEqual(
       new CertificateError('Basic constraints extension is missing from issuer certificate'),
@@ -311,8 +314,7 @@ describe('issue()', () => {
   });
 
   test('should refuse an issuer not marked as CA', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue({
+    const invalidIssuerCertificate = await Certificate.issue({
       ...baseCertificateOptions,
       isCA: false,
       issuerPrivateKey: issuerKeyPair.privateKey,
@@ -322,34 +324,26 @@ describe('issue()', () => {
     await expect(
       Certificate.issue({
         ...baseCertificateOptions,
-        issuerCertificate: issuerCert,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerCertificate: invalidIssuerCertificate,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       }),
     ).rejects.toEqual(new CertificateError('Issuer is not a CA'));
   });
 
   test('should set issuer DN to that of CA', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue({
-      ...baseCertificateOptions,
-      isCA: true,
-      issuerPrivateKey: keyPair.privateKey,
-      subjectPublicKey: issuerKeyPair.publicKey,
-    });
-
-    const subjectKeyPair = await generateRSAKeyPair();
     const subjectCert = await Certificate.issue({
       ...baseCertificateOptions,
-      issuerCertificate: issuerCert,
-      issuerPrivateKey: keyPair.privateKey,
+      issuerCertificate,
+      issuerPrivateKey: issuerKeyPair.privateKey,
       subjectPublicKey: subjectKeyPair.publicKey,
     });
 
     const subjectCertIssuerDn = subjectCert.pkijsCertificate.issuer.typesAndValues;
     expect(subjectCertIssuerDn.length).toBe(1);
     expect(subjectCertIssuerDn[0].type).toBe(oids.COMMON_NAME);
-    const issuerCn = issuerCert.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value;
+    const issuerCn =
+      issuerCertificate.pkijsCertificate.subject.typesAndValues[0].value.valueBlock.value;
     expect(subjectCertIssuerDn[0].value.valueBlock.value).toBe(issuerCn);
   });
 
@@ -357,8 +351,8 @@ describe('issue()', () => {
     test('Extension should be included and marked as critical', async () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
 
       const extensions = cert.pkijsCertificate.extensions as ReadonlyArray<pkijs.Extension>;
@@ -370,8 +364,8 @@ describe('issue()', () => {
     test('CA flag should be false by default', async () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
 
       const basicConstraints = getBasicConstraintsExtension(cert);
@@ -382,8 +376,8 @@ describe('issue()', () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
         isCA: true,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
       const basicConstraints = getBasicConstraintsExtension(cert);
       expect(basicConstraints).toHaveProperty('cA', true);
@@ -392,8 +386,8 @@ describe('issue()', () => {
     test('pathLenConstraint should be 0 by default', async () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
 
       const basicConstraints = getBasicConstraintsExtension(cert);
@@ -404,9 +398,9 @@ describe('issue()', () => {
       const pathLenConstraint = 2;
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
         pathLenConstraint,
-        subjectPublicKey: keyPair.publicKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
 
       const basicConstraints = getBasicConstraintsExtension(cert);
@@ -417,9 +411,9 @@ describe('issue()', () => {
       await expect(
         Certificate.issue({
           ...baseCertificateOptions,
-          issuerPrivateKey: keyPair.privateKey,
+          issuerPrivateKey: subjectKeyPair.privateKey,
           pathLenConstraint: 3,
-          subjectPublicKey: keyPair.publicKey,
+          subjectPublicKey: subjectKeyPair.publicKey,
         }),
       ).rejects.toEqual(new CertificateError('pathLenConstraint must be between 0 and 2 (got 3)'));
     });
@@ -428,9 +422,9 @@ describe('issue()', () => {
       await expect(
         Certificate.issue({
           ...baseCertificateOptions,
-          issuerPrivateKey: keyPair.privateKey,
+          issuerPrivateKey: subjectKeyPair.privateKey,
           pathLenConstraint: -1,
-          subjectPublicKey: keyPair.publicKey,
+          subjectPublicKey: subjectKeyPair.publicKey,
         }),
       ).rejects.toEqual(new CertificateError('pathLenConstraint must be between 0 and 2 (got -1)'));
     });
@@ -440,8 +434,8 @@ describe('issue()', () => {
     test('should correspond to subject when self-issued', async () => {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerPrivateKey: keyPair.privateKey,
-        subjectPublicKey: keyPair.publicKey,
+        issuerPrivateKey: subjectKeyPair.privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
       });
 
       const extensions = cert.pkijsCertificate.extensions || [];
@@ -454,22 +448,15 @@ describe('issue()', () => {
         schema: akiExtensionAsn1,
       });
       const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
-      expect(keyIdBuffer.toString('hex')).toEqual(await getPublicKeyDigest(keyPair.publicKey));
+      expect(keyIdBuffer.toString('hex')).toEqual(
+        await getPublicKeyDigest(subjectKeyPair.publicKey),
+      );
     });
 
     test('should correspond to issuer key when different from subject', async () => {
-      const issuerKeyPair = await generateRSAKeyPair();
-      const issuerCert = await Certificate.issue({
-        ...baseCertificateOptions,
-        isCA: true,
-        issuerPrivateKey: issuerKeyPair.privateKey,
-        subjectPublicKey: issuerKeyPair.publicKey,
-      });
-
-      const subjectKeyPair = await generateRSAKeyPair();
       const subjectCert = await Certificate.issue({
         ...baseCertificateOptions,
-        issuerCertificate: issuerCert,
+        issuerCertificate,
         issuerPrivateKey: subjectKeyPair.privateKey,
         subjectPublicKey: subjectKeyPair.publicKey,
       });
@@ -491,18 +478,9 @@ describe('issue()', () => {
   });
 
   test('Subject Key Identifier extension should correspond to subject key', async () => {
-    const issuerKeyPair = await generateRSAKeyPair();
-    const issuerCert = await Certificate.issue({
-      ...baseCertificateOptions,
-      isCA: true,
-      issuerPrivateKey: issuerKeyPair.privateKey,
-      subjectPublicKey: issuerKeyPair.publicKey,
-    });
-
-    const subjectKeyPair = await generateRSAKeyPair();
     const subjectCert = await Certificate.issue({
       ...baseCertificateOptions,
-      issuerCertificate: issuerCert,
+      issuerCertificate,
       issuerPrivateKey: subjectKeyPair.privateKey,
       subjectPublicKey: subjectKeyPair.publicKey,
     });
