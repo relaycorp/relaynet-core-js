@@ -1,4 +1,4 @@
-import { BmpString, Integer, LocalBaseBlock, OctetString } from 'asn1js';
+import { BmpString, Integer, BaseBlock, OctetString } from 'asn1js';
 import { min, setMilliseconds } from 'date-fns';
 import * as pkijs from 'pkijs';
 
@@ -349,7 +349,7 @@ interface Asn1jsSerializable {
   readonly toBER: (sizeOnly?: boolean) => ArrayBuffer;
 }
 
-function cloneAsn1jsValue(value: Asn1jsSerializable): LocalBaseBlock {
+function cloneAsn1jsValue(value: Asn1jsSerializable): BaseBlock<any> {
   const valueSerialized = value.toBER(false);
   return derDeserialize(valueSerialized);
 }
