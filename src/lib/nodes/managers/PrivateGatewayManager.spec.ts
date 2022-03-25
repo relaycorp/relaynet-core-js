@@ -4,11 +4,7 @@ import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import * as privateGatewayModule from '../PrivateGateway';
 import { PrivateGatewayManager } from './PrivateGatewayManager';
 
-const MOCK_PRIVATE_GATEWAY = { foo: 'bar' };
-const MOCK_PRIVATE_GATEWAY_CLASS = mockSpy(
-  jest.spyOn(privateGatewayModule, 'PrivateGateway'),
-  () => MOCK_PRIVATE_GATEWAY,
-);
+const MOCK_PRIVATE_GATEWAY_CLASS = mockSpy(jest.spyOn(privateGatewayModule, 'PrivateGateway'));
 
 let privateAddress: string;
 let privateKey: CryptoKey;
@@ -36,8 +32,22 @@ describe('get', () => {
 
     const gateway = await manager.get(privateAddress);
 
-    expect(gateway).toEqual(MOCK_PRIVATE_GATEWAY);
     expect(MOCK_PRIVATE_GATEWAY_CLASS).toBeCalledWith(privateAddress, privateKey, KEY_STORES, {});
+    expect(gateway).toEqual(MOCK_PRIVATE_GATEWAY_CLASS.mock.instances[0]);
+  });
+
+  test('Key stores should be passed on', async () => {
+    await KEY_STORES.privateKeyStore.saveIdentityKey(privateKey);
+    const manager = new PrivateGatewayManager(KEY_STORES);
+
+    await manager.get(privateAddress);
+
+    expect(MOCK_PRIVATE_GATEWAY_CLASS).toBeCalledWith(
+      expect.anything(),
+      expect.anything(),
+      KEY_STORES,
+      expect.anything(),
+    );
   });
 
   test('Crypto options should be honoured if passed', async () => {
@@ -52,6 +62,23 @@ describe('get', () => {
       expect.anything(),
       expect.anything(),
       cryptoOptions,
+    );
+  });
+
+  test('Custom PrivateGateway subclass should be used if applicable', async () => {
+    const customPrivateGateway = {};
+    const customPrivateGatewayConstructor = jest.fn().mockReturnValue(customPrivateGateway);
+    const manager = new PrivateGatewayManager(KEY_STORES);
+    await KEY_STORES.privateKeyStore.saveIdentityKey(privateKey);
+
+    const gateway = await manager.get(privateAddress, customPrivateGatewayConstructor);
+
+    expect(gateway).toBe(customPrivateGateway);
+    expect(customPrivateGatewayConstructor).toBeCalledWith(
+      privateAddress,
+      privateKey,
+      KEY_STORES,
+      {},
     );
   });
 });
