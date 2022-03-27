@@ -164,7 +164,7 @@ export async function asyncIterableToArray<T>(iterable: AsyncIterable<T>): Promi
 }
 
 export function getAsn1SequenceItem(
-  fields: asn1js.Sequence | asn1js.LocalBaseBlock,
+  fields: asn1js.Sequence | asn1js.BaseBlock<any>,
   itemIndex: number,
 ): asn1js.Primitive {
   expect(fields).toBeInstanceOf(asn1js.Sequence);
