@@ -4,7 +4,7 @@ import * as pkijs from 'pkijs';
 import { derDeserialize } from '../_utils';
 
 export function serializeContentInfo(
-  content: asn1js.LocalBaseBlock,
+  content: asn1js.BaseBlock<any>,
   contentType: string,
 ): ArrayBuffer {
   const contentInfo = new pkijs.ContentInfo({ content, contentType });

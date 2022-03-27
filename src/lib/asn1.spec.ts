@@ -1,7 +1,6 @@
 import {
   BaseBlock,
   Constructed,
-  LocalBaseBlock,
   OctetString,
   Primitive,
   Sequence,
@@ -64,7 +63,7 @@ describe('makeImplicitlyTaggedSequence', () => {
   });
 
   function expectItemToBeImplicitlyTaggedPrimitive(
-    item: LocalBaseBlock,
+    item: BaseBlock<any>,
     itemExplicitlyTagged: BaseBlock<any>,
     expectedTagNumber: number,
   ): void {
