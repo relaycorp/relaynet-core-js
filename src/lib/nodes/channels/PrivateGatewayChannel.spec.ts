@@ -130,15 +130,17 @@ describe('getOrCreateCDAIssuer', () => {
   });
 
   async function retrieveCDAIssuer(): Promise<Certificate | null> {
-    return KEY_STORES.certificateStore.retrieveLatest(
+    const issuerPath = await KEY_STORES.certificateStore.retrieveLatest(
       privateGatewayPrivateAddress,
       privateGatewayPrivateAddress,
     );
+    return issuerPath?.leafCertificate ?? null;
   }
 
   async function saveCDAIssuer(cdaIssuer: Certificate): Promise<void> {
     await KEY_STORES.certificateStore.save(
       cdaIssuer,
+      [],
       await cdaIssuer.calculateSubjectPrivateAddress(),
     );
   }
@@ -161,6 +163,7 @@ describe('getCDAIssuers', () => {
     });
     await KEY_STORES.certificateStore.save(
       differentSubjectCertificate,
+      [],
       privateGatewayPrivateAddress,
     );
     const channel = new StubPrivateGatewayChannel();
@@ -171,6 +174,7 @@ describe('getCDAIssuers', () => {
   test('Other issuers should be ignored', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
+      [],
       `not-${privateGatewayPrivateAddress}`,
     );
     const channel = new StubPrivateGatewayChannel();

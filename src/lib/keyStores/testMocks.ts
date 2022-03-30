@@ -1,5 +1,7 @@
 // tslint:disable:max-classes-per-file no-object-mutation readonly-keyword readonly-array
 
+import { OctetString, Sequence } from 'asn1js';
+import { makeImplicitlyTaggedSequence } from '../asn1';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificateStore } from './CertificateStore';
 import { KeyStoreSet } from './KeyStoreSet';
@@ -115,7 +117,7 @@ export class MockPublicKeyStore extends PublicKeyStore {
 
 interface MockStoredCertificateData {
   readonly expiryDate: Date;
-  readonly certificateSerialized: ArrayBuffer;
+  readonly serialization: ArrayBuffer;
   readonly issuerPrivateAddress: string;
 }
 
@@ -128,11 +130,19 @@ export class MockCertificateStore extends CertificateStore {
     this.dataByPrivateAddress = {};
   }
 
-  public async forceSave(certificate: Certificate, issuerPrivateAddress: string): Promise<void> {
+  public async forceSave(
+    subjectCertificate: Certificate,
+    chain: readonly Certificate[],
+    issuerPrivateAddress: string,
+  ): Promise<void> {
+    const sequence = makeImplicitlyTaggedSequence(
+      new OctetString({ valueHex: subjectCertificate.serialize() }),
+      new Sequence({ value: chain.map((c) => new OctetString({ valueHex: c.serialize() })) }),
+    );
     await this.saveData(
-      await certificate.calculateSubjectPrivateAddress(),
-      certificate.serialize(),
-      certificate.expiryDate,
+      sequence.toBER(),
+      await subjectCertificate.calculateSubjectPrivateAddress(),
+      subjectCertificate.expiryDate,
       issuerPrivateAddress,
     );
   }
@@ -152,7 +162,7 @@ export class MockCertificateStore extends CertificateStore {
     if (matchingCertificateData.length === 0) {
       return [];
     }
-    return matchingCertificateData.map((d) => d.certificateSerialized);
+    return matchingCertificateData.map((d) => d.serialization);
   }
 
   protected async retrieveLatestSerialization(
@@ -169,17 +179,17 @@ export class MockCertificateStore extends CertificateStore {
     const dataSorted = matchingCertificateData.sort(
       (a, b) => b.expiryDate.getTime() - a.expiryDate.getTime(),
     );
-    return dataSorted[0].certificateSerialized;
+    return dataSorted[0].serialization;
   }
 
   protected async saveData(
+    serialization: ArrayBuffer,
     subjectPrivateAddress: string,
-    subjectCertificateSerialized: ArrayBuffer,
     subjectCertificateExpiryDate: Date,
     issuerPrivateAddress: string,
   ): Promise<void> {
     const mockData: MockStoredCertificateData = {
-      certificateSerialized: subjectCertificateSerialized,
+      serialization,
       expiryDate: subjectCertificateExpiryDate,
       issuerPrivateAddress,
     };

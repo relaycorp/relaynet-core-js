@@ -48,7 +48,11 @@ beforeEach(async () => {
 describe('getGSCVerifier', () => {
   test('Certificates from a different issuer should be ignored', async () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
+    await KEY_STORES.certificateStore.save(
+      nodeCertificate,
+      [],
+      nodeCertificateIssuerPrivateAddress,
+    );
 
     const verifier = await gateway.getGSCVerifier(
       `not-${nodeCertificateIssuerPrivateAddress}`,
@@ -60,7 +64,11 @@ describe('getGSCVerifier', () => {
 
   test('All certificates should be set as trusted', async () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
+    await KEY_STORES.certificateStore.save(
+      nodeCertificate,
+      [],
+      nodeCertificateIssuerPrivateAddress,
+    );
 
     const verifier = await gateway.getGSCVerifier(
       nodeCertificateIssuerPrivateAddress,
