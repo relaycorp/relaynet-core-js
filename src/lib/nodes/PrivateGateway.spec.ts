@@ -139,12 +139,12 @@ describe('savePublicGatewayChannel', () => {
       publicGatewaySessionPublicKey,
     );
 
-    await expect(
-      KEY_STORES.certificateStore.retrieveLatest(
-        privateGatewayPrivateAddress,
-        publicGatewayPrivateAddress,
-      ),
-    ).resolves.toSatisfy((c) => c.isEqual(privateGatewayPDCCertificate));
+    const path = await KEY_STORES.certificateStore.retrieveLatest(
+      privateGatewayPrivateAddress,
+      publicGatewayPrivateAddress,
+    );
+    expect(path!.leafCertificate.isEqual(privateGatewayPDCCertificate));
+    expect(path!.chain).toHaveLength(0);
   });
 
   test('Public key of public gateway should be stored', async () => {
@@ -198,6 +198,7 @@ describe('retrievePublicGatewayChannel', () => {
   test('Null should be returned if public gateway public key is not found', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
+      [],
       publicGatewayPrivateAddress,
     );
     const privateGateway = new PrivateGateway(
@@ -235,6 +236,7 @@ describe('retrievePublicGatewayChannel', () => {
   test('Channel should be returned if it exists', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
+      [],
       publicGatewayPrivateAddress,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
@@ -261,6 +263,7 @@ describe('retrievePublicGatewayChannel', () => {
   test('Crypto options should be passed', async () => {
     await KEY_STORES.certificateStore.save(
       privateGatewayPDCCertificate,
+      [],
       publicGatewayPrivateAddress,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);

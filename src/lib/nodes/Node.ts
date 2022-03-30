@@ -22,14 +22,14 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     peerPrivateAddress: string,
     signerClass: new (certificate: Certificate, privateKey: CryptoKey) => S,
   ): Promise<S | null> {
-    const certificate = await this.keyStores.certificateStore.retrieveLatest(
+    const path = await this.keyStores.certificateStore.retrieveLatest(
       this.privateAddress,
       peerPrivateAddress,
     );
-    if (!certificate) {
+    if (!path) {
       return null;
     }
-    return new signerClass(certificate, this.identityPrivateKey);
+    return new signerClass(path.leafCertificate, this.identityPrivateKey);
   }
 
   /**

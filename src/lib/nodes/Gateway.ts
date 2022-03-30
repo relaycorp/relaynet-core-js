@@ -9,10 +9,10 @@ export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequ
     peerPrivateAddress: string,
     verifierClass: new (trustedCertificates: readonly Certificate[]) => V,
   ): Promise<V> {
-    const trustedCertificates = await this.keyStores.certificateStore.retrieveAll(
+    const trustedPaths = await this.keyStores.certificateStore.retrieveAll(
       this.privateAddress,
       peerPrivateAddress,
     );
-    return new verifierClass(trustedCertificates);
+    return new verifierClass(trustedPaths.map((p) => p.leafCertificate));
   }
 }
