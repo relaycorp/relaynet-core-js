@@ -42,7 +42,11 @@ export class PrivateGateway extends Gateway {
     }
 
     const publicGatewayPrivateAddress = deliveryAuthorization.getIssuerPrivateAddress()!;
-    await this.keyStores.certificateStore.save(deliveryAuthorization, publicGatewayPrivateAddress);
+    await this.keyStores.certificateStore.save(
+      deliveryAuthorization,
+      [],
+      publicGatewayPrivateAddress,
+    );
     await this.keyStores.publicKeyStore.saveIdentityKey(
       await publicGatewayIdentityCertificate.getPublicKey(),
     );
@@ -74,7 +78,7 @@ export class PrivateGateway extends Gateway {
 
     return new PrivatePublicGatewayChannel(
       this.identityPrivateKey,
-      privateGatewayDeliveryAuth,
+      privateGatewayDeliveryAuth.leafCertificate,
       publicGatewayPrivateAddress,
       publicGatewayPublicKey,
       publicGatewayPublicAddress,

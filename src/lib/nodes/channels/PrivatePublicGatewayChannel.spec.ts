@@ -281,7 +281,9 @@ describe('generateCCA', () => {
         privateGatewayPrivateAddress,
         privateGatewayPrivateAddress,
       );
-      await expect(cargoDeliveryAuthorization.getCertificationPath([], [cdaIssuer!])).toResolve();
+      await expect(
+        cargoDeliveryAuthorization.getCertificationPath([], [cdaIssuer!.leafCertificate]),
+      ).toResolve();
     });
 
     async function extractCDA(ccaSerialized: ArrayBuffer): Promise<Certificate> {

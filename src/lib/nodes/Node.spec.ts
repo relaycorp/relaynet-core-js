@@ -74,7 +74,11 @@ describe('getGSCSigner', () => {
 
   test('Signer should be of the type requested if certificate exists', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
+    await KEY_STORES.certificateStore.save(
+      nodeCertificate,
+      [],
+      nodeCertificateIssuerPrivateAddress,
+    );
 
     const signer = await node.getGSCSigner(
       nodeCertificateIssuerPrivateAddress,
@@ -86,7 +90,11 @@ describe('getGSCSigner', () => {
 
   test('Signer should receive the certificate and private key of the node', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
-    await KEY_STORES.certificateStore.save(nodeCertificate, nodeCertificateIssuerPrivateAddress);
+    await KEY_STORES.certificateStore.save(
+      nodeCertificate,
+      [],
+      nodeCertificateIssuerPrivateAddress,
+    );
 
     const signer = await node.getGSCSigner(
       nodeCertificateIssuerPrivateAddress,
