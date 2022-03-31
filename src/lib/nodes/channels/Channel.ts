@@ -7,9 +7,6 @@ import { NodeCryptoOptions } from '../NodeCryptoOptions';
 
 export abstract class Channel {
   // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
-  /**
-   * @internal
-   */
   constructor(
     protected readonly nodePrivateKey: CryptoKey,
     public readonly nodeDeliveryAuth: Certificate,
