@@ -89,6 +89,7 @@ export { EndpointManager } from './lib/nodes/managers/EndpointManager';
 export { PrivateGatewayManager } from './lib/nodes/managers/PrivateGatewayManager';
 export { PrivateGateway } from './lib/nodes/PrivateGateway';
 export { CargoMessageStream } from './lib/nodes/CargoMessageStream';
+export { Channel } from './lib/nodes/channels/Channel';
 export { PrivatePublicGatewayChannel } from './lib/nodes/channels/PrivatePublicGatewayChannel';
 
 //endregion
