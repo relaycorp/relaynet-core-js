@@ -1,5 +1,6 @@
 import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegistrationRequest';
 import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificationPath } from '../pki/CertificationPath';
 import { SessionKey } from '../SessionKey';
 import { PrivatePublicGatewayChannel } from './channels/PrivatePublicGatewayChannel';
 import { NodeError } from './errors';
@@ -43,8 +44,7 @@ export class PrivateGateway extends Gateway {
 
     const publicGatewayPrivateAddress = deliveryAuthorization.getIssuerPrivateAddress()!;
     await this.keyStores.certificateStore.save(
-      deliveryAuthorization,
-      [],
+      new CertificationPath(deliveryAuthorization, []),
       publicGatewayPrivateAddress,
     );
     await this.keyStores.publicKeyStore.saveIdentityKey(

@@ -1,6 +1,6 @@
 import { addDays, setMilliseconds } from 'date-fns';
 
-import { arrayBufferFrom, expectBuffersToEqual, reSerializeCertificate } from '../_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual, reSerializeCertificate } from '../_test_utils';
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import {
   derSerializePublicKey,
@@ -10,7 +10,8 @@ import {
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
-import { issueGatewayCertificate } from '../pki';
+import { CertificationPath } from '../pki/CertificationPath';
+import { issueGatewayCertificate } from '../pki/issuance';
 import { StubMessage } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
@@ -75,8 +76,7 @@ describe('getGSCSigner', () => {
   test('Signer should be of the type requested if certificate exists', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
-      nodeCertificate,
-      [],
+      new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerPrivateAddress,
     );
 
@@ -91,8 +91,7 @@ describe('getGSCSigner', () => {
   test('Signer should receive the certificate and private key of the node', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
-      nodeCertificate,
-      [],
+      new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerPrivateAddress,
     );
 
@@ -146,7 +145,7 @@ describe('unwrapMessagePayload', () => {
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
-    expectBuffersToEqual(payloadPlaintext.content, PAYLOAD_PLAINTEXT_CONTENT);
+    expectArrayBuffersToEqual(payloadPlaintext.content, PAYLOAD_PLAINTEXT_CONTENT);
   });
 
   test('Originator session key should be stored', async () => {
@@ -166,10 +165,9 @@ describe('unwrapMessagePayload', () => {
     const storedKey =
       KEY_STORES.publicKeyStore.sessionKeys[await peerCertificate.calculateSubjectPrivateAddress()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
-    expectBuffersToEqual(Buffer.from(dhKeyId), storedKey.publicKeyId);
-    expectBuffersToEqual(
+    expect(storedKey.publicKeyId).toEqual(Buffer.from(dhKeyId));
+    expect(storedKey.publicKeyDer).toEqual(
       await derSerializePublicKey((await envelopedData.getOriginatorKey()).publicKey),
-      storedKey.publicKeyDer,
     );
   });
 });

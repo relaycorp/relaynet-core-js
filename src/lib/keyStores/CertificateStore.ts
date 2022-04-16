@@ -1,9 +1,4 @@
-import { OctetString, Sequence } from 'asn1js';
-
-import { makeImplicitlyTaggedSequence } from '../asn1';
-import { derDeserialize } from '../crypto_wrappers/_utils';
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import { CertificationPath } from './CertificationPath';
+import { CertificationPath } from '../pki/CertificationPath';
 
 /**
  * Store of certificates.
@@ -12,29 +7,20 @@ export abstract class CertificateStore {
   /**
    * Store `subjectCertificate` as long as it's still valid.
    *
-   * @param subjectCertificate
-   * @param chain
+   * @param path
    * @param issuerPrivateAddress
    *
-   * Whilst we could take the {issuerPrivateAddress} from the {subjectCertificate}, we must not
-   * rely on it because we don't have enough information/context here to be certain that the
-   * value is legitimate. Additionally, the value has to be present in an X.509 extension, which
-   * could be absent if produced by a non-compliant implementation.
+   * Whilst we could take the {issuerPrivateAddress} from the leaf certificate in the {path}, we
+   * must not rely on it because we don't have enough information/context here to be certain that
+   * the value is legitimate. Additionally, the value has to be present in an X.509 extension,
+   * which could be absent if produced by a non-compliant implementation.
    */
-  public async save(
-    subjectCertificate: Certificate,
-    chain: readonly Certificate[],
-    issuerPrivateAddress: string,
-  ): Promise<void> {
-    if (new Date() < subjectCertificate.expiryDate) {
-      const sequence = makeImplicitlyTaggedSequence(
-        new OctetString({ valueHex: subjectCertificate.serialize() }),
-        new Sequence({ value: chain.map((c) => new OctetString({ valueHex: c.serialize() })) }),
-      );
+  public async save(path: CertificationPath, issuerPrivateAddress: string): Promise<void> {
+    if (new Date() < path.leafCertificate.expiryDate) {
       await this.saveData(
-        sequence.toBER(),
-        await subjectCertificate.calculateSubjectPrivateAddress(),
-        subjectCertificate.expiryDate,
+        path.serialize(),
+        await path.leafCertificate.calculateSubjectPrivateAddress(),
+        path.leafCertificate.expiryDate,
         issuerPrivateAddress,
       );
     }
@@ -51,7 +37,7 @@ export abstract class CertificateStore {
     if (!serialization) {
       return null;
     }
-    const path = deserializeCertificatePath(serialization);
+    const path = CertificationPath.deserialize(serialization);
     return new Date() < path.leafCertificate.expiryDate ? path : null;
   }
 
@@ -64,7 +50,7 @@ export abstract class CertificateStore {
       issuerPrivateAddress,
     );
     return allSerializations
-      .map(deserializeCertificatePath)
+      .map(CertificationPath.deserialize)
       .filter((p) => new Date() < p.leafCertificate.expiryDate);
   }
 
@@ -86,15 +72,4 @@ export abstract class CertificateStore {
     subjectPrivateAddress: string,
     issuerPrivateAddress: string,
   ): Promise<readonly ArrayBuffer[]>;
-}
-
-function deserializeCertificatePath(pathSerialized: ArrayBuffer): CertificationPath {
-  const deserialization = derDeserialize(pathSerialized);
-  const leafCertificate = Certificate.deserialize(
-    deserialization.valueBlock.value[0].valueBlock.valueHex,
-  );
-  const chain = deserialization.valueBlock.value[1].valueBlock.value.map((b: OctetString) =>
-    Certificate.deserialize(b.valueBlock.valueHex),
-  );
-  return { leafCertificate, chain };
 }

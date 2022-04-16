@@ -32,7 +32,7 @@ export {
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
-export { CertificationPath } from './lib/keyStores/CertificationPath';
+export { CertificationPath } from './lib/pki/CertificationPath';
 export { CertificateStore } from './lib/keyStores/CertificateStore';
 export * from './lib/keyStores/testMocks';
 export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
@@ -43,7 +43,7 @@ export * from './lib/cargoRelay';
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
 export { default as CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
-export * from './lib/pki';
+export * from './lib/pki/issuance';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove

@@ -16,7 +16,7 @@ import Cargo from '../../messages/Cargo';
 import Parcel from '../../messages/Parcel';
 import CargoMessageSet from '../../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../../messages/payloads/ServiceMessage';
-import { issueGatewayCertificate } from '../../pki';
+import { issueGatewayCertificate } from '../../pki/issuance';
 import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { SessionKey } from '../../SessionKey';
 import { SessionKeyPair } from '../../SessionKeyPair';

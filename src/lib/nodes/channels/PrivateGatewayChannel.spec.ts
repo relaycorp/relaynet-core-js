@@ -8,7 +8,8 @@ import {
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
-import { issueGatewayCertificate } from '../../pki';
+import { CertificationPath } from '../../pki/CertificationPath';
+import { issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 
@@ -139,8 +140,7 @@ describe('getOrCreateCDAIssuer', () => {
 
   async function saveCDAIssuer(cdaIssuer: Certificate): Promise<void> {
     await KEY_STORES.certificateStore.save(
-      cdaIssuer,
-      [],
+      new CertificationPath(cdaIssuer, []),
       await cdaIssuer.calculateSubjectPrivateAddress(),
     );
   }
@@ -162,8 +162,7 @@ describe('getCDAIssuers', () => {
       validityEndDate: privateGatewayPDCCertificate.expiryDate,
     });
     await KEY_STORES.certificateStore.save(
-      differentSubjectCertificate,
-      [],
+      new CertificationPath(differentSubjectCertificate, []),
       privateGatewayPrivateAddress,
     );
     const channel = new StubPrivateGatewayChannel();
@@ -173,8 +172,7 @@ describe('getCDAIssuers', () => {
 
   test('Other issuers should be ignored', async () => {
     await KEY_STORES.certificateStore.save(
-      privateGatewayPDCCertificate,
-      [],
+      new CertificationPath(privateGatewayPDCCertificate, []),
       `not-${privateGatewayPrivateAddress}`,
     );
     const channel = new StubPrivateGatewayChannel();

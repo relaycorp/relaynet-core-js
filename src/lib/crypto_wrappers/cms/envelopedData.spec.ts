@@ -7,7 +7,7 @@ import {
   arrayBufferFrom,
   CRYPTO_OIDS,
   expectAsn1ValuesToBeEqual,
-  expectBuffersToEqual,
+  expectArrayBuffersToEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
   getMockContext,
@@ -269,7 +269,7 @@ describe('SessionlessEnvelopedData', () => {
     test('Decryption should succeed with the right private key', async () => {
       const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, nodeCertificate);
       const actualPlaintext = await envelopedData.decrypt(nodePrivateKey);
-      expectBuffersToEqual(actualPlaintext, plaintext);
+      expectArrayBuffersToEqual(actualPlaintext, plaintext);
     });
   });
 
@@ -317,7 +317,7 @@ describe('SessionEnvelopedData', () => {
       );
       const dhKeyIdAttributeValue = (dhKeyIdAttribute as any).values[0];
       expect(dhKeyIdAttributeValue).toBeInstanceOf(asn1js.OctetString);
-      expectBuffersToEqual(dhKeyIdAttributeValue.valueBlock.valueHex, dhKeyId);
+      expectArrayBuffersToEqual(dhKeyIdAttributeValue.valueBlock.valueHex, dhKeyId);
     });
 
     test('Recipient key id should be stored in EnvelopedData', async () => {
@@ -415,10 +415,7 @@ describe('SessionEnvelopedData', () => {
 
         const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
         const expectedPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
-        expectBuffersToEqual(
-          Buffer.from(expectedPublicKeyDer),
-          await derSerializePublicKey(publicKey),
-        );
+        expect(Buffer.from(expectedPublicKeyDer)).toEqual(await derSerializePublicKey(publicKey));
       });
 
       test('Call should fail if RecipientInfo is not KeyAgreeRecipientInfo', async () => {
@@ -456,7 +453,7 @@ describe('SessionEnvelopedData', () => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
       const decryptedPlaintext = await envelopedData.decrypt(bobDhPrivateKey);
-      expectBuffersToEqual(decryptedPlaintext, plaintext);
+      expectArrayBuffersToEqual(decryptedPlaintext, plaintext);
     });
   });
 });

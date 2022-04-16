@@ -1,7 +1,4 @@
-import { Constructed, OctetString, Primitive, verifySchema } from 'asn1js';
-
-import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../asn1';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificationPath } from '../pki/CertificationPath';
 import { generateFormatSignature } from './formatSignature';
 import InvalidMessageError from './InvalidMessageError';
 
@@ -16,64 +13,28 @@ export class CertificateRotation {
       throw new InvalidMessageError('Format signature should be that of a CertificateRotation');
     }
 
-    const sequenceSerialized = serialization.slice(formatSignature.byteLength);
-    const result = verifySchema(sequenceSerialized, CertificateRotation.SCHEMA);
-    if (!result.verified) {
-      throw new InvalidMessageError(
-        'Serialization did not meet structure of a CertificateRotation',
-      );
-    }
-
-    const rotationBlock = (result.result as any).CertificateRotation;
-
-    let subjectCertificate: Certificate;
+    const certificationPathSerialized = serialization.slice(formatSignature.byteLength);
+    let certificationPath: CertificationPath;
     try {
-      subjectCertificate = Certificate.deserialize(
-        rotationBlock.subjectCertificate.valueBlock.valueHex,
-      );
+      certificationPath = CertificationPath.deserialize(certificationPathSerialized);
     } catch (err) {
-      throw new InvalidMessageError('Subject certificate is malformed');
+      throw new InvalidMessageError(err as Error, 'CertificationPath is malformed');
     }
 
-    let chain: readonly Certificate[];
-    const chainCertsSerialized: readonly ArrayBuffer[] = rotationBlock.chain.valueBlock.value.map(
-      (c: Primitive) => c.valueBlock.valueHex,
-    );
-    try {
-      chain = chainCertsSerialized.map((c) => Certificate.deserialize(c));
-    } catch (err) {
-      throw new InvalidMessageError('Chain contains malformed certificate');
-    }
-
-    return new CertificateRotation(subjectCertificate, chain);
+    return new CertificateRotation(certificationPath);
   }
 
-  private static readonly SCHEMA = makeHeterogeneousSequenceSchema('CertificateRotation', [
-    new Primitive({ name: 'subjectCertificate' }),
-    new Constructed({ name: 'chain' }),
-  ]);
-
-  constructor(
-    public readonly subjectCertificate: Certificate,
-    public readonly chain: readonly Certificate[],
-  ) {}
+  constructor(public readonly certificationPath: CertificationPath) {}
 
   public serialize(): ArrayBuffer {
-    // Serialize sequence
-    const chainASN1 = this.chain.map((c) => new OctetString({ valueHex: c.serialize() }));
-    const sequenceSerialized = makeImplicitlyTaggedSequence(
-      new OctetString({ valueHex: this.subjectCertificate.serialize() }),
-      new Constructed({ value: chainASN1 } as any),
-    ).toBER();
-
-    // Serialize entire message
+    const pathSerialized = this.certificationPath.serialize();
     const serialization = new ArrayBuffer(
-      CERTIFICATE_ROTATION_FORMAT_SIGNATURE.byteLength + sequenceSerialized.byteLength,
+      CERTIFICATE_ROTATION_FORMAT_SIGNATURE.byteLength + pathSerialized.byteLength,
     );
     const serializationView = new Uint8Array(serialization);
     serializationView.set(CERTIFICATE_ROTATION_FORMAT_SIGNATURE, 0);
     serializationView.set(
-      new Uint8Array(sequenceSerialized),
+      new Uint8Array(pathSerialized),
       CERTIFICATE_ROTATION_FORMAT_SIGNATURE.byteLength,
     );
     return serialization;

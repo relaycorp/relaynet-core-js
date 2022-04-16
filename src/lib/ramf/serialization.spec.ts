@@ -6,7 +6,6 @@ import { SmartBuffer } from 'smart-buffer';
 
 import {
   arrayBufferFrom,
-  expectBuffersToEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
   getAsn1SequenceItem,
@@ -407,8 +406,7 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const payloadBlock = getAsn1SequenceItem(fields, 4);
-          expectBuffersToEqual(
-            Buffer.from((payloadBlock as asn1js.OctetString).valueBlock.valueHex),
+          expect(Buffer.from((payloadBlock as asn1js.OctetString).valueBlock.valueHex)).toEqual(
             largePayload,
           );
         });

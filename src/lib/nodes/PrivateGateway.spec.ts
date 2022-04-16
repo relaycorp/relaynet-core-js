@@ -10,7 +10,8 @@ import {
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
-import { issueGatewayCertificate } from '../pki';
+import { CertificationPath } from '../pki/CertificationPath';
+import { issueGatewayCertificate } from '../pki/issuance';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeError } from './errors';
@@ -144,7 +145,7 @@ describe('savePublicGatewayChannel', () => {
       publicGatewayPrivateAddress,
     );
     expect(path!.leafCertificate.isEqual(privateGatewayPDCCertificate));
-    expect(path!.chain).toHaveLength(0);
+    expect(path!.certificateAuthorities).toHaveLength(0);
   });
 
   test('Public key of public gateway should be stored', async () => {
@@ -197,8 +198,7 @@ describe('savePublicGatewayChannel', () => {
 describe('retrievePublicGatewayChannel', () => {
   test('Null should be returned if public gateway public key is not found', async () => {
     await KEY_STORES.certificateStore.save(
-      privateGatewayPDCCertificate,
-      [],
+      new CertificationPath(privateGatewayPDCCertificate, []),
       publicGatewayPrivateAddress,
     );
     const privateGateway = new PrivateGateway(
@@ -235,8 +235,7 @@ describe('retrievePublicGatewayChannel', () => {
 
   test('Channel should be returned if it exists', async () => {
     await KEY_STORES.certificateStore.save(
-      privateGatewayPDCCertificate,
-      [],
+      new CertificationPath(privateGatewayPDCCertificate, []),
       publicGatewayPrivateAddress,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
@@ -262,8 +261,7 @@ describe('retrievePublicGatewayChannel', () => {
 
   test('Crypto options should be passed', async () => {
     await KEY_STORES.certificateStore.save(
-      privateGatewayPDCCertificate,
-      [],
+      new CertificationPath(privateGatewayPDCCertificate, []),
       publicGatewayPrivateAddress,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);

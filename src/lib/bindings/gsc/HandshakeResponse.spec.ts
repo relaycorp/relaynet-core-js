@@ -1,6 +1,6 @@
 import { Constructed, Integer, OctetString, Sequence } from 'asn1js';
 
-import { arrayBufferFrom, expectBuffersToEqual } from '../../_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../../messages/InvalidMessageError';
@@ -40,7 +40,7 @@ describe('serialize', () => {
     const nonceSignaturesASN1 = sequence.valueBlock.value[0] as Constructed;
     expect(nonceSignaturesASN1.valueBlock.value).toHaveLength(1);
     expect(nonceSignaturesASN1.valueBlock.value[0]).toBeInstanceOf(OctetString);
-    expectBuffersToEqual(
+    expectArrayBuffersToEqual(
       SIGNATURE1,
       (nonceSignaturesASN1.valueBlock.value[0] as OctetString).valueBlock.valueHex,
     );
@@ -58,12 +58,12 @@ describe('serialize', () => {
     const nonceSignaturesASN1 = sequence.valueBlock.value[0] as Constructed;
     expect(nonceSignaturesASN1.valueBlock.value).toHaveLength(2);
     expect(nonceSignaturesASN1.valueBlock.value[0]).toBeInstanceOf(OctetString);
-    expectBuffersToEqual(
+    expectArrayBuffersToEqual(
       SIGNATURE1,
       (nonceSignaturesASN1.valueBlock.value[0] as OctetString).valueBlock.valueHex,
     );
     expect(nonceSignaturesASN1.valueBlock.value[1]).toBeInstanceOf(OctetString);
-    expectBuffersToEqual(
+    expectArrayBuffersToEqual(
       SIGNATURE2,
       (nonceSignaturesASN1.valueBlock.value[1] as OctetString).valueBlock.valueHex,
     );
@@ -87,7 +87,7 @@ describe('deserialize', () => {
     const responseDeserialized = HandshakeResponse.deserialize(serialization);
 
     expect(responseDeserialized.nonceSignatures).toHaveLength(2);
-    expectBuffersToEqual(responseDeserialized.nonceSignatures[0], SIGNATURE1);
-    expectBuffersToEqual(responseDeserialized.nonceSignatures[1], SIGNATURE2);
+    expectArrayBuffersToEqual(responseDeserialized.nonceSignatures[0], SIGNATURE1);
+    expectArrayBuffersToEqual(responseDeserialized.nonceSignatures[1], SIGNATURE2);
   });
 });

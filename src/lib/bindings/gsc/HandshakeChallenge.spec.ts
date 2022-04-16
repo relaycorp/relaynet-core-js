@@ -1,5 +1,5 @@
 import { Primitive, Sequence } from 'asn1js';
-import { arrayBufferFrom, expectBuffersToEqual } from '../../_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual } from '../../_test_utils';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import { HandshakeChallenge } from './HandshakeChallenge';
@@ -14,7 +14,7 @@ describe('serialize', () => {
 
     const sequence = derDeserialize(serialization);
     expect(sequence).toBeInstanceOf(Sequence);
-    expectBuffersToEqual(
+    expectArrayBuffersToEqual(
       NONCE,
       ((sequence as Sequence).valueBlock.value[0] as Primitive).valueBlock.valueHex,
     );
@@ -37,6 +37,6 @@ describe('deserialized', () => {
 
     const challengeDeserialized = HandshakeChallenge.deserialize(serialization);
 
-    expectBuffersToEqual(NONCE, challengeDeserialized.nonce);
+    expectArrayBuffersToEqual(NONCE, challengeDeserialized.nonce);
   });
 });
