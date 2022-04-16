@@ -5,7 +5,7 @@ import {
   getRSAPublicKeyFromPrivate,
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
-import { issueGatewayCertificate } from '../../pki';
+import { issueGatewayCertificate } from '../../pki/issuance';
 import { GatewayChannel } from './GatewayChannel';
 
 /**

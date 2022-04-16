@@ -13,7 +13,7 @@ import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import InvalidMessageError from '../../messages/InvalidMessageError';
-import { issueGatewayCertificate } from '../../pki';
+import { issueGatewayCertificate } from '../../pki/issuance';
 import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivatePublicGatewayChannel } from './PrivatePublicGatewayChannel';
 

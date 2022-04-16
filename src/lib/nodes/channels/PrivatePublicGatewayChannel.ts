@@ -7,7 +7,7 @@ import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
-import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki';
+import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 

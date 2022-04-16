@@ -3,7 +3,7 @@ import { addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { issueGatewayCertificate } from '../pki';
+import { issueGatewayCertificate } from '../pki/issuance';
 import { MockCertificateStore } from './testMocks';
 
 const store = new MockCertificateStore();

@@ -12,7 +12,7 @@ import {
   issueDeliveryAuthorization,
   issueEndpointCertificate,
   issueGatewayCertificate,
-} from '../../pki';
+} from '../../pki/issuance';
 import RAMFSyntaxError from '../../ramf/RAMFSyntaxError';
 import { ParcelCollection } from './ParcelCollection';
 

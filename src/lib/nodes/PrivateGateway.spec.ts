@@ -10,7 +10,7 @@ import {
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
-import { issueGatewayCertificate } from '../pki';
+import { issueGatewayCertificate } from '../pki/issuance';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeError } from './errors';

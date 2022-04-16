@@ -43,7 +43,7 @@ export * from './lib/cargoRelay';
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
 export { default as CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
-export * from './lib/pki';
+export * from './lib/pki/issuance';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
