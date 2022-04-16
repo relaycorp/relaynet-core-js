@@ -32,7 +32,7 @@ export {
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
-export { CertificationPath } from './lib/keyStores/CertificationPath';
+export { CertificationPath } from './lib/pki/CertificationPath';
 export { CertificateStore } from './lib/keyStores/CertificateStore';
 export * from './lib/keyStores/testMocks';
 export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';

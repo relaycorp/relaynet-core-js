@@ -120,8 +120,8 @@ describe('retrieveLatest', () => {
     const path = await store.retrieveLatest(subjectPrivateAddress, issuerPrivateAddress);
 
     expect(path!.leafCertificate.isEqual(newerCertificate)).toBeTrue();
-    expect(path!.chain).toHaveLength(1);
-    expect(path!.chain[0].isEqual(issuerCertificate)).toBeTrue();
+    expect(path!.certificateAuthorities).toHaveLength(1);
+    expect(path!.certificateAuthorities[0].isEqual(issuerCertificate)).toBeTrue();
   });
 });
 
@@ -155,10 +155,10 @@ describe('retrieveAll', () => {
     expect(allCertificates).toHaveLength(2);
     expect(allCertificates.filter((p) => certificate1.isEqual(p.leafCertificate))).toHaveLength(1);
     expect(allCertificates.filter((p) => certificate2.isEqual(p.leafCertificate))).toHaveLength(1);
-    expect(allCertificates[0].chain).toHaveLength(1);
-    expect(allCertificates[0].chain[0].isEqual(issuerCertificate)).toBeTrue();
-    expect(allCertificates[1].chain).toHaveLength(1);
-    expect(allCertificates[1].chain[0].isEqual(issuerCertificate)).toBeTrue();
+    expect(allCertificates[0].certificateAuthorities).toHaveLength(1);
+    expect(allCertificates[0].certificateAuthorities[0].isEqual(issuerCertificate)).toBeTrue();
+    expect(allCertificates[1].certificateAuthorities).toHaveLength(1);
+    expect(allCertificates[1].certificateAuthorities[0].isEqual(issuerCertificate)).toBeTrue();
   });
 
   test('Certificates from another issuer should be ignored', async () => {

@@ -144,7 +144,7 @@ describe('savePublicGatewayChannel', () => {
       publicGatewayPrivateAddress,
     );
     expect(path!.leafCertificate.isEqual(privateGatewayPDCCertificate));
-    expect(path!.chain).toHaveLength(0);
+    expect(path!.certificateAuthorities).toHaveLength(0);
   });
 
   test('Public key of public gateway should be stored', async () => {

@@ -3,7 +3,7 @@ import { OctetString, Sequence } from 'asn1js';
 import { makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { CertificationPath } from './CertificationPath';
+import { CertificationPath } from '../pki/CertificationPath';
 
 /**
  * Store of certificates.
@@ -96,5 +96,5 @@ function deserializeCertificatePath(pathSerialized: ArrayBuffer): CertificationP
   const chain = deserialization.valueBlock.value[1].valueBlock.value.map((b: OctetString) =>
     Certificate.deserialize(b.valueBlock.valueHex),
   );
-  return { leafCertificate, chain };
+  return new CertificationPath(leafCertificate, chain);
 }
