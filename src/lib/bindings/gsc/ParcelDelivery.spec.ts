@@ -1,6 +1,6 @@
 import { Integer, Primitive, Sequence } from 'asn1js';
 
-import { arrayBufferFrom, expectBuffersToEqual } from '../../_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../../messages/InvalidMessageError';
@@ -19,7 +19,7 @@ describe('serialize', () => {
     expect(sequence).toBeInstanceOf(Sequence);
     const deliveryIdASN1 = (sequence as Sequence).valueBlock.value[0];
     expect(deliveryIdASN1).toBeInstanceOf(Primitive);
-    expectBuffersToEqual(
+    expectArrayBuffersToEqual(
       (deliveryIdASN1 as Primitive).valueBlock.valueHex,
       arrayBufferFrom(DELIVERY_ID),
     );
@@ -34,7 +34,7 @@ describe('serialize', () => {
     expect(sequence).toBeInstanceOf(Sequence);
     const parcelSerializedASN1 = (sequence as Sequence).valueBlock.value[1];
     expect(parcelSerializedASN1).toBeInstanceOf(Primitive);
-    expectBuffersToEqual(
+    expectArrayBuffersToEqual(
       (parcelSerializedASN1 as Primitive).valueBlock.valueHex,
       PARCEL_SERIALIZED,
     );
@@ -67,6 +67,6 @@ describe('deserialize', () => {
     const deserialization = ParcelDelivery.deserialize(serialization);
 
     expect(deserialization.deliveryId).toEqual(DELIVERY_ID);
-    expectBuffersToEqual(deserialization.parcelSerialized, PARCEL_SERIALIZED);
+    expectArrayBuffersToEqual(deserialization.parcelSerialized, PARCEL_SERIALIZED);
   });
 });

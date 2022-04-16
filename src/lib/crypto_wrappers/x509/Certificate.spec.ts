@@ -4,12 +4,7 @@ import { addDays, addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 import * as jestDateMock from 'jest-date-mock';
 import * as pkijs from 'pkijs';
 
-import {
-  expectBuffersToEqual,
-  generateStubCert,
-  reSerializeCertificate,
-  sha256Hex,
-} from '../../_test_utils';
+import { generateStubCert, reSerializeCertificate, sha256Hex } from '../../_test_utils';
 import * as oids from '../../oids';
 import { derDeserialize, getPkijsCrypto } from '../_utils';
 import {
@@ -914,8 +909,7 @@ test('getPublicKey should return the subject public key', async () => {
 
   const publicKey = await cert.getPublicKey();
 
-  expectBuffersToEqual(
-    await derSerializePublicKey(publicKey),
+  await expect(derSerializePublicKey(publicKey)).resolves.toEqual(
     await derSerializePublicKey(subjectKeyPair.publicKey),
   );
 });

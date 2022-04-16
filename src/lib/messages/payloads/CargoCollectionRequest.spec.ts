@@ -2,7 +2,7 @@ import { Integer } from 'asn1js';
 
 import {
   arrayBufferFrom,
-  expectBuffersToEqual,
+  expectArrayBuffersToEqual,
   generateStubCert,
   getAsn1SequenceItem,
 } from '../../_test_utils';
@@ -25,7 +25,7 @@ describe('serialize', () => {
 
     const sequence = derDeserialize(serialization);
     const cdaSerialized = getAsn1SequenceItem(sequence, 0).valueBlock.valueHex;
-    expectBuffersToEqual(cargoDeliveryAuthorization.serialize(), cdaSerialized);
+    expectArrayBuffersToEqual(cargoDeliveryAuthorization.serialize(), cdaSerialized);
   });
 });
 

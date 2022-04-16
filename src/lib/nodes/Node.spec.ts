@@ -1,6 +1,6 @@
 import { addDays, setMilliseconds } from 'date-fns';
 
-import { arrayBufferFrom, expectBuffersToEqual, reSerializeCertificate } from '../_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual, reSerializeCertificate } from '../_test_utils';
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import {
   derSerializePublicKey,
@@ -146,7 +146,7 @@ describe('unwrapMessagePayload', () => {
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
-    expectBuffersToEqual(payloadPlaintext.content, PAYLOAD_PLAINTEXT_CONTENT);
+    expectArrayBuffersToEqual(payloadPlaintext.content, PAYLOAD_PLAINTEXT_CONTENT);
   });
 
   test('Originator session key should be stored', async () => {
@@ -166,10 +166,9 @@ describe('unwrapMessagePayload', () => {
     const storedKey =
       KEY_STORES.publicKeyStore.sessionKeys[await peerCertificate.calculateSubjectPrivateAddress()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
-    expectBuffersToEqual(Buffer.from(dhKeyId), storedKey.publicKeyId);
-    expectBuffersToEqual(
+    expect(storedKey.publicKeyId).toEqual(Buffer.from(dhKeyId));
+    expect(storedKey.publicKeyDer).toEqual(
       await derSerializePublicKey((await envelopedData.getOriginatorKey()).publicKey),
-      storedKey.publicKeyDer,
     );
   });
 });

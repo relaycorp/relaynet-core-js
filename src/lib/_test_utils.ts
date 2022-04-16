@@ -32,7 +32,7 @@ export function expectAsn1ValuesToBeEqual(
   expectedValue: Asn1jsSerializable,
   actualValue: Asn1jsSerializable,
 ): void {
-  expectBuffersToEqual(expectedValue.toBER(false), actualValue.toBER(false));
+  expectArrayBuffersToEqual(expectedValue.toBER(false), actualValue.toBER(false));
 }
 
 interface StubCertConfig {
@@ -101,29 +101,20 @@ export async function getPromiseRejection<ErrorType extends Error>(
 }
 
 /**
- * Assert that two buffers are of the same type and contain the same octets.
+ * Assert that two `ArrayBuffer`s are equivalent.
  *
  * expect(value1).toEqual(value2) does NOT work with ArrayBuffer instances: It always passes.
  *
  * @param expectedBuffer
  * @param actualBuffer
  */
-export function expectBuffersToEqual(
-  expectedBuffer: Buffer | ArrayBuffer,
-  actualBuffer: Buffer | ArrayBuffer,
+export function expectArrayBuffersToEqual(
+  expectedBuffer: ArrayBuffer,
+  actualBuffer: ArrayBuffer,
 ): void {
-  expect(expectedBuffer.byteLength).toEqual(actualBuffer.byteLength);
-  if (expectedBuffer instanceof Buffer) {
-    expect(actualBuffer).toBeInstanceOf(Buffer);
-    expect(expectedBuffer.equals(actualBuffer as Buffer)).toBeTrue();
-  } else {
-    expect(expectedBuffer).toBeInstanceOf(ArrayBuffer);
-    expect(actualBuffer).toBeInstanceOf(ArrayBuffer);
-
-    const actualBuffer1 = Buffer.from(expectedBuffer);
-    const actualBuffer2 = Buffer.from(actualBuffer);
-    expect(actualBuffer1.equals(actualBuffer2)).toBeTrue();
-  }
+  expect(expectedBuffer).not.toBeInstanceOf(Buffer);
+  expect(actualBuffer).not.toBeInstanceOf(Buffer);
+  expect(Buffer.from(actualBuffer)).toEqual(Buffer.from(expectedBuffer));
 }
 
 export function getMockInstance(mockedObject: any): jest.MockInstance<any, any> {

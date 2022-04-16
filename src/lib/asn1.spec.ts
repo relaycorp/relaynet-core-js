@@ -10,7 +10,7 @@ import {
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
-import { arrayBufferFrom, expectBuffersToEqual } from './_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual } from './_test_utils';
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
@@ -94,8 +94,8 @@ describe('derSerializeHomogeneousSequence', () => {
 
     const deserialization = derDeserialize(serialization) as Sequence;
     expect(deserialization.valueBlock.value).toHaveLength(2);
-    expectBuffersToEqual(item1.toBER(), deserialization.valueBlock.value[0].toBER());
-    expectBuffersToEqual(item2.toBER(), deserialization.valueBlock.value[1].toBER());
+    expectArrayBuffersToEqual(item1.toBER(), deserialization.valueBlock.value[0].toBER());
+    expectArrayBuffersToEqual(item2.toBER(), deserialization.valueBlock.value[1].toBER());
   });
 });
 

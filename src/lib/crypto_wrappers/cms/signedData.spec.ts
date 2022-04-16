@@ -7,7 +7,7 @@ import {
   arrayBufferFrom,
   calculateDigestHex,
   expectAsn1ValuesToBeEqual,
-  expectBuffersToEqual,
+  expectArrayBuffersToEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
   sha256Hex,
@@ -193,7 +193,7 @@ describe('sign', () => {
       expect(encapContentInfo).toHaveProperty('eContentType', CMS_OIDS.DATA);
       expect(encapContentInfo).toHaveProperty('eContent');
       const plaintextOctetString = encapContentInfo.eContent.valueBlock.value[0];
-      expectBuffersToEqual(
+      expectArrayBuffersToEqual(
         (plaintextOctetString as asn1js.OctetString).valueBlock.valueHex,
         plaintext,
       );

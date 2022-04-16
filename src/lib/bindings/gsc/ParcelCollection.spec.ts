@@ -1,6 +1,6 @@
 import {
   arrayBufferFrom,
-  expectBuffersToEqual,
+  expectArrayBuffersToEqual,
   generateStubCert,
   reSerializeCertificate,
 } from '../../_test_utils';
@@ -59,7 +59,7 @@ beforeAll(async () => {
 test('Parcel serialized should be honored', () => {
   const collection = new ParcelCollection(PARCEL_SERIALIZED, [gatewayCertificate], jest.fn());
 
-  expectBuffersToEqual(PARCEL_SERIALIZED, collection.parcelSerialized);
+  expectArrayBuffersToEqual(PARCEL_SERIALIZED, collection.parcelSerialized);
 });
 
 test('Trusted certificates should be honored', () => {

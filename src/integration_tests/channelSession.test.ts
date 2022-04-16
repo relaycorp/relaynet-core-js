@@ -2,7 +2,7 @@ import * as pkijs from 'pkijs';
 
 import { EnvelopedData, generateECDHKeyPair, SessionEnvelopedData } from '..';
 
-import { arrayBufferFrom, expectBuffersToEqual } from '../lib/_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual } from '../lib/_test_utils';
 
 test('Encryption and decryption with subsequent DH keys', async () => {
   const bobKeyPair1 = await generateECDHKeyPair();
@@ -15,7 +15,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
     publicKey: bobKeyPair1.publicKey,
   });
   const decryptedPlaintext1 = await encryptionResult1.envelopedData.decrypt(bobKeyPair1.privateKey);
-  expectBuffersToEqual(decryptedPlaintext1, plaintext1);
+  expectArrayBuffersToEqual(decryptedPlaintext1, plaintext1);
   checkRecipientInfo(encryptionResult1.envelopedData, bobKeyPair1Id);
 
   // Run 2: Bob replies to Alice. They have one DH key pair each.
@@ -25,7 +25,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   const decryptedPlaintext2 = await encryptionResult2.envelopedData.decrypt(
     encryptionResult1.dhPrivateKey as CryptoKey,
   );
-  expectBuffersToEqual(decryptedPlaintext2, plaintext2);
+  expectArrayBuffersToEqual(decryptedPlaintext2, plaintext2);
   checkRecipientInfo(encryptionResult2.envelopedData, alicePublicKey1.keyId);
 
   // Run 3: Alice replies to Bob. Alice has two DH key pairs and Bob just one.
@@ -35,7 +35,7 @@ test('Encryption and decryption with subsequent DH keys', async () => {
   const decryptedPlaintext3 = await encryptionResult3.envelopedData.decrypt(
     encryptionResult2.dhPrivateKey as CryptoKey,
   );
-  expectBuffersToEqual(decryptedPlaintext3, plaintext3);
+  expectArrayBuffersToEqual(decryptedPlaintext3, plaintext3);
   checkRecipientInfo(encryptionResult3.envelopedData, bobPublicKey2.keyId);
 });
 
@@ -53,13 +53,16 @@ test('EnvelopedData should be decrypted after serialization', async () => {
   });
 
   // Check it can be decrypted before serializing it:
-  expectBuffersToEqual(await envelopedData.decrypt(dhKeyPair.privateKey), plaintext);
+  expectArrayBuffersToEqual(await envelopedData.decrypt(dhKeyPair.privateKey), plaintext);
 
   // Check it can be decrypted after serializing and deserializing it:
   const envelopedDataDeserialized = EnvelopedData.deserialize(
     envelopedData.serialize(),
   ) as SessionEnvelopedData;
-  expectBuffersToEqual(await envelopedDataDeserialized.decrypt(dhKeyPair.privateKey), plaintext);
+  expectArrayBuffersToEqual(
+    await envelopedDataDeserialized.decrypt(dhKeyPair.privateKey),
+    plaintext,
+  );
 });
 
 function checkRecipientInfo(

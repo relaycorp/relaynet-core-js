@@ -2,7 +2,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import { CryptoEngine } from 'pkijs';
 
-import { arrayBufferFrom, expectBuffersToEqual, sha256Hex } from '../_test_utils';
+import { arrayBufferFrom, sha256Hex } from '../_test_utils';
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeECDHPublicKey,
@@ -184,8 +184,7 @@ describe('Key serializers', () => {
   test('derSerializePublicKey should convert public key to buffer', async () => {
     const publicKeyDer = await derSerializePublicKey(stubKeyPair.publicKey);
 
-    expect(publicKeyDer).toBeInstanceOf(Buffer);
-    expectBuffersToEqual(publicKeyDer, Buffer.from(stubExportedKeyDer));
+    expect(publicKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
 
     expect(mockExportKey).toBeCalledTimes(1);
     expect(mockExportKey).toBeCalledWith('spki', stubKeyPair.publicKey);
@@ -194,8 +193,7 @@ describe('Key serializers', () => {
   test('derSerializePrivateKey should convert private key to buffer', async () => {
     const privateKeyDer = await derSerializePrivateKey(stubKeyPair.privateKey);
 
-    expect(privateKeyDer).toBeInstanceOf(Buffer);
-    expectBuffersToEqual(privateKeyDer, Buffer.from(stubExportedKeyDer));
+    expect(privateKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
 
     expect(mockExportKey).toBeCalledTimes(1);
     expect(mockExportKey).toBeCalledWith('pkcs8', stubKeyPair.privateKey);
@@ -372,8 +370,7 @@ test('getPublicKeyDigest should return the SHA-256 digest of the public key', as
 
   const digest = await getPublicKeyDigest(keyPair.publicKey);
 
-  expectBuffersToEqual(
-    Buffer.from(digest),
+  expect(Buffer.from(digest)).toEqual(
     createHash('sha256')
       .update(await derSerializePublicKey(keyPair.publicKey))
       .digest(),

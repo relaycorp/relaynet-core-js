@@ -6,7 +6,7 @@ import {
   arrayBufferFrom,
   arrayToAsyncIterable,
   asyncIterableToArray,
-  expectBuffersToEqual,
+  expectArrayBuffersToEqual,
   generateStubCert,
 } from '../../_test_utils';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
@@ -295,7 +295,7 @@ describe('CargoMessageSet', () => {
       expect((deserialization as asn1js.Set).valueBlock.value).toHaveLength(1);
       const stubMessageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[0];
       expect(stubMessageAsn1).toBeInstanceOf(asn1js.OctetString);
-      expectBuffersToEqual(
+      expectArrayBuffersToEqual(
         (stubMessageAsn1 as asn1js.OctetString).valueBlock.valueHex,
         STUB_MESSAGE,
       );
@@ -316,7 +316,7 @@ describe('CargoMessageSet', () => {
       for (let index = 0; index < stubMessages.length; index++) {
         const messageAsn1 = (deserialization as asn1js.Sequence).valueBlock.value[index];
         expect(messageAsn1).toBeInstanceOf(asn1js.OctetString);
-        expectBuffersToEqual(
+        expectArrayBuffersToEqual(
           (messageAsn1 as asn1js.OctetString).valueBlock.valueHex,
           stubMessages[index],
         );

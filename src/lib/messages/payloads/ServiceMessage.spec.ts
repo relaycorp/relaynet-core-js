@@ -1,7 +1,7 @@
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { arrayBufferFrom, expectBuffersToEqual, getAsn1SequenceItem } from '../../_test_utils';
+import { arrayBufferFrom, expectArrayBuffersToEqual, getAsn1SequenceItem } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import InvalidMessageError from '../InvalidMessageError';
@@ -31,7 +31,7 @@ describe('ServiceMessage', () => {
       const sequence = derDeserialize(serialization);
       expect(sequence).toBeInstanceOf(asn1js.Sequence);
       const contentASN1 = getAsn1SequenceItem(sequence, 1);
-      expectBuffersToEqual(bufferToArray(CONTENT), contentASN1.valueBlock.valueHex);
+      expectArrayBuffersToEqual(bufferToArray(CONTENT), contentASN1.valueBlock.valueHex);
     });
   });
 
@@ -59,8 +59,9 @@ describe('ServiceMessage', () => {
       const serialization = bufferToArray(Buffer.from(originalMessage.serialize()));
 
       const finalMessage = ServiceMessage.deserialize(serialization);
+
       expect(finalMessage.type).toEqual(originalMessage.type);
-      expectBuffersToEqual(originalMessage.content, finalMessage.content);
+      expect(finalMessage.content).toEqual(originalMessage.content);
     });
   });
 });
