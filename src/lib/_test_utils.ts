@@ -100,6 +100,21 @@ export async function getPromiseRejection<ErrorType extends Error>(
   throw new Error('Expected promise to throw');
 }
 
+export function catchError<ErrorType extends Error>(
+  func: () => void,
+  errorClass: new () => ErrorType,
+): ErrorType {
+  try {
+    func();
+  } catch (error) {
+    if (!(error instanceof errorClass)) {
+      throw error;
+    }
+    return error as ErrorType;
+  }
+  throw new Error('Expected function to throw');
+}
+
 /**
  * Assert that two `ArrayBuffer`s are equivalent.
  *
