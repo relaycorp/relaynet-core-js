@@ -1,8 +1,6 @@
 // tslint:disable:max-classes-per-file no-object-mutation readonly-keyword readonly-array
 
-import { OctetString, Sequence } from 'asn1js';
-import { makeImplicitlyTaggedSequence } from '../asn1';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { CertificationPath } from '../pki/CertificationPath';
 import { CertificateStore } from './CertificateStore';
 import { KeyStoreSet } from './KeyStoreSet';
 import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
@@ -130,19 +128,11 @@ export class MockCertificateStore extends CertificateStore {
     this.dataByPrivateAddress = {};
   }
 
-  public async forceSave(
-    subjectCertificate: Certificate,
-    chain: readonly Certificate[],
-    issuerPrivateAddress: string,
-  ): Promise<void> {
-    const sequence = makeImplicitlyTaggedSequence(
-      new OctetString({ valueHex: subjectCertificate.serialize() }),
-      new Sequence({ value: chain.map((c) => new OctetString({ valueHex: c.serialize() })) }),
-    );
+  public async forceSave(path: CertificationPath, issuerPrivateAddress: string): Promise<void> {
     await this.saveData(
-      sequence.toBER(),
-      await subjectCertificate.calculateSubjectPrivateAddress(),
-      subjectCertificate.expiryDate,
+      path.serialize(),
+      await path.leafCertificate.calculateSubjectPrivateAddress(),
+      path.leafCertificate.expiryDate,
       issuerPrivateAddress,
     );
   }

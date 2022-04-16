@@ -4,6 +4,7 @@ import { reSerializeCertificate } from '../_test_utils';
 import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
+import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { Gateway } from './Gateway';
 import { StubVerifier } from './signatures/_test_utils';
@@ -49,8 +50,7 @@ describe('getGSCVerifier', () => {
   test('Certificates from a different issuer should be ignored', async () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
-      nodeCertificate,
-      [],
+      new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerPrivateAddress,
     );
 
@@ -65,8 +65,7 @@ describe('getGSCVerifier', () => {
   test('All certificates should be set as trusted', async () => {
     const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
-      nodeCertificate,
-      [],
+      new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerPrivateAddress,
     );
 

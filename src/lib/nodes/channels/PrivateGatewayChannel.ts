@@ -5,6 +5,7 @@ import {
   getRSAPublicKeyFromPrivate,
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { GatewayChannel } from './GatewayChannel';
 
@@ -35,7 +36,8 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
       validityEndDate: addDays(now, 180),
       validityStartDate: subMinutes(now, 90),
     });
-    await this.keyStores.certificateStore.save(issuer, [], privateAddress);
+    const path = new CertificationPath(issuer, []);
+    await this.keyStores.certificateStore.save(path, privateAddress);
     return issuer;
   }
 

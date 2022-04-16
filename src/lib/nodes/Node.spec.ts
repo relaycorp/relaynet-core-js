@@ -10,6 +10,7 @@ import {
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
+import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { StubMessage } from '../ramf/_test_utils';
 import { SessionKey } from '../SessionKey';
@@ -75,8 +76,7 @@ describe('getGSCSigner', () => {
   test('Signer should be of the type requested if certificate exists', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
-      nodeCertificate,
-      [],
+      new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerPrivateAddress,
     );
 
@@ -91,8 +91,7 @@ describe('getGSCSigner', () => {
   test('Signer should receive the certificate and private key of the node', async () => {
     const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
-      nodeCertificate,
-      [],
+      new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerPrivateAddress,
     );
 
