@@ -59,7 +59,7 @@
     "@relaycorp/shared-config": "^1.7.0",
     "@types/asn1js": "2.0.2",
     "@types/jest": "^27.4.1",
-    "@types/pkijs": "0.0.12",
+    "@types/pkijs": "0.0.13",
     "del-cli": "^4.0.1",
     "jest": "^27.5.1",
     "jest-date-mock": "^1.0.8",
