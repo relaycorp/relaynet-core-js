@@ -21,7 +21,6 @@ export {
   derDeserializeRSAPublicKey,
   derSerializePrivateKey,
   derSerializePublicKey,
-  ECDHCurveName,
   generateECDHKeyPair,
   generateRSAKeyPair,
   getPublicKeyDigest,
@@ -29,6 +28,7 @@ export {
   getRSAPublicKeyFromPrivate,
   getPrivateAddressFromIdentityKey,
 } from './lib/crypto_wrappers/keys';
+export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
 export * from './lib/keyStores/privateKeyStore';
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';

@@ -2,10 +2,9 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { getAlgorithmParameters } from 'pkijs';
 
 import { getPkijsCrypto } from './_utils';
+import { ECDHCurveName, HashingAlgorithm, RSAModulus } from './algorithms';
 
 const cryptoEngine = getPkijsCrypto();
-
-export type ECDHCurveName = 'P-256' | 'P-384' | 'P-521';
 
 const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
   hash: { name: 'SHA-256' },
@@ -14,23 +13,28 @@ const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
 
 //region Key generators
 
+export interface RSAKeyGenOptions {
+  readonly modulus: RSAModulus;
+  readonly hashingAlgorithm: HashingAlgorithm;
+}
+
 /**
- * Generate an RSA key pair
+ * Generate an RSA-PSS key pair.
  *
- * @param modulus The RSA modulus for the keys (2048 or greater).
- * @param hashingAlgorithm The hashing algorithm (e.g., SHA-256, SHA-384, SHA-512).
+ * @param options The RSA key generation options
  * @throws Error If the modulus or the hashing algorithm is disallowed by RS-018.
  */
-export async function generateRSAKeyPair({
-  modulus = 2048,
-  hashingAlgorithm = 'SHA-256',
-} = {}): Promise<CryptoKeyPair> {
+export async function generateRSAKeyPair(
+  options: Partial<RSAKeyGenOptions> = {},
+): Promise<CryptoKeyPair> {
+  const modulus = options.modulus ?? 2048;
   if (modulus < 2048) {
     throw new Error(`RSA modulus must be => 2048 per RS-018 (got ${modulus})`);
   }
 
+  const hashingAlgorithm = options.hashingAlgorithm ?? 'SHA-256';
   // RS-018 disallows MD5 and SHA-1, but only SHA-1 is supported in WebCrypto
-  if (hashingAlgorithm === 'SHA-1') {
+  if ((hashingAlgorithm as any) === 'SHA-1') {
     throw new Error('SHA-1 is disallowed by RS-018');
   }
 
@@ -64,17 +68,10 @@ export async function generateECDHKeyPair(
 }
 
 export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
-  const jwkPrivateKey = await cryptoEngine.exportKey('jwk', privateKey);
-  const publicKeyData = {
-    alg: jwkPrivateKey.alg,
-    e: jwkPrivateKey.e,
-    ext: jwkPrivateKey.ext,
-    kty: jwkPrivateKey.kty,
-    n: jwkPrivateKey.n,
-  };
+  const publicKeyDer = await cryptoEngine.exportKey('spki', privateKey);
   const hashingAlgoName = (privateKey.algorithm as any).hash.name;
   const opts = { hash: { name: hashingAlgoName }, name: privateKey.algorithm.name };
-  return cryptoEngine.importKey('jwk', publicKeyData, opts, true, ['verify']);
+  return cryptoEngine.importKey('spki', publicKeyDer, opts, true, ['verify']);
 }
 
 //endregion

@@ -1,18 +1,9 @@
 import { mockSpy } from '../../_test_utils';
-import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../../crypto_wrappers/keys';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import * as privateGatewayModule from '../PrivateGateway';
 import { PrivateGatewayManager } from './PrivateGatewayManager';
 
 const MOCK_PRIVATE_GATEWAY_CLASS = mockSpy(jest.spyOn(privateGatewayModule, 'PrivateGateway'));
-
-let privateAddress: string;
-let privateKey: CryptoKey;
-beforeAll(async () => {
-  const keyPair = await generateRSAKeyPair();
-  privateKey = keyPair.privateKey;
-  privateAddress = await getPrivateAddressFromIdentityKey(keyPair.privateKey);
-});
 
 const KEY_STORES = new MockKeyStoreSet();
 afterEach(() => {
@@ -23,11 +14,12 @@ describe('get', () => {
   test('Null should be returned if the private key does not exist', async () => {
     const manager = new PrivateGatewayManager(KEY_STORES);
 
-    await expect(manager.get(privateAddress)).resolves.toBeNull();
+    await expect(manager.get('non-existing')).resolves.toBeNull();
   });
 
   test('Node should be returned if private key exists', async () => {
-    await KEY_STORES.privateKeyStore.saveIdentityKey(privateKey);
+    const { privateKey, privateAddress } =
+      await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
     const manager = new PrivateGatewayManager(KEY_STORES);
 
     const gateway = await manager.get(privateAddress);
@@ -37,7 +29,7 @@ describe('get', () => {
   });
 
   test('Key stores should be passed on', async () => {
-    await KEY_STORES.privateKeyStore.saveIdentityKey(privateKey);
+    const { privateAddress } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
     const manager = new PrivateGatewayManager(KEY_STORES);
 
     await manager.get(privateAddress);
@@ -51,7 +43,7 @@ describe('get', () => {
   });
 
   test('Crypto options should be honoured if passed', async () => {
-    await KEY_STORES.privateKeyStore.saveIdentityKey(privateKey);
+    const { privateAddress } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
     const cryptoOptions = { encryption: { aesKeySize: 256 } };
     const manager = new PrivateGatewayManager(KEY_STORES, cryptoOptions);
 
@@ -69,7 +61,8 @@ describe('get', () => {
     const customPrivateGateway = {};
     const customPrivateGatewayConstructor = jest.fn().mockReturnValue(customPrivateGateway);
     const manager = new PrivateGatewayManager(KEY_STORES);
-    await KEY_STORES.privateKeyStore.saveIdentityKey(privateKey);
+    const { privateKey, privateAddress } =
+      await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
 
     const gateway = await manager.get(privateAddress, customPrivateGatewayConstructor);
 

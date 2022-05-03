@@ -1,6 +1,7 @@
 /* tslint:disable:no-let */
 
 import { arrayBufferFrom, generateStubCert, getMockContext, mockSpy } from '../_test_utils';
+import { HashingAlgorithm } from '../crypto_wrappers/algorithms';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import * as serialization from '../ramf/serialization';
 import RAMFMessage from './RAMFMessage';
@@ -71,7 +72,7 @@ export function describeMessage<M extends RAMFMessage<any>>(
     });
 
     test('Signature options should be honored', async () => {
-      const signatureOptions = { hashingAlgorithmName: 'SHA-384' };
+      const signatureOptions = { hashingAlgorithmName: 'SHA-384' as HashingAlgorithm };
       await message.serialize(senderPrivateKey, signatureOptions);
 
       const serializeCallArs = getMockContext(serialization.serialize).calls[0];

@@ -7,7 +7,7 @@ import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
-  public identityKeys: { [privateAddress: string]: Buffer } = {};
+  public identityKeys: { [privateAddress: string]: CryptoKey } = {};
 
   public sessionKeys: { [keyId: string]: SessionPrivateKeyData } = {};
 
@@ -20,21 +20,15 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     this.sessionKeys = {};
   }
 
-  protected async retrieveIdentityKeySerialized(privateAddress: string): Promise<Buffer | null> {
-    if (this.failOnFetch) {
-      throw new Error('Denied');
-    }
-    return this.identityKeys[privateAddress];
+  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
+    return this.identityKeys[privateAddress] ?? null;
   }
 
-  protected async saveIdentityKeySerialized(
-    privateAddress: string,
-    keySerialized: Buffer,
-  ): Promise<void> {
+  protected async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    this.identityKeys[privateAddress] = keySerialized;
+    this.identityKeys[privateAddress] = privateKey;
   }
 
   protected async saveSessionKeySerialized(
