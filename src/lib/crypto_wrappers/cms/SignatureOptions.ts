@@ -1,3 +1,5 @@
+import { HashingAlgorithm } from '../algorithms';
+
 export interface SignatureOptions {
-  readonly hashingAlgorithmName: string;
+  readonly hashingAlgorithmName: HashingAlgorithm;
 }
