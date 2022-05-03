@@ -13,6 +13,7 @@ import {
   sha256Hex,
 } from '../../_test_utils';
 import { CMS_OIDS } from '../../oids';
+import { HashingAlgorithm } from '../algorithms';
 import { generateRSAKeyPair } from '../keys';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
@@ -154,21 +155,24 @@ describe('sign', () => {
       ).toEqual(sha256Hex(plaintext));
     });
 
-    test.each([['SHA-384', 'SHA-512']])('%s should be supported', async (hashingAlgorithmName) => {
-      const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate, [], {
-        hashingAlgorithmName,
-      });
+    test.each(['SHA-384', 'SHA-512'] as readonly HashingAlgorithm[])(
+      '%s should be supported',
+      async (hashingAlgorithmName) => {
+        const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate, [], {
+          hashingAlgorithmName,
+        });
 
-      const digestAttribute = getSignerInfoAttribute(
-        signedData.pkijsSignedData.signerInfos[0],
-        CMS_OIDS.ATTR_DIGEST,
-      );
-      const algorithmNameNodejs = hashingAlgorithmName.toLowerCase().replace('-', '');
-      expect(
-        // @ts-ignore
-        Buffer.from(digestAttribute.values[0].valueBlock.valueHex).toString('hex'),
-      ).toEqual(calculateDigestHex(algorithmNameNodejs, plaintext));
-    });
+        const digestAttribute = getSignerInfoAttribute(
+          signedData.pkijsSignedData.signerInfos[0],
+          CMS_OIDS.ATTR_DIGEST,
+        );
+        const algorithmNameNodejs = hashingAlgorithmName.toLowerCase().replace('-', '');
+        const digest = (digestAttribute as any).values[0].valueBlock.valueHex;
+        expect(Buffer.from(digest).toString('hex')).toEqual(
+          calculateDigestHex(algorithmNameNodejs, plaintext),
+        );
+      },
+    );
 
     test('SHA-1 should not be a valid hashing function', async () => {
       expect.hasAssertions();
@@ -176,7 +180,7 @@ describe('sign', () => {
       try {
         await SignedData.sign(plaintext, keyPair.privateKey, certificate, [], {
           hashingAlgorithmName: 'SHA-1',
-        });
+        } as any);
       } catch (error: any) {
         expect(error).toBeInstanceOf(CMSError);
         expect(error.message).toEqual('SHA-1 is disallowed by RS-018');

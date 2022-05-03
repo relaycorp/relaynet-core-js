@@ -20,6 +20,7 @@ import { StubMessage } from './_test_utils';
 import RAMFSyntaxError from './RAMFSyntaxError';
 import RAMFValidationError from './RAMFValidationError';
 import { deserialize, serialize } from './serialization';
+import { HashingAlgorithm } from '../crypto_wrappers/algorithms';
 
 const PAYLOAD = Buffer.from('Hi');
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1;
@@ -161,7 +162,7 @@ describe('MessageSerializer', () => {
         expect(signatureOptions).toBe(undefined);
       });
 
-      test.each([['SHA-384', 'SHA-512']])(
+      test.each(['SHA-384', 'SHA-512'] as readonly HashingAlgorithm[])(
         '%s should also be supported',
         async (hashingAlgorithmName) => {
           const message = new StubMessage(RECIPIENT_ADDRESS, SENDER_CERTIFICATE, PAYLOAD);
