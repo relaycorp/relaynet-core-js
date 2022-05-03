@@ -27,7 +27,7 @@ export interface RSAKeyGenOptions {
 export async function generateRSAKeyPair(
   options: Partial<RSAKeyGenOptions> = {},
 ): Promise<CryptoKeyPair> {
-  const modulus = options?.modulus ?? 2048;
+  const modulus = options.modulus ?? 2048;
   if (modulus < 2048) {
     throw new Error(`RSA modulus must be => 2048 per RS-018 (got ${modulus})`);
   }
