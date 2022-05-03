@@ -2,10 +2,12 @@
 
 import {
   derDeserializeECDHPrivateKey,
-  derDeserializeRSAPrivateKey,
   derSerializePrivateKey,
+  generateRSAKeyPair,
   getPrivateAddressFromIdentityKey,
+  RSAKeyGenOptions,
 } from '../crypto_wrappers/keys';
+import { IdentityKeyPair } from '../IdentityKeyPair';
 import RelaynetError from '../RelaynetError';
 import UnknownKeyError from './UnknownKeyError';
 
@@ -25,45 +27,17 @@ export class PrivateKeyStoreError extends RelaynetError {}
 export abstract class PrivateKeyStore {
   //region Identity keys
 
-  /**
-   * Save identity `privateKey`.
-   *
-   * @param privateKey
-   * @return The corresponding private address
-   */
-  public async saveIdentityKey(privateKey: CryptoKey): Promise<string> {
-    const privateAddress = await getPrivateAddressFromIdentityKey(privateKey);
-    const privateKeyDer = await derSerializePrivateKey(privateKey);
+  public async generateIdentityKeyPair(
+    keyOptions: Partial<RSAKeyGenOptions> = {},
+  ): Promise<IdentityKeyPair> {
+    const keyPair = await this.generateRSAKeyPair(keyOptions);
+    const privateAddress = await getPrivateAddressFromIdentityKey(keyPair.publicKey);
     try {
-      await this.saveIdentityKeySerialized(privateAddress, privateKeyDer);
+      await this.saveIdentityKey(privateAddress, keyPair.privateKey);
     } catch (err) {
       throw new PrivateKeyStoreError(err as Error, `Failed to save key for ${privateAddress}`);
     }
-    return privateAddress;
-  }
-
-  /**
-   * Return the private component of a node key pair if it exists.
-   *
-   * @param privateAddress
-   * @throws PrivateKeyStoreError when the look up could not be done
-   */
-  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
-    let keySerialized: Buffer | null;
-    try {
-      keySerialized = await this.retrieveIdentityKeySerialized(privateAddress);
-    } catch (err) {
-      throw new PrivateKeyStoreError(err as Error, `Failed to retrieve key for ${privateAddress}`);
-    }
-
-    if (!keySerialized) {
-      return null;
-    }
-
-    return derDeserializeRSAPrivateKey(keySerialized, {
-      hash: { name: 'SHA-256' },
-      name: 'RSA-PSS',
-    });
+    return { ...keyPair, privateAddress };
   }
 
   //endregion
@@ -123,13 +97,15 @@ export abstract class PrivateKeyStore {
 
   //endregion
 
-  protected abstract retrieveIdentityKeySerialized(privateAddress: string): Promise<Buffer | null>;
+  /**
+   * Return the private component of a node key pair if it exists.
+   *
+   * @param privateAddress
+   */
+  public abstract retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null>;
   protected abstract retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null>;
 
-  protected abstract saveIdentityKeySerialized(
-    privateAddress: string,
-    keySerialized: Buffer,
-  ): Promise<void>;
+  protected abstract saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void>;
   protected abstract saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
@@ -162,5 +138,11 @@ export abstract class PrivateKeyStore {
     } catch (error) {
       throw new PrivateKeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
     }
+  }
+
+  protected async generateRSAKeyPair(
+    keyOptions: Partial<RSAKeyGenOptions>,
+  ): Promise<CryptoKeyPair> {
+    return generateRSAKeyPair(keyOptions);
   }
 }

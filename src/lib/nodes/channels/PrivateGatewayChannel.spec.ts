@@ -16,9 +16,6 @@ import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 let publicGatewayPrivateAddress: string;
 let publicGatewayPublicKey: CryptoKey;
 let publicGatewayCertificate: Certificate;
-let privateGatewayPrivateAddress: string;
-let privateGatewayPrivateKey: CryptoKey;
-let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
@@ -31,24 +28,25 @@ beforeAll(async () => {
     subjectPublicKey: publicGatewayPublicKey,
     validityEndDate: tomorrow,
   });
-
-  // Private gateway
-  const privateGatewayKeyPair = await generateRSAKeyPair();
-  privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
-  privateGatewayPDCCertificate = await issueGatewayCertificate({
-    issuerCertificate: publicGatewayCertificate,
-    issuerPrivateKey: publicGatewayKeyPair.privateKey,
-    subjectPublicKey: privateGatewayKeyPair.publicKey,
-    validityEndDate: tomorrow,
-  });
-  privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(
-    privateGatewayKeyPair.publicKey,
-  );
 });
 
 const KEY_STORES = new MockKeyStoreSet();
+let privateGatewayPrivateAddress: string;
+let privateGatewayPrivateKey: CryptoKey;
+let privateGatewayPDCCertificate: Certificate;
 beforeEach(async () => {
-  await KEY_STORES.privateKeyStore.saveIdentityKey(privateGatewayPrivateKey);
+  const { privateKey, publicKey, privateAddress } =
+    await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
+
+  // Private gateway
+  privateGatewayPrivateKey = privateKey;
+  privateGatewayPDCCertificate = await issueGatewayCertificate({
+    issuerCertificate: publicGatewayCertificate,
+    issuerPrivateKey: privateKey,
+    subjectPublicKey: publicKey,
+    validityEndDate: publicGatewayCertificate.expiryDate,
+  });
+  privateGatewayPrivateAddress = privateAddress;
 });
 afterEach(() => {
   KEY_STORES.clear();

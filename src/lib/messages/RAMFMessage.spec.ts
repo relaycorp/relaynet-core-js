@@ -36,7 +36,6 @@ afterEach(() => {
 describe('RAMFMessage', () => {
   let recipientPrivateAddress: string;
   let recipientCertificate: Certificate;
-  let recipientPrivateKey: CryptoKey;
   let senderCertificate: Certificate;
   beforeAll(async () => {
     const recipientKeyPair = await generateRSAKeyPair();
@@ -44,7 +43,6 @@ describe('RAMFMessage', () => {
       attributes: { isCA: true },
       subjectPublicKey: recipientKeyPair.publicKey,
     });
-    recipientPrivateKey = recipientKeyPair.privateKey;
     recipientPrivateAddress = recipientCertificate.getCommonName();
 
     const senderKeyPair = await generateRSAKeyPair();
@@ -432,7 +430,6 @@ describe('RAMFMessage', () => {
       );
 
       const recipientKeyStore = new MockPrivateKeyStore();
-      await recipientKeyStore.saveIdentityKey(recipientPrivateKey);
 
       const stubMessage = new StubMessage(
         '0123',
