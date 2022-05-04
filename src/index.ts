@@ -30,6 +30,7 @@ export {
 } from './lib/crypto_wrappers/keys';
 export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
 export * from './lib/keyStores/privateKeyStore';
+export { IdentityKeyPair } from './lib/IdentityKeyPair';
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
 export { CertificationPath } from './lib/pki/CertificationPath';
