@@ -27,6 +27,7 @@ export {
   getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
   getPrivateAddressFromIdentityKey,
+  RSAKeyGenOptions,
 } from './lib/crypto_wrappers/keys';
 export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
 export * from './lib/keyStores/privateKeyStore';
