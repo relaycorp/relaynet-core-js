@@ -8,7 +8,7 @@ import {
   RSAKeyGenOptions,
 } from '../crypto_wrappers/keys';
 import { IdentityKeyPair } from '../IdentityKeyPair';
-import RelaynetError from '../RelaynetError';
+import { KeyStoreError } from './KeyStoreError';
 import UnknownKeyError from './UnknownKeyError';
 
 /**
@@ -18,11 +18,6 @@ export interface SessionPrivateKeyData {
   readonly keySerialized: Buffer;
   readonly peerPrivateAddress?: string;
 }
-
-/**
- * Error thrown when there was a failure in the communication with the backing service.
- */
-export class PrivateKeyStoreError extends RelaynetError {}
 
 export abstract class PrivateKeyStore {
   //region Identity keys
@@ -35,7 +30,7 @@ export abstract class PrivateKeyStore {
     try {
       await this.saveIdentityKey(privateAddress, keyPair.privateKey);
     } catch (err) {
-      throw new PrivateKeyStoreError(err as Error, `Failed to save key for ${privateAddress}`);
+      throw new KeyStoreError(err as Error, `Failed to save key for ${privateAddress}`);
     }
     return { ...keyPair, privateAddress };
   }
@@ -118,7 +113,7 @@ export abstract class PrivateKeyStore {
     try {
       key = await this.retrieveSessionKeyData(keyIdHex);
     } catch (error) {
-      throw new PrivateKeyStoreError(error as Error, `Failed to retrieve key`);
+      throw new KeyStoreError(error as Error, `Failed to retrieve key`);
     }
     if (key === null) {
       throw new UnknownKeyError(`Key ${keyIdHex} does not exist`);
@@ -136,7 +131,7 @@ export abstract class PrivateKeyStore {
     try {
       await this.saveSessionKeySerialized(keyIdString, privateKeyDer, peerPrivateAddress);
     } catch (error) {
-      throw new PrivateKeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
+      throw new KeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
     }
   }
 

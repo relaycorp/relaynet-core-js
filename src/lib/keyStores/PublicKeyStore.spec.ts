@@ -4,8 +4,8 @@ import {
   generateRSAKeyPair,
   getPrivateAddressFromIdentityKey,
 } from '../crypto_wrappers/keys';
+import { KeyStoreError } from './KeyStoreError';
 import { SessionPublicKeyData } from './PublicKeyStore';
-import PublicKeyStoreError from './PublicKeyStoreError';
 import { MockPublicKeyStore } from './testMocks';
 
 const STORE = new MockPublicKeyStore();
@@ -85,7 +85,7 @@ describe('Session keys', () => {
       const bogusStore = new MockPublicKeyStore(false, fetchError);
 
       await expect(bogusStore.retrieveLastSessionKey(peerPrivateAddress)).rejects.toEqual(
-        new PublicKeyStoreError(fetchError, 'Failed to retrieve key'),
+        new KeyStoreError(fetchError, 'Failed to retrieve key'),
       );
     });
   });
@@ -165,7 +165,7 @@ describe('Session keys', () => {
           peerPrivateAddress,
           CREATION_DATE,
         ),
-      ).rejects.toEqual(new PublicKeyStoreError('Failed to save public session key: Denied'));
+      ).rejects.toEqual(new KeyStoreError('Failed to save public session key: Denied'));
     });
   });
 });

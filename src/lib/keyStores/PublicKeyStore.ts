@@ -5,7 +5,7 @@ import {
   getPrivateAddressFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { SessionKey } from '../SessionKey';
-import PublicKeyStoreError from './PublicKeyStoreError';
+import { KeyStoreError } from './KeyStoreError';
 
 export interface SessionPublicKeyData {
   readonly publicKeyId: Buffer;
@@ -48,7 +48,7 @@ export abstract class PublicKeyStore {
     try {
       await this.saveSessionKeyData(keyData, peerPrivateAddress);
     } catch (error) {
-      throw new PublicKeyStoreError(error as Error, 'Failed to save public session key');
+      throw new KeyStoreError(error as Error, 'Failed to save public session key');
     }
   }
 
@@ -85,7 +85,7 @@ export abstract class PublicKeyStore {
     try {
       return await this.retrieveSessionKeyData(peerPrivateAddress);
     } catch (error) {
-      throw new PublicKeyStoreError(error as Error, 'Failed to retrieve key');
+      throw new KeyStoreError(error as Error, 'Failed to retrieve key');
     }
   }
 }

@@ -30,14 +30,14 @@ export {
   RSAKeyGenOptions,
 } from './lib/crypto_wrappers/keys';
 export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
-export * from './lib/keyStores/privateKeyStore';
+export { PrivateKeyStore, SessionPrivateKeyData } from './lib/keyStores/PrivateKeyStore';
 export { IdentityKeyPair } from './lib/IdentityKeyPair';
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
 export { CertificationPath } from './lib/pki/CertificationPath';
 export { CertificateStore } from './lib/keyStores/CertificateStore';
 export * from './lib/keyStores/testMocks';
-export { default as PublicKeyStoreError } from './lib/keyStores/PublicKeyStoreError';
+export { KeyStoreError } from './lib/keyStores/KeyStoreError';
 export { default as UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 export * from './lib/cargoRelay';
