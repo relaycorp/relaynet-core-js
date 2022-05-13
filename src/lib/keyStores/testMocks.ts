@@ -3,7 +3,7 @@
 import { CertificationPath } from '../pki/CertificationPath';
 import { CertificateStore } from './CertificateStore';
 import { KeyStoreSet } from './KeyStoreSet';
-import { PrivateKeyStore, SessionPrivateKeyData } from './privateKeyStore';
+import { PrivateKeyStore, SessionPrivateKeyData } from './PrivateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {

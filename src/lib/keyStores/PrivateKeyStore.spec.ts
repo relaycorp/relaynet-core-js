@@ -5,7 +5,8 @@ import {
   getPrivateAddressFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { SessionKeyPair } from '../SessionKeyPair';
-import { PrivateKeyStoreError, SessionPrivateKeyData } from './privateKeyStore';
+import { KeyStoreError } from './KeyStoreError';
+import { SessionPrivateKeyData } from './PrivateKeyStore';
 import { MockPrivateKeyStore } from './testMocks';
 import UnknownKeyError from './UnknownKeyError';
 
@@ -74,7 +75,7 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore(true);
 
         await expect(store.generateIdentityKeyPair()).rejects.toThrowWithMessage(
-          PrivateKeyStoreError,
+          KeyStoreError,
           /^Failed to save key for \w+: Denied/,
         );
       });
@@ -109,7 +110,7 @@ describe('PrivateKeyStore', () => {
         await expect(
           store.saveUnboundSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId),
         ).rejects.toThrowWithMessage(
-          PrivateKeyStoreError,
+          KeyStoreError,
           `Failed to save key ${sessionKeyIdHex}: Denied`,
         );
       });
@@ -154,7 +155,7 @@ describe('PrivateKeyStore', () => {
 
         await expect(
           store.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId),
-        ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
+        ).rejects.toEqual(new KeyStoreError('Failed to retrieve key: Denied'));
       });
     });
 
@@ -182,7 +183,7 @@ describe('PrivateKeyStore', () => {
             PEER_PRIVATE_ADDRESS,
           ),
         ).rejects.toThrowWithMessage(
-          PrivateKeyStoreError,
+          KeyStoreError,
           `Failed to save key ${sessionKeyIdHex}: Denied`,
         );
       });
@@ -250,7 +251,7 @@ describe('PrivateKeyStore', () => {
 
         await expect(
           store.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
-        ).rejects.toEqual(new PrivateKeyStoreError('Failed to retrieve key: Denied'));
+        ).rejects.toEqual(new KeyStoreError('Failed to retrieve key: Denied'));
       });
     });
   });

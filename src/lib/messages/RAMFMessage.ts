@@ -5,7 +5,7 @@ import { makeDateWithSecondPrecision } from '../_utils';
 import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
 import Certificate from '../crypto_wrappers/x509/Certificate';
-import { PrivateKeyStore } from '../keyStores/privateKeyStore';
+import { PrivateKeyStore } from '../keyStores/PrivateKeyStore';
 import RAMFError from '../ramf/RAMFError';
 import { SessionKey } from '../SessionKey';
 import InvalidMessageError from './InvalidMessageError';

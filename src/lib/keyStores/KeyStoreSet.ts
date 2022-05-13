@@ -1,5 +1,5 @@
 import { CertificateStore } from './CertificateStore';
-import { PrivateKeyStore } from './privateKeyStore';
+import { PrivateKeyStore } from './PrivateKeyStore';
 import { PublicKeyStore } from './PublicKeyStore';
 
 export interface KeyStoreSet {
