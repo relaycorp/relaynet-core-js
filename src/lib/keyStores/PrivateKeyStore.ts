@@ -35,6 +35,13 @@ export abstract class PrivateKeyStore {
     return { ...keyPair, privateAddress };
   }
 
+  /**
+   * Return the private component of a node key pair if it exists.
+   *
+   * @param privateAddress
+   */
+  public abstract retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null>;
+
   //endregion
   //region Session keys
 
@@ -92,20 +99,14 @@ export abstract class PrivateKeyStore {
 
   //endregion
 
-  /**
-   * Return the private component of a node key pair if it exists.
-   *
-   * @param privateAddress
-   */
-  public abstract retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null>;
-  protected abstract retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null>;
-
   protected abstract saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void>;
+
   protected abstract saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
     peerPrivateAddress?: string,
   ): Promise<void>;
+  protected abstract retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null>;
 
   private async retrieveSessionKeyDataOrThrowError(keyId: Buffer): Promise<SessionPrivateKeyData> {
     const keyIdHex = keyId.toString('hex');
