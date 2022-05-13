@@ -1,6 +1,5 @@
 // tslint:disable:max-classes-per-file
 
-import bufferToArray from 'buffer-to-arraybuffer';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert, getPromiseRejection, reSerializeCertificate } from '../_test_utils';
@@ -432,7 +431,7 @@ describe('RAMFMessage', () => {
       const recipientKeyStore = new MockPrivateKeyStore();
 
       const stubMessage = new StubMessage(
-        '0123',
+        recipientPrivateAddress,
         senderCertificate,
         Buffer.from(envelopedData.serialize()),
       );
@@ -443,33 +442,76 @@ describe('RAMFMessage', () => {
       );
     });
 
-    test('Payload should be decrypted', async () => {
+    test('Payload for private recipient should be decrypted with key store', async () => {
       const recipientSessionKeyPair = await SessionKeyPair.generate();
       const { envelopedData } = await SessionEnvelopedData.encrypt(
         STUB_PAYLOAD_PLAINTEXT,
         recipientSessionKeyPair.sessionKey,
       );
+      const stubMessage = new StubMessage(
+        recipientPrivateAddress,
+        senderCertificate,
+        Buffer.from(envelopedData.serialize()),
+      );
       const recipientKeyStore = new MockPrivateKeyStore();
       await recipientKeyStore.saveSessionKey(
         recipientSessionKeyPair.privateKey,
         recipientSessionKeyPair.sessionKey.keyId,
-      );
-
-      const stubMessage = new StubMessage(
-        '0123',
-        senderCertificate,
-        Buffer.from(envelopedData.serialize()),
+        stubMessage.recipientAddress,
       );
 
       const { payload, senderSessionKey } = await stubMessage.unwrapPayload(recipientKeyStore);
 
       expect(payload).toBeInstanceOf(StubPayload);
-      expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
+      expect(Buffer.from(payload.content)).toEqual(STUB_PAYLOAD_PLAINTEXT);
 
       expect(senderSessionKey).toEqual(await envelopedData.getOriginatorKey());
     });
 
-    test('Keystore lookup should be skipped if private key is provided', async () => {
+    test('Payload for public recipient should be decrypted with key store', async () => {
+      const recipientSessionKeyPair = await SessionKeyPair.generate();
+      const { envelopedData } = await SessionEnvelopedData.encrypt(
+        STUB_PAYLOAD_PLAINTEXT,
+        recipientSessionKeyPair.sessionKey,
+      );
+      const stubMessage = new StubMessage(
+        'https://example.com',
+        senderCertificate,
+        Buffer.from(envelopedData.serialize()),
+      );
+      const recipientKeyStore = new MockPrivateKeyStore();
+      await recipientKeyStore.saveSessionKey(
+        recipientSessionKeyPair.privateKey,
+        recipientSessionKeyPair.sessionKey.keyId,
+        recipientPrivateAddress,
+      );
+
+      const { payload, senderSessionKey } = await stubMessage.unwrapPayload(
+        recipientKeyStore,
+        recipientPrivateAddress,
+      );
+
+      expect(payload).toBeInstanceOf(StubPayload);
+      expect(Buffer.from(payload.content)).toEqual(STUB_PAYLOAD_PLAINTEXT);
+
+      expect(senderSessionKey).toEqual(await envelopedData.getOriginatorKey());
+    });
+
+    test('Recipient private address should be passed if only public is available', async () => {
+      const stubMessage = new StubMessage(
+        'https://example.com',
+        senderCertificate,
+        Buffer.from([]),
+      );
+      const recipientKeyStore = new MockPrivateKeyStore();
+
+      await expect(stubMessage.unwrapPayload(recipientKeyStore)).rejects.toThrowWithMessage(
+        RAMFError,
+        'Recipient private address should be passed because message uses public address',
+      );
+    });
+
+    test('Payload for private recipient should be decrypted with private key', async () => {
       const recipientSessionKeyPair = await SessionKeyPair.generate();
       const { envelopedData } = await SessionEnvelopedData.encrypt(
         STUB_PAYLOAD_PLAINTEXT,
@@ -485,7 +527,26 @@ describe('RAMFMessage', () => {
       const { payload } = await stubMessage.unwrapPayload(recipientSessionKeyPair.privateKey);
 
       expect(payload).toBeInstanceOf(StubPayload);
-      expect(payload.content).toEqual(bufferToArray(STUB_PAYLOAD_PLAINTEXT));
+      expect(Buffer.from(payload.content)).toEqual(STUB_PAYLOAD_PLAINTEXT);
+    });
+
+    test('Payload for public recipient should be decrypted with private key', async () => {
+      const recipientSessionKeyPair = await SessionKeyPair.generate();
+      const { envelopedData } = await SessionEnvelopedData.encrypt(
+        STUB_PAYLOAD_PLAINTEXT,
+        recipientSessionKeyPair.sessionKey,
+      );
+
+      const stubMessage = new StubMessage(
+        'https://example.com',
+        senderCertificate,
+        Buffer.from(envelopedData.serialize()),
+      );
+
+      const { payload } = await stubMessage.unwrapPayload(recipientSessionKeyPair.privateKey);
+
+      expect(payload).toBeInstanceOf(StubPayload);
+      expect(Buffer.from(payload.content)).toEqual(STUB_PAYLOAD_PLAINTEXT);
     });
   });
 

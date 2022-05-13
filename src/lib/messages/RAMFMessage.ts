@@ -14,13 +14,18 @@ import { RecipientAddressType } from './RecipientAddressType';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
-const PRIVATE_ADDRESS_REGEX = /^0[a-f0-9]+$/;
+const PRIVATE_ADDRESS_REGEX = /^0[a-f\d]+$/;
 
 interface MessageOptions {
   readonly id: string;
   readonly creationDate: Date;
   readonly ttl: number;
   readonly senderCaCertificateChain: readonly Certificate[];
+}
+
+interface PayloadUnwrapping<Payload extends PayloadPlaintext> {
+  readonly payload: Payload;
+  readonly senderSessionKey: SessionKey;
 }
 
 /**
@@ -89,15 +94,35 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     );
   }
 
+  public async unwrapPayload(privateKey: CryptoKey): Promise<PayloadUnwrapping<Payload>>;
+  public async unwrapPayload(
+    privateKeyStore: PrivateKeyStore,
+    privateAddress?: string,
+  ): Promise<PayloadUnwrapping<Payload>>;
   public async unwrapPayload(
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-  ): Promise<{ readonly payload: Payload; readonly senderSessionKey: SessionKey }> {
+    privateAddress?: string,
+  ): Promise<PayloadUnwrapping<Payload>> {
+    if (
+      privateKeyOrStore instanceof PrivateKeyStore &&
+      !this.isRecipientAddressPrivate &&
+      !privateAddress
+    ) {
+      throw new RAMFError(
+        'Recipient private address should be passed because message uses public address',
+      );
+    }
+
     const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
     if (!(payloadEnvelopedData instanceof SessionEnvelopedData)) {
       throw new RAMFError('Sessionless payloads are no longer supported');
     }
 
-    const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, privateKeyOrStore);
+    const payloadPlaintext = await this.decryptPayload(
+      payloadEnvelopedData,
+      privateKeyOrStore,
+      privateAddress,
+    );
     const payload = await this.deserializePayload(payloadPlaintext);
 
     const senderSessionKey = await (
@@ -134,20 +159,30 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   protected async decryptPayload(
     payloadEnvelopedData: EnvelopedData,
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
+    privateAddress?: string,
   ): Promise<ArrayBuffer> {
-    const privateKey = await this.fetchPrivateKey(payloadEnvelopedData, privateKeyOrStore);
+    const privateKey = await this.fetchPrivateKey(
+      payloadEnvelopedData,
+      privateKeyOrStore,
+      privateAddress,
+    );
     return payloadEnvelopedData.decrypt(privateKey);
   }
 
   protected async fetchPrivateKey(
     payloadEnvelopedData: EnvelopedData,
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
+    privateAddress?: string,
   ): Promise<CryptoKey> {
     const keyId = payloadEnvelopedData.getRecipientKeyId();
     let privateKey: CryptoKey;
     if (privateKeyOrStore instanceof PrivateKeyStore) {
       const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
-      privateKey = await privateKeyOrStore.retrieveSessionKey(keyId, peerPrivateAddress);
+      privateKey = await privateKeyOrStore.retrieveSessionKey(
+        keyId,
+        privateAddress ?? this.recipientAddress,
+        peerPrivateAddress,
+      );
     } else {
       privateKey = privateKeyOrStore;
     }

@@ -135,7 +135,11 @@ describe('wrapMessagePayload', () => {
     )) as SessionEnvelopedData;
     const originatorSessionKey = await payloadEnvelopedData.getOriginatorKey();
     await expect(
-      KEY_STORES.privateKeyStore.retrieveSessionKey(originatorSessionKey.keyId, peerPrivateAddress),
+      KEY_STORES.privateKeyStore.retrieveSessionKey(
+        originatorSessionKey.keyId,
+        await nodeCertificate.calculateSubjectPrivateAddress(),
+        peerPrivateAddress,
+      ),
     ).resolves.toBeTruthy();
   });
 

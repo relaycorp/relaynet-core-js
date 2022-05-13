@@ -1,4 +1,5 @@
 import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
+import { getPrivateAddressFromIdentityKey } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../../messages/payloads/PayloadPlaintext';
@@ -38,6 +39,7 @@ export abstract class Channel {
     await this.keyStores.privateKeyStore.saveSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
+      await this.getNodePrivateAddress(),
       this.peerPrivateAddress,
     );
     return envelopedData.serialize();
@@ -47,4 +49,8 @@ export abstract class Channel {
    * @internal
    */
   public abstract getOutboundRAMFAddress(): string;
+
+  protected async getNodePrivateAddress(): Promise<string> {
+    return getPrivateAddressFromIdentityKey(this.nodePrivateKey);
+  }
 }

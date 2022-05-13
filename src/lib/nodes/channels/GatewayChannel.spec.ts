@@ -132,7 +132,11 @@ describe('generateCargoes', () => {
     const cargoPayload = EnvelopedData.deserialize(bufferToArray(cargo.payloadSerialized));
     const originatorKey = await (cargoPayload as SessionEnvelopedData).getOriginatorKey();
     await expect(
-      KEY_STORES.privateKeyStore.retrieveSessionKey(originatorKey.keyId, peerPrivateAddress),
+      KEY_STORES.privateKeyStore.retrieveSessionKey(
+        originatorKey.keyId,
+        await nodeCertificate.calculateSubjectPrivateAddress(),
+        peerPrivateAddress,
+      ),
     ).toResolve();
   });
 

@@ -3,6 +3,8 @@ import Certificate from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
 import RAMFMessage from '../messages/RAMFMessage';
+import { SessionKey } from '../SessionKey';
+import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
 
@@ -16,6 +18,22 @@ export abstract class Node<Payload extends PayloadPlaintext> {
 
   public async getIdentityPublicKey(): Promise<CryptoKey> {
     return getRSAPublicKeyFromPrivate(this.identityPrivateKey);
+  }
+
+  /**
+   * Generate and store a new session key.
+   *
+   * @param peerPrivateAddress The peer to bind the key to, unless it's an initial key
+   */
+  public async generateSessionKey(peerPrivateAddress?: string): Promise<SessionKey> {
+    const { sessionKey, privateKey } = await SessionKeyPair.generate();
+    await this.keyStores.privateKeyStore.saveSessionKey(
+      privateKey,
+      sessionKey.keyId,
+      this.privateAddress,
+      peerPrivateAddress,
+    );
+    return sessionKey;
   }
 
   public async getGSCSigner<S extends Signer>(
@@ -40,7 +58,10 @@ export abstract class Node<Payload extends PayloadPlaintext> {
    * @param message
    */
   public async unwrapMessagePayload<P extends Payload>(message: RAMFMessage<P>): Promise<P> {
-    const unwrapResult = await message.unwrapPayload(this.keyStores.privateKeyStore);
+    const unwrapResult = await message.unwrapPayload(
+      this.keyStores.privateKeyStore,
+      this.privateAddress,
+    );
 
     await this.keyStores.publicKeyStore.saveSessionKey(
       unwrapResult.senderSessionKey,
