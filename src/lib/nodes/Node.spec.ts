@@ -13,8 +13,6 @@ import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindin
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { StubMessage } from '../ramf/_test_utils';
-import { SessionKey } from '../SessionKey';
-import { SessionKeyPair } from '../SessionKeyPair';
 import { StubNode } from './_test_utils';
 
 let nodePrivateAddress: string;
@@ -107,6 +105,41 @@ describe('getGSCSigner', () => {
   });
 });
 
+describe('generateSessionKey', () => {
+  const PRIVATE_ADDRESS = '0deadbeef';
+  test('Key should not be bound to any peer by default', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+
+    const sessionKey = await node.generateSessionKey();
+
+    await expect(
+      derSerializePublicKey(
+        await KEY_STORES.privateKeyStore.retrieveUnboundSessionKey(
+          sessionKey.keyId,
+          node.privateAddress,
+        ),
+      ),
+    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+  });
+
+  test('Key should be bound to a peer if explicitly set', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    const peerPrivateAddress = `${PRIVATE_ADDRESS}cousin`;
+
+    const sessionKey = await node.generateSessionKey(peerPrivateAddress);
+
+    await expect(
+      derSerializePublicKey(
+        await KEY_STORES.privateKeyStore.retrieveSessionKey(
+          sessionKey.keyId,
+          node.privateAddress,
+          peerPrivateAddress,
+        ),
+      ),
+    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+  });
+});
+
 describe('unwrapMessagePayload', () => {
   const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
   const RECIPIENT_ADDRESS = 'https://example.com';
@@ -121,17 +154,9 @@ describe('unwrapMessagePayload', () => {
     });
   });
 
-  let sessionKey: SessionKey;
-  beforeEach(async () => {
-    const sessionKeyPair = await SessionKeyPair.generate();
-    sessionKey = sessionKeyPair.sessionKey;
-    await KEY_STORES.privateKeyStore.saveUnboundSessionKey(
-      sessionKeyPair.privateKey,
-      sessionKeyPair.sessionKey.keyId,
-    );
-  });
-
   test('Payload plaintext should be returned', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    const sessionKey = await node.generateSessionKey();
     const { envelopedData } = await SessionEnvelopedData.encrypt(
       PAYLOAD_PLAINTEXT_CONTENT,
       sessionKey,
@@ -141,7 +166,6 @@ describe('unwrapMessagePayload', () => {
       peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     const payloadPlaintext = await node.unwrapMessagePayload(message);
 
@@ -149,6 +173,8 @@ describe('unwrapMessagePayload', () => {
   });
 
   test('Originator session key should be stored', async () => {
+    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    const sessionKey = await node.generateSessionKey();
     const { envelopedData, dhKeyId } = await SessionEnvelopedData.encrypt(
       PAYLOAD_PLAINTEXT_CONTENT,
       sessionKey,
@@ -158,7 +184,6 @@ describe('unwrapMessagePayload', () => {
       peerCertificate,
       Buffer.from(envelopedData.serialize()),
     );
-    const node = new StubNode(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
 
     await node.unwrapMessagePayload(message);
 

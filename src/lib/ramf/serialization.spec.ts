@@ -391,7 +391,7 @@ describe('MessageSerializer', () => {
 
           const fields = await deserializeFields(messageSerialized);
           const payloadBlock = getAsn1SequenceItem(fields, 4);
-          expect(payloadBlock.valueBlock.valueHex).toEqual(bufferToArray(PAYLOAD));
+          expect(Buffer.from(payloadBlock.valueBlock.valueHex)).toEqual(PAYLOAD);
         });
 
         test('Payload can span up to 8 MiB', async () => {

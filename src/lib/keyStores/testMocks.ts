@@ -34,6 +34,7 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
   protected async saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
+    privateAddress: string,
     peerPrivateAddress?: string,
   ): Promise<void> {
     if (this.failOnSave) {
@@ -43,6 +44,7 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     this.sessionKeys[keyId] = {
       keySerialized,
       peerPrivateAddress,
+      privateAddress,
     };
   }
 
