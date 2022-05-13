@@ -92,15 +92,25 @@ describe('PrivateKeyStore', () => {
 
     const PEER_PRIVATE_ADDRESS = '0deadbeef';
 
-    describe('saveUnboundSessionKey', () => {
-      test('Key should be stored', async () => {
-        await MOCK_STORE.saveUnboundSessionKey(
+    describe('saveSessionKey', () => {
+      test('Unbound key should be stored', async () => {
+        await MOCK_STORE.saveSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId);
+
+        expect(MOCK_STORE.sessionKeys).toHaveProperty<SessionPrivateKeyData>(sessionKeyIdHex, {
+          keySerialized: await derSerializePrivateKey(sessionKeyPair.privateKey),
+        });
+      });
+
+      test('Bound key should be stored', async () => {
+        await MOCK_STORE.saveSessionKey(
           sessionKeyPair.privateKey,
           sessionKeyPair.sessionKey.keyId,
+          PEER_PRIVATE_ADDRESS,
         );
 
         expect(MOCK_STORE.sessionKeys).toHaveProperty<SessionPrivateKeyData>(sessionKeyIdHex, {
           keySerialized: await derSerializePrivateKey(sessionKeyPair.privateKey),
+          peerPrivateAddress: PEER_PRIVATE_ADDRESS,
         });
       });
 
@@ -108,7 +118,7 @@ describe('PrivateKeyStore', () => {
         const store = new MockPrivateKeyStore(true);
 
         await expect(
-          store.saveUnboundSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId),
+          store.saveSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId),
         ).rejects.toThrowWithMessage(
           KeyStoreError,
           `Failed to save key ${sessionKeyIdHex}: Denied`,
@@ -118,10 +128,7 @@ describe('PrivateKeyStore', () => {
 
     describe('fetchUnboundSessionKey', () => {
       test('Existing key should be returned', async () => {
-        await MOCK_STORE.saveUnboundSessionKey(
-          sessionKeyPair.privateKey,
-          sessionKeyPair.sessionKey.keyId,
-        );
+        await MOCK_STORE.saveSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId);
 
         const keySerialized = await MOCK_STORE.retrieveUnboundSessionKey(
           sessionKeyPair.sessionKey.keyId,
@@ -139,7 +146,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Subsequent session keys should not be returned', async () => {
-        await MOCK_STORE.saveBoundSessionKey(
+        await MOCK_STORE.saveSessionKey(
           sessionKeyPair.privateKey,
           sessionKeyPair.sessionKey.keyId,
           PEER_PRIVATE_ADDRESS,
@@ -159,42 +166,9 @@ describe('PrivateKeyStore', () => {
       });
     });
 
-    describe('saveBoundSessionKey', () => {
-      test('Bound key should be stored', async () => {
-        await MOCK_STORE.saveBoundSessionKey(
-          sessionKeyPair.privateKey,
-          sessionKeyPair.sessionKey.keyId,
-          PEER_PRIVATE_ADDRESS,
-        );
-
-        expect(MOCK_STORE.sessionKeys).toHaveProperty<SessionPrivateKeyData>(sessionKeyIdHex, {
-          keySerialized: await derSerializePrivateKey(sessionKeyPair.privateKey),
-          peerPrivateAddress: PEER_PRIVATE_ADDRESS,
-        });
-      });
-
-      test('Errors should be wrapped', async () => {
-        const store = new MockPrivateKeyStore(true);
-
-        await expect(
-          store.saveBoundSessionKey(
-            sessionKeyPair.privateKey,
-            sessionKeyPair.sessionKey.keyId,
-            PEER_PRIVATE_ADDRESS,
-          ),
-        ).rejects.toThrowWithMessage(
-          KeyStoreError,
-          `Failed to save key ${sessionKeyIdHex}: Denied`,
-        );
-      });
-    });
-
     describe('fetchBoundKey', () => {
       test('Initial session keys should be returned', async () => {
-        await MOCK_STORE.saveUnboundSessionKey(
-          sessionKeyPair.privateKey,
-          sessionKeyPair.sessionKey.keyId,
-        );
+        await MOCK_STORE.saveSessionKey(sessionKeyPair.privateKey, sessionKeyPair.sessionKey.keyId);
 
         const privateKey = await MOCK_STORE.retrieveSessionKey(
           sessionKeyPair.sessionKey.keyId,
@@ -207,7 +181,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Subsequent session keys should be returned', async () => {
-        await MOCK_STORE.saveBoundSessionKey(
+        await MOCK_STORE.saveSessionKey(
           sessionKeyPair.privateKey,
           sessionKeyPair.sessionKey.keyId,
           PEER_PRIVATE_ADDRESS,
@@ -230,7 +204,7 @@ describe('PrivateKeyStore', () => {
       });
 
       test('Keys bound to another recipient should not be returned', async () => {
-        await MOCK_STORE.saveBoundSessionKey(
+        await MOCK_STORE.saveSessionKey(
           sessionKeyPair.privateKey,
           sessionKeyPair.sessionKey.keyId,
           PEER_PRIVATE_ADDRESS,

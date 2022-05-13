@@ -35,7 +35,7 @@ export abstract class Channel {
       recipientSessionKey,
       this.cryptoOptions.encryption,
     );
-    await this.keyStores.privateKeyStore.saveBoundSessionKey(
+    await this.keyStores.privateKeyStore.saveSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
       this.peerPrivateAddress,

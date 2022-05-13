@@ -45,16 +45,18 @@ export abstract class PrivateKeyStore {
   //endregion
   //region Session keys
 
-  public async saveUnboundSessionKey(privateKey: CryptoKey, keyId: Buffer): Promise<void> {
-    await this.saveSessionKeyOrWrapError(keyId, privateKey);
-  }
-
-  public async saveBoundSessionKey(
+  public async saveSessionKey(
     privateKey: CryptoKey,
     keyId: Buffer,
-    peerPrivateAddress: string,
+    peerPrivateAddress?: string,
   ): Promise<void> {
-    await this.saveSessionKeyOrWrapError(keyId, privateKey, peerPrivateAddress);
+    const keyIdString = keyId.toString('hex');
+    const privateKeyDer = await derSerializePrivateKey(privateKey);
+    try {
+      await this.saveSessionKeySerialized(keyIdString, privateKeyDer, peerPrivateAddress);
+    } catch (error) {
+      throw new KeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
+    }
   }
 
   /**
@@ -120,20 +122,6 @@ export abstract class PrivateKeyStore {
       throw new UnknownKeyError(`Key ${keyIdHex} does not exist`);
     }
     return key;
-  }
-
-  private async saveSessionKeyOrWrapError(
-    keyId: Buffer,
-    privateKey: CryptoKey,
-    peerPrivateAddress?: string,
-  ): Promise<void> {
-    const keyIdString = keyId.toString('hex');
-    const privateKeyDer = await derSerializePrivateKey(privateKey);
-    try {
-      await this.saveSessionKeySerialized(keyIdString, privateKeyDer, peerPrivateAddress);
-    } catch (error) {
-      throw new KeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
-    }
   }
 
   protected async generateRSAKeyPair(

@@ -450,7 +450,7 @@ describe('RAMFMessage', () => {
         recipientSessionKeyPair.sessionKey,
       );
       const recipientKeyStore = new MockPrivateKeyStore();
-      await recipientKeyStore.saveUnboundSessionKey(
+      await recipientKeyStore.saveSessionKey(
         recipientSessionKeyPair.privateKey,
         recipientSessionKeyPair.sessionKey.keyId,
       );

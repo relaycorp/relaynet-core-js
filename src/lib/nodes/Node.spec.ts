@@ -125,7 +125,7 @@ describe('unwrapMessagePayload', () => {
   beforeEach(async () => {
     const sessionKeyPair = await SessionKeyPair.generate();
     sessionKey = sessionKeyPair.sessionKey;
-    await KEY_STORES.privateKeyStore.saveUnboundSessionKey(
+    await KEY_STORES.privateKeyStore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
     );

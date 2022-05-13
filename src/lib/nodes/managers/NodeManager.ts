@@ -18,13 +18,13 @@ export abstract class NodeManager {
     const { sessionKey, privateKey } = await SessionKeyPair.generate();
 
     if (peerPrivateAddress) {
-      await this.keyStores.privateKeyStore.saveBoundSessionKey(
+      await this.keyStores.privateKeyStore.saveSessionKey(
         privateKey,
         sessionKey.keyId,
         peerPrivateAddress,
       );
     } else {
-      await this.keyStores.privateKeyStore.saveUnboundSessionKey(privateKey, sessionKey.keyId);
+      await this.keyStores.privateKeyStore.saveSessionKey(privateKey, sessionKey.keyId);
     }
 
     return sessionKey;
