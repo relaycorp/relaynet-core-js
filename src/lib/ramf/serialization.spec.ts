@@ -322,9 +322,9 @@ describe('MessageSerializer', () => {
           const fields = await deserializeFields(messageSerialized);
           const ttlBlock = getAsn1SequenceItem(fields, 3);
           const ttlIntegerBlock = new asn1js.Integer({
-            valueHex: ttlBlock.valueBlock.valueHex,
-          } as any);
-          expect(ttlIntegerBlock.valueBlock.valueDec).toEqual(message.ttl);
+            valueHex: ttlBlock.valueBlock.valueHexView,
+          });
+          expect(Number(ttlIntegerBlock.toBigInt())).toEqual(message.ttl);
         });
 
         test('TTL of zero should be accepted', async () => {

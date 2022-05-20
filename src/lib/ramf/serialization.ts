@@ -261,12 +261,13 @@ function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
   }
   const messageBlock = result.result.RAMFMessage;
   const textDecoder = new TextDecoder();
+  const ttlBigInt = getIntegerFromPrimitiveBlock(messageBlock.ttl);
   return {
     date: getDateFromPrimitiveBlock(messageBlock.date),
     id: textDecoder.decode(messageBlock.id.valueBlock.valueHex),
     payload: Buffer.from(messageBlock.payload.valueBlock.valueHex),
     recipientAddress: textDecoder.decode(messageBlock.recipientAddress.valueBlock.valueHex),
-    ttl: getIntegerFromPrimitiveBlock(messageBlock.ttl),
+    ttl: Number(ttlBigInt), // Cannot exceed Number.MAX_SAFE_INTEGER anyway
   };
 }
 
@@ -278,13 +279,9 @@ function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
   }
 }
 
-function getIntegerFromPrimitiveBlock(block: asn1js.Primitive): number {
-  const integerBlock = new asn1js.Integer({ valueHex: block.valueBlock.valueHex } as any);
-  if (!integerBlock.valueBlock.isHexOnly) {
-    return integerBlock.valueBlock.valueDec;
-  }
-  const ttlBuffer = Buffer.from(integerBlock.valueBlock.valueHex);
-  return ttlBuffer.readUInt32BE(0);
+function getIntegerFromPrimitiveBlock(block: asn1js.Primitive): bigint {
+  const integerBlock = new asn1js.Integer({ valueHex: block.valueBlock.valueHexView });
+  return integerBlock.toBigInt();
 }
 
 async function verifySignature(
