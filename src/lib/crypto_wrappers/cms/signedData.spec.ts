@@ -196,9 +196,13 @@ describe('sign', () => {
       expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
       expect(encapContentInfo).toHaveProperty('eContentType', CMS_OIDS.DATA);
       expect(encapContentInfo).toHaveProperty('eContent');
-      const plaintextOctetString = encapContentInfo.eContent.valueBlock.value[0];
+      if (!encapContentInfo.eContent) {
+        throw new Error('encapContentInfo.eContent is empty');
+      }
+      const plaintextOctetString = encapContentInfo.eContent.valueBlock
+        .value[0] as asn1js.OctetString;
       expectArrayBuffersToEqual(
-        (plaintextOctetString as asn1js.OctetString).valueBlock.valueHex,
+        plaintextOctetString.valueBlock.valueHexView.slice().buffer,
         plaintext,
       );
     });
@@ -315,9 +319,7 @@ describe('verify', () => {
     );
     const differentPlaintext = arrayBufferFrom('this is an invalid plaintext');
 
-    await expect(signedData.verify(differentPlaintext)).rejects.toEqual(
-      new CMSError('Invalid signature:  (PKI.js code: 14)'),
-    );
+    await expect(signedData.verify(differentPlaintext)).rejects.toBeInstanceOf(CMSError);
   });
 
   test('Invalid signature with encapsulated plaintext should be rejected', async () => {
@@ -330,9 +332,7 @@ describe('verify', () => {
       eContentType: CMS_OIDS.DATA,
     });
 
-    await expect(signedData.verify()).rejects.toEqual(
-      new CMSError('Invalid signature:  (PKI.js code: 14)'),
-    );
+    await expect(signedData.verify()).rejects.toBeInstanceOf(CMSError);
   });
 
   test('Valid signature without encapsulated plaintext should be accepted', async () => {

@@ -24,6 +24,7 @@ import {
   SessionEnvelopedData,
   SessionlessEnvelopedData,
 } from './envelopedData';
+import { assertPkiType } from './_utils';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
@@ -212,6 +213,12 @@ describe('SessionlessEnvelopedData', () => {
         const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, nodeCertificate);
 
         const keyTransRecipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
+        assertPkiType(keyTransRecipientInfo, pkijs.KeyTransRecipientInfo, 'keyTransRecipientInfo');
+        assertPkiType(
+          keyTransRecipientInfo.rid,
+          pkijs.IssuerAndSerialNumber,
+          'keyTransRecipientInfo.rid',
+        );
         expect(keyTransRecipientInfo.version).toEqual(0);
         expect(keyTransRecipientInfo.rid).toBeInstanceOf(pkijs.IssuerAndSerialNumber);
         expectPkijsValuesToBeEqual(
@@ -228,6 +235,7 @@ describe('SessionlessEnvelopedData', () => {
         const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, nodeCertificate);
 
         const keyTransRecipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
+        assertPkiType(keyTransRecipientInfo, pkijs.KeyTransRecipientInfo, 'keyTransRecipientInfo');
         expect(keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmId).toEqual(OID_RSA_OAEP);
       });
 
@@ -235,6 +243,7 @@ describe('SessionlessEnvelopedData', () => {
         const envelopedData = await SessionlessEnvelopedData.encrypt(plaintext, nodeCertificate);
 
         const keyTransRecipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
+        assertPkiType(keyTransRecipientInfo, pkijs.KeyTransRecipientInfo, 'keyTransRecipientInfo');
         const algorithmParams = new pkijs.RSAESOAEPParams({
           schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
         });
@@ -324,6 +333,7 @@ describe('SessionEnvelopedData', () => {
       const { envelopedData } = await SessionEnvelopedData.encrypt(plaintext, bobSessionKey);
 
       const keyInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0].value;
+      assertPkiType(keyInfo, pkijs.KeyAgreeRecipientInfo, 'keyInfo');
       const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
       const subjectKeyIdentifierBlock = encryptedKey.rid.value.subjectKeyIdentifier;
       expect(Buffer.from(subjectKeyIdentifierBlock.valueBlock.valueHex)).toEqual(bobSessionKeyId);
@@ -414,6 +424,8 @@ describe('SessionEnvelopedData', () => {
         const { publicKey } = await envelopedData.getOriginatorKey();
 
         const recipientInfo = envelopedData.pkijsEnvelopedData.recipientInfos[0];
+        assertPkiType(recipientInfo, pkijs.RecipientInfo, 'recipientInfo');
+        assertPkiType(recipientInfo.value, pkijs.KeyAgreeRecipientInfo, 'recipientInfo.value');
         const expectedPublicKeyDer = recipientInfo.value.originator.value.toSchema().toBER(false);
         expect(Buffer.from(expectedPublicKeyDer)).toEqual(await derSerializePublicKey(publicKey));
       });

@@ -1,16 +1,16 @@
-import { fromBER, BaseBlock } from 'asn1js';
+import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 export function getPkijsCrypto(): SubtleCrypto {
   const cryptoEngine = pkijs.getCrypto();
-  if (cryptoEngine === undefined) {
+  if (!cryptoEngine) {
     throw new Error('PKI.js crypto engine is undefined');
   }
   return cryptoEngine;
 }
 
-export function derDeserialize(derValue: ArrayBuffer): BaseBlock<any> {
-  const asn1Value = fromBER(derValue);
+export function derDeserialize(derValue: ArrayBuffer): asn1js.AsnType {
+  const asn1Value = asn1js.fromBER(derValue);
   if (asn1Value.offset === -1) {
     throw new Error('Value is not DER-encoded');
   }

@@ -483,6 +483,9 @@ describe('issue()', () => {
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1,
       });
+      if (!akiExtensionRestored.keyIdentifier) {
+        throw new Error('akiExtensionRestored.keyIdentifier is empty');
+      }
       const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
       expect(keyIdBuffer.toString('hex')).toEqual(
         await getPublicKeyDigest(subjectKeyPair.publicKey),
@@ -506,6 +509,9 @@ describe('issue()', () => {
       const akiExtensionRestored = new pkijs.AuthorityKeyIdentifier({
         schema: akiExtensionAsn1,
       });
+      if (!akiExtensionRestored.keyIdentifier) {
+        throw new Error('akiExtensionRestored.keyIdentifier is empty');
+      }
       const keyIdBuffer = Buffer.from(akiExtensionRestored.keyIdentifier.valueBlock.valueHex);
       expect(keyIdBuffer.toString('hex')).toEqual(
         await getPublicKeyDigest(issuerKeyPair.publicKey),
