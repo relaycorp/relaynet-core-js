@@ -24,7 +24,7 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     return this.identityKeys[privateAddress] ?? null;
   }
 
-  protected async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
+  public async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
