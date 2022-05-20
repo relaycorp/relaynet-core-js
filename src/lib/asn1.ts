@@ -13,10 +13,10 @@ export function makeImplicitlyTaggedSequence(...items: ReadonlyArray<BaseBlock<a
   const asn1Items = items.map((item, index) => {
     const idBlock = { tagClass: 3, tagNumber: index };
     return item instanceof Constructed
-      ? new Constructed({ idBlock, value: item.valueBlock.value } as any)
-      : new Primitive({ idBlock, valueHex: item.valueBlock.toBER() } as any);
+      ? new Constructed({ idBlock, value: item.valueBlock.value })
+      : new Primitive({ idBlock, valueHex: item.valueBlock.toBER() });
   });
-  return new Sequence({ value: asn1Items } as any);
+  return new Sequence({ value: asn1Items });
 }
 
 /**
@@ -24,8 +24,9 @@ export function makeImplicitlyTaggedSequence(...items: ReadonlyArray<BaseBlock<a
  *
  * @param items
  */
-export function derSerializeHomogeneousSequence(items: ReadonlyArray<BaseBlock<any>>): ArrayBuffer {
-  const sequence = new Sequence({ value: items } as any);
+// tslint:disable-next-line:readonly-array
+export function derSerializeHomogeneousSequence(items: BaseBlock<any>[]): ArrayBuffer {
+  const sequence = new Sequence({ value: items });
   return sequence.toBER();
 }
 
@@ -45,11 +46,11 @@ export function makeHeterogeneousSequenceSchema(
       const asn1Type = item instanceof Constructed ? Constructed : Primitive;
       return new asn1Type({
         idBlock: { tagClass: 3, tagNumber },
-        name: (item as any).name,
-        optional: (item as any).optional ?? false,
-      } as any);
+        name: item.name,
+        optional: item.optional,
+      });
     }),
-  } as any);
+  });
 }
 
 export function dateToASN1DateTimeInUTC(date: Date): DateTime {
