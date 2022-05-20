@@ -279,12 +279,9 @@ function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
 }
 
 function getIntegerFromPrimitiveBlock(block: asn1js.Primitive): number {
-  const integerBlock = new asn1js.Integer({ valueHex: block.valueBlock.valueHex } as any);
-  if (!integerBlock.valueBlock.isHexOnly) {
-    return integerBlock.valueBlock.valueDec;
-  }
-  const ttlBuffer = Buffer.from(integerBlock.valueBlock.valueHex);
-  return ttlBuffer.readUInt32BE(0);
+  const integerBlock = new asn1js.Integer({ valueHex: block.valueBlock.valueHexView });
+  const integerBigInt = integerBlock.toBigInt();
+  return Number(integerBigInt); // Cannot exceed Number.MAX_SAFE_INTEGER anyway
 }
 
 async function verifySignature(
