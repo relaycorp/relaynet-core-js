@@ -33,7 +33,7 @@ export function assertPkiType<T extends pkijs.PkiObject>(
   }
 }
 
-export function assertUndefined(data: unknown, paramName?: string) : asserts data {
+export function assertUndefined(data: unknown, paramName?: string): asserts data {
   if (data === undefined) {
     throw new Error(`Required parameter ${paramName ? `'${paramName}'` : paramName} is missing`);
   }

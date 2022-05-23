@@ -1,10 +1,9 @@
 import * as pkijs from 'pkijs';
-import { assertPkiType, assertUndefined } from "./_utils";
+
+import { assertPkiType, assertUndefined } from './_utils';
 
 describe('CMS utils', () => {
-
   describe('assertPkiType', () => {
-
     test('correct type', () => {
       const o = new pkijs.Certificate();
 
@@ -20,11 +19,9 @@ describe('CMS utils', () => {
         assertPkiType(o, pkijs.CertID, 'test');
       }).toThrow(TypeError);
     });
-
   });
-  
-  describe('assertUndefined', () => {
 
+  describe('assertUndefined', () => {
     test('correct', () => {
       const v = false;
       expect(() => {
@@ -47,7 +44,5 @@ describe('CMS utils', () => {
         assertUndefined(o, 'test');
       }).toThrow(Error);
     });
-
   });
-
 });
