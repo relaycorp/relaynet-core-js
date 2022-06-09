@@ -271,11 +271,9 @@ export default class Certificate {
       throw new CertificateError(verification.resultMessage);
     }
 
-    return verification.certificatePath
-      ? verification.certificatePath.map(
-          (pkijsCert: pkijs.Certificate) => new Certificate(pkijsCert),
-        )
-      : [];
+    return verification.certificatePath!.map(
+      (pkijsCert: pkijs.Certificate) => new Certificate(pkijsCert),
+    );
   }
 }
 
