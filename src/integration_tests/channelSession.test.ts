@@ -80,7 +80,7 @@ function checkRecipientInfo(
   expect(recipientInfo).toHaveProperty('value.originator.variant', 3);
 
   // Validate keyEncryptionAlgorithm
-  assertPkiType(recipientInfo.value, pkijs.KeyTransRecipientInfo, 'recipientInfo.value');
+  assertPkiType(recipientInfo.value, pkijs.KeyAgreeRecipientInfo, 'recipientInfo.value');
   expect(recipientInfo.value.keyEncryptionAlgorithm).toHaveProperty(
     'algorithmId',
     '1.3.132.1.11.3', // dhSinglePass-stdDH-sha512kdf-scheme

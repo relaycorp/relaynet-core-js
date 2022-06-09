@@ -18,7 +18,8 @@ interface PkiObjectConstructor<T extends pkijs.PkiObject = pkijs.PkiObject> {
 }
 
 /**
- * Checks that incoming object is instance of supplied type
+ * Check that incoming object is instance of supplied type.
+ *
  * @param obj Object to be validated
  * @param type Expected PKI type
  * @param targetName Name of the validated object
