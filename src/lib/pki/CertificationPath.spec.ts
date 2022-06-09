@@ -1,4 +1,4 @@
-import { Constructed, Integer, OctetString, Set, VisibleString } from 'asn1js';
+import { Constructed, Integer, OctetString, Sequence, Set, VisibleString } from 'asn1js';
 import { addDays } from 'date-fns';
 
 import { expectArrayBuffersToEqual } from '../_test_utils';
@@ -35,7 +35,7 @@ describe('serialize', () => {
 
     const serialization = path.serialize();
 
-    const pathDeserialized = derDeserialize(serialization);
+    const pathDeserialized = derDeserialize(serialization) as Sequence;
     const leafCertificateASN1 = pathDeserialized.valueBlock.value[0];
     expectArrayBuffersToEqual(
       leafCertificateASN1.valueBlock.toBER(),
@@ -48,8 +48,8 @@ describe('serialize', () => {
 
     const serialization = path.serialize();
 
-    const pathDeserialized = derDeserialize(serialization);
-    const casASN1 = pathDeserialized.valueBlock.value[1];
+    const pathDeserialized = derDeserialize(serialization) as Sequence;
+    const casASN1 = pathDeserialized.valueBlock.value[1] as Sequence;
     expect(casASN1).toBeInstanceOf(Constructed);
     expect(casASN1.valueBlock.value).toHaveLength(1);
     const caASN1 = casASN1.valueBlock.value[0];

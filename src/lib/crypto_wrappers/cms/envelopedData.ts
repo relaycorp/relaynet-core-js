@@ -9,7 +9,7 @@ import { SessionKey } from '../../SessionKey';
 import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
 import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import Certificate from '../x509/Certificate';
-import { deserializeContentInfo } from './_utils';
+import { assertPkiType, assertUndefined, deserializeContentInfo } from './_utils';
 import CMSError from './CMSError';
 
 const pkijsCrypto = getPkijsCrypto();
@@ -165,8 +165,10 @@ export class SessionlessEnvelopedData extends EnvelopedData {
 
   public getRecipientKeyId(): Buffer {
     const recipientInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
+    assertPkiType(recipientInfo, pkijs.KeyTransRecipientInfo, 'recipientInfo');
+    assertPkiType(recipientInfo.rid, pkijs.IssuerAndSerialNumber, 'recipientInfo.rid');
     const serialNumberBlock = recipientInfo.rid.serialNumber;
-    return Buffer.from(serialNumberBlock.valueBlock.valueHex);
+    return Buffer.from(serialNumberBlock.valueBlock.valueHexView);
   }
 }
 
@@ -212,12 +214,11 @@ export class SessionEnvelopedData extends EnvelopedData {
     );
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
-    const [pkijsEncryptionResult]: ReadonlyArray<{
-      readonly ecdhPrivateKey: CryptoKey;
-    }> = (await pkijsEnvelopedData.encrypt(
+    const [pkijsEncryptionResult] = await pkijsEnvelopedData.encrypt(
       { name: AES_CIPHER_MODE, length: aesKeySize } as any,
       plaintext,
-    )) as any;
+    );
+    assertUndefined(pkijsEncryptionResult, 'pkijsEncryptionResult');
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
 
     const envelopedData = new SessionEnvelopedData(pkijsEnvelopedData);
@@ -234,6 +235,7 @@ export class SessionEnvelopedData extends EnvelopedData {
     if (recipientInfo.variant !== 2) {
       throw new CMSError(`Expected KeyAgreeRecipientInfo (got variant: ${recipientInfo.variant})`);
     }
+    assertPkiType(recipientInfo.value, pkijs.KeyAgreeRecipientInfo, 'recipientInfo.value');
     const originator = recipientInfo.value.originator.value;
     const publicKeyDer = originator.toSchema().toBER(false);
 
@@ -249,6 +251,7 @@ export class SessionEnvelopedData extends EnvelopedData {
 
   public getRecipientKeyId(): Buffer {
     const keyInfo = this.pkijsEnvelopedData.recipientInfos[0].value;
+    assertPkiType(keyInfo, pkijs.KeyAgreeRecipientInfo, 'keyInfo');
     const encryptedKey = keyInfo.recipientEncryptedKeys.encryptedKeys[0];
     const subjectKeyIdentifierBlock = encryptedKey.rid.value.subjectKeyIdentifier;
     return Buffer.from(subjectKeyIdentifierBlock.valueBlock.valueHex);

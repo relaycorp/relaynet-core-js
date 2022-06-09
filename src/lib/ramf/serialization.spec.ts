@@ -573,9 +573,7 @@ describe('MessageSerializer', () => {
           ),
         );
         expect(error).toBeInstanceOf(RAMFValidationError);
-        expect(error.message).toEqual(
-          'Invalid RAMF message signature: Invalid signature:  (PKI.js code: 14)',
-        );
+        expect(error.message).toStartWith('Invalid RAMF message signature: Invalid signature:');
       });
 
       test('Sender certificate should be extracted from signature', async () => {

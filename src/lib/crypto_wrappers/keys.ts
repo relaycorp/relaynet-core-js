@@ -38,19 +38,15 @@ export async function generateRSAKeyPair(
     throw new Error('SHA-1 is disallowed by RS-018');
   }
 
-  const algorithm = getAlgorithmParameters('RSA-PSS', 'generatekey');
+  const algorithm = getAlgorithmParameters('RSA-PSS', 'generateKey');
+  const rsaAlgorithm = algorithm.algorithm as RsaHashedKeyAlgorithm;
   // tslint:disable-next-line:no-object-mutation
-  (algorithm.algorithm.hash as Algorithm).name = hashingAlgorithm;
+  rsaAlgorithm.hash.name = hashingAlgorithm;
   // tslint:disable-next-line:no-object-mutation
-  algorithm.algorithm.modulusLength = modulus;
+  rsaAlgorithm.modulusLength = modulus;
 
-  const keyPair = await cryptoEngine.generateKey(
-    algorithm.algorithm,
-    true,
-    // tslint:disable-next-line:readonly-array
-    algorithm.usages as KeyUsage[],
-  );
-  return keyPair as CryptoKeyPair;
+  const keyPair = await cryptoEngine.generateKey(rsaAlgorithm, true, algorithm.usages);
+  return keyPair;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { BmpString, Integer, BaseBlock, OctetString } from 'asn1js';
+import { BmpString, Integer, OctetString, BaseBlock } from 'asn1js';
 import { min, setMilliseconds } from 'date-fns';
 import * as pkijs from 'pkijs';
 
@@ -7,6 +7,7 @@ import { derDeserialize, generateRandom64BitValue } from '../_utils';
 import { getPrivateAddressFromIdentityKey, getPublicKeyDigest } from '../keys';
 import CertificateError from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
+import { assertPkiType, assertUndefined } from '../cms/_utils';
 
 const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 
@@ -211,8 +212,10 @@ export default class Certificate {
     if (!authorityKeyAttribute) {
       return null;
     }
-    const authorityKeyId = authorityKeyAttribute.parsedValue as pkijs.AuthorityKeyIdentifier;
-    const id = Buffer.from(authorityKeyId.keyIdentifier.valueBlock.valueHex).toString('hex');
+    const authorityKeyId = authorityKeyAttribute.parsedValue;
+    assertPkiType(authorityKeyId, pkijs.AuthorityKeyIdentifier, 'authorityKeyId');
+    assertUndefined(authorityKeyId.keyIdentifier, 'authorityKeyId.keyIdentifier');
+    const id = Buffer.from(authorityKeyId.keyIdentifier.valueBlock.valueHexView).toString('hex');
     return `0${id}`;
   }
 
@@ -259,7 +262,7 @@ export default class Certificate {
 
     const chainValidator = new pkijs.CertificateChainValidationEngine({
       certs: [...intermediateCertsSanitized.map((c) => c.pkijsCertificate), this.pkijsCertificate],
-      findIssuer,
+      findIssuer: findIssuer as unknown as pkijs.FindIssuerCallback, // Use unknown to fix TS error, because findIssuer returns `readonly Certificate[]` instead of `Certificate[]`
       trustedCerts: trustedCertificates.map((c) => c.pkijsCertificate),
     });
     const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
@@ -268,7 +271,7 @@ export default class Certificate {
       throw new CertificateError(verification.resultMessage);
     }
 
-    return verification.certificatePath.map(
+    return verification.certificatePath!.map(
       (pkijsCert: pkijs.Certificate) => new Certificate(pkijsCert),
     );
   }
@@ -345,13 +348,9 @@ function validateIssuerCertificate(issuerCertificate: Certificate): void {
 
 //endregion
 
-interface Asn1jsSerializable {
-  readonly toBER: (sizeOnly?: boolean) => ArrayBuffer;
-}
-
-function cloneAsn1jsValue(value: Asn1jsSerializable): BaseBlock<any> {
+function cloneAsn1jsValue<T extends BaseBlock>(value: T): T {
   const valueSerialized = value.toBER(false);
-  return derDeserialize(valueSerialized);
+  return derDeserialize(valueSerialized) as T;
 }
 
 function isCertificateInArray(certificate: Certificate, array: readonly Certificate[]): boolean {

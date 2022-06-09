@@ -49,7 +49,7 @@
     "dohdec": "^3.1.0",
     "is-valid-domain": "^0.1.6",
     "moment": "^2.29.3",
-    "pkijs": "^2.3.1",
+    "pkijs": "^3.0.3",
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.2",
     "verror": "^1.10.1",
@@ -58,7 +58,6 @@
   "devDependencies": {
     "@relaycorp/shared-config": "^1.7.0",
     "@types/jest": "^27.5.0",
-    "@types/pkijs": "0.0.13",
     "del-cli": "^4.0.1",
     "jest": "^27.5.1",
     "jest-date-mock": "^1.0.8",
