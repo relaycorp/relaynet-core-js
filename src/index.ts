@@ -88,6 +88,7 @@ export * from './lib/messages/bindings/signatures';
 // Nodes
 export { Endpoint } from './lib/nodes/Endpoint';
 export { EndpointManager } from './lib/nodes/managers/EndpointManager';
+export { GatewayManager } from './lib/nodes/managers/GatewayManager';
 export { PrivateGatewayManager } from './lib/nodes/managers/PrivateGatewayManager';
 export { PrivateGateway } from './lib/nodes/PrivateGateway';
 export { CargoMessageStream } from './lib/nodes/CargoMessageStream';
