@@ -30,22 +30,24 @@ export {
   RSAKeyGenOptions,
 } from './lib/crypto_wrappers/keys';
 export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
-export { PrivateKeyStore, SessionPrivateKeyData } from './lib/keyStores/PrivateKeyStore';
 export { IdentityKeyPair } from './lib/IdentityKeyPair';
-export * from './lib/keyStores/PublicKeyStore';
-export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
-export { CertificationPath } from './lib/pki/CertificationPath';
-export { CertificateStore } from './lib/keyStores/CertificateStore';
-export * from './lib/keyStores/testMocks';
-export { KeyStoreError } from './lib/keyStores/KeyStoreError';
-export { default as UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 export * from './lib/cargoRelay';
 
 // PKI
 export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
+export { CertificationPath } from './lib/pki/CertificationPath';
 export { default as CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
 export * from './lib/pki/issuance';
+
+// Key stores
+export { PrivateKeyStore, SessionPrivateKeyData } from './lib/keyStores/PrivateKeyStore';
+export * from './lib/keyStores/PublicKeyStore';
+export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
+export { CertificateStore } from './lib/keyStores/CertificateStore';
+export * from './lib/keyStores/testMocks';
+export { KeyStoreError } from './lib/keyStores/KeyStoreError';
+export { default as UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
