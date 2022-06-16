@@ -21,9 +21,6 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
   }
 
   public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
-    if (this.failOnFetch) {
-      throw new Error('Denied');
-    }
     return this.identityKeys[privateAddress] ?? null;
   }
 
