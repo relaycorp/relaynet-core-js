@@ -40,6 +40,7 @@ export abstract class PrivateKeyStore {
    * Return the private component of a node key pair if it exists.
    *
    * @param privateAddress
+   * @throws {KeyStoreError} if the backend failed to retrieve the key due to an error
    */
   public abstract retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null>;
 
