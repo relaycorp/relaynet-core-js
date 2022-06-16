@@ -45,9 +45,6 @@ export abstract class Channel {
     return envelopedData.serialize();
   }
 
-  /**
-   * @internal
-   */
   public abstract getOutboundRAMFAddress(): string;
 
   protected async getNodePrivateAddress(): Promise<string> {
