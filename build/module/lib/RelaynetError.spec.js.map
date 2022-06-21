@@ -1,0 +1,1 @@
+{"version":3,"file":"RelaynetError.spec.js","sourceRoot":"","sources":["../../../src/lib/RelaynetError.spec.ts"],"names":[],"mappings":"AAAA,OAAO,aAAa,MAAM,iBAAiB,CAAC;AAE5C,IAAI,CAAC,kDAAkD,EAAE,GAAG,EAAE;IAC5D,MAAM,QAAS,SAAQ,aAAa;KAAG;IACvC,MAAM,KAAK,GAAG,IAAI,QAAQ,CAAC,kBAAkB,CAAC,CAAC;IAC/C,MAAM,CAAC,KAAK,CAAC,IAAI,CAAC,CAAC,IAAI,CAAC,UAAU,CAAC,CAAC;AACtC,CAAC,CAAC,CAAC"}

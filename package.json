@@ -70,6 +70,9 @@
     "typedoc": "^0.22.17",
     "typescript": "^4.7.4"
   },
+  "peerDependencies": {
+    "@peculiar/webcrypto": "*"
+  },
   "prettier": "@relaycorp/shared-config/.prettierrc.json",
   "publishConfig": {
     "access": "public"
