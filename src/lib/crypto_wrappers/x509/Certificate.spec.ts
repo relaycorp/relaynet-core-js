@@ -112,9 +112,8 @@ describe('issue()', () => {
   test('should use crypto engine in private key if set', async () => {
     const crypto = new Crypto();
     const privateKey = new PrivateKey(crypto);
+    // tslint:disable-next-line:no-object-mutation
     privateKey.algorithm = subjectKeyPair.privateKey.algorithm;
-    privateKey.usages = subjectKeyPair.privateKey.usages;
-    privateKey.extractable = subjectKeyPair.privateKey.extractable;
     jest.spyOn(pkijs.Certificate.prototype, 'sign');
 
     await expect(
