@@ -8,7 +8,7 @@ const cryptoEngine = new CryptoEngine({
   name: 'nodeEngine',
   subtle: crypto.subtle,
 });
-setEngine('nodeEngine', crypto, cryptoEngine);
+setEngine('nodeEngine', cryptoEngine);
 //endregion
 
 //region Exports
@@ -29,6 +29,7 @@ export {
   getPrivateAddressFromIdentityKey,
   RSAKeyGenOptions,
 } from './lib/crypto_wrappers/keys';
+export { PrivateKey } from './lib/crypto_wrappers/PrivateKey';
 export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
 export { IdentityKeyPair } from './lib/IdentityKeyPair';
 

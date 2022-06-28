@@ -3,7 +3,7 @@ import { min, setMilliseconds } from 'date-fns';
 import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
-import { derDeserialize, generateRandom64BitValue } from '../_utils';
+import { derDeserialize, generateRandom64BitValue, getEngineFromPrivateKey } from '../_utils';
 import { getPrivateAddressFromIdentityKey, getPublicKeyDigest } from '../keys';
 import CertificateError from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
@@ -109,7 +109,8 @@ export default class Certificate {
 
     const signatureHashAlgo = (options.issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
       .hash as Algorithm;
-    await pkijsCert.sign(options.issuerPrivateKey, signatureHashAlgo.name);
+    const engine = getEngineFromPrivateKey(options.issuerPrivateKey);
+    await pkijsCert.sign(options.issuerPrivateKey, signatureHashAlgo.name, engine);
     return new Certificate(pkijsCert);
   }
 
