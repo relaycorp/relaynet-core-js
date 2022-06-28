@@ -2,27 +2,49 @@ import { Crypto } from '@peculiar/webcrypto';
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
+import { mockSpy } from '../_test_utils';
 
-import { derDeserialize, generateRandom64BitValue, getPkijsCrypto } from './_utils';
+import {
+  derDeserialize,
+  generateRandom64BitValue,
+  getPkijsCrypto,
+  getEngineFromPrivateKey,
+} from './_utils';
+import { PrivateKey } from './PrivateKey';
 
 const stubCrypto = new Crypto();
 
-jest.mock('pkijs');
+const mockGetCrypto = mockSpy(jest.spyOn(pkijs, 'getCrypto'));
 
 describe('getPkijsCrypto', () => {
   test('It should pass on the crypto object it got', () => {
-    // @ts-ignore
-    pkijs.getCrypto.mockReturnValue(stubCrypto.subtle);
+    mockGetCrypto.mockReturnValue(stubCrypto.subtle as any);
+
     const crypto = getPkijsCrypto();
 
     expect(crypto).toBe(stubCrypto.subtle);
   });
 
   test('It should error out if there is no crypto object', () => {
-    // @ts-ignore
-    pkijs.getCrypto.mockReturnValue(undefined);
+    mockGetCrypto.mockReturnValue(undefined as any);
 
     expect(getPkijsCrypto).toThrow('PKI.js crypto engine is undefined');
+  });
+});
+
+describe('getPkijsEngineFromCrypto', () => {
+  test('undefined should be returned if CryptoKey is used', () => {
+    const engine = getEngineFromPrivateKey(null as any);
+
+    expect(engine).toBeUndefined();
+  });
+
+  test('Nameless engine should be returned if PrivateKey is used', () => {
+    const engine = getEngineFromPrivateKey(new PrivateKey(stubCrypto));
+
+    expect(engine?.name).toBeEmpty();
+    expect(engine?.crypto).toBe(stubCrypto);
+    expect(engine?.subtle).toBe(stubCrypto.subtle);
   });
 });
 
@@ -50,10 +72,7 @@ test('generateRandom64BitValue() should generate a cryptographically secure valu
   const mockWebcrypto = {
     getRandomValues: jest.fn().mockImplementation((array: Uint8Array) => array.set(expectedBytes)),
   };
-  // @ts-ignore
-  pkijs.getCrypto.mockReset();
-  // @ts-ignore
-  pkijs.getCrypto.mockReturnValue(mockWebcrypto);
+  mockGetCrypto.mockReturnValue(mockWebcrypto as any);
 
   const randomValue = generateRandom64BitValue();
 

@@ -1,3 +1,4 @@
+import { Crypto } from '@peculiar/webcrypto';
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import { addDays, addSeconds, setMilliseconds, subSeconds } from 'date-fns';
@@ -12,6 +13,7 @@ import {
   generateRSAKeyPair,
   getPrivateAddressFromIdentityKey,
 } from '../keys';
+import { PrivateKey } from '../PrivateKey';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
 
@@ -103,6 +105,30 @@ describe('issue()', () => {
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
       subjectKeyPair.privateKey,
       ((subjectKeyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name,
+      undefined,
+    );
+  });
+
+  test('should use crypto engine in private key if set', async () => {
+    const crypto = new Crypto();
+    const privateKey = new PrivateKey(crypto);
+    privateKey.algorithm = subjectKeyPair.privateKey.algorithm;
+    privateKey.usages = subjectKeyPair.privateKey.usages;
+    privateKey.extractable = subjectKeyPair.privateKey.extractable;
+    jest.spyOn(pkijs.Certificate.prototype, 'sign');
+
+    await expect(
+      Certificate.issue({
+        ...baseCertificateOptions,
+        issuerPrivateKey: privateKey,
+        subjectPublicKey: subjectKeyPair.publicKey,
+      }),
+    ).toReject();
+
+    expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.toSatisfy<pkijs.CryptoEngine>((e) => e.crypto === crypto),
     );
   });
 

@@ -55,6 +55,9 @@
     "verror": "^1.10.1",
     "webcrypto-core": "^1.7.5"
   },
+  "peerDependencies": {
+    "webcrypto-core": "< 2"
+  },
   "devDependencies": {
     "@relaycorp/shared-config": "^1.8.0",
     "@types/jest": "^27.5.0",

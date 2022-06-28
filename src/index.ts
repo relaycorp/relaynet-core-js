@@ -8,7 +8,7 @@ const cryptoEngine = new CryptoEngine({
   name: 'nodeEngine',
   subtle: crypto.subtle,
 });
-setEngine('nodeEngine', crypto, cryptoEngine);
+setEngine('nodeEngine', cryptoEngine);
 //endregion
 
 //region Exports
