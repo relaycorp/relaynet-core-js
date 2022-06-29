@@ -39,7 +39,7 @@ describe('Constructor', () => {
     expect(aesKwProvider).not.toBeInstanceOf(AwalaAesKwProvider);
   });
 
-  test('Custom providers should override default ones', () => {
+  test('Custom providers should be registered', () => {
     const providerName = 'COOL-PROVIDER';
     const customProvider = new (class extends MockAesKwProvider {
       override readonly name = providerName as any;
