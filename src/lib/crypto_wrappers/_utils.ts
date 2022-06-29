@@ -1,7 +1,5 @@
 import * as asn1js from 'asn1js';
-import { CryptoEngine, getCrypto } from 'pkijs';
-
-import { PrivateKey } from './PrivateKey';
+import { getCrypto } from 'pkijs';
 
 export function getPkijsCrypto(): SubtleCrypto {
   const cryptoEngine = getCrypto();
@@ -9,13 +7,6 @@ export function getPkijsCrypto(): SubtleCrypto {
     throw new Error('PKI.js crypto engine is undefined');
   }
   return cryptoEngine;
-}
-
-export function getEngineFromPrivateKey(key: CryptoKey | PrivateKey): CryptoEngine | undefined {
-  if (key instanceof PrivateKey) {
-    return new CryptoEngine({ crypto: key.crypto });
-  }
-  return undefined;
 }
 
 export function derDeserialize(derValue: ArrayBuffer): asn1js.AsnType {

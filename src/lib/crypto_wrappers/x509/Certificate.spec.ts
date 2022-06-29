@@ -1,4 +1,3 @@
-import { Crypto } from '@peculiar/webcrypto';
 import * as asn1js from 'asn1js';
 import bufferToArrayBuffer from 'buffer-to-arraybuffer';
 import { addDays, addSeconds, setMilliseconds, subSeconds } from 'date-fns';
@@ -14,6 +13,8 @@ import {
   getPrivateAddressFromIdentityKey,
 } from '../keys';
 import { PrivateKey } from '../PrivateKey';
+import { MockAesKwProvider } from '../webcrypto/_test_utils';
+import { getEngineForPrivateKey } from '../webcrypto/engine';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
 
@@ -110,8 +111,7 @@ describe('issue()', () => {
   });
 
   test('should use crypto engine in private key if set', async () => {
-    const crypto = new Crypto();
-    const privateKey = new PrivateKey(crypto);
+    const privateKey = new PrivateKey(new MockAesKwProvider());
     // tslint:disable-next-line:no-object-mutation
     privateKey.algorithm = subjectKeyPair.privateKey.algorithm;
     jest.spyOn(pkijs.Certificate.prototype, 'sign');
@@ -124,10 +124,12 @@ describe('issue()', () => {
       }),
     ).toReject();
 
+    const engine = getEngineForPrivateKey(privateKey);
+    expect(engine).toBeInstanceOf(pkijs.CryptoEngine);
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
       expect.anything(),
       expect.anything(),
-      expect.toSatisfy<pkijs.CryptoEngine>((e) => e.crypto === crypto),
+      engine,
     );
   });
 

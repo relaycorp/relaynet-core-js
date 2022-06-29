@@ -2,6 +2,7 @@ import { Crypto } from '@peculiar/webcrypto';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { AesKwProvider, SubtleCrypto } from 'webcrypto-core';
 import { arrayBufferFrom } from '../../_test_utils';
+import { MockAesKwProvider } from './_test_utils';
 
 import { AwalaAesKwProvider } from './AwalaAesKwProvider';
 
@@ -113,9 +114,3 @@ describe('onDecrypt', () => {
     expect(unwrappedKey).toEqual(unwrappedKeySerialized);
   });
 });
-
-class MockAesKwProvider extends AesKwProvider {
-  public readonly onGenerateKey = jest.fn();
-  public readonly onExportKey = jest.fn();
-  public readonly onImportKey = jest.fn();
-}
