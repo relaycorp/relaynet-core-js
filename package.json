@@ -56,6 +56,7 @@
     "webcrypto-core": "^1.7.5"
   },
   "peerDependencies": {
+    "@peculiar/webcrypto": "< 2",
     "webcrypto-core": "< 2"
   },
   "devDependencies": {
