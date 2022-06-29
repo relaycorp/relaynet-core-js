@@ -42,7 +42,7 @@ describe('Constructor', () => {
   test('Custom providers should override default ones', () => {
     const providerName = 'COOL-PROVIDER';
     const customProvider = new (class extends MockAesKwProvider {
-      override name = providerName as any;
+      override readonly name = providerName as any;
     })();
     const crypto = new AwalaCrypto([customProvider]);
 
