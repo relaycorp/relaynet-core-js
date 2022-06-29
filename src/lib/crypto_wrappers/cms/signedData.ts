@@ -5,7 +5,8 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { CMS_OIDS } from '../../oids';
-import { getPkijsCrypto, getEngineFromPrivateKey } from '../_utils';
+import { getPkijsCrypto } from '../_utils';
+import { getEngineForPrivateKey } from '../webcrypto/engine';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
 import CMSError from './CMSError';
@@ -100,7 +101,7 @@ export class SignedData {
       0,
       hashingAlgorithmName,
       encapsulatePlaintext ? undefined : plaintext,
-      getEngineFromPrivateKey(privateKey),
+      getEngineForPrivateKey(privateKey),
     );
 
     return SignedData.reDeserialize(pkijsSignedData);

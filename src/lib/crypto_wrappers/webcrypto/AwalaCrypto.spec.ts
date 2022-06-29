@@ -2,6 +2,7 @@ import { getCiphers } from 'crypto';
 import { SubtleCrypto } from 'webcrypto-core';
 
 import { getMockInstance } from '../../_test_utils';
+import { MockAesKwProvider } from './_test_utils';
 import { AwalaAesKwProvider } from './AwalaAesKwProvider';
 import { AwalaCrypto } from './AwalaCrypto';
 
@@ -16,10 +17,12 @@ const CIPHERS: readonly string[] = [
   'aes-128-ofb',
 ];
 
+beforeEach(() => {
+  getMockInstance(getCiphers).mockReturnValue(CIPHERS);
+});
+
 describe('Constructor', () => {
   test("Pure JavaScript AES-KW provider should be used if Node doesn't support cipher", () => {
-    getMockInstance(getCiphers).mockReturnValue(CIPHERS);
-
     const crypto = new AwalaCrypto();
 
     const aesKwProvider = (crypto.subtle as SubtleCrypto).providers.get('AES-KW');
@@ -34,5 +37,15 @@ describe('Constructor', () => {
     const aesKwProvider = (crypto.subtle as SubtleCrypto).providers.get('AES-KW');
     expect(aesKwProvider).toBeTruthy();
     expect(aesKwProvider).not.toBeInstanceOf(AwalaAesKwProvider);
+  });
+
+  test('Custom providers should override default ones', () => {
+    const providerName = 'COOL-PROVIDER';
+    const customProvider = new (class extends MockAesKwProvider {
+      override name = providerName as any;
+    })();
+    const crypto = new AwalaCrypto([customProvider]);
+
+    expect((crypto.subtle as SubtleCrypto).providers.get(providerName)).toBe(customProvider);
   });
 });

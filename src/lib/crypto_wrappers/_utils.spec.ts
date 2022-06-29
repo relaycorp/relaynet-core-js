@@ -2,15 +2,9 @@ import { Crypto } from '@peculiar/webcrypto';
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
-import { mockSpy } from '../_test_utils';
 
-import {
-  derDeserialize,
-  generateRandom64BitValue,
-  getPkijsCrypto,
-  getEngineFromPrivateKey,
-} from './_utils';
-import { PrivateKey } from './PrivateKey';
+import { mockSpy } from '../_test_utils';
+import { derDeserialize, generateRandom64BitValue, getPkijsCrypto } from './_utils';
 
 const stubCrypto = new Crypto();
 
@@ -29,22 +23,6 @@ describe('getPkijsCrypto', () => {
     mockGetCrypto.mockReturnValue(undefined as any);
 
     expect(getPkijsCrypto).toThrow('PKI.js crypto engine is undefined');
-  });
-});
-
-describe('getPkijsEngineFromCrypto', () => {
-  test('undefined should be returned if CryptoKey is used', () => {
-    const engine = getEngineFromPrivateKey(null as any);
-
-    expect(engine).toBeUndefined();
-  });
-
-  test('Nameless engine should be returned if PrivateKey is used', () => {
-    const engine = getEngineFromPrivateKey(new PrivateKey(stubCrypto));
-
-    expect(engine?.name).toBeEmpty();
-    expect(engine?.crypto).toBe(stubCrypto);
-    expect(engine?.subtle).toBe(stubCrypto.subtle);
   });
 });
 

@@ -1,7 +1,7 @@
-import { CryptoKey } from 'webcrypto-core';
+import { CryptoKey, ProviderCrypto } from 'webcrypto-core';
 
 export class PrivateKey extends CryptoKey {
-  constructor(public readonly crypto: Crypto) {
+  constructor(public readonly provider: ProviderCrypto) {
     super();
 
     this.type = 'private';
