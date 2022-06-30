@@ -1,6 +1,9 @@
+import { ProviderCrypto } from 'webcrypto-core';
+
 import { arrayBufferFrom } from '../_test_utils';
 import * as utils from './_utils';
 import { generateRSAKeyPair } from './keys';
+import { PrivateKey } from './PrivateKey';
 import { sign, verify } from './rsaSigning';
 
 const plaintext = arrayBufferFrom('the plaintext');
@@ -14,15 +17,29 @@ beforeAll(async () => {
 });
 
 describe('sign', () => {
+  const RSA_PSS_PARAMS = {
+    hash: { name: 'SHA-256' },
+    name: 'RSA-PSS',
+    saltLength: 32,
+  };
+
   test('The plaintext should be signed with RSA-PSS, SHA-256 and a salt of 32', async () => {
     const signature = await sign(plaintext, keyPair.privateKey);
 
-    const rsaPssParams = {
-      hash: { name: 'SHA-256' },
-      name: 'RSA-PSS',
-      saltLength: 32,
+    await pkijsCrypto.verify(RSA_PSS_PARAMS, keyPair.publicKey, signature, plaintext);
+  });
+
+  test('The plaintext should be signed with PrivateKey if requested', async () => {
+    const mockSignature = arrayBufferFrom('signature');
+    const mockProvider: Partial<ProviderCrypto> = {
+      sign: jest.fn().mockReturnValue(mockSignature),
     };
-    await pkijsCrypto.verify(rsaPssParams, keyPair.publicKey, signature, plaintext);
+    const privateKey = new PrivateKey(mockProvider as any);
+
+    const signature = await sign(plaintext, privateKey);
+
+    expect(signature).toBe(mockSignature);
+    expect(mockProvider.sign).toBeCalledWith(RSA_PSS_PARAMS, privateKey, plaintext);
   });
 });
 

@@ -4,6 +4,7 @@
  */
 
 import * as utils from './_utils';
+import { PrivateKey } from './PrivateKey';
 
 const rsaPssParams = {
   hash: { name: 'SHA-256' },
@@ -14,6 +15,9 @@ const rsaPssParams = {
 const pkijsCrypto = utils.getPkijsCrypto();
 
 export async function sign(plaintext: ArrayBuffer, privateKey: CryptoKey): Promise<ArrayBuffer> {
+  if (privateKey instanceof PrivateKey) {
+    return privateKey.provider.sign(rsaPssParams, privateKey, plaintext);
+  }
   return pkijsCrypto.sign(rsaPssParams, privateKey, plaintext);
 }
 
