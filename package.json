@@ -48,7 +48,7 @@
     "date-fns": "^2.28.0",
     "dohdec": "^3.1.0",
     "is-valid-domain": "^0.1.6",
-    "moment": "^2.29.3",
+    "moment": "^2.29.4",
     "pkijs": "^3.0.5",
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.2",
