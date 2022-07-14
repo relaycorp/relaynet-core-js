@@ -118,7 +118,7 @@ export abstract class PrivateKeyStore {
 
   //endregion
 
-  protected abstract saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void>;
+  public abstract saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void>;
 
   protected abstract saveSessionKeySerialized(
     keyId: string,
