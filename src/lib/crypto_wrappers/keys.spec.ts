@@ -18,6 +18,8 @@ import {
   getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
 } from './keys';
+import { RsaPssPrivateKey } from './PrivateKey';
+import { MockRsaPssProvider } from './webcrypto/_test_utils';
 
 describe('generateRsaKeyPair', () => {
   test('Keys should be RSA-PSS', async () => {
@@ -140,6 +142,21 @@ describe('getRSAPublicKeyFromPrivate', () => {
     );
   });
 
+  test('Public key should be taken from provider if custom one is used', async () => {
+    const keyPair = await generateRSAKeyPair();
+    const mockRsaPssProvider = new MockRsaPssProvider();
+    mockRsaPssProvider.onExportKey.mockResolvedValue(
+      await derSerializePublicKey(keyPair.publicKey),
+    );
+    const privateKey = new RsaPssPrivateKey('SHA-256', mockRsaPssProvider);
+
+    const publicKey = await getRSAPublicKeyFromPrivate(privateKey);
+
+    await expect(derSerializePublicKey(publicKey)).resolves.toEqual(
+      await derSerializePublicKey(keyPair.publicKey),
+    );
+  });
+
   test('Public key should honour algorithm parameters', async () => {
     const keyPair = await generateRSAKeyPair();
 
@@ -174,22 +191,38 @@ describe('Key serializers', () => {
     mockExportKey.mockRestore();
   });
 
-  test('derSerializePublicKey should convert public key to buffer', async () => {
-    const publicKeyDer = await derSerializePublicKey(stubKeyPair.publicKey);
+  describe('derSerializePublicKey', () => {
+    test('Public key should be converted to buffer', async () => {
+      const publicKeyDer = await derSerializePublicKey(stubKeyPair.publicKey);
 
-    expect(publicKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
+      expect(publicKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
 
-    expect(mockExportKey).toBeCalledTimes(1);
-    expect(mockExportKey).toBeCalledWith('spki', stubKeyPair.publicKey);
+      expect(mockExportKey).toBeCalledTimes(1);
+      expect(mockExportKey).toBeCalledWith('spki', stubKeyPair.publicKey);
+    });
+
+    test('Public key should be extracted first if input is PrivateKey', async () => {
+      const provider = new MockRsaPssProvider();
+      provider.onExportKey.mockResolvedValue(stubExportedKeyDer);
+      const privateKey = new RsaPssPrivateKey('SHA-256', provider);
+
+      await expect(derSerializePublicKey(privateKey)).resolves.toEqual(
+        Buffer.from(stubExportedKeyDer),
+      );
+
+      expect(mockExportKey).not.toBeCalled();
+    });
   });
 
-  test('derSerializePrivateKey should convert private key to buffer', async () => {
-    const privateKeyDer = await derSerializePrivateKey(stubKeyPair.privateKey);
+  describe('derSerializePrivateKey', () => {
+    test('derSerializePrivateKey should convert private key to buffer', async () => {
+      const privateKeyDer = await derSerializePrivateKey(stubKeyPair.privateKey);
 
-    expect(privateKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
+      expect(privateKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
 
-    expect(mockExportKey).toBeCalledTimes(1);
-    expect(mockExportKey).toBeCalledWith('pkcs8', stubKeyPair.privateKey);
+      expect(mockExportKey).toBeCalledTimes(1);
+      expect(mockExportKey).toBeCalledWith('pkcs8', stubKeyPair.privateKey);
+    });
   });
 });
 
@@ -358,19 +391,34 @@ describe('Key deserializers', () => {
   });
 });
 
-test('getPublicKeyDigest should return the SHA-256 digest of the public key', async () => {
-  const keyPair = await generateRSAKeyPair();
+describe('getPublicKeyDigest', () => {
+  test('SHA-256 digest should be returned in hex', async () => {
+    const keyPair = await generateRSAKeyPair();
 
-  const digest = await getPublicKeyDigest(keyPair.publicKey);
+    const digest = await getPublicKeyDigest(keyPair.publicKey);
 
-  expect(Buffer.from(digest)).toEqual(
-    createHash('sha256')
-      .update(await derSerializePublicKey(keyPair.publicKey))
-      .digest(),
-  );
+    expect(Buffer.from(digest)).toEqual(
+      createHash('sha256')
+        .update(await derSerializePublicKey(keyPair.publicKey))
+        .digest(),
+    );
+  });
+
+  test('Public key should be extracted first if input is private key', async () => {
+    const mockPublicKeySerialized = arrayBufferFrom('the public key');
+    const provider = new MockRsaPssProvider();
+    provider.onExportKey.mockResolvedValue(mockPublicKeySerialized);
+    const privateKey = new RsaPssPrivateKey('SHA-256', provider);
+
+    const digest = await getPublicKeyDigest(privateKey);
+
+    expect(Buffer.from(digest)).toEqual(
+      createHash('sha256').update(Buffer.from(mockPublicKeySerialized)).digest(),
+    );
+  });
 });
 
-test('getPublicKeyDigest should return the SHA-256 hex digest of the public key', async () => {
+test('getPublicKeyDigestHex should return the SHA-256 hex digest of the public key', async () => {
   const keyPair = await generateRSAKeyPair();
 
   const digestHex = await getPublicKeyDigestHex(keyPair.publicKey);

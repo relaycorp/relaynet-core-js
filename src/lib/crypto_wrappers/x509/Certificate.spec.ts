@@ -12,8 +12,8 @@ import {
   generateRSAKeyPair,
   getPrivateAddressFromIdentityKey,
 } from '../keys';
-import { PrivateKey } from '../PrivateKey';
-import { MockAesKwProvider } from '../webcrypto/_test_utils';
+import { RsaPssPrivateKey } from '../PrivateKey';
+import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
@@ -111,9 +111,7 @@ describe('issue()', () => {
   });
 
   test('should use crypto engine in private key if set', async () => {
-    const privateKey = new PrivateKey(new MockAesKwProvider());
-    // tslint:disable-next-line:no-object-mutation
-    privateKey.algorithm = subjectKeyPair.privateKey.algorithm;
+    const privateKey = new RsaPssPrivateKey('SHA-256', new MockRsaPssProvider());
     jest.spyOn(pkijs.Certificate.prototype, 'sign');
 
     await expect(
@@ -122,7 +120,7 @@ describe('issue()', () => {
         issuerPrivateKey: privateKey,
         subjectPublicKey: subjectKeyPair.publicKey,
       }),
-    ).toReject();
+    ).toResolve();
 
     const engine = getEngineForPrivateKey(privateKey);
     expect(engine).toBeInstanceOf(pkijs.CryptoEngine);

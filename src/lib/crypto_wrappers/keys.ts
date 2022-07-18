@@ -3,6 +3,7 @@ import { getAlgorithmParameters } from 'pkijs';
 
 import { getPkijsCrypto } from './_utils';
 import { ECDHCurveName, HashingAlgorithm, RSAModulus } from './algorithms';
+import { PrivateKey } from './PrivateKey';
 
 const cryptoEngine = getPkijsCrypto();
 
@@ -45,8 +46,7 @@ export async function generateRSAKeyPair(
   // tslint:disable-next-line:no-object-mutation
   rsaAlgorithm.modulusLength = modulus;
 
-  const keyPair = await cryptoEngine.generateKey(rsaAlgorithm, true, algorithm.usages);
-  return keyPair;
+  return cryptoEngine.generateKey(rsaAlgorithm, true, algorithm.usages);
 }
 
 /**
@@ -64,10 +64,8 @@ export async function generateECDHKeyPair(
 }
 
 export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
-  const publicKeyDer = await cryptoEngine.exportKey('spki', privateKey);
-  const hashingAlgoName = (privateKey.algorithm as any).hash.name;
-  const opts = { hash: { name: hashingAlgoName }, name: privateKey.algorithm.name };
-  return cryptoEngine.importKey('spki', publicKeyDer, opts, true, ['verify']);
+  const publicKeyDer = bufferToArray(await derSerializePublicKey(privateKey));
+  return cryptoEngine.importKey('spki', publicKeyDer, privateKey.algorithm, true, ['verify']);
 }
 
 //endregion
@@ -80,7 +78,10 @@ export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise
  * @param publicKey
  */
 export async function derSerializePublicKey(publicKey: CryptoKey): Promise<Buffer> {
-  const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+  const publicKeyDer =
+    publicKey instanceof PrivateKey
+      ? ((await publicKey.provider.exportKey('spki', publicKey)) as ArrayBuffer)
+      : await cryptoEngine.exportKey('spki', publicKey);
   return Buffer.from(publicKeyDer);
 }
 
@@ -168,7 +169,7 @@ export async function derDeserializeECDHPrivateKey(
  * @param publicKey
  */
 export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
-  const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+  const publicKeyDer = await derSerializePublicKey(publicKey);
   return cryptoEngine.digest({ name: 'SHA-256' }, publicKeyDer);
 }
 
