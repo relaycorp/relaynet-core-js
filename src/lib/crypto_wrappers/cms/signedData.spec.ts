@@ -15,7 +15,7 @@ import {
 import { CMS_OIDS } from '../../oids';
 import { HashingAlgorithm } from '../algorithms';
 import { generateRSAKeyPair } from '../keys';
-import { PrivateKey } from '../PrivateKey';
+import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
@@ -47,10 +47,7 @@ describe('sign', () => {
 
   test('Crypto in private key should be used if set', async () => {
     const provider = new MockRsaPssProvider();
-    const privateKey = new PrivateKey(provider);
-    privateKey.algorithm = keyPair.privateKey.algorithm;
-    privateKey.usages = keyPair.privateKey.usages;
-    privateKey.extractable = keyPair.privateKey.extractable;
+    const privateKey = new RsaPssPrivateKey('SHA-256', provider);
 
     await expect(SignedData.sign(plaintext, privateKey, certificate)).toResolve();
 

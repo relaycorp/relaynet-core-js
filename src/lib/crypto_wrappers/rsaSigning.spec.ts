@@ -1,10 +1,9 @@
-import { ProviderCrypto } from 'webcrypto-core';
-
 import { arrayBufferFrom } from '../_test_utils';
 import * as utils from './_utils';
 import { generateRSAKeyPair } from './keys';
-import { PrivateKey } from './PrivateKey';
+import { RsaPssPrivateKey } from './PrivateKey';
 import { sign, verify } from './rsaSigning';
+import { MockRsaPssProvider } from './webcrypto/_test_utils';
 
 const plaintext = arrayBufferFrom('the plaintext');
 
@@ -31,15 +30,14 @@ describe('sign', () => {
 
   test('The plaintext should be signed with PrivateKey if requested', async () => {
     const mockSignature = arrayBufferFrom('signature');
-    const mockProvider: Partial<ProviderCrypto> = {
-      sign: jest.fn().mockReturnValue(mockSignature),
-    };
-    const privateKey = new PrivateKey(mockProvider as any);
+    const mockProvider = new MockRsaPssProvider();
+    mockProvider.onSign.mockResolvedValue(mockSignature);
+    const privateKey = new RsaPssPrivateKey('SHA-256', mockProvider);
 
     const signature = await sign(plaintext, privateKey);
 
     expect(signature).toBe(mockSignature);
-    expect(mockProvider.sign).toBeCalledWith(RSA_PSS_PARAMS, privateKey, plaintext);
+    expect(mockProvider.onSign).toBeCalledWith(RSA_PSS_PARAMS, privateKey, plaintext);
   });
 });
 

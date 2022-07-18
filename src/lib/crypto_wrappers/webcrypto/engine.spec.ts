@@ -1,6 +1,6 @@
 import { SubtleCrypto } from 'webcrypto-core';
 
-import { PrivateKey } from '../PrivateKey';
+import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from './_test_utils';
 import { getEngineForPrivateKey } from './engine';
 
@@ -14,7 +14,7 @@ describe('getEngine', () => {
   });
 
   test('Nameless engine should be returned if PrivateKey is used', () => {
-    const key = new PrivateKey(PROVIDER);
+    const key = new RsaPssPrivateKey('SHA-256', PROVIDER);
 
     const engine = getEngineForPrivateKey(key);
 
@@ -22,7 +22,7 @@ describe('getEngine', () => {
   });
 
   test('Engine crypto should use provider from private key', () => {
-    const key = new PrivateKey(PROVIDER);
+    const key = new RsaPssPrivateKey('SHA-256', PROVIDER);
 
     const engine = getEngineForPrivateKey(key);
 
@@ -31,8 +31,8 @@ describe('getEngine', () => {
 
   test('Same engine should be returned if multiple keys share provider', () => {
     // This is to check engines are being cached
-    const key1 = new PrivateKey(PROVIDER);
-    const key2 = new PrivateKey(PROVIDER);
+    const key1 = new RsaPssPrivateKey('SHA-256', PROVIDER);
+    const key2 = new RsaPssPrivateKey('SHA-256', PROVIDER);
 
     const engine1 = getEngineForPrivateKey(key1);
     const engine2 = getEngineForPrivateKey(key2);
@@ -41,8 +41,8 @@ describe('getEngine', () => {
   });
 
   test('Different engines should be returned if keys use different providers', () => {
-    const key1 = new PrivateKey(PROVIDER);
-    const key2 = new PrivateKey(new MockRsaPssProvider());
+    const key1 = new RsaPssPrivateKey('SHA-256', PROVIDER);
+    const key2 = new RsaPssPrivateKey('SHA-256', new MockRsaPssProvider());
 
     const engine1 = getEngineForPrivateKey(key1);
     const engine2 = getEngineForPrivateKey(key2);

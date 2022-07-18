@@ -3,6 +3,7 @@ import { getAlgorithmParameters } from 'pkijs';
 
 import { getPkijsCrypto } from './_utils';
 import { ECDHCurveName, HashingAlgorithm, RSAModulus } from './algorithms';
+import { PrivateKey } from './PrivateKey';
 
 const cryptoEngine = getPkijsCrypto();
 
@@ -45,8 +46,7 @@ export async function generateRSAKeyPair(
   // tslint:disable-next-line:no-object-mutation
   rsaAlgorithm.modulusLength = modulus;
 
-  const keyPair = await cryptoEngine.generateKey(rsaAlgorithm, true, algorithm.usages);
-  return keyPair;
+  return cryptoEngine.generateKey(rsaAlgorithm, true, algorithm.usages);
 }
 
 /**
@@ -64,10 +64,12 @@ export async function generateECDHKeyPair(
 }
 
 export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
-  const publicKeyDer = await cryptoEngine.exportKey('spki', privateKey);
-  const hashingAlgoName = (privateKey.algorithm as any).hash.name;
-  const opts = { hash: { name: hashingAlgoName }, name: privateKey.algorithm.name };
-  return cryptoEngine.importKey('spki', publicKeyDer, opts, true, ['verify']);
+  const publicKeyDer =
+    privateKey instanceof PrivateKey
+      ? ((await privateKey.provider.exportKey('spki', privateKey)) as ArrayBuffer)
+      : await cryptoEngine.exportKey('spki', privateKey);
+
+  return cryptoEngine.importKey('spki', publicKeyDer, privateKey.algorithm, true, ['verify']);
 }
 
 //endregion

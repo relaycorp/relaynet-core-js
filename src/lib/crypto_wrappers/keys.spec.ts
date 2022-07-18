@@ -18,6 +18,8 @@ import {
   getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
 } from './keys';
+import { RsaPssPrivateKey } from './PrivateKey';
+import { MockRsaPssProvider } from './webcrypto/_test_utils';
 
 describe('generateRsaKeyPair', () => {
   test('Keys should be RSA-PSS', async () => {
@@ -135,6 +137,21 @@ describe('getRSAPublicKeyFromPrivate', () => {
     // It's important to check we got a public key before checking its serialisation. If we try to
     // serialise a private key with SPKI, it'd internally use the public key first.
     expect(publicKey.type).toEqual(keyPair.publicKey.type);
+    await expect(derSerializePublicKey(publicKey)).resolves.toEqual(
+      await derSerializePublicKey(keyPair.publicKey),
+    );
+  });
+
+  test('Public key should be taken from provider if custom one is used', async () => {
+    const keyPair = await generateRSAKeyPair();
+    const mockRsaPssProvider = new MockRsaPssProvider();
+    mockRsaPssProvider.onExportKey.mockResolvedValue(
+      await derSerializePublicKey(keyPair.publicKey),
+    );
+    const privateKey = new RsaPssPrivateKey('SHA-256', mockRsaPssProvider);
+
+    const publicKey = await getRSAPublicKeyFromPrivate(privateKey);
+
     await expect(derSerializePublicKey(publicKey)).resolves.toEqual(
       await derSerializePublicKey(keyPair.publicKey),
     );
