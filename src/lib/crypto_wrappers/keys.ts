@@ -169,7 +169,7 @@ export async function derDeserializeECDHPrivateKey(
  * @param publicKey
  */
 export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
-  const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+  const publicKeyDer = await derSerializePublicKey(publicKey);
   return cryptoEngine.digest({ name: 'SHA-256' }, publicKeyDer);
 }
 

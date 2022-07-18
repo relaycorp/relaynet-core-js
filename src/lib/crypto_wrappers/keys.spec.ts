@@ -391,16 +391,31 @@ describe('Key deserializers', () => {
   });
 });
 
-test('getPublicKeyDigest should return the SHA-256 digest of the public key', async () => {
-  const keyPair = await generateRSAKeyPair();
+describe('getPublicKeyDigest', () => {
+  test('SHA-256 digest should be returned in hex', async () => {
+    const keyPair = await generateRSAKeyPair();
 
-  const digest = await getPublicKeyDigest(keyPair.publicKey);
+    const digest = await getPublicKeyDigest(keyPair.publicKey);
 
-  expect(Buffer.from(digest)).toEqual(
-    createHash('sha256')
-      .update(await derSerializePublicKey(keyPair.publicKey))
-      .digest(),
-  );
+    expect(Buffer.from(digest)).toEqual(
+      createHash('sha256')
+        .update(await derSerializePublicKey(keyPair.publicKey))
+        .digest(),
+    );
+  });
+
+  test('Public key should be extracted first if input is private key', async () => {
+    const mockPublicKeySerialized = arrayBufferFrom('the public key');
+    const provider = new MockRsaPssProvider();
+    provider.onExportKey.mockResolvedValue(mockPublicKeySerialized);
+    const privateKey = new RsaPssPrivateKey('SHA-256', provider);
+
+    const digest = await getPublicKeyDigest(privateKey);
+
+    expect(Buffer.from(digest)).toEqual(
+      createHash('sha256').update(Buffer.from(mockPublicKeySerialized)).digest(),
+    );
+  });
 });
 
 test('getPublicKeyDigestHex should return the SHA-256 hex digest of the public key', async () => {
