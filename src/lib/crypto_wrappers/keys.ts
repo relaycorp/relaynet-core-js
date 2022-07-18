@@ -64,11 +64,7 @@ export async function generateECDHKeyPair(
 }
 
 export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
-  const publicKeyDer =
-    privateKey instanceof PrivateKey
-      ? ((await privateKey.provider.exportKey('spki', privateKey)) as ArrayBuffer)
-      : await cryptoEngine.exportKey('spki', privateKey);
-
+  const publicKeyDer = bufferToArray(await derSerializePublicKey(privateKey));
   return cryptoEngine.importKey('spki', publicKeyDer, privateKey.algorithm, true, ['verify']);
 }
 
@@ -82,7 +78,10 @@ export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise
  * @param publicKey
  */
 export async function derSerializePublicKey(publicKey: CryptoKey): Promise<Buffer> {
-  const publicKeyDer = await cryptoEngine.exportKey('spki', publicKey);
+  const publicKeyDer =
+    publicKey instanceof PrivateKey
+      ? ((await publicKey.provider.exportKey('spki', publicKey)) as ArrayBuffer)
+      : await cryptoEngine.exportKey('spki', publicKey);
   return Buffer.from(publicKeyDer);
 }
 

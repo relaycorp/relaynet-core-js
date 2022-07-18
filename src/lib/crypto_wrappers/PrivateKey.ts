@@ -5,7 +5,7 @@ import { CryptoKey, KeyAlgorithm, KeyUsages, ProviderCrypto } from 'webcrypto-co
 import { HashingAlgorithm } from './algorithms';
 
 export class PrivateKey extends CryptoKey {
-  public override readonly extractable = true;
+  public override readonly extractable = true; // The **public** key is extractable as SPKI
 
   public override readonly type = 'private' as KeyType;
 
