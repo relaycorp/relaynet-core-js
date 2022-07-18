@@ -1,11 +1,11 @@
 import { SubtleCrypto } from 'webcrypto-core';
 
 import { PrivateKey } from '../PrivateKey';
-import { MockAesKwProvider } from './_test_utils';
+import { MockRsaPssProvider } from './_test_utils';
 import { getEngineForPrivateKey } from './engine';
 
 describe('getEngine', () => {
-  const PROVIDER = new MockAesKwProvider();
+  const PROVIDER = new MockRsaPssProvider();
 
   test('undefined should be returned if CryptoKey is used', () => {
     const engine = getEngineForPrivateKey(null as unknown as CryptoKey);
@@ -42,7 +42,7 @@ describe('getEngine', () => {
 
   test('Different engines should be returned if keys use different providers', () => {
     const key1 = new PrivateKey(PROVIDER);
-    const key2 = new PrivateKey(new MockAesKwProvider());
+    const key2 = new PrivateKey(new MockRsaPssProvider());
 
     const engine1 = getEngineForPrivateKey(key1);
     const engine2 = getEngineForPrivateKey(key2);

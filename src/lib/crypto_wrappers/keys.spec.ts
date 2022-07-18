@@ -370,7 +370,7 @@ test('getPublicKeyDigest should return the SHA-256 digest of the public key', as
   );
 });
 
-test('getPublicKeyDigest should return the SHA-256 hex digest of the public key', async () => {
+test('getPublicKeyDigestHex should return the SHA-256 hex digest of the public key', async () => {
   const keyPair = await generateRSAKeyPair();
 
   const digestHex = await getPublicKeyDigestHex(keyPair.publicKey);

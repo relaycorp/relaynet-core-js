@@ -13,7 +13,7 @@ import {
   getPrivateAddressFromIdentityKey,
 } from '../keys';
 import { PrivateKey } from '../PrivateKey';
-import { MockAesKwProvider } from '../webcrypto/_test_utils';
+import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
 import Certificate from './Certificate';
 import CertificateError from './CertificateError';
@@ -111,7 +111,7 @@ describe('issue()', () => {
   });
 
   test('should use crypto engine in private key if set', async () => {
-    const privateKey = new PrivateKey(new MockAesKwProvider());
+    const privateKey = new PrivateKey(new MockRsaPssProvider());
     // tslint:disable-next-line:no-object-mutation
     privateKey.algorithm = subjectKeyPair.privateKey.algorithm;
     jest.spyOn(pkijs.Certificate.prototype, 'sign');

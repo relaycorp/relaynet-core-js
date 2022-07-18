@@ -16,8 +16,7 @@ import { CMS_OIDS } from '../../oids';
 import { HashingAlgorithm } from '../algorithms';
 import { generateRSAKeyPair } from '../keys';
 import { PrivateKey } from '../PrivateKey';
-import { MockAesKwProvider } from '../webcrypto/_test_utils';
-import { getEngineForPrivateKey } from '../webcrypto/engine';
+import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import Certificate from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
 import CMSError from './CMSError';
@@ -47,16 +46,15 @@ describe('sign', () => {
   });
 
   test('Crypto in private key should be used if set', async () => {
-    const privateKey = new PrivateKey(new MockAesKwProvider());
-    const engine = getEngineForPrivateKey(privateKey);
-    const signSpy = jest.spyOn(engine!.crypto.subtle, 'sign');
+    const provider = new MockRsaPssProvider();
+    const privateKey = new PrivateKey(provider);
     privateKey.algorithm = keyPair.privateKey.algorithm;
     privateKey.usages = keyPair.privateKey.usages;
     privateKey.extractable = keyPair.privateKey.extractable;
 
-    await expect(SignedData.sign(plaintext, privateKey, certificate)).toReject();
+    await expect(SignedData.sign(plaintext, privateKey, certificate)).toResolve();
 
-    expect(signSpy).toBeCalled();
+    expect(provider.onSign).toBeCalled();
   });
 
   describe('SignerInfo', () => {
