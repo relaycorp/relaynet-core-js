@@ -14,7 +14,7 @@ export abstract class GatewayChannel extends Channel {
   public async *generateCargoes(messages: CargoMessageStream): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
-    const recipientAddress = this.getOutboundRAMFAddress();
+    const recipientAddress = await this.getOutboundRAMFAddress();
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
       const creationDate = getCargoCreationTime();
       const ttl = getSecondsBetweenDates(creationDate, expiryDate);

@@ -338,7 +338,7 @@ class StubGatewayChannel extends GatewayChannel {
     );
   }
 
-  public getOutboundRAMFAddress(): string {
+  async getOutboundRAMFAddress(): Promise<string> {
     return StubGatewayChannel.OUTBOUND_RAMF_ADDRESS;
   }
 }

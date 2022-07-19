@@ -201,7 +201,7 @@ class StubPrivateGatewayChannel extends PrivateGatewayChannel {
     );
   }
 
-  public getOutboundRAMFAddress(): string {
+  async getOutboundRAMFAddress(): Promise<string> {
     throw new Error('not implemented');
   }
 }
