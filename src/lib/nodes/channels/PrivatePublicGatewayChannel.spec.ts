@@ -84,8 +84,10 @@ beforeEach(() => {
   );
 });
 
-test('getOutboundRAMFAddress should return public address of public gateway', () => {
-  expect(channel.getOutboundRAMFAddress()).toEqual(`https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`);
+test('getOutboundRAMFAddress should return public address of public gateway', async () => {
+  await expect(channel.getOutboundRAMFAddress()).resolves.toEqual(
+    `https://${PUBLIC_GATEWAY_PUBLIC_ADDRESS}`,
+  );
 });
 
 describe('Endpoint registration', () => {

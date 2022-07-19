@@ -165,7 +165,7 @@ describe('wrapMessagePayload', () => {
 });
 
 class StubChannel extends Channel {
-  getOutboundRAMFAddress(): string {
+  async getOutboundRAMFAddress(): Promise<string> {
     throw new Error('not implemented');
   }
 }
