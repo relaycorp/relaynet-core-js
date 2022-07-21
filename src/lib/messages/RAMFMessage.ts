@@ -10,11 +10,8 @@ import RAMFError from '../ramf/RAMFError';
 import { SessionKey } from '../SessionKey';
 import InvalidMessageError from './InvalidMessageError';
 import PayloadPlaintext from './payloads/PayloadPlaintext';
-import { RecipientAddressType } from './RecipientAddressType';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
-
-const PRIVATE_ADDRESS_REGEX = /^0[a-f\d]+$/;
 
 interface MessageOptions {
   readonly id: string;
@@ -135,17 +132,13 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   /**
    * Report whether the message is valid.
    *
-   * @param recipientAddressType The expected type of recipient address, if one is required
-   * @param trustedCertificates If present, will check that the sender is authorized to send
+   * @param trustedCertificates? If present, will check that the sender is authorized to send
    *   the message based on the trusted certificates.
    * @return The certification path from the sender to one of the `trustedCertificates` (if present)
    */
   public async validate(
-    recipientAddressType?: RecipientAddressType,
     trustedCertificates?: readonly Certificate[],
   ): Promise<readonly Certificate[] | null> {
-    await this.validateRecipientAddress(recipientAddressType);
-
     await this.validateTiming();
 
     if (trustedCertificates) {
@@ -190,22 +183,6 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   }
 
   protected abstract deserializePayload(payloadPlaintext: ArrayBuffer): Payload;
-
-  private async validateRecipientAddress(
-    requiredRecipientAddressType?: RecipientAddressType,
-  ): Promise<void> {
-    const isAddressPrivate = this.isRecipientAddressPrivate;
-    if (isAddressPrivate && !PRIVATE_ADDRESS_REGEX[Symbol.match](this.recipientAddress)) {
-      throw new InvalidMessageError('Recipient address is malformed');
-    }
-
-    if (requiredRecipientAddressType === RecipientAddressType.PUBLIC && isAddressPrivate) {
-      throw new InvalidMessageError('Recipient address should be public but got a private one');
-    }
-    if (requiredRecipientAddressType === RecipientAddressType.PRIVATE && !isAddressPrivate) {
-      throw new InvalidMessageError('Recipient address should be private but got a public one');
-    }
-  }
 
   private async validateAuthorization(
     trustedCertificates: readonly Certificate[],
