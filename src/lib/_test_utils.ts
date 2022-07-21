@@ -1,4 +1,4 @@
-import * as asn1js from 'asn1js';
+import { BaseBlock, Constructed, Primitive } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
@@ -169,14 +169,28 @@ export async function asyncIterableToArray<T>(iterable: AsyncIterable<T>): Promi
   return values;
 }
 
-export function getAsn1SequenceItem(
-  fields: asn1js.Sequence | asn1js.BaseBlock<any>,
+export function getPrimitiveItemFromConstructed(
+  fields: BaseBlock<any>,
   itemIndex: number,
-): asn1js.Primitive {
-  expect(fields).toBeInstanceOf(asn1js.Sequence);
-  const itemBlock = (fields as asn1js.Sequence).valueBlock.value[itemIndex] as asn1js.Primitive;
-  expect(itemBlock).toBeInstanceOf(asn1js.Primitive);
+): Primitive {
+  const itemBlock = getItemFromConstructed(fields, itemIndex);
+  expect(itemBlock).toBeInstanceOf(Primitive);
+  return itemBlock as Primitive;
+}
+
+export function getConstructedItemFromConstructed(
+  fields: BaseBlock<any>,
+  itemIndex: number,
+): Constructed {
+  const itemBlock = getItemFromConstructed(fields, itemIndex);
+  expect(itemBlock).toBeInstanceOf(Constructed);
+  return itemBlock as Constructed;
+}
+
+function getItemFromConstructed(fields: BaseBlock<any>, itemIndex: number): BaseBlock<any> {
+  expect(fields).toBeInstanceOf(Constructed);
+  const itemBlock = fields.valueBlock.value[itemIndex];
   expect(itemBlock.idBlock.tagClass).toEqual(3); // Context-specific
   expect(itemBlock.idBlock.tagNumber).toEqual(itemIndex);
-  return itemBlock as any;
+  return itemBlock;
 }

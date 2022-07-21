@@ -4,7 +4,7 @@ import {
   arrayBufferFrom,
   expectArrayBuffersToEqual,
   generateStubCert,
-  getAsn1SequenceItem,
+  getPrimitiveItemFromConstructed,
 } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
@@ -24,7 +24,7 @@ describe('serialize', () => {
     const serialization = request.serialize();
 
     const sequence = derDeserialize(serialization);
-    const cdaSerialized = getAsn1SequenceItem(sequence, 0).valueBlock.valueHex;
+    const cdaSerialized = getPrimitiveItemFromConstructed(sequence, 0).valueBlock.valueHex;
     expectArrayBuffersToEqual(cargoDeliveryAuthorization.serialize(), cdaSerialized);
   });
 });

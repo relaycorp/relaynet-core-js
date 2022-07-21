@@ -1,4 +1,12 @@
-import * as asn1js from 'asn1js';
+import {
+  Constructed,
+  Integer,
+  OctetString,
+  Primitive,
+  Sequence,
+  verifySchema,
+  VisibleString,
+} from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { TextDecoder } from 'util';
 
@@ -27,7 +35,7 @@ const MAX_ID_LENGTH = 64;
 export const RAMF_MAX_TTL = 15552000;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
-const PRIVATE_ADDRESS_REGEX = /^[a-f0-9]+$/;
+const PRIVATE_ADDRESS_REGEX = /^[a-f\d]+$/;
 
 /**
  * Maximum length of any SDU to be encapsulated in a CMS EnvelopedData value, per the RAMF spec.
@@ -42,7 +50,7 @@ interface MessageFormatSignature {
 }
 
 interface MessageFieldSet {
-  readonly recipientAddress: string;
+  readonly recipient: string;
   readonly id: string;
   readonly date: Date;
   readonly ttl: number;
@@ -50,11 +58,11 @@ interface MessageFieldSet {
 }
 
 const ASN1_SCHEMA = makeHeterogeneousSequenceSchema('RAMFMessage', [
-  new asn1js.Primitive({ name: 'recipientAddress' }),
-  new asn1js.Primitive({ name: 'id' }),
-  new asn1js.Primitive({ name: 'date' }),
-  new asn1js.Primitive({ name: 'ttl' }),
-  new asn1js.Primitive({ name: 'payload' }),
+  new Constructed({ name: 'recipient' }),
+  new Primitive({ name: 'id' }),
+  new Primitive({ name: 'date' }),
+  new Primitive({ name: 'ttl' }),
+  new Primitive({ name: 'payload' }),
 ]);
 
 /**
@@ -74,7 +82,7 @@ export async function serialize(
   signatureOptions?: Partial<SignatureOptions>,
 ): Promise<ArrayBuffer> {
   //region Validation
-  validateRecipientAddressLength(message.recipientAddress);
+  validateRecipientAddressingLength(message.recipientAddress);
   validateMessageIdLength(message.id);
   validateTtl(message.ttl);
   validatePayloadLength(message.payloadSerialized);
@@ -86,11 +94,11 @@ export async function serialize(
   );
 
   const fieldSetSerialized = makeImplicitlyTaggedSequence(
-    new asn1js.VisibleString({ value: message.recipientAddress }),
-    new asn1js.VisibleString({ value: message.id }),
+    encodeRecipientField(message),
+    new VisibleString({ value: message.id }),
     dateToASN1DateTimeInUTC(message.creationDate),
-    new asn1js.Integer({ value: message.ttl }),
-    new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
+    new Integer({ value: message.ttl }),
+    new OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
   ).toBER();
 
   //region Signature
@@ -112,6 +120,10 @@ export async function serialize(
   serializationView.set(formatSignature, 0);
   serializationView.set(new Uint8Array(signature), formatSignature.byteLength);
   return serialization;
+}
+
+function encodeRecipientField(message: RAMFMessage<any>): Sequence {
+  return makeImplicitlyTaggedSequence(new VisibleString({ value: message.recipientAddress }));
 }
 
 function validateMessageLength(serialization: ArrayBuffer): void {
@@ -139,14 +151,14 @@ export async function deserialize<M extends RAMFMessage<any>>(
   const signatureVerification = await verifySignature(serialization.slice(10));
 
   const messageFields = parseMessageFields(signatureVerification.plaintext);
-  validateRecipientAddressLength(messageFields.recipientAddress);
-  validateRecipientAddress(messageFields.recipientAddress);
+  validateRecipientAddressingLength(messageFields.recipient);
+  validateRecipientAddress(messageFields.recipient);
   validateMessageIdLength(messageFields.id);
   validateTtl(messageFields.ttl);
   validatePayloadLength(messageFields.payload);
 
   return new messageClass(
-    messageFields.recipientAddress,
+    messageFields.recipient,
     signatureVerification.signerCertificate,
     messageFields.payload,
     {
@@ -204,7 +216,7 @@ function validateRecipientAddress(recipientAddress: string): void {
   }
 }
 
-function validateRecipientAddressLength(recipientAddress: string): void {
+function validateRecipientAddressingLength(recipientAddress: string): void {
   const length = recipientAddress.length;
   if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
     throw new RAMFSyntaxError(
@@ -255,23 +267,29 @@ function parseMessageFormatSignature(serialization: ArrayBuffer): MessageFormatS
 }
 
 function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
-  const result = asn1js.verifySchema(serialization, ASN1_SCHEMA);
+  const result = verifySchema(serialization, ASN1_SCHEMA);
   if (!result.verified) {
     throw new RAMFSyntaxError('Invalid RAMF fields');
   }
   const messageBlock = result.result.RAMFMessage;
   const textDecoder = new TextDecoder();
   const ttlBigInt = getIntegerFromPrimitiveBlock(messageBlock.ttl);
+
+  const recipientSequence = messageBlock.recipient.valueBlock.value;
+  if (recipientSequence.length === 0) {
+    throw new RAMFSyntaxError('Recipient SEQUENCE should at least contain the private address');
+  }
+
   return {
     date: getDateFromPrimitiveBlock(messageBlock.date),
     id: textDecoder.decode(messageBlock.id.valueBlock.valueHex),
     payload: Buffer.from(messageBlock.payload.valueBlock.valueHex),
-    recipientAddress: textDecoder.decode(messageBlock.recipientAddress.valueBlock.valueHex),
+    recipient: textDecoder.decode(recipientSequence[0].valueBlock.valueHex),
     ttl: Number(ttlBigInt), // Cannot exceed Number.MAX_SAFE_INTEGER anyway
   };
 }
 
-function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
+function getDateFromPrimitiveBlock(block: Primitive): Date {
   try {
     return asn1DateTimeToDate(block);
   } catch (exc) {
@@ -279,8 +297,8 @@ function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
   }
 }
 
-function getIntegerFromPrimitiveBlock(block: asn1js.Primitive): bigint {
-  const integerBlock = new asn1js.Integer({ valueHex: block.valueBlock.valueHexView });
+function getIntegerFromPrimitiveBlock(block: Primitive): bigint {
+  const integerBlock = new Integer({ valueHex: block.valueBlock.valueHexView });
   return integerBlock.toBigInt();
 }
 
