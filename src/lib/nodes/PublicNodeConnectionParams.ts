@@ -71,10 +71,10 @@ export class PublicNodeConnectionParams {
     new Constructed({
       name: 'sessionKey',
       value: [
-        new Primitive({ idBlock: { tagClass: 3, tagNumber: 0 } } as any),
-        new Primitive({ idBlock: { tagClass: 3, tagNumber: 1 } } as any),
+        new Primitive({ idBlock: { tagClass: 3, tagNumber: 0 } }),
+        new Primitive({ idBlock: { tagClass: 3, tagNumber: 1 } }),
       ],
-    } as any),
+    }),
   ]);
 
   constructor(
