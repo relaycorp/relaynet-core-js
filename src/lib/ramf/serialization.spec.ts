@@ -929,7 +929,7 @@ describe('MessageSerializer', () => {
 
         test('Date not serialized as an ASN.1 DATE-TIME should be refused', async () => {
           const messageSerialized = await serializeRamfWithoutValidation([
-            new VisibleString({ value: 'the-address' }),
+            new Sequence({ value: [new VisibleString({ value: 'the-address' })] }),
             new VisibleString({ value: 'id' }),
             new DateTime({ value: '42' }),
             new Integer({ value: 1_000 }),
@@ -943,9 +943,7 @@ describe('MessageSerializer', () => {
               stubConcreteMessageVersionOctet,
               StubMessage,
             ),
-          ).rejects.toMatchObject({
-            message: /^Message date is invalid:/,
-          });
+          ).rejects.toThrowWithMessage(RAMFValidationError, /^Message date is invalid:/);
         });
       });
 
