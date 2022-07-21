@@ -1,5 +1,7 @@
-import { Constructed, OctetString, Primitive, verifySchema } from 'asn1js';
+import { Constructed, OctetString, Primitive, verifySchema, VisibleString } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
+import isValidDomain from 'is-valid-domain';
+import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserializeECDHPublicKey, derSerializePublicKey } from '../../crypto_wrappers/keys';
@@ -33,27 +35,44 @@ export class PrivateNodeRegistration {
       throw new InvalidMessageError(err as Error, 'Gateway certificate is invalid');
     }
 
+    const textDecoder = new TextDecoder();
+    const publicGatewayPublicAddress = textDecoder.decode(
+      registrationASN1.publicGatewayPublicAddress.valueBlock.valueHex,
+    );
+    if (!isValidDomain(publicGatewayPublicAddress)) {
+      throw new InvalidMessageError(
+        `Malformed public gateway address (${publicGatewayPublicAddress})`,
+      );
+    }
+
     const sessionKey = await deserializeSessionKey(registrationASN1.sessionKey);
 
-    return new PrivateNodeRegistration(privateNodeCertificate, gatewayCertificate, sessionKey);
+    return new PrivateNodeRegistration(
+      privateNodeCertificate,
+      gatewayCertificate,
+      publicGatewayPublicAddress,
+      sessionKey,
+    );
   }
 
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema('PrivateNodeRegistration', [
     new Primitive({ name: 'privateNodeCertificate' }),
     new Primitive({ name: 'gatewayCertificate' }),
+    new Primitive({ name: 'publicGatewayPublicAddress' }),
     new Constructed({
       name: 'sessionKey',
       optional: true,
       value: [
-        new Primitive({ idBlock: { tagClass: 3, tagNumber: 0 } } as any),
-        new Primitive({ idBlock: { tagClass: 3, tagNumber: 1 } } as any),
+        new Primitive({ idBlock: { tagClass: 3, tagNumber: 0 } }),
+        new Primitive({ idBlock: { tagClass: 3, tagNumber: 1 } }),
       ],
-    } as any),
+    }),
   ]);
 
   constructor(
     public readonly privateNodeCertificate: Certificate,
     public readonly gatewayCertificate: Certificate,
+    public readonly publicGatewayPublicAddress: string,
     public readonly sessionKey: SessionKey | null = null,
   ) {}
 
@@ -70,6 +89,7 @@ export class PrivateNodeRegistration {
     return makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: this.privateNodeCertificate.serialize() }),
       new OctetString({ valueHex: this.gatewayCertificate.serialize() }),
+      new VisibleString({ value: this.publicGatewayPublicAddress }),
       ...(sessionKeySequence ? [sessionKeySequence] : []),
     ).toBER();
   }
@@ -86,7 +106,9 @@ async function deserializeSessionKey(sessionKeySequence: any): Promise<SessionKe
   const sessionKeyIdASN1 = sessionKeySequence.valueBlock.value[0] as Primitive;
   let sessionPublicKey: CryptoKey;
   try {
-    sessionPublicKey = await derDeserializeECDHPublicKey(sessionPublicKeyASN1.valueBlock.valueHex);
+    sessionPublicKey = await derDeserializeECDHPublicKey(
+      sessionPublicKeyASN1.valueBlock.valueHexView,
+    );
   } catch (err: any) {
     throw new InvalidMessageError(
       new Error(err), // The original error could be a string 🤦
@@ -94,7 +116,7 @@ async function deserializeSessionKey(sessionKeySequence: any): Promise<SessionKe
     );
   }
   return {
-    keyId: Buffer.from(sessionKeyIdASN1.valueBlock.valueHex),
+    keyId: Buffer.from(sessionKeyIdASN1.valueBlock.valueHexView),
     publicKey: sessionPublicKey,
   };
 }

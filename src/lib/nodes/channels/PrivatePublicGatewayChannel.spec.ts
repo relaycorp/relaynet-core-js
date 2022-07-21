@@ -204,6 +204,14 @@ describe('Endpoint registration', () => {
       expect(registration.gatewayCertificate.isEqual(privateGatewayPDCCertificate)).toBeTrue();
     });
 
+    test('Public gateway public gateway should be included in registration', async () => {
+      const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
+
+      const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
+
+      expect(registration.publicGatewayPublicAddress).toEqual(PUBLIC_GATEWAY_PUBLIC_ADDRESS);
+    });
+
     test('Session key should be absent from registration', async () => {
       const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
 

@@ -90,7 +90,11 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
       subjectPublicKey: endpointPublicKey,
       validityEndDate: addMonths(new Date(), 6),
     });
-    const registration = new PrivateNodeRegistration(endpointCertificate, this.nodeDeliveryAuth);
+    const registration = new PrivateNodeRegistration(
+      endpointCertificate,
+      this.nodeDeliveryAuth,
+      this.publicGatewayPublicAddress,
+    );
     return registration.serialize();
   }
 
