@@ -45,7 +45,7 @@
     "@types/verror": "^1.10.6",
     "asn1js": "^3.0.5",
     "buffer-to-arraybuffer": "0.0.6",
-    "date-fns": "^2.28.0",
+    "date-fns": "^2.29.1",
     "dohdec": "^3.1.0",
     "is-valid-domain": "^0.1.6",
     "moment": "^2.29.4",
@@ -62,7 +62,7 @@
   "devDependencies": {
     "@relaycorp/shared-config": "^1.9.1",
     "@types/jest": "^27.5.0",
-    "del-cli": "^4.0.1",
+    "del-cli": "^5.0.0",
     "jest": "^27.5.1",
     "jest-date-mock": "^1.0.8",
     "jest-extended": "^3.0.0",
