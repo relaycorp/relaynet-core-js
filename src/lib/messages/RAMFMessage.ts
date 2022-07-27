@@ -10,6 +10,7 @@ import RAMFError from '../ramf/RAMFError';
 import { SessionKey } from '../SessionKey';
 import InvalidMessageError from './InvalidMessageError';
 import PayloadPlaintext from './payloads/PayloadPlaintext';
+import { Recipient } from './Recipient';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
@@ -35,7 +36,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   public readonly senderCaCertificateChain: readonly Certificate[];
 
   constructor(
-    readonly recipientAddress: string,
+    readonly recipient: Recipient,
     readonly senderCertificate: Certificate,
     readonly payloadSerialized: Buffer,
     options: Partial<MessageOptions> = {},
@@ -51,16 +52,6 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   get expiryDate(): Date {
     const creationDateTimestamp = this.creationDate.getTime();
     return new Date(creationDateTimestamp + this.ttl * 1_000);
-  }
-
-  get isRecipientAddressPrivate(): boolean {
-    try {
-      // tslint:disable-next-line:no-unused-expression
-      new URL(this.recipientAddress);
-    } catch (_) {
-      return true;
-    }
-    return false;
   }
 
   /**
@@ -98,28 +89,13 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   ): Promise<PayloadUnwrapping<Payload>>;
   public async unwrapPayload(
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-    privateAddress?: string,
   ): Promise<PayloadUnwrapping<Payload>> {
-    if (
-      privateKeyOrStore instanceof PrivateKeyStore &&
-      !this.isRecipientAddressPrivate &&
-      !privateAddress
-    ) {
-      throw new RAMFError(
-        'Recipient private address should be passed because message uses public address',
-      );
-    }
-
     const payloadEnvelopedData = EnvelopedData.deserialize(bufferToArray(this.payloadSerialized));
     if (!(payloadEnvelopedData instanceof SessionEnvelopedData)) {
       throw new RAMFError('Sessionless payloads are no longer supported');
     }
 
-    const payloadPlaintext = await this.decryptPayload(
-      payloadEnvelopedData,
-      privateKeyOrStore,
-      privateAddress,
-    );
+    const payloadPlaintext = await this.decryptPayload(payloadEnvelopedData, privateKeyOrStore);
     const payload = await this.deserializePayload(payloadPlaintext);
 
     const senderSessionKey = await (
@@ -152,20 +128,14 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   protected async decryptPayload(
     payloadEnvelopedData: EnvelopedData,
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-    privateAddress?: string,
   ): Promise<ArrayBuffer> {
-    const privateKey = await this.fetchPrivateKey(
-      payloadEnvelopedData,
-      privateKeyOrStore,
-      privateAddress,
-    );
+    const privateKey = await this.fetchPrivateKey(payloadEnvelopedData, privateKeyOrStore);
     return payloadEnvelopedData.decrypt(privateKey);
   }
 
   protected async fetchPrivateKey(
     payloadEnvelopedData: EnvelopedData,
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
-    privateAddress?: string,
   ): Promise<CryptoKey> {
     const keyId = payloadEnvelopedData.getRecipientKeyId();
     let privateKey: CryptoKey;
@@ -173,7 +143,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
       const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
       privateKey = await privateKeyOrStore.retrieveSessionKey(
         keyId,
-        privateAddress ?? this.recipientAddress,
+        this.recipient.id,
         peerPrivateAddress,
       );
     } else {
@@ -194,12 +164,10 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
       throw new InvalidMessageError(error as Error, 'Sender is not authorized');
     }
 
-    if (this.isRecipientAddressPrivate) {
-      const recipientCertificate = certificationPath[1];
-      const recipientPrivateAddress = await recipientCertificate.calculateSubjectPrivateAddress();
-      if (recipientPrivateAddress !== this.recipientAddress) {
-        throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipientAddress}`);
-      }
+    const recipientCertificate = certificationPath[1];
+    const recipientId = await recipientCertificate.calculateSubjectPrivateAddress();
+    if (recipientId !== this.recipient.id) {
+      throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipient}`);
     }
 
     return certificationPath;
