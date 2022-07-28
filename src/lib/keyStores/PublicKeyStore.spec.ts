@@ -2,7 +2,7 @@ import {
   derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPublicKeyData } from './PublicKeyStore';
@@ -15,21 +15,18 @@ beforeEach(() => {
 
 describe('Identity keys', () => {
   let publicKey: CryptoKey;
-  let peerPrivateAddress: string;
+  let peerId: string;
   beforeAll(async () => {
     const keyPair = await generateRSAKeyPair();
     publicKey = keyPair.publicKey;
-    peerPrivateAddress = await getPrivateAddressFromIdentityKey(publicKey);
+    peerId = await getIdFromIdentityKey(publicKey);
   });
 
   describe('saveIdentityKey', () => {
     test('Key should be stored', async () => {
       await STORE.saveIdentityKey(publicKey);
 
-      expect(STORE.identityKeys).toHaveProperty(
-        peerPrivateAddress,
-        await derSerializePublicKey(publicKey),
-      );
+      expect(STORE.identityKeys).toHaveProperty(peerId, await derSerializePublicKey(publicKey));
     });
   });
 
@@ -37,7 +34,7 @@ describe('Identity keys', () => {
     test('Key should be returned if it exists', async () => {
       await STORE.saveIdentityKey(publicKey);
 
-      const publicKeyRetrieved = await STORE.retrieveIdentityKey(peerPrivateAddress);
+      const publicKeyRetrieved = await STORE.retrieveIdentityKey(peerId);
 
       await expect(derSerializePublicKey(publicKeyRetrieved!)).resolves.toEqual(
         await derSerializePublicKey(publicKey),
@@ -45,7 +42,7 @@ describe('Identity keys', () => {
     });
 
     test('Null should be returned if it does not exist', async () => {
-      await expect(STORE.retrieveIdentityKey(peerPrivateAddress)).resolves.toBeNull();
+      await expect(STORE.retrieveIdentityKey(peerId)).resolves.toBeNull();
     });
   });
 });
@@ -55,7 +52,7 @@ describe('Session keys', () => {
 
   const sessionKeyId = Buffer.from([1, 3, 5, 7, 9]);
   let sessionPublicKey: CryptoKey;
-  const peerPrivateAddress = '0deadbeef';
+  const peerId = '0deadbeef';
   beforeAll(async () => {
     const keyPair = await generateECDHKeyPair();
     sessionPublicKey = keyPair.publicKey;
@@ -68,15 +65,15 @@ describe('Session keys', () => {
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
         publicKeyId: sessionKeyId,
       };
-      STORE.registerSessionKey(keyData, peerPrivateAddress);
+      STORE.registerSessionKey(keyData, peerId);
 
-      const key = await STORE.retrieveLastSessionKey(peerPrivateAddress);
+      const key = await STORE.retrieveLastSessionKey(peerId);
       expect(key?.keyId).toEqual(sessionKeyId);
       expect(await derSerializePublicKey(key!.publicKey)).toEqual(keyData.publicKeyDer);
     });
 
     test('Null should be returned if key for recipient does not exist', async () => {
-      await expect(STORE.retrieveLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
+      await expect(STORE.retrieveLastSessionKey(peerId)).resolves.toBeNull();
     });
 
     test('Retrieval errors should be wrapped', async () => {
@@ -84,7 +81,7 @@ describe('Session keys', () => {
 
       const bogusStore = new MockPublicKeyStore(false, fetchError);
 
-      await expect(bogusStore.retrieveLastSessionKey(peerPrivateAddress)).rejects.toEqual(
+      await expect(bogusStore.retrieveLastSessionKey(peerId)).rejects.toEqual(
         new KeyStoreError(fetchError, 'Failed to retrieve key'),
       );
     });
@@ -94,11 +91,11 @@ describe('Session keys', () => {
     test('Key data should be saved if there is no prior key for recipient', async () => {
       await STORE.saveSessionKey(
         { keyId: sessionKeyId, publicKey: sessionPublicKey },
-        peerPrivateAddress,
+        peerId,
         CREATION_DATE,
       );
 
-      const keyData = STORE.sessionKeys[peerPrivateAddress];
+      const keyData = STORE.sessionKeys[peerId];
       const expectedKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: CREATION_DATE,
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
@@ -113,7 +110,7 @@ describe('Session keys', () => {
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
         publicKeyId: sessionKeyId,
       };
-      STORE.registerSessionKey(oldKeyData, peerPrivateAddress);
+      STORE.registerSessionKey(oldKeyData, peerId);
 
       const newPublicKeyId = Buffer.concat([sessionKeyId, Buffer.from([1, 0])]);
       const newPublicKey = (await generateECDHKeyPair()).publicKey;
@@ -121,11 +118,11 @@ describe('Session keys', () => {
       newPublicKeyDate.setHours(newPublicKeyDate.getHours() + 1);
       await STORE.saveSessionKey(
         { publicKey: newPublicKey, keyId: newPublicKeyId },
-        peerPrivateAddress,
+        peerId,
         newPublicKeyDate,
       );
 
-      const keyData = STORE.sessionKeys[peerPrivateAddress];
+      const keyData = STORE.sessionKeys[peerId];
       const expectedKeyData: SessionPublicKeyData = {
         publicKeyCreationTime: newPublicKeyDate,
         publicKeyDer: await derSerializePublicKey(newPublicKey),
@@ -140,7 +137,7 @@ describe('Session keys', () => {
         publicKeyDer: await derSerializePublicKey(sessionPublicKey),
         publicKeyId: sessionKeyId,
       };
-      STORE.registerSessionKey(currentKeyData, peerPrivateAddress);
+      STORE.registerSessionKey(currentKeyData, peerId);
 
       const olderPublicKeyId = Buffer.concat([sessionKeyId, sessionKeyId]);
       const olderPublicKey = (await generateECDHKeyPair()).publicKey;
@@ -148,11 +145,11 @@ describe('Session keys', () => {
       olderPublicKeyDate.setHours(olderPublicKeyDate.getHours() - 1);
       await STORE.saveSessionKey(
         { publicKey: olderPublicKey, keyId: olderPublicKeyId },
-        peerPrivateAddress,
+        peerId,
         olderPublicKeyDate,
       );
 
-      const keyData = STORE.sessionKeys[peerPrivateAddress];
+      const keyData = STORE.sessionKeys[peerId];
       expect(keyData).toEqual(currentKeyData);
     });
 
@@ -162,7 +159,7 @@ describe('Session keys', () => {
       await expect(
         bogusStore.saveSessionKey(
           { keyId: sessionKeyId, publicKey: sessionPublicKey },
-          peerPrivateAddress,
+          peerId,
           CREATION_DATE,
         ),
       ).rejects.toEqual(new KeyStoreError('Failed to save public session key: Denied'));

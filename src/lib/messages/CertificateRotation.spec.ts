@@ -24,16 +24,16 @@ describe('CertificateRotation', () => {
       const serialization = rotation.serialize();
 
       const expectedFormatSignature = Buffer.concat([
-        Buffer.from('Relaynet'),
+        Buffer.from('Awala'),
         Buffer.from([0x10, 0x00]),
       ]);
-      expect(Buffer.from(serialization).slice(0, 10)).toEqual(expectedFormatSignature);
+      expect(Buffer.from(serialization).slice(0, 7)).toEqual(expectedFormatSignature);
     });
 
     test('Serialization should contain CertificationPath', async () => {
       const rotation = new CertificateRotation(certificationPath);
 
-      const pathSerialized = rotation.serialize().slice(10);
+      const pathSerialized = rotation.serialize().slice(7);
 
       expect(pathSerialized).toEqual(certificationPath.serialize());
     });

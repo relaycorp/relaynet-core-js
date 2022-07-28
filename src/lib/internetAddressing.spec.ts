@@ -28,16 +28,16 @@ jest.mock('dohdec', () => ({
 }));
 import {
   BindingType,
-  PublicAddressingError,
-  resolvePublicAddress,
+  InternetAddressingError,
+  resolveInternetAddress,
   UnreachableResolverError,
-} from './publicAddressing';
+} from './internetAddressing';
 
-describe('resolvePublicAddress', () => {
-  const MALFORMED_ANSWER_ERROR = new PublicAddressingError('DNS answer is malformed');
+describe('resolveInternetAddress', () => {
+  const MALFORMED_ANSWER_ERROR = new InternetAddressingError('DNS answer is malformed');
 
   test('DNS resolution should be skipped if host name contains port', async () => {
-    const address = await resolvePublicAddress(`${HOST}:${TARGET_PORT}`, BindingType.PDC);
+    const address = await resolveInternetAddress(`${HOST}:${TARGET_PORT}`, BindingType.PDC);
 
     expect(address).toHaveProperty('host', HOST);
     expect(address).toHaveProperty('port', TARGET_PORT);
@@ -45,7 +45,7 @@ describe('resolvePublicAddress', () => {
   });
 
   test('Specified domain name should be requested', async () => {
-    await resolvePublicAddress(HOST, BindingType.PDC);
+    await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(mockGetDNS).toBeCalledWith(
       expect.objectContaining({ name: `_${BindingType.PDC}._tcp.${HOST}` }),
@@ -53,13 +53,13 @@ describe('resolvePublicAddress', () => {
   });
 
   test('DNSSEC verification should be requested', async () => {
-    await resolvePublicAddress(HOST, BindingType.PDC);
+    await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(mockGetDNS).toBeCalledWith(expect.objectContaining({ dnssec: true }));
   });
 
   test('SRV record should be requested', async () => {
-    await resolvePublicAddress(HOST, BindingType.PDC);
+    await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(mockGetDNS).toBeCalledWith(
       expect.objectContaining({ name: HOST_SRV_NAME, rrtype: 'SRV' }),
@@ -67,7 +67,7 @@ describe('resolvePublicAddress', () => {
   });
 
   test('CloudFlare resolver should be used by default', async () => {
-    await resolvePublicAddress(HOST, BindingType.PDC);
+    await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(mockDOH).toBeCalledWith(
       expect.objectContaining({ url: 'https://cloudflare-dns.com/dns-query' }),
@@ -77,7 +77,7 @@ describe('resolvePublicAddress', () => {
   test('DNS resolver should be customizable', async () => {
     const resolverURL = 'https://dns.example.com/dns-query';
 
-    await resolvePublicAddress(HOST, BindingType.PDC, resolverURL);
+    await resolveInternetAddress(HOST, BindingType.PDC, resolverURL);
 
     expect(mockDOH).toBeCalledWith(expect.objectContaining({ url: resolverURL }));
   });
@@ -85,22 +85,22 @@ describe('resolvePublicAddress', () => {
   test('Null should be returned if domain does not exist', async () => {
     mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, rcode: 'NXDOMAIN' });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).resolves.toBeNull();
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).resolves.toBeNull();
   });
 
   test('An error should be thrown if DNS lookup status is not NOERROR', async () => {
     const status = 'SERVFAIL';
     mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, rcode: status });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
-      new PublicAddressingError(`SRV lookup for ${HOST_SRV_NAME} failed with status ${status}`),
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      new InternetAddressingError(`SRV lookup for ${HOST_SRV_NAME} failed with status ${status}`),
     );
   });
 
   test('An error should be thrown if the Answer is empty', async () => {
     mockGetDNS.mockReturnValue({ ...SUCCESSFUL_RESPONSE, answers: [] });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toEqual(
       MALFORMED_ANSWER_ERROR,
     );
   });
@@ -116,7 +116,7 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toEqual(
       MALFORMED_ANSWER_ERROR,
     );
   });
@@ -132,7 +132,7 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toEqual(
       MALFORMED_ANSWER_ERROR,
     );
   });
@@ -148,7 +148,7 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toEqual(
       MALFORMED_ANSWER_ERROR,
     );
   });
@@ -159,7 +159,7 @@ describe('resolvePublicAddress', () => {
     (networkError as any).errno = 'ENOTFOUND';
     mockGetDNS.mockRejectedValue(networkError);
 
-    const error = await getPromiseRejection(resolvePublicAddress(HOST, BindingType.PDC));
+    const error = await getPromiseRejection(resolveInternetAddress(HOST, BindingType.PDC));
 
     expect(error).toBeInstanceOf(UnreachableResolverError);
     expect(error.message).toMatch(/^Failed to reach DoH resolver:/);
@@ -170,21 +170,21 @@ describe('resolvePublicAddress', () => {
     const dnsLookupError = new Error('This is unexpected');
     mockGetDNS.mockRejectedValue(dnsLookupError);
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toBe(dnsLookupError);
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toBe(dnsLookupError);
   });
 
   test('An error should be thrown if DNSSEC verification fails', async () => {
     mockGetDNS.mockResolvedValue({ ...SUCCESSFUL_RESPONSE, flag_ad: false });
 
-    await expect(resolvePublicAddress(HOST, BindingType.PDC)).rejects.toEqual(
-      new PublicAddressingError(
+    await expect(resolveInternetAddress(HOST, BindingType.PDC)).rejects.toEqual(
+      new InternetAddressingError(
         `DNSSEC verification for SRV _${BindingType.PDC}._tcp.${HOST} failed`,
       ),
     );
   });
 
   test('Address should be returned if record exists and is valid', async () => {
-    const address = await resolvePublicAddress(HOST, BindingType.PDC);
+    const address = await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(address).toHaveProperty('host', TARGET_HOST);
     expect(address).toHaveProperty('port', TARGET_PORT);
@@ -196,7 +196,7 @@ describe('resolvePublicAddress', () => {
       answers: [{ type: 'RRSIG' }, ...SUCCESSFUL_RESPONSE.answers],
     });
 
-    const address = await resolvePublicAddress(HOST, BindingType.PDC);
+    const address = await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(address).toHaveProperty('host', TARGET_HOST);
     expect(address).toHaveProperty('port', TARGET_PORT);
@@ -213,7 +213,7 @@ describe('resolvePublicAddress', () => {
       ],
     });
 
-    const address = await resolvePublicAddress(HOST, BindingType.PDC);
+    const address = await resolveInternetAddress(HOST, BindingType.PDC);
 
     expect(address).toHaveProperty('host', TARGET_HOST);
   });

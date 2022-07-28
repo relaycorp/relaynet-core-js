@@ -26,7 +26,7 @@ export {
   getPublicKeyDigest,
   getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   RSAKeyGenOptions,
 } from './lib/crypto_wrappers/keys';
 export { PrivateKey, RsaPssPrivateKey } from './lib/crypto_wrappers/PrivateKey';
@@ -63,7 +63,7 @@ export { default as RAMFError } from './lib/ramf/RAMFError';
 export { default as RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';
 export { MAX_RAMF_MESSAGE_LENGTH } from './lib/ramf/serialization';
 export { default as RAMFMessage } from './lib/messages/RAMFMessage';
-export { RecipientAddressType } from './lib/messages/RecipientAddressType';
+export { Recipient } from './lib/messages/Recipient';
 export { default as Parcel } from './lib/messages/Parcel';
 export { default as ServiceMessage } from './lib/messages/payloads/ServiceMessage';
 export { default as Cargo } from './lib/messages/Cargo';
@@ -98,11 +98,11 @@ export { PrivateGateway } from './lib/nodes/PrivateGateway';
 export { CargoMessageStream } from './lib/nodes/CargoMessageStream';
 export { Channel } from './lib/nodes/channels/Channel';
 export { GatewayChannel } from './lib/nodes/channels/GatewayChannel';
-export { PrivatePublicGatewayChannel } from './lib/nodes/channels/PrivatePublicGatewayChannel';
+export { PrivateInternetGatewayChannel } from './lib/nodes/channels/PrivateInternetGatewayChannel';
 
 //endregion
 
 export { NodeCryptoOptions } from './lib/nodes/NodeCryptoOptions';
 export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
 export * from './lib/nodes/errors';
-export * from './lib/publicAddressing';
+export * from './lib/internetAddressing';

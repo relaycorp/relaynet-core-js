@@ -1,5 +1,3 @@
-/* tslint:disable:no-let */
-
 import { arrayBufferFrom, generateStubCert, getMockContext, mockSpy } from '../_test_utils';
 import { HashingAlgorithm } from '../crypto_wrappers/algorithms';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';

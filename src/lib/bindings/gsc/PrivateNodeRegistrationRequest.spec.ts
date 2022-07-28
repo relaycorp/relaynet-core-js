@@ -4,7 +4,7 @@ import {
   generateRSAKeyPair,
   PrivateNodeRegistrationRequest,
 } from '../../../index';
-import { arrayBufferFrom, getAsn1SequenceItem } from '../../_test_utils';
+import { arrayBufferFrom, getPrimitiveItemFromConstructed } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import { verify } from '../../crypto_wrappers/rsaSigning';
@@ -27,7 +27,7 @@ describe('serialize', () => {
     const serialization = await request.serialize(privateNodeKeyPair.privateKey);
 
     const sequence = derDeserialize(serialization);
-    expect(getAsn1SequenceItem(sequence, 0)).toHaveProperty(
+    expect(getPrimitiveItemFromConstructed(sequence, 0)).toHaveProperty(
       'valueBlock.valueHex',
       arrayBufferFrom(await derSerializePublicKey(privateNodeKeyPair.publicKey)),
     );
@@ -42,7 +42,7 @@ describe('serialize', () => {
     const serialization = await request.serialize(privateNodeKeyPair.privateKey);
 
     const sequence = derDeserialize(serialization);
-    expect(getAsn1SequenceItem(sequence, 1)).toHaveProperty(
+    expect(getPrimitiveItemFromConstructed(sequence, 1)).toHaveProperty(
       'valueBlock.valueHex',
       authorizationSerialized,
     );
@@ -57,7 +57,7 @@ describe('serialize', () => {
     const serialization = await request.serialize(privateNodeKeyPair.privateKey);
 
     const sequence = derDeserialize(serialization);
-    const signature = getAsn1SequenceItem(sequence, 2).valueBlock.valueHex;
+    const signature = getPrimitiveItemFromConstructed(sequence, 2).valueBlock.valueHex;
     const expectedPNRACountersignature = makeImplicitlyTaggedSequence(
       new ObjectIdentifier({
         value: RELAYNET_OIDS.NODE_REGISTRATION.AUTHORIZATION_COUNTERSIGNATURE,

@@ -6,13 +6,10 @@ import { Verifier } from './signatures/Verifier';
 
 export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {
   public async getGSCVerifier<V extends Verifier>(
-    peerPrivateAddress: string,
+    peerId: string,
     verifierClass: new (trustedCertificates: readonly Certificate[]) => V,
   ): Promise<V> {
-    const trustedPaths = await this.keyStores.certificateStore.retrieveAll(
-      this.privateAddress,
-      peerPrivateAddress,
-    );
+    const trustedPaths = await this.keyStores.certificateStore.retrieveAll(this.id, peerId);
     return new verifierClass(trustedPaths.map((p) => p.leafCertificate));
   }
 }

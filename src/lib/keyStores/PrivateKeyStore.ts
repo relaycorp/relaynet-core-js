@@ -4,7 +4,7 @@ import {
   derDeserializeECDHPrivateKey,
   derSerializePrivateKey,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   RSAKeyGenOptions,
 } from '../crypto_wrappers/keys';
 import { IdentityKeyPair } from '../IdentityKeyPair';
@@ -16,8 +16,8 @@ import UnknownKeyError from './UnknownKeyError';
  */
 export interface SessionPrivateKeyData {
   readonly keySerialized: Buffer;
-  readonly privateAddress: string;
-  readonly peerPrivateAddress?: string;
+  readonly nodeId: string;
+  readonly peerId?: string;
 }
 
 export abstract class PrivateKeyStore {
@@ -27,22 +27,22 @@ export abstract class PrivateKeyStore {
     keyOptions: Partial<RSAKeyGenOptions> = {},
   ): Promise<IdentityKeyPair> {
     const keyPair = await this.generateRSAKeyPair(keyOptions);
-    const privateAddress = await getPrivateAddressFromIdentityKey(keyPair.publicKey);
+    const id = await getIdFromIdentityKey(keyPair.publicKey);
     try {
-      await this.saveIdentityKey(privateAddress, keyPair.privateKey);
+      await this.saveIdentityKey(id, keyPair.privateKey);
     } catch (err) {
-      throw new KeyStoreError(err as Error, `Failed to save key for ${privateAddress}`);
+      throw new KeyStoreError(err as Error, `Failed to save key for ${id}`);
     }
-    return { ...keyPair, privateAddress };
+    return { ...keyPair, id };
   }
 
   /**
    * Return the private component of a node key pair if it exists.
    *
-   * @param privateAddress
+   * @param nodeId
    * @throws {KeyStoreError} if the backend failed to retrieve the key due to an error
    */
-  public abstract retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null>;
+  public abstract retrieveIdentityKey(nodeId: string): Promise<CryptoKey | null>;
 
   //endregion
   //region Session keys
@@ -50,18 +50,13 @@ export abstract class PrivateKeyStore {
   public async saveSessionKey(
     privateKey: CryptoKey,
     keyId: Buffer,
-    privateAddress: string,
-    peerPrivateAddress?: string,
+    nodeId: string,
+    peerId?: string,
   ): Promise<void> {
     const keyIdString = keyId.toString('hex');
     const privateKeyDer = await derSerializePrivateKey(privateKey);
     try {
-      await this.saveSessionKeySerialized(
-        keyIdString,
-        privateKeyDer,
-        privateAddress,
-        peerPrivateAddress,
-      );
+      await this.saveSessionKeySerialized(keyIdString, privateKeyDer, nodeId, peerId);
     } catch (error) {
       throw new KeyStoreError(error as Error, `Failed to save key ${keyIdString}`);
     }
@@ -71,17 +66,14 @@ export abstract class PrivateKeyStore {
    * Return the private component of an initial session key pair.
    *
    * @param keyId The key pair id (typically the serial number)
-   * @param privateAddress The private address of the node that owns the key
+   * @param nodeId The id of the node that owns the key
    * @throws UnknownKeyError when the key does not exist
-   * @throws PrivateKeyStoreError when the look up could not be done
+   * @throws PrivateKeyStoreError when the look-up could not be done
    */
-  public async retrieveUnboundSessionKey(
-    keyId: Buffer,
-    privateAddress: string,
-  ): Promise<CryptoKey> {
-    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, privateAddress);
+  public async retrieveUnboundSessionKey(keyId: Buffer, nodeId: string): Promise<CryptoKey> {
+    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, nodeId);
 
-    if (keyData.peerPrivateAddress) {
+    if (keyData.peerId) {
       throw new UnknownKeyError(`Key ${keyId.toString('hex')} is bound`);
     }
 
@@ -92,24 +84,24 @@ export abstract class PrivateKeyStore {
    * Retrieve private session key, regardless of whether it's an initial key or not.
    *
    * @param keyId The key pair id (typically the serial number)
-   * @param privateAddress The private address of the node that owns the key
-   * @param peerPrivateAddress The private address of the recipient, in case the key is bound to
+   * @param nodeId The id of the node that owns the key
+   * @param peerId The id of the recipient, in case the key is bound to
    *    a recipient
    * @throws UnknownKeyError when the key does not exist
-   * @throws PrivateKeyStoreError when the look up could not be done
+   * @throws PrivateKeyStoreError when the look-up could not be done
    */
   public async retrieveSessionKey(
     keyId: Buffer,
-    privateAddress: string,
-    peerPrivateAddress: string,
+    nodeId: string,
+    peerId: string,
   ): Promise<CryptoKey> {
-    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, privateAddress);
+    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, nodeId);
     const keyIdHex = keyId.toString('hex');
 
-    if (keyData.peerPrivateAddress && peerPrivateAddress !== keyData.peerPrivateAddress) {
+    if (keyData.peerId && peerId !== keyData.peerId) {
       throw new UnknownKeyError(
         `Session key ${keyIdHex} is bound to another recipient ` +
-          `(${keyData.peerPrivateAddress}, not ${peerPrivateAddress})`,
+          `(${keyData.peerId}, not ${peerId})`,
       );
     }
 
@@ -118,19 +110,19 @@ export abstract class PrivateKeyStore {
 
   //endregion
 
-  public abstract saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void>;
+  public abstract saveIdentityKey(nodeId: string, privateKey: CryptoKey): Promise<void>;
 
   protected abstract saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
-    privateAddress: string,
-    peerPrivateAddress?: string,
+    nodeId: string,
+    peerId?: string,
   ): Promise<void>;
   protected abstract retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null>;
 
   private async retrieveSessionKeyDataOrThrowError(
     keyId: Buffer,
-    privateAddress: string,
+    nodeId: string,
   ): Promise<SessionPrivateKeyData> {
     const keyIdHex = keyId.toString('hex');
     let keyData: SessionPrivateKeyData | null;
@@ -142,7 +134,7 @@ export abstract class PrivateKeyStore {
     if (keyData === null) {
       throw new UnknownKeyError(`Key ${keyIdHex} does not exist`);
     }
-    if (keyData.privateAddress !== privateAddress) {
+    if (keyData.nodeId !== nodeId) {
       throw new UnknownKeyError('Key is owned by a different node');
     }
     return keyData;

@@ -1,3 +1,5 @@
+import { addDays } from 'date-fns';
+
 import {
   arrayBufferFrom,
   expectArrayBuffersToEqual,
@@ -8,6 +10,7 @@ import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import InvalidMessageError from '../../messages/InvalidMessageError';
 import Parcel from '../../messages/Parcel';
+import { Recipient } from '../../messages/Recipient';
 import {
   issueDeliveryAuthorization,
   issueEndpointCertificate,
@@ -23,8 +26,7 @@ let pdaCertificate: Certificate;
 let recipientCertificate: Certificate;
 let gatewayCertificate: Certificate;
 beforeAll(async () => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrow = addDays(new Date(), 1);
 
   const caKeyPair = await generateRSAKeyPair();
   gatewayCertificate = reSerializeCertificate(
@@ -54,6 +56,13 @@ beforeAll(async () => {
       validityEndDate: tomorrow,
     }),
   );
+});
+
+let recipient: Recipient;
+beforeAll(async () => {
+  recipient = {
+    id: await recipientCertificate.calculateSubjectId(),
+  };
 });
 
 test('Parcel serialized should be honored', () => {
@@ -88,27 +97,12 @@ describe('deserializeAndValidateParcel', () => {
     await expect(collection.deserializeAndValidateParcel()).rejects.toBeInstanceOf(RAMFSyntaxError);
   });
 
-  test('Parcels bound for public endpoints should be refused', async () => {
-    const parcel = new Parcel('https://example.com', pdaCertificate, Buffer.from([]), {
-      senderCaCertificateChain: [gatewayCertificate],
-    });
-    const collection = new ParcelCollection(
-      await parcel.serialize(pdaGranteeKeyPair.privateKey),
-      [gatewayCertificate],
-      jest.fn(),
-    );
-
-    await expect(collection.deserializeAndValidateParcel()).rejects.toBeInstanceOf(
-      InvalidMessageError,
-    );
-  });
-
   test('Parcels from unauthorized senders should be refused', async () => {
     const unauthorizedSenderCertificate = await generateStubCert({
       issuerPrivateKey: pdaGranteeKeyPair.privateKey,
       subjectPublicKey: pdaGranteeKeyPair.publicKey,
     });
-    const parcel = new Parcel('0deadbeef', unauthorizedSenderCertificate, Buffer.from([]));
+    const parcel = new Parcel(recipient, unauthorizedSenderCertificate, Buffer.from([]));
     const collection = new ParcelCollection(
       await parcel.serialize(pdaGranteeKeyPair.privateKey),
       [gatewayCertificate],
@@ -121,12 +115,9 @@ describe('deserializeAndValidateParcel', () => {
   });
 
   test('Valid parcels should be returned', async () => {
-    const parcel = new Parcel(
-      await recipientCertificate.calculateSubjectPrivateAddress(),
-      pdaCertificate,
-      Buffer.from([]),
-      { senderCaCertificateChain: [recipientCertificate] },
-    );
+    const parcel = new Parcel(recipient, pdaCertificate, Buffer.from([]), {
+      senderCaCertificateChain: [recipientCertificate],
+    });
     const collection = new ParcelCollection(
       await parcel.serialize(pdaGranteeKeyPair.privateKey),
       [gatewayCertificate],

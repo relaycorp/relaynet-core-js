@@ -7,11 +7,7 @@ import * as pkijs from 'pkijs';
 import { generateStubCert, reSerializeCertificate, sha256Hex } from '../../_test_utils';
 import * as oids from '../../oids';
 import { derDeserialize, getPkijsCrypto } from '../_utils';
-import {
-  derSerializePublicKey,
-  generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
-} from '../keys';
+import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../keys';
 import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
@@ -655,7 +651,7 @@ describe('getCommonName()', () => {
   });
 });
 
-describe('calculateSubjectPrivateAddress', () => {
+describe('calculateSubjectId', () => {
   test('Private node address should be returned', async () => {
     const nodeKeyPair = await generateRSAKeyPair();
     const nodeCertificate = await generateStubCert({
@@ -663,8 +659,8 @@ describe('calculateSubjectPrivateAddress', () => {
       subjectPublicKey: nodeKeyPair.publicKey,
     });
 
-    await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
-      await getPrivateAddressFromIdentityKey(nodeKeyPair.publicKey),
+    await expect(nodeCertificate.calculateSubjectId()).resolves.toEqual(
+      await getIdFromIdentityKey(nodeKeyPair.publicKey),
     );
   });
 
@@ -676,20 +672,20 @@ describe('calculateSubjectPrivateAddress', () => {
     });
     const getPublicKeySpy = jest.spyOn(nodeCertificate, 'getPublicKey');
 
-    const address = await nodeCertificate.calculateSubjectPrivateAddress();
-    await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(address);
+    const address = await nodeCertificate.calculateSubjectId();
+    await expect(nodeCertificate.calculateSubjectId()).resolves.toEqual(address);
 
     expect(getPublicKeySpy).toBeCalledTimes(1);
   });
 });
 
-describe('getIssuerPrivateAddress', () => {
+describe('getIssuerId', () => {
   test('Nothing should be output if there are no extensions', async () => {
     const certificate = await generateStubCert({});
     // tslint:disable-next-line:no-delete no-object-mutation
     delete certificate.pkijsCertificate.extensions;
 
-    expect(certificate.getIssuerPrivateAddress()).toBeNull();
+    expect(certificate.getIssuerId()).toBeNull();
   });
 
   test('Nothing should be output if extension is missing', async () => {
@@ -699,18 +695,16 @@ describe('getIssuerPrivateAddress', () => {
       (e) => e.extnID !== oids.AUTHORITY_KEY,
     );
 
-    expect(certificate.getIssuerPrivateAddress()).toBeNull();
+    expect(certificate.getIssuerId()).toBeNull();
   });
 
-  test('Private address of issuer should be output if extension is present', async () => {
+  test('Issuer id should be output if extension is present', async () => {
     const certificate = await generateStubCert({
       issuerCertificate,
       issuerPrivateKey: issuerKeyPair.privateKey,
     });
 
-    expect(certificate.getIssuerPrivateAddress()).toEqual(
-      await issuerCertificate.calculateSubjectPrivateAddress(),
-    );
+    expect(certificate.getIssuerId()).toEqual(await issuerCertificate.calculateSubjectId());
   });
 });
 

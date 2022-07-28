@@ -1,4 +1,4 @@
-/* tslint:disable:no-let no-object-mutation */
+/* tslint:disable:no-object-mutation */
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 
@@ -97,7 +97,7 @@ describe('CargoMessageSet', () => {
     let privateKey: CryptoKey;
     let certificate: Certificate;
 
-    const PCA = new ParcelCollectionAck('https://sender.endpoint/', 'deadbeef', 'parcel-id');
+    const PCA = new ParcelCollectionAck('0deadc0de', 'deadbeef', 'parcel-id');
 
     beforeAll(async () => {
       const senderKeyPair = await generateRSAKeyPair();
@@ -109,7 +109,7 @@ describe('CargoMessageSet', () => {
     });
 
     test('Parcels should be returned', async () => {
-      const parcel = new Parcel('0deadbeef', certificate, Buffer.from('hi'));
+      const parcel = new Parcel({ id: '0deadbeef' }, certificate, Buffer.from('hi'));
       const parcelSerialization = await parcel.serialize(privateKey);
 
       const item = await CargoMessageSet.deserializeItem(parcelSerialization);
@@ -148,7 +148,7 @@ describe('CargoMessageSet', () => {
     });
 
     test('An error should be yielded when unsupported RAMF message is found', async () => {
-      const innerCargo = new Cargo('address', certificate, Buffer.from('hi'));
+      const innerCargo = new Cargo({ id: 'address' }, certificate, Buffer.from('hi'));
       const cargoSerialization = await innerCargo.serialize(privateKey);
 
       await expect(CargoMessageSet.deserializeItem(cargoSerialization)).rejects.toThrow(

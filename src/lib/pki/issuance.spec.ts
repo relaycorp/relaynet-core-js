@@ -65,7 +65,7 @@ describe('issueGatewayCertificate', () => {
     expect(mockCertificateIssue.mock.calls[0][0]).toMatchObject(basicCertificateOptions);
   });
 
-  test('Certificate should have its private address as its Common Name (CN)', async () => {
+  test('Certificate should have its id as its Common Name (CN)', async () => {
     await issueGatewayCertificate(minimalCertificateOptions);
 
     expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(
@@ -121,7 +121,7 @@ describe('issueEndpointCertificate', () => {
     expect(mockCertificateIssue.mock.calls[0][0]).toMatchObject(basicCertificateOptions);
   });
 
-  test('Certificate should have its private address as its Common Name (CN)', async () => {
+  test('Certificate should have its id as its Common Name (CN)', async () => {
     await issueEndpointCertificate(minimalCertificateOptions);
 
     expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(
@@ -192,7 +192,7 @@ describe('issueDeliveryAuthorization', () => {
     expect(mockCertificateIssue.mock.calls[0][0]).toMatchObject(basicCertificateOptions);
   });
 
-  test('Certificate should have its private address as its Common Name (CN)', async () => {
+  test('Certificate should have its id as its Common Name (CN)', async () => {
     await issueDeliveryAuthorization(minimalCertificateOptions);
 
     expect(mockCertificateIssue.mock.calls[0][0]).toHaveProperty(

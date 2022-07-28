@@ -6,31 +6,31 @@ import InvalidMessageError from './InvalidMessageError';
 import { ParcelCollectionAck } from './ParcelCollectionAck';
 
 describe('ParcelCollectionAck', () => {
-  const SENDER_ENDPOINT_PRIVATE_ADDRESS = '0deadbeef';
-  const RECIPIENT_ENDPOINT_ADDRESS = 'https://example.com';
+  const SENDER_ENDPOINT_ID = '0deadbeef';
+  const RECIPIENT_ENDPOINT_INTERNET_ADDRESS = 'example.com';
   const PARCEL_ID = 'the-parcel-id';
 
   describe('serialize', () => {
     test('Serialization should start with format signature', () => {
       const pca = new ParcelCollectionAck(
-        SENDER_ENDPOINT_PRIVATE_ADDRESS,
-        RECIPIENT_ENDPOINT_ADDRESS,
+        SENDER_ENDPOINT_ID,
+        RECIPIENT_ENDPOINT_INTERNET_ADDRESS,
         PARCEL_ID,
       );
 
       const pcaSerialized = pca.serialize();
 
       const expectedFormatSignature = Buffer.concat([
-        Buffer.from('Relaynet'),
+        Buffer.from('Awala'),
         Buffer.from([0x51, 0x00]),
       ]);
-      expect(Buffer.from(pcaSerialized).slice(0, 10)).toEqual(expectedFormatSignature);
+      expect(Buffer.from(pcaSerialized).slice(0, 7)).toEqual(expectedFormatSignature);
     });
 
     test('An ACK should be serialized as a 3-item sequence', () => {
       const pca = new ParcelCollectionAck(
-        SENDER_ENDPOINT_PRIVATE_ADDRESS,
-        RECIPIENT_ENDPOINT_ADDRESS,
+        SENDER_ENDPOINT_ID,
+        RECIPIENT_ENDPOINT_INTERNET_ADDRESS,
         PARCEL_ID,
       );
 
@@ -41,10 +41,10 @@ describe('ParcelCollectionAck', () => {
       const pcaSequenceItems = pcaSequenceBlock.valueBlock.value;
       expect(pcaSequenceItems).toHaveLength(3);
       expect((pcaSequenceItems[0] as asn1js.Primitive).valueBlock.valueHex).toEqual(
-        arrayBufferFrom(SENDER_ENDPOINT_PRIVATE_ADDRESS),
+        arrayBufferFrom(SENDER_ENDPOINT_ID),
       );
       expect((pcaSequenceItems[1] as asn1js.Primitive).valueBlock.valueHex).toEqual(
-        arrayBufferFrom(RECIPIENT_ENDPOINT_ADDRESS),
+        arrayBufferFrom(RECIPIENT_ENDPOINT_INTERNET_ADDRESS),
       );
       expect((pcaSequenceItems[2] as asn1js.Primitive).valueBlock.valueHex).toEqual(
         arrayBufferFrom(PARCEL_ID),
@@ -52,7 +52,7 @@ describe('ParcelCollectionAck', () => {
     });
 
     function skipFormatSignatureFromSerialization(pcaSerialized: ArrayBuffer): ArrayBuffer {
-      return pcaSerialized.slice(10);
+      return pcaSerialized.slice(7);
     }
 
     function parsePCA(pcaSerialized: ArrayBuffer): asn1js.Sequence {
@@ -110,15 +110,15 @@ describe('ParcelCollectionAck', () => {
 
     test('A new instance should be returned if serialization is valid', () => {
       const pca = new ParcelCollectionAck(
-        SENDER_ENDPOINT_PRIVATE_ADDRESS,
-        RECIPIENT_ENDPOINT_ADDRESS,
+        SENDER_ENDPOINT_ID,
+        RECIPIENT_ENDPOINT_INTERNET_ADDRESS,
         PARCEL_ID,
       );
 
       const pcaDeserialized = ParcelCollectionAck.deserialize(pca.serialize());
 
-      expect(pcaDeserialized.senderEndpointPrivateAddress).toEqual(SENDER_ENDPOINT_PRIVATE_ADDRESS);
-      expect(pcaDeserialized.recipientEndpointAddress).toEqual(RECIPIENT_ENDPOINT_ADDRESS);
+      expect(pcaDeserialized.senderEndpointId).toEqual(SENDER_ENDPOINT_ID);
+      expect(pcaDeserialized.recipientEndpointId).toEqual(RECIPIENT_ENDPOINT_INTERNET_ADDRESS);
       expect(pcaDeserialized.parcelId).toEqual(PARCEL_ID);
     });
   });

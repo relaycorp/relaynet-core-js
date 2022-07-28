@@ -2,7 +2,7 @@ import {
   derDeserializeECDHPublicKey,
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { SessionKey } from '../SessionKey';
 import { KeyStoreError } from './KeyStoreError';
@@ -17,25 +17,21 @@ export abstract class PublicKeyStore {
   //region Identity keys
 
   public async saveIdentityKey(key: CryptoKey): Promise<void> {
-    const peerPrivateAddress = await getPrivateAddressFromIdentityKey(key);
+    const peerId = await getIdFromIdentityKey(key);
     const keySerialized = await derSerializePublicKey(key);
-    await this.saveIdentityKeySerialized(keySerialized, peerPrivateAddress);
+    await this.saveIdentityKeySerialized(keySerialized, peerId);
   }
 
-  public async retrieveIdentityKey(peerPrivateAddress: string): Promise<CryptoKey | null> {
-    const keySerialized = await this.retrieveIdentityKeySerialized(peerPrivateAddress);
+  public async retrieveIdentityKey(peerId: string): Promise<CryptoKey | null> {
+    const keySerialized = await this.retrieveIdentityKeySerialized(peerId);
     return keySerialized ? derDeserializeRSAPublicKey(keySerialized) : null;
   }
 
   //endregion
   //region Session keys
 
-  public async saveSessionKey(
-    key: SessionKey,
-    peerPrivateAddress: string,
-    creationTime: Date,
-  ): Promise<void> {
-    const priorKeyData = await this.fetchSessionKeyDataOrWrapError(peerPrivateAddress);
+  public async saveSessionKey(key: SessionKey, peerId: string, creationTime: Date): Promise<void> {
+    const priorKeyData = await this.fetchSessionKeyDataOrWrapError(peerId);
     if (priorKeyData && creationTime <= priorKeyData.publicKeyCreationTime) {
       return;
     }
@@ -46,14 +42,14 @@ export abstract class PublicKeyStore {
       publicKeyId: key.keyId,
     };
     try {
-      await this.saveSessionKeyData(keyData, peerPrivateAddress);
+      await this.saveSessionKeyData(keyData, peerId);
     } catch (error) {
       throw new KeyStoreError(error as Error, 'Failed to save public session key');
     }
   }
 
-  public async retrieveLastSessionKey(peerPrivateAddress: string): Promise<SessionKey | null> {
-    const keyData = await this.fetchSessionKeyDataOrWrapError(peerPrivateAddress);
+  public async retrieveLastSessionKey(peerId: string): Promise<SessionKey | null> {
+    const keyData = await this.fetchSessionKeyDataOrWrapError(peerId);
     if (!keyData) {
       return null;
     }
@@ -63,27 +59,23 @@ export abstract class PublicKeyStore {
 
   //endregion
 
-  protected abstract retrieveIdentityKeySerialized(
-    peerPrivateAddress: string,
-  ): Promise<Buffer | null>;
-  protected abstract retrieveSessionKeyData(
-    peerPrivateAddress: string,
-  ): Promise<SessionPublicKeyData | null>;
+  protected abstract retrieveIdentityKeySerialized(peerId: string): Promise<Buffer | null>;
+  protected abstract retrieveSessionKeyData(peerId: string): Promise<SessionPublicKeyData | null>;
 
   protected abstract saveIdentityKeySerialized(
     keySerialized: Buffer,
-    peerPrivateAddress: string,
+    peerId: string,
   ): Promise<void>;
   protected abstract saveSessionKeyData(
     keyData: SessionPublicKeyData,
-    peerPrivateAddress: string,
+    peerId: string,
   ): Promise<void>;
 
   private async fetchSessionKeyDataOrWrapError(
-    peerPrivateAddress: string,
+    peerId: string,
   ): Promise<SessionPublicKeyData | null> {
     try {
-      return await this.retrieveSessionKeyData(peerPrivateAddress);
+      return await this.retrieveSessionKeyData(peerId);
     } catch (error) {
       throw new KeyStoreError(error as Error, 'Failed to retrieve key');
     }

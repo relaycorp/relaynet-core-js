@@ -9,13 +9,14 @@ import {
 } from '../../_test_utils';
 import { EnvelopedData, SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../../crypto_wrappers/cms/SignatureOptions';
-import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../../crypto_wrappers/keys';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import Cargo from '../../messages/Cargo';
 import Parcel from '../../messages/Parcel';
 import CargoMessageSet from '../../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../../messages/payloads/ServiceMessage';
+import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { SessionKey } from '../../SessionKey';
@@ -27,7 +28,7 @@ const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 
 const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
-let peerPrivateAddress: string;
+let peerId: string;
 let peerPublicKey: CryptoKey;
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
@@ -35,7 +36,7 @@ beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   const peerKeyPair = await generateRSAKeyPair();
-  peerPrivateAddress = await getPrivateAddressFromIdentityKey(peerKeyPair.publicKey);
+  peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerPublicKey = peerKeyPair.publicKey;
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
@@ -71,7 +72,7 @@ describe('generateCargoes', () => {
   beforeEach(async () => {
     await KEY_STORES.publicKeyStore.saveSessionKey(
       peerSessionKeyPair.sessionKey,
-      peerPrivateAddress,
+      peerId,
       new Date(),
     );
   });
@@ -91,7 +92,7 @@ describe('generateCargoes', () => {
     );
 
     const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-    expect(cargo.recipientAddress).toEqual(StubGatewayChannel.OUTBOUND_RAMF_ADDRESS);
+    expect(cargo.recipient.id).toEqual(StubGatewayChannel.OUTBOUND_RAMF_RECIPIENT_ID);
   });
 
   test('Payload should be encrypted with session key', async () => {
@@ -134,8 +135,8 @@ describe('generateCargoes', () => {
     await expect(
       KEY_STORES.privateKeyStore.retrieveSessionKey(
         originatorKey.keyId,
-        await nodeCertificate.calculateSubjectPrivateAddress(),
-        peerPrivateAddress,
+        await nodeCertificate.calculateSubjectId(),
+        peerId,
       ),
     ).toResolve();
   });
@@ -269,7 +270,7 @@ describe('generateCargoes', () => {
   test('Messages should be encapsulated into as few cargoes as possible', async () => {
     const channel = new StubGatewayChannel();
     const dummyParcel = await generateDummyParcel(
-      peerPrivateAddress,
+      peerId,
       peerSessionKeyPair.sessionKey,
       nodeCertificate,
     );
@@ -310,7 +311,7 @@ describe('generateCargoes', () => {
 });
 
 async function generateDummyParcel(
-  recipientAddress: string,
+  recipientId: string,
   recipientSessionKey: SessionKey,
   finalSenderCertificate: Certificate,
 ): Promise<Parcel> {
@@ -321,24 +322,17 @@ async function generateDummyParcel(
     recipientSessionKey,
   );
   const payloadSerialized = Buffer.from(envelopedData.serialize());
-  return new Parcel(recipientAddress, finalSenderCertificate, payloadSerialized);
+  return new Parcel({ id: recipientId }, finalSenderCertificate, payloadSerialized);
 }
 
 class StubGatewayChannel extends GatewayChannel {
-  public static readonly OUTBOUND_RAMF_ADDRESS = '0deadbeef';
+  public static readonly OUTBOUND_RAMF_RECIPIENT_ID = '0deadbeef';
 
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(
-      nodePrivateKey,
-      nodeCertificate,
-      peerPrivateAddress,
-      peerPublicKey,
-      KEY_STORES,
-      cryptoOptions,
-    );
+    super(nodePrivateKey, nodeCertificate, peerId, peerPublicKey, KEY_STORES, cryptoOptions);
   }
 
-  async getOutboundRAMFAddress(): Promise<string> {
-    return StubGatewayChannel.OUTBOUND_RAMF_ADDRESS;
+  async getOutboundRAMFRecipient(): Promise<Recipient> {
+    return { id: StubGatewayChannel.OUTBOUND_RAMF_RECIPIENT_ID };
   }
 }

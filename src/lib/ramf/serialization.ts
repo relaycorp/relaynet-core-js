@@ -1,8 +1,17 @@
-import * as asn1js from 'asn1js';
+import {
+  Constructed,
+  Integer,
+  OctetString,
+  Primitive,
+  Sequence,
+  verifySchema,
+  VisibleString,
+} from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
+import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
 
-import { SignatureOptions } from '../..';
+import { Recipient, SignatureOptions } from '../..';
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
@@ -27,14 +36,15 @@ const MAX_ID_LENGTH = 64;
 export const RAMF_MAX_TTL = 15552000;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
-const PRIVATE_ADDRESS_REGEX = /^[a-f0-9]+$/;
+const NODE_ID_REGEX = /^[a-f\d]+$/;
 
 /**
  * Maximum length of any SDU to be encapsulated in a CMS EnvelopedData value, per the RAMF spec.
  */
 export const MAX_SDU_PLAINTEXT_LENGTH = 8322048;
 
-const FORMAT_SIGNATURE_CONSTANT = Buffer.from('Relaynet');
+const FORMAT_SIGNATURE_CONSTANT = Buffer.from('Awala');
+const FORMAT_SIGNATURE_LENGTH = FORMAT_SIGNATURE_CONSTANT.byteLength + 2;
 
 interface MessageFormatSignature {
   readonly concreteMessageType: number;
@@ -42,7 +52,7 @@ interface MessageFormatSignature {
 }
 
 interface MessageFieldSet {
-  readonly recipientAddress: string;
+  readonly recipient: Recipient;
   readonly id: string;
   readonly date: Date;
   readonly ttl: number;
@@ -50,11 +60,11 @@ interface MessageFieldSet {
 }
 
 const ASN1_SCHEMA = makeHeterogeneousSequenceSchema('RAMFMessage', [
-  new asn1js.Primitive({ name: 'recipientAddress' }),
-  new asn1js.Primitive({ name: 'id' }),
-  new asn1js.Primitive({ name: 'date' }),
-  new asn1js.Primitive({ name: 'ttl' }),
-  new asn1js.Primitive({ name: 'payload' }),
+  new Constructed({ name: 'recipient' }),
+  new Primitive({ name: 'id' }),
+  new Primitive({ name: 'date' }),
+  new Primitive({ name: 'ttl' }),
+  new Primitive({ name: 'payload' }),
 ]);
 
 /**
@@ -74,7 +84,6 @@ export async function serialize(
   signatureOptions?: Partial<SignatureOptions>,
 ): Promise<ArrayBuffer> {
   //region Validation
-  validateRecipientAddressLength(message.recipientAddress);
   validateMessageIdLength(message.id);
   validateTtl(message.ttl);
   validatePayloadLength(message.payloadSerialized);
@@ -86,11 +95,11 @@ export async function serialize(
   );
 
   const fieldSetSerialized = makeImplicitlyTaggedSequence(
-    new asn1js.VisibleString({ value: message.recipientAddress }),
-    new asn1js.VisibleString({ value: message.id }),
+    encodeRecipientField(message.recipient),
+    new VisibleString({ value: message.id }),
     dateToASN1DateTimeInUTC(message.creationDate),
-    new asn1js.Integer({ value: message.ttl }),
-    new asn1js.OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
+    new Integer({ value: message.ttl }),
+    new OctetString({ valueHex: bufferToArray(message.payloadSerialized) }),
   ).toBER();
 
   //region Signature
@@ -114,6 +123,18 @@ export async function serialize(
   return serialization;
 }
 
+function encodeRecipientField(recipient: Recipient): Sequence {
+  validateRecipientFieldsLength(recipient);
+
+  const additionalItems = recipient.internetAddress
+    ? [new VisibleString({ value: recipient.internetAddress })]
+    : [];
+  return makeImplicitlyTaggedSequence(
+    new VisibleString({ value: recipient.id }),
+    ...additionalItems,
+  );
+}
+
 function validateMessageLength(serialization: ArrayBuffer): void {
   if (MAX_RAMF_MESSAGE_LENGTH < serialization.byteLength) {
     throw new RAMFSyntaxError(
@@ -129,24 +150,23 @@ export async function deserialize<M extends RAMFMessage<any>>(
   messageClass: new (...args: readonly any[]) => M,
 ): Promise<M> {
   validateMessageLength(serialization);
-  const messageFormatSignature = parseMessageFormatSignature(serialization.slice(0, 10));
+  const messageFormatSignature = parseMessageFormatSignature(serialization);
   validateFileFormatSignature(
     messageFormatSignature,
     concreteMessageTypeOctet,
     concreteMessageVersionOctet,
   );
 
-  const signatureVerification = await verifySignature(serialization.slice(10));
+  const signatureVerification = await verifySignature(serialization.slice(FORMAT_SIGNATURE_LENGTH));
 
   const messageFields = parseMessageFields(signatureVerification.plaintext);
-  validateRecipientAddressLength(messageFields.recipientAddress);
-  validateRecipientAddress(messageFields.recipientAddress);
+  validateRecipient(messageFields.recipient);
   validateMessageIdLength(messageFields.id);
   validateTtl(messageFields.ttl);
   validatePayloadLength(messageFields.payload);
 
   return new messageClass(
-    messageFields.recipientAddress,
+    messageFields.recipient,
     signatureVerification.signerCertificate,
     messageFields.payload,
     {
@@ -190,26 +210,34 @@ function validateFileFormatSignature(
   //endregion
 }
 
-function validateRecipientAddress(recipientAddress: string): void {
-  try {
-    // tslint:disable-next-line:no-unused-expression
-    new URL(recipientAddress);
-  } catch (_) {
-    // The address isn't public. Check if it's private:
-    if (!recipientAddress.match(PRIVATE_ADDRESS_REGEX)) {
-      throw new RAMFValidationError(
-        `Recipient address should be a valid node address (got: "${recipientAddress}")`,
-      );
-    }
+function validateRecipient(recipient: Recipient): void {
+  validateRecipientFieldsLength(recipient);
+
+  if (!recipient.id.match(NODE_ID_REGEX)) {
+    throw new RAMFSyntaxError(`Recipient id is malformed ("${recipient.id}")`);
+  }
+
+  if (recipient.internetAddress && !isValidDomain(recipient.internetAddress)) {
+    throw new RAMFSyntaxError(
+      `Recipient Internet address is malformed ("${recipient.internetAddress}")`,
+    );
   }
 }
 
-function validateRecipientAddressLength(recipientAddress: string): void {
-  const length = recipientAddress.length;
-  if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
+function validateRecipientFieldsLength(recipient: Recipient): void {
+  const idLength = recipient.id.length;
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < idLength) {
     throw new RAMFSyntaxError(
-      `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} characters ` +
-        `(got ${length})`,
+      `Recipient id should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} characters ` +
+        `(got ${idLength})`,
+    );
+  }
+
+  const internetAddressLength = recipient.internetAddress?.length ?? 0;
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < internetAddressLength) {
+    throw new RAMFSyntaxError(
+      `Recipient Internet address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} ` +
+        `characters (got ${internetAddressLength})`,
     );
   }
 }
@@ -244,34 +272,46 @@ function validatePayloadLength(payloadBuffer: ArrayBuffer): void {
 //region Deserialization validation
 
 function parseMessageFormatSignature(serialization: ArrayBuffer): MessageFormatSignature {
-  if (serialization.byteLength < 10) {
+  if (serialization.byteLength < FORMAT_SIGNATURE_LENGTH) {
     throw new RAMFSyntaxError('Serialization is too small to contain RAMF format signature');
   }
-  const formatSignature = Buffer.from(serialization.slice(0, 10));
-  if (!FORMAT_SIGNATURE_CONSTANT.equals(formatSignature.slice(0, 8))) {
-    throw new RAMFSyntaxError('RAMF format signature does not begin with "Relaynet"');
+  const formatSignature = Buffer.from(serialization.slice(0, FORMAT_SIGNATURE_LENGTH));
+  const formatSignatureConstant = formatSignature.slice(0, FORMAT_SIGNATURE_CONSTANT.byteLength);
+  if (!FORMAT_SIGNATURE_CONSTANT.equals(formatSignatureConstant)) {
+    throw new RAMFSyntaxError('RAMF format signature does not begin with "Awala"');
   }
-  return { concreteMessageType: formatSignature[8], concreteMessageVersion: formatSignature[9] };
+  return { concreteMessageType: formatSignature[5], concreteMessageVersion: formatSignature[6] };
 }
 
 function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
-  const result = asn1js.verifySchema(serialization, ASN1_SCHEMA);
+  const result = verifySchema(serialization, ASN1_SCHEMA);
   if (!result.verified) {
     throw new RAMFSyntaxError('Invalid RAMF fields');
   }
   const messageBlock = result.result.RAMFMessage;
   const textDecoder = new TextDecoder();
   const ttlBigInt = getIntegerFromPrimitiveBlock(messageBlock.ttl);
+
+  const recipientSequence = messageBlock.recipient.valueBlock.value;
+  if (recipientSequence.length === 0) {
+    throw new RAMFSyntaxError('Recipient SEQUENCE should at least contain the id');
+  }
+  const recipientId = textDecoder.decode(recipientSequence[0].valueBlock.valueHex);
+  const recipientInternetAddress =
+    2 <= recipientSequence.length
+      ? textDecoder.decode(recipientSequence[1].valueBlock.valueHex)
+      : undefined;
+
   return {
     date: getDateFromPrimitiveBlock(messageBlock.date),
     id: textDecoder.decode(messageBlock.id.valueBlock.valueHex),
     payload: Buffer.from(messageBlock.payload.valueBlock.valueHex),
-    recipientAddress: textDecoder.decode(messageBlock.recipientAddress.valueBlock.valueHex),
+    recipient: { id: recipientId, internetAddress: recipientInternetAddress },
     ttl: Number(ttlBigInt), // Cannot exceed Number.MAX_SAFE_INTEGER anyway
   };
 }
 
-function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
+function getDateFromPrimitiveBlock(block: Primitive): Date {
   try {
     return asn1DateTimeToDate(block);
   } catch (exc) {
@@ -279,8 +319,8 @@ function getDateFromPrimitiveBlock(block: asn1js.Primitive): Date {
   }
 }
 
-function getIntegerFromPrimitiveBlock(block: asn1js.Primitive): bigint {
-  const integerBlock = new asn1js.Integer({ valueHex: block.valueBlock.valueHexView });
+function getIntegerFromPrimitiveBlock(block: Primitive): bigint {
+  const integerBlock = new Integer({ valueHex: block.valueBlock.valueHexView });
   return integerBlock.toBigInt();
 }
 

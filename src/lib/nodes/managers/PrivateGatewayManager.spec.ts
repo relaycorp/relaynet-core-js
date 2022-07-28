@@ -9,10 +9,10 @@ afterEach(() => {
 
 describe('get', () => {
   test('PrivateGateway instances should be returned', async () => {
-    const { privateAddress } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
+    const { id } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
     const manager = new PrivateGatewayManager(KEY_STORES);
 
-    const gateway = await manager.get(privateAddress);
+    const gateway = await manager.get(id);
 
     expect(gateway).toBeInstanceOf(PrivateGateway);
   });

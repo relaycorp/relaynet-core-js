@@ -7,6 +7,7 @@ import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
+import { Recipient } from '../../messages/Recipient';
 import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
@@ -15,33 +16,33 @@ const CLOCK_DRIFT_TOLERANCE_MINUTES = 90;
 const OUTBOUND_CARGO_TTL_DAYS = 14;
 
 /**
- * Channel between a private gateway (the node) and its public gateway (the peer).
+ * Channel between a private gateway (the node) and its Internet gateway (the peer).
  */
-export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
+export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
   /**
    * @internal
    */
   constructor(
     privateGatewayPrivateKey: CryptoKey,
     privateGatewayDeliveryAuth: Certificate,
-    publicGatewayPrivateAddress: string,
-    publicGatewayPublicKey: CryptoKey,
-    public readonly publicGatewayPublicAddress: string,
+    internetGatewayId: string,
+    internetGatewayPublicKey: CryptoKey,
+    public readonly internetGatewayInternetAddress: string,
     keyStores: KeyStoreSet,
     cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
     super(
       privateGatewayPrivateKey,
       privateGatewayDeliveryAuth,
-      publicGatewayPrivateAddress,
-      publicGatewayPublicKey,
+      internetGatewayId,
+      internetGatewayPublicKey,
       keyStores,
       cryptoOptions,
     );
   }
 
-  async getOutboundRAMFAddress(): Promise<string> {
-    return `https://${this.publicGatewayPublicAddress}`;
+  async getOutboundRAMFRecipient(): Promise<Recipient> {
+    return { id: this.peerId, internetAddress: this.internetGatewayInternetAddress };
   }
 
   //region Private endpoint registration
@@ -90,7 +91,11 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
       subjectPublicKey: endpointPublicKey,
       validityEndDate: addMonths(new Date(), 6),
     });
-    const registration = new PrivateNodeRegistration(endpointCertificate, this.nodeDeliveryAuth);
+    const registration = new PrivateNodeRegistration(
+      endpointCertificate,
+      this.nodeDeliveryAuth,
+      this.internetGatewayInternetAddress,
+    );
     return registration.serialize();
   }
 
@@ -111,7 +116,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     const ccr = new CargoCollectionRequest(cargoDeliveryAuthorization);
     const ccaPayload = await this.wrapMessagePayload(ccr);
     const cca = new CargoCollectionAuthorization(
-      await this.getOutboundRAMFAddress(),
+      await this.getOutboundRAMFRecipient(),
       this.nodeDeliveryAuth,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },
