@@ -698,7 +698,7 @@ describe('getIssuerId', () => {
     expect(certificate.getIssuerId()).toBeNull();
   });
 
-  test('Private address of issuer should be output if extension is present', async () => {
+  test('Issuer id should be output if extension is present', async () => {
     const certificate = await generateStubCert({
       issuerCertificate,
       issuerPrivateKey: issuerKeyPair.privateKey,

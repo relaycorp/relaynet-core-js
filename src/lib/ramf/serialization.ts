@@ -36,7 +36,7 @@ const MAX_ID_LENGTH = 64;
 export const RAMF_MAX_TTL = 15552000;
 const MAX_PAYLOAD_LENGTH = 2 ** 23 - 1; // 8 MiB
 
-const PRIVATE_ADDRESS_REGEX = /^[a-f\d]+$/;
+const NODE_ID_REGEX = /^[a-f\d]+$/;
 
 /**
  * Maximum length of any SDU to be encapsulated in a CMS EnvelopedData value, per the RAMF spec.
@@ -212,7 +212,7 @@ function validateFileFormatSignature(
 function validateRecipient(recipient: Recipient): void {
   validateRecipientFieldsLength(recipient);
 
-  if (!recipient.id.match(PRIVATE_ADDRESS_REGEX)) {
+  if (!recipient.id.match(NODE_ID_REGEX)) {
     throw new RAMFSyntaxError(`Recipient id is malformed ("${recipient.id}")`);
   }
 
@@ -292,7 +292,7 @@ function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
 
   const recipientSequence = messageBlock.recipient.valueBlock.value;
   if (recipientSequence.length === 0) {
-    throw new RAMFSyntaxError('Recipient SEQUENCE should at least contain the private address');
+    throw new RAMFSyntaxError('Recipient SEQUENCE should at least contain the id');
   }
   const recipientId = textDecoder.decode(recipientSequence[0].valueBlock.valueHex);
   const recipientInternetAddress =

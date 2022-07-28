@@ -818,7 +818,7 @@ describe('MessageSerializer', () => {
               StubMessage,
             ),
           ).rejects.toEqual(
-            new RAMFSyntaxError('Recipient SEQUENCE should at least contain the private address'),
+            new RAMFSyntaxError('Recipient SEQUENCE should at least contain the id'),
           );
         });
 

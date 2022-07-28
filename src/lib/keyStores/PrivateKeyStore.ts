@@ -66,7 +66,7 @@ export abstract class PrivateKeyStore {
    * Return the private component of an initial session key pair.
    *
    * @param keyId The key pair id (typically the serial number)
-   * @param nodeId The private address of the node that owns the key
+   * @param nodeId The id of the node that owns the key
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look-up could not be done
    */
@@ -84,8 +84,8 @@ export abstract class PrivateKeyStore {
    * Retrieve private session key, regardless of whether it's an initial key or not.
    *
    * @param keyId The key pair id (typically the serial number)
-   * @param nodeId The private address of the node that owns the key
-   * @param peerId The private address of the recipient, in case the key is bound to
+   * @param nodeId The id of the node that owns the key
+   * @param peerId The id of the recipient, in case the key is bound to
    *    a recipient
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look-up could not be done

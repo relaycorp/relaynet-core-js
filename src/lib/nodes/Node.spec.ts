@@ -99,7 +99,6 @@ describe('getGSCSigner', () => {
 });
 
 describe('generateSessionKey', () => {
-  const PRIVATE_ADDRESS = '0deadbeef';
   test('Key should not be bound to any peer by default', async () => {
     const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
 
@@ -114,7 +113,7 @@ describe('generateSessionKey', () => {
 
   test('Key should be bound to a peer if explicitly set', async () => {
     const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
-    const peerId = `${PRIVATE_ADDRESS}cousin`;
+    const peerId = '0deadbeef';
 
     const sessionKey = await node.generateSessionKey(peerId);
 

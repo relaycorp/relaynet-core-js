@@ -47,7 +47,7 @@ describe('Identity keys', () => {
       },
     );
 
-    test('Private address should be returned', async () => {
+    test('Id should be returned', async () => {
       const keyPair = await MOCK_STORE.generateIdentityKeyPair();
 
       expect(keyPair.id).toEqual(await getIdFromIdentityKey(keyPair.publicKey));

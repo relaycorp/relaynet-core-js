@@ -427,7 +427,7 @@ test('getPublicKeyDigestHex should return the SHA-256 hex digest of the public k
 });
 
 describe('getIdFromIdentityKey', () => {
-  test('Private address should be computed from identity key', async () => {
+  test('Id should be computed from identity key', async () => {
     const keyPair = await generateRSAKeyPair();
 
     const id = await getIdFromIdentityKey(keyPair.publicKey);
