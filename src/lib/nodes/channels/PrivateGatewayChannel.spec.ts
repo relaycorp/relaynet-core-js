@@ -3,11 +3,12 @@ import { addDays, setMilliseconds, subMinutes, subSeconds } from 'date-fns';
 import {
   derSerializePublicKey,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   getRSAPublicKeyFromPrivate,
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
+import { Recipient } from '../../messages/Recipient';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
@@ -22,7 +23,7 @@ beforeAll(async () => {
   // Public gateway
   const publicGatewayKeyPair = await generateRSAKeyPair();
   publicGatewayPublicKey = publicGatewayKeyPair.publicKey;
-  publicGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(publicGatewayPublicKey);
+  publicGatewayPrivateAddress = await getIdFromIdentityKey(publicGatewayPublicKey);
   publicGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: publicGatewayKeyPair.privateKey,
     subjectPublicKey: publicGatewayPublicKey,
@@ -201,7 +202,7 @@ class StubPrivateGatewayChannel extends PrivateGatewayChannel {
     );
   }
 
-  async getOutboundRAMFAddress(): Promise<string> {
+  async getOutboundRAMFRecipient(): Promise<Recipient> {
     throw new Error('not implemented');
   }
 }

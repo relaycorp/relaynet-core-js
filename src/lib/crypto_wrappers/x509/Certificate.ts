@@ -4,7 +4,7 @@ import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
-import { getPrivateAddressFromIdentityKey, getPublicKeyDigest } from '../keys';
+import { getIdFromIdentityKey, getPublicKeyDigest } from '../keys';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
 import CertificateError from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
@@ -202,7 +202,7 @@ export default class Certificate {
   public async calculateSubjectPrivateAddress(): Promise<string> {
     if (!this.privateAddressCache) {
       // tslint:disable-next-line:no-object-mutation
-      this.privateAddressCache = await getPrivateAddressFromIdentityKey(await this.getPublicKey());
+      this.privateAddressCache = await getIdFromIdentityKey(await this.getPublicKey());
     }
     return this.privateAddressCache;
   }

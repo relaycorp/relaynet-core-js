@@ -14,12 +14,12 @@ export abstract class GatewayChannel extends Channel {
   public async *generateCargoes(messages: CargoMessageStream): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
-    const recipientAddress = await this.getOutboundRAMFAddress();
+    const recipient = await this.getOutboundRAMFRecipient();
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
       const creationDate = getCargoCreationTime();
       const ttl = getSecondsBetweenDates(creationDate, expiryDate);
       const cargo = new Cargo(
-        recipientAddress,
+        recipient,
         this.nodeDeliveryAuth,
         await this.encryptPayload(messageSerialized),
         { creationDate, ttl: Math.min(ttl, RAMF_MAX_TTL) },

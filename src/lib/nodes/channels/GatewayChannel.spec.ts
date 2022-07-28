@@ -9,13 +9,14 @@ import {
 } from '../../_test_utils';
 import { EnvelopedData, SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../../crypto_wrappers/cms/SignatureOptions';
-import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../../crypto_wrappers/keys';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import Cargo from '../../messages/Cargo';
 import Parcel from '../../messages/Parcel';
 import CargoMessageSet from '../../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../../messages/payloads/ServiceMessage';
+import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { SessionKey } from '../../SessionKey';
@@ -35,7 +36,7 @@ beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   const peerKeyPair = await generateRSAKeyPair();
-  peerPrivateAddress = await getPrivateAddressFromIdentityKey(peerKeyPair.publicKey);
+  peerPrivateAddress = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerPublicKey = peerKeyPair.publicKey;
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
@@ -91,7 +92,7 @@ describe('generateCargoes', () => {
     );
 
     const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-    expect(cargo.recipientAddress).toEqual(StubGatewayChannel.OUTBOUND_RAMF_ADDRESS);
+    expect(cargo.recipient.id).toEqual(StubGatewayChannel.OUTBOUND_RAMF_RECIPIENT_ID);
   });
 
   test('Payload should be encrypted with session key', async () => {
@@ -310,7 +311,7 @@ describe('generateCargoes', () => {
 });
 
 async function generateDummyParcel(
-  recipientAddress: string,
+  recipientId: string,
   recipientSessionKey: SessionKey,
   finalSenderCertificate: Certificate,
 ): Promise<Parcel> {
@@ -321,11 +322,11 @@ async function generateDummyParcel(
     recipientSessionKey,
   );
   const payloadSerialized = Buffer.from(envelopedData.serialize());
-  return new Parcel(recipientAddress, finalSenderCertificate, payloadSerialized);
+  return new Parcel({ id: recipientId }, finalSenderCertificate, payloadSerialized);
 }
 
 class StubGatewayChannel extends GatewayChannel {
-  public static readonly OUTBOUND_RAMF_ADDRESS = '0deadbeef';
+  public static readonly OUTBOUND_RAMF_RECIPIENT_ID = '0deadbeef';
 
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
     super(
@@ -338,7 +339,7 @@ class StubGatewayChannel extends GatewayChannel {
     );
   }
 
-  async getOutboundRAMFAddress(): Promise<string> {
-    return StubGatewayChannel.OUTBOUND_RAMF_ADDRESS;
+  async getOutboundRAMFRecipient(): Promise<Recipient> {
+    return { id: StubGatewayChannel.OUTBOUND_RAMF_RECIPIENT_ID };
   }
 }

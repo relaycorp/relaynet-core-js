@@ -25,28 +25,28 @@ export class ParcelCollectionAck {
     const textDecoder = new TextDecoder();
     const pcaBlock: any = (result.result as any).ParcelCollectionAck;
     return new ParcelCollectionAck(
-      textDecoder.decode(pcaBlock.senderEndpointPrivateAddress.valueBlock.valueHex),
-      textDecoder.decode(pcaBlock.recipientEndpointAddress.valueBlock.valueHex),
+      textDecoder.decode(pcaBlock.senderEndpointId.valueBlock.valueHex),
+      textDecoder.decode(pcaBlock.recipientEndpointId.valueBlock.valueHex),
       textDecoder.decode(pcaBlock.parcelId.valueBlock.valueHex),
     );
   }
 
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema('ParcelCollectionAck', [
-    new Primitive({ name: 'senderEndpointPrivateAddress' }),
-    new Primitive({ name: 'recipientEndpointAddress' }),
+    new Primitive({ name: 'senderEndpointId' }),
+    new Primitive({ name: 'recipientEndpointId' }),
     new Primitive({ name: 'parcelId' }),
   ]);
 
   constructor(
-    public readonly senderEndpointPrivateAddress: string,
-    public readonly recipientEndpointAddress: string,
+    public readonly senderEndpointId: string,
+    public readonly recipientEndpointId: string,
     public readonly parcelId: string,
   ) {}
 
   public serialize(): ArrayBuffer {
     const ackSerialized = makeImplicitlyTaggedSequence(
-      new VisibleString({ value: this.senderEndpointPrivateAddress }),
-      new VisibleString({ value: this.recipientEndpointAddress }),
+      new VisibleString({ value: this.senderEndpointId }),
+      new VisibleString({ value: this.recipientEndpointId }),
       new VisibleString({ value: this.parcelId }),
     ).toBER();
     const serialization = new ArrayBuffer(

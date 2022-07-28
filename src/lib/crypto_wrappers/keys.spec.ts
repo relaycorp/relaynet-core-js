@@ -13,7 +13,7 @@ import {
   derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   getPublicKeyDigest,
   getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
@@ -430,7 +430,7 @@ describe('getPrivateAddressFromIdentityKey', () => {
   test('Private address should be computed from identity key', async () => {
     const keyPair = await generateRSAKeyPair();
 
-    const privateAddress = await getPrivateAddressFromIdentityKey(keyPair.publicKey);
+    const privateAddress = await getIdFromIdentityKey(keyPair.publicKey);
 
     expect(privateAddress).toEqual('0' + sha256Hex(await derSerializePublicKey(keyPair.publicKey)));
   });
@@ -438,7 +438,7 @@ describe('getPrivateAddressFromIdentityKey', () => {
   test('DH keys should be refused', async () => {
     const keyPair = await generateECDHKeyPair();
 
-    await expect(getPrivateAddressFromIdentityKey(keyPair.publicKey)).rejects.toThrowWithMessage(
+    await expect(getIdFromIdentityKey(keyPair.publicKey)).rejects.toThrowWithMessage(
       Error,
       'Only RSA keys are supported (got ECDH)',
     );

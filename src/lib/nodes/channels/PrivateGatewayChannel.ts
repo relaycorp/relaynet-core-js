@@ -1,9 +1,6 @@
 import { addDays, subMinutes } from 'date-fns';
 
-import {
-  getPrivateAddressFromIdentityKey,
-  getRSAPublicKeyFromPrivate,
-} from '../../crypto_wrappers/keys';
+import { getIdFromIdentityKey, getRSAPublicKeyFromPrivate } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
@@ -17,7 +14,7 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
     const now = new Date();
 
     const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
-    const privateAddress = await getPrivateAddressFromIdentityKey(publicKey);
+    const privateAddress = await getIdFromIdentityKey(publicKey);
 
     const existingIssuerPath = await this.keyStores.certificateStore.retrieveLatest(
       privateAddress,
@@ -46,7 +43,7 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
    */
   public async getCDAIssuers(): Promise<readonly Certificate[]> {
     const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
-    const privateAddress = await getPrivateAddressFromIdentityKey(publicKey);
+    const privateAddress = await getIdFromIdentityKey(publicKey);
     const issuerPaths = await this.keyStores.certificateStore.retrieveAll(
       privateAddress,
       privateAddress,

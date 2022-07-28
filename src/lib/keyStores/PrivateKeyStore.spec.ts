@@ -2,7 +2,7 @@ import { HashingAlgorithm, RSAModulus } from '../crypto_wrappers/algorithms';
 import {
   derSerializePrivateKey,
   derSerializePublicKey,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { KeyStoreError } from './KeyStoreError';
@@ -50,9 +50,7 @@ describe('Identity keys', () => {
     test('Private address should be returned', async () => {
       const keyPair = await MOCK_STORE.generateIdentityKeyPair();
 
-      expect(keyPair.privateAddress).toEqual(
-        await getPrivateAddressFromIdentityKey(keyPair.publicKey),
-      );
+      expect(keyPair.privateAddress).toEqual(await getIdFromIdentityKey(keyPair.publicKey));
     });
 
     test('Public key should correspond to private key', async () => {

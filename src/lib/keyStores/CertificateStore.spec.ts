@@ -1,7 +1,7 @@
 import { addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 import { expectArrayBuffersToEqual } from '../_test_utils';
 
-import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
@@ -20,7 +20,7 @@ let subjectCertificate: Certificate;
 let certificationPath: CertificationPath;
 beforeAll(async () => {
   const issuerKeyPair = await generateRSAKeyPair();
-  issuerPrivateAddress = await getPrivateAddressFromIdentityKey(issuerKeyPair.publicKey);
+  issuerPrivateAddress = await getIdFromIdentityKey(issuerKeyPair.publicKey);
   issuerCertificate = await issueGatewayCertificate({
     subjectPublicKey: issuerKeyPair.publicKey,
     issuerPrivateKey: issuerKeyPair.privateKey,
@@ -28,7 +28,7 @@ beforeAll(async () => {
   });
 
   subjectKeyPair = await generateRSAKeyPair();
-  subjectPrivateAddress = await getPrivateAddressFromIdentityKey(subjectKeyPair.publicKey);
+  subjectPrivateAddress = await getIdFromIdentityKey(subjectKeyPair.publicKey);
   subjectCertificate = await issueGatewayCertificate({
     issuerCertificate,
     issuerPrivateKey: issuerKeyPair.privateKey,

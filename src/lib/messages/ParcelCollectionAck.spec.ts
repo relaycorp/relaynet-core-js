@@ -117,8 +117,8 @@ describe('ParcelCollectionAck', () => {
 
       const pcaDeserialized = ParcelCollectionAck.deserialize(pca.serialize());
 
-      expect(pcaDeserialized.senderEndpointPrivateAddress).toEqual(SENDER_ENDPOINT_PRIVATE_ADDRESS);
-      expect(pcaDeserialized.recipientEndpointAddress).toEqual(RECIPIENT_ENDPOINT_ADDRESS);
+      expect(pcaDeserialized.senderEndpointId).toEqual(SENDER_ENDPOINT_PRIVATE_ADDRESS);
+      expect(pcaDeserialized.recipientEndpointId).toEqual(RECIPIENT_ENDPOINT_ADDRESS);
       expect(pcaDeserialized.parcelId).toEqual(PARCEL_ID);
     });
   });

@@ -5,7 +5,7 @@ import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegis
 import {
   derSerializePublicKey,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   getRSAPublicKeyFromPrivate,
 } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -31,7 +31,7 @@ beforeAll(async () => {
   // Public gateway
   const publicGatewayKeyPair = await generateRSAKeyPair();
   publicGatewayPublicKey = publicGatewayKeyPair.publicKey;
-  publicGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(publicGatewayPublicKey);
+  publicGatewayPrivateAddress = await getIdFromIdentityKey(publicGatewayPublicKey);
   publicGatewayCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerPrivateKey: publicGatewayKeyPair.privateKey,
@@ -43,9 +43,7 @@ beforeAll(async () => {
   // Private gateway
   const privateGatewayKeyPair = await generateRSAKeyPair();
   privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
-  privateGatewayPrivateAddress = await getPrivateAddressFromIdentityKey(
-    privateGatewayKeyPair.publicKey,
-  );
+  privateGatewayPrivateAddress = await getIdFromIdentityKey(privateGatewayKeyPair.publicKey);
   privateGatewayPDCCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: publicGatewayCertificate,
@@ -251,9 +249,9 @@ describe('retrievePublicGatewayChannel', () => {
       PUBLIC_GATEWAY_PUBLIC_ADDRESS,
     );
 
-    expect(channel!.publicGatewayPublicAddress).toEqual(PUBLIC_GATEWAY_PUBLIC_ADDRESS);
+    expect(channel!.publicGatewayInternetAddress).toEqual(PUBLIC_GATEWAY_PUBLIC_ADDRESS);
     expect(channel!.nodeDeliveryAuth.isEqual(privateGatewayPDCCertificate)).toBeTrue();
-    expect(channel!.peerPrivateAddress).toEqual(publicGatewayPrivateAddress);
+    expect(channel!.peerId).toEqual(publicGatewayPrivateAddress);
     await expect(derSerializePublicKey(channel!.peerPublicKey)).resolves.toEqual(
       await derSerializePublicKey(publicGatewayPublicKey),
     );

@@ -4,7 +4,7 @@ import {
   derDeserializeECDHPrivateKey,
   derSerializePrivateKey,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   RSAKeyGenOptions,
 } from '../crypto_wrappers/keys';
 import { IdentityKeyPair } from '../IdentityKeyPair';
@@ -27,7 +27,7 @@ export abstract class PrivateKeyStore {
     keyOptions: Partial<RSAKeyGenOptions> = {},
   ): Promise<IdentityKeyPair> {
     const keyPair = await this.generateRSAKeyPair(keyOptions);
-    const privateAddress = await getPrivateAddressFromIdentityKey(keyPair.publicKey);
+    const privateAddress = await getIdFromIdentityKey(keyPair.publicKey);
     try {
       await this.saveIdentityKey(privateAddress, keyPair.privateKey);
     } catch (err) {

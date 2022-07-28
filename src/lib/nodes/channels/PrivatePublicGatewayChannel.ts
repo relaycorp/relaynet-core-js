@@ -7,6 +7,7 @@ import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
+import { Recipient } from '../../messages/Recipient';
 import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
@@ -26,7 +27,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     privateGatewayDeliveryAuth: Certificate,
     publicGatewayPrivateAddress: string,
     publicGatewayPublicKey: CryptoKey,
-    public readonly publicGatewayPublicAddress: string,
+    public readonly publicGatewayInternetAddress: string,
     keyStores: KeyStoreSet,
     cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
@@ -40,8 +41,8 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     );
   }
 
-  async getOutboundRAMFAddress(): Promise<string> {
-    return `https://${this.publicGatewayPublicAddress}`;
+  async getOutboundRAMFRecipient(): Promise<Recipient> {
+    return { id: this.peerId, internetAddress: this.publicGatewayInternetAddress };
   }
 
   //region Private endpoint registration
@@ -93,7 +94,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     const registration = new PrivateNodeRegistration(
       endpointCertificate,
       this.nodeDeliveryAuth,
-      this.publicGatewayPublicAddress,
+      this.publicGatewayInternetAddress,
     );
     return registration.serialize();
   }
@@ -115,7 +116,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     const ccr = new CargoCollectionRequest(cargoDeliveryAuthorization);
     const ccaPayload = await this.wrapMessagePayload(ccr);
     const cca = new CargoCollectionAuthorization(
-      await this.getOutboundRAMFAddress(),
+      await this.getOutboundRAMFRecipient(),
       this.nodeDeliveryAuth,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },

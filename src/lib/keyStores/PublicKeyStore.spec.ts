@@ -2,7 +2,7 @@ import {
   derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPublicKeyData } from './PublicKeyStore';
@@ -19,7 +19,7 @@ describe('Identity keys', () => {
   beforeAll(async () => {
     const keyPair = await generateRSAKeyPair();
     publicKey = keyPair.publicKey;
-    peerPrivateAddress = await getPrivateAddressFromIdentityKey(publicKey);
+    peerPrivateAddress = await getIdFromIdentityKey(publicKey);
   });
 
   describe('saveIdentityKey', () => {

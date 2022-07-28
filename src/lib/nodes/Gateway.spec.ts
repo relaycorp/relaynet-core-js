@@ -1,7 +1,7 @@
 import { addDays, setMilliseconds } from 'date-fns';
 
 import { reSerializeCertificate } from '../_test_utils';
-import { generateRSAKeyPair, getPrivateAddressFromIdentityKey } from '../crypto_wrappers/keys';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto_wrappers/keys';
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { CertificationPath } from '../pki/CertificationPath';
@@ -38,7 +38,7 @@ beforeAll(async () => {
       validityEndDate: tomorrow,
     }),
   );
-  nodePrivateAddress = await getPrivateAddressFromIdentityKey(nodeKeyPair.publicKey);
+  nodePrivateAddress = await getIdFromIdentityKey(nodeKeyPair.publicKey);
 });
 
 const KEY_STORES = new MockKeyStoreSet();

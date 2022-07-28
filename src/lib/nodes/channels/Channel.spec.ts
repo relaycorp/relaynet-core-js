@@ -5,10 +5,11 @@ import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
 import {
   generateECDHKeyPair,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
+import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { StubPayload } from '../../ramf/_test_utils';
 import { SessionKey } from '../../SessionKey';
@@ -23,7 +24,7 @@ beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   const peerKeyPair = await generateRSAKeyPair();
-  peerPrivateAddress = await getPrivateAddressFromIdentityKey(peerKeyPair.publicKey);
+  peerPrivateAddress = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerPublicKey = peerKeyPair.publicKey;
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
@@ -165,7 +166,7 @@ describe('wrapMessagePayload', () => {
 });
 
 class StubChannel extends Channel {
-  async getOutboundRAMFAddress(): Promise<string> {
+  async getOutboundRAMFRecipient(): Promise<Recipient> {
     throw new Error('not implemented');
   }
 }

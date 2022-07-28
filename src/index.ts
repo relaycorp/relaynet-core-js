@@ -26,7 +26,7 @@ export {
   getPublicKeyDigest,
   getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   RSAKeyGenOptions,
 } from './lib/crypto_wrappers/keys';
 export { PrivateKey, RsaPssPrivateKey } from './lib/crypto_wrappers/PrivateKey';

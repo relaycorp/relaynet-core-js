@@ -7,11 +7,7 @@ import * as pkijs from 'pkijs';
 import { generateStubCert, reSerializeCertificate, sha256Hex } from '../../_test_utils';
 import * as oids from '../../oids';
 import { derDeserialize, getPkijsCrypto } from '../_utils';
-import {
-  derSerializePublicKey,
-  generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
-} from '../keys';
+import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../keys';
 import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
@@ -664,7 +660,7 @@ describe('calculateSubjectPrivateAddress', () => {
     });
 
     await expect(nodeCertificate.calculateSubjectPrivateAddress()).resolves.toEqual(
-      await getPrivateAddressFromIdentityKey(nodeKeyPair.publicKey),
+      await getIdFromIdentityKey(nodeKeyPair.publicKey),
     );
   });
 

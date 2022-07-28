@@ -2,7 +2,7 @@ import {
   derDeserializeECDHPublicKey,
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
 } from '../crypto_wrappers/keys';
 import { SessionKey } from '../SessionKey';
 import { KeyStoreError } from './KeyStoreError';
@@ -17,7 +17,7 @@ export abstract class PublicKeyStore {
   //region Identity keys
 
   public async saveIdentityKey(key: CryptoKey): Promise<void> {
-    const peerPrivateAddress = await getPrivateAddressFromIdentityKey(key);
+    const peerPrivateAddress = await getIdFromIdentityKey(key);
     const keySerialized = await derSerializePublicKey(key);
     await this.saveIdentityKeySerialized(keySerialized, peerPrivateAddress);
   }
