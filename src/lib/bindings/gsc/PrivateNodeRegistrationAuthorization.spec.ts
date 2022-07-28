@@ -14,7 +14,6 @@ describe('PrivateNodeRegistrationAuthorization', () => {
   const expiryDate = moment().millisecond(0).add(1, 'days').toDate();
   const gatewayData = arrayBufferFrom('This is the gateway data');
 
-  // tslint:disable-next-line:no-let
   let gatewayKeyPair: CryptoKeyPair;
   beforeAll(async () => {
     gatewayKeyPair = await generateRSAKeyPair();

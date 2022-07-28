@@ -9,7 +9,6 @@ const plaintext = arrayBufferFrom('the plaintext');
 
 const pkijsCrypto = utils.getPkijsCrypto();
 
-// tslint:disable-next-line:no-let
 let keyPair: CryptoKeyPair;
 beforeAll(async () => {
   keyPair = await generateRSAKeyPair();

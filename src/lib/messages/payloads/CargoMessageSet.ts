@@ -62,11 +62,10 @@ export default class CargoMessageSet implements PayloadPlaintext {
   public static async *batchMessagesSerialized(
     messagesWithExpiryDate: AsyncIterable<MessageWithExpiryDate>,
   ): AsyncIterable<MessageWithExpiryDate> {
-    // tslint:disable-next-line:readonly-array no-let
+    // tslint:disable-next-line:readonly-array
     let currentBatch: ArrayBuffer[] = [];
-    // tslint:disable-next-line:no-let no-unnecessary-initializer
+    // tslint:disable-next-line:no-unnecessary-initializer
     let currentBatchExpiryDate: Date | undefined = undefined;
-    // tslint:disable-next-line:no-let
     let availableOctetsInCurrentBatch = MAX_SDU_PLAINTEXT_LENGTH - DER_TL_OVERHEAD_OCTETS;
 
     for await (const { messageSerialized, expiryDate } of messagesWithExpiryDate) {

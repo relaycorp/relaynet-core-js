@@ -109,7 +109,6 @@ export class SignedData {
 
   public static deserialize(signedDataSerialized: ArrayBuffer): SignedData {
     const contentInfo = deserializeContentInfo(signedDataSerialized);
-    // tslint:disable-next-line:no-let
     let pkijsSignedData: pkijs.SignedData;
     try {
       pkijsSignedData = new pkijs.SignedData({ schema: contentInfo.content });
