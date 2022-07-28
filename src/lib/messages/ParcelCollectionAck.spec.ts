@@ -6,15 +6,15 @@ import InvalidMessageError from './InvalidMessageError';
 import { ParcelCollectionAck } from './ParcelCollectionAck';
 
 describe('ParcelCollectionAck', () => {
-  const SENDER_ENDPOINT_PRIVATE_ADDRESS = '0deadbeef';
-  const RECIPIENT_ENDPOINT_ADDRESS = 'https://example.com';
+  const SENDER_ENDPOINT_ID = '0deadbeef';
+  const RECIPIENT_ENDPOINT_INTERNET_ADDRESS = 'example.com';
   const PARCEL_ID = 'the-parcel-id';
 
   describe('serialize', () => {
     test('Serialization should start with format signature', () => {
       const pca = new ParcelCollectionAck(
-        SENDER_ENDPOINT_PRIVATE_ADDRESS,
-        RECIPIENT_ENDPOINT_ADDRESS,
+        SENDER_ENDPOINT_ID,
+        RECIPIENT_ENDPOINT_INTERNET_ADDRESS,
         PARCEL_ID,
       );
 
@@ -29,8 +29,8 @@ describe('ParcelCollectionAck', () => {
 
     test('An ACK should be serialized as a 3-item sequence', () => {
       const pca = new ParcelCollectionAck(
-        SENDER_ENDPOINT_PRIVATE_ADDRESS,
-        RECIPIENT_ENDPOINT_ADDRESS,
+        SENDER_ENDPOINT_ID,
+        RECIPIENT_ENDPOINT_INTERNET_ADDRESS,
         PARCEL_ID,
       );
 
@@ -41,10 +41,10 @@ describe('ParcelCollectionAck', () => {
       const pcaSequenceItems = pcaSequenceBlock.valueBlock.value;
       expect(pcaSequenceItems).toHaveLength(3);
       expect((pcaSequenceItems[0] as asn1js.Primitive).valueBlock.valueHex).toEqual(
-        arrayBufferFrom(SENDER_ENDPOINT_PRIVATE_ADDRESS),
+        arrayBufferFrom(SENDER_ENDPOINT_ID),
       );
       expect((pcaSequenceItems[1] as asn1js.Primitive).valueBlock.valueHex).toEqual(
-        arrayBufferFrom(RECIPIENT_ENDPOINT_ADDRESS),
+        arrayBufferFrom(RECIPIENT_ENDPOINT_INTERNET_ADDRESS),
       );
       expect((pcaSequenceItems[2] as asn1js.Primitive).valueBlock.valueHex).toEqual(
         arrayBufferFrom(PARCEL_ID),
@@ -110,15 +110,15 @@ describe('ParcelCollectionAck', () => {
 
     test('A new instance should be returned if serialization is valid', () => {
       const pca = new ParcelCollectionAck(
-        SENDER_ENDPOINT_PRIVATE_ADDRESS,
-        RECIPIENT_ENDPOINT_ADDRESS,
+        SENDER_ENDPOINT_ID,
+        RECIPIENT_ENDPOINT_INTERNET_ADDRESS,
         PARCEL_ID,
       );
 
       const pcaDeserialized = ParcelCollectionAck.deserialize(pca.serialize());
 
-      expect(pcaDeserialized.senderEndpointId).toEqual(SENDER_ENDPOINT_PRIVATE_ADDRESS);
-      expect(pcaDeserialized.recipientEndpointId).toEqual(RECIPIENT_ENDPOINT_ADDRESS);
+      expect(pcaDeserialized.senderEndpointId).toEqual(SENDER_ENDPOINT_ID);
+      expect(pcaDeserialized.recipientEndpointId).toEqual(RECIPIENT_ENDPOINT_INTERNET_ADDRESS);
       expect(pcaDeserialized.parcelId).toEqual(PARCEL_ID);
     });
   });
