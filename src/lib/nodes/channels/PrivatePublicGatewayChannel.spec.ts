@@ -27,7 +27,7 @@ let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const nextYear = setMilliseconds(addDays(new Date(), 360), 0);
 
-  // Public gateway
+  // Internet gateway
   const internetGatewayKeyPair = await generateRSAKeyPair();
   internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
   internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
@@ -204,7 +204,7 @@ describe('Endpoint registration', () => {
       expect(registration.gatewayCertificate.isEqual(privateGatewayPDCCertificate)).toBeTrue();
     });
 
-    test('Public gateway Internet gateway should be included in registration', async () => {
+    test('Internet gateway Internet gateway should be included in registration', async () => {
       const registrationSerialized = await channel.registerEndpoint(endpointPublicKey);
 
       const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);

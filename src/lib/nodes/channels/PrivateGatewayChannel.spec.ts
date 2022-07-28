@@ -20,7 +20,7 @@ let internetGatewayCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
-  // Public gateway
+  // Internet gateway
   const internetGatewayKeyPair = await generateRSAKeyPair();
   internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
   internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
