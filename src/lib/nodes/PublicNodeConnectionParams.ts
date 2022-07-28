@@ -24,10 +24,10 @@ export class PublicNodeConnectionParams {
     const paramsASN1 = (result.result as any).PublicNodeConnectionParams;
 
     const textDecoder = new TextDecoder();
-    const publicAddress = textDecoder.decode(paramsASN1.publicAddress.valueBlock.valueHex);
-    if (!isValidDomain(publicAddress)) {
+    const internetAddress = textDecoder.decode(paramsASN1.internetAddress.valueBlock.valueHex);
+    if (!isValidDomain(internetAddress)) {
       throw new InvalidPublicNodeConnectionParams(
-        `Public address is syntactically invalid (${publicAddress})`,
+        `Internet address is syntactically invalid (${internetAddress})`,
       );
     }
 
@@ -59,14 +59,14 @@ export class PublicNodeConnectionParams {
       );
     }
 
-    return new PublicNodeConnectionParams(publicAddress, identityKey, {
+    return new PublicNodeConnectionParams(internetAddress, identityKey, {
       keyId: Buffer.from(sessionKeyId),
       publicKey: sessionPublicKey,
     });
   }
 
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema('PublicNodeConnectionParams', [
-    new Primitive({ name: 'publicAddress' }),
+    new Primitive({ name: 'internetAddress' }),
     new Primitive({ name: 'identityKey' }),
     new Constructed({
       name: 'sessionKey',
@@ -78,7 +78,7 @@ export class PublicNodeConnectionParams {
   ]);
 
   constructor(
-    public readonly publicAddress: string,
+    public readonly internetAddress: string,
     public readonly identityKey: CryptoKey,
     public readonly sessionKey: SessionKey,
   ) {}
@@ -93,7 +93,7 @@ export class PublicNodeConnectionParams {
     );
 
     return makeImplicitlyTaggedSequence(
-      new VisibleString({ value: this.publicAddress }),
+      new VisibleString({ value: this.internetAddress }),
       new OctetString({ valueHex: bufferToArray(identityKeySerialized) }),
       sessionKeySequence,
     ).toBER();

@@ -105,4 +105,4 @@ export { PrivatePublicGatewayChannel } from './lib/nodes/channels/PrivatePublicG
 export { NodeCryptoOptions } from './lib/nodes/NodeCryptoOptions';
 export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
 export * from './lib/nodes/errors';
-export * from './lib/publicAddressing';
+export * from './lib/internetAddressing';

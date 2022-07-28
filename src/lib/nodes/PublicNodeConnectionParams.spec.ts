@@ -29,7 +29,7 @@ beforeAll(async () => {
 });
 
 describe('serialize', () => {
-  test('Public address should be serialized', async () => {
+  test('Internet address should be serialized', async () => {
     const params = new PublicNodeConnectionParams(PUBLIC_ADDRESS, identityKey, sessionKey);
 
     const serialization = await params.serialize();
@@ -130,17 +130,17 @@ describe('deserialize', () => {
     ).rejects.toThrowWithMessage(InvalidPublicNodeConnectionParams, malformedErrorMessage);
   });
 
-  test('Public address should be syntactically valid', async () => {
-    const invalidPublicAddress = 'not a public address';
+  test('Internet address should be syntactically valid', async () => {
+    const invalidInternetAddress = 'not a domain name';
     const invalidSerialization = makeImplicitlyTaggedSequence(
-      new VisibleString({ value: invalidPublicAddress }),
+      new VisibleString({ value: invalidInternetAddress }),
       new OctetString({ valueHex: identityKeySerialized }),
       sessionKeySequence,
     ).toBER();
 
     await expect(PublicNodeConnectionParams.deserialize(invalidSerialization)).rejects.toThrow(
       new InvalidPublicNodeConnectionParams(
-        `Public address is syntactically invalid (${invalidPublicAddress})`,
+        `Internet address is syntactically invalid (${invalidInternetAddress})`,
       ),
     );
   });
@@ -207,7 +207,7 @@ describe('deserialize', () => {
 
     const paramsDeserialized = await PublicNodeConnectionParams.deserialize(serialization);
 
-    expect(paramsDeserialized.publicAddress).toEqual(PUBLIC_ADDRESS);
+    expect(paramsDeserialized.internetAddress).toEqual(PUBLIC_ADDRESS);
     await expect(derSerializePublicKey(paramsDeserialized.identityKey)).resolves.toEqual(
       Buffer.from(identityKeySerialized),
     );

@@ -17,7 +17,7 @@ export enum BindingType {
   PDC = 'awala-pdc',
 }
 
-export class PublicAddressingError extends RelaynetError {}
+export class InternetAddressingError extends RelaynetError {}
 
 export class UnreachableResolverError extends RelaynetError {}
 
@@ -27,8 +27,8 @@ export class UnreachableResolverError extends RelaynetError {}
  * @param hostName The host name to look up
  * @param bindingType The SRV service to look up
  * @param resolverURL The URL for the DNS-over-HTTPS resolver
- * @throws PublicAddressingError If DNSSEC verification failed
- * @throws UnreachableResolverError If the DNS resolver was unreachable
+ * @throws {InternetAddressingError} If DNSSEC verification failed
+ * @throws {UnreachableResolverError} If the DNS resolver was unreachable
  *
  * `null` is returned when `hostName` is an IP address or a non-existing SRV record for the service
  * in `bindingType`.
@@ -38,7 +38,7 @@ export class UnreachableResolverError extends RelaynetError {}
  *
  * DNS resolution is done with DNS-over-HTTPS.
  */
-export async function resolvePublicAddress(
+export async function resolveInternetAddress(
   hostName: string,
   bindingType: BindingType,
   resolverURL = CLOUDFLARE_RESOLVER_URL,
@@ -64,16 +64,16 @@ export async function resolvePublicAddress(
     return null;
   }
   if (result.rcode !== 'NOERROR') {
-    throw new PublicAddressingError(`SRV lookup for ${name} failed with status ${result.rcode}`);
+    throw new InternetAddressingError(`SRV lookup for ${name} failed with status ${result.rcode}`);
   }
   if (!result.flag_ad) {
-    throw new PublicAddressingError(`DNSSEC verification for SRV ${name} failed`);
+    throw new InternetAddressingError(`DNSSEC verification for SRV ${name} failed`);
   }
   const srvAnswers = result.answers.filter((a) => a.type === 'SRV');
   // TODO: Pick the best answer based on its weight and priority fields
   const answer = srvAnswers[0];
   if (!answer || !answer.data || !answer.data.target || !answer.data.port) {
-    throw new PublicAddressingError('DNS answer is malformed');
+    throw new InternetAddressingError('DNS answer is malformed');
   }
   return { host: removeTrailingDot(answer.data.target), port: answer.data.port };
 }

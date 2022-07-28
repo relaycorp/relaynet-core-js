@@ -59,7 +59,7 @@ export class PrivateGateway extends Gateway {
 
   public async retrievePublicGatewayChannel(
     publicGatewayId: string,
-    publicGatewayPublicAddress: string,
+    publicGatewayInternetAddress: string,
   ): Promise<PrivatePublicGatewayChannel | null> {
     const publicGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
       publicGatewayId,
@@ -81,7 +81,7 @@ export class PrivateGateway extends Gateway {
       privateGatewayDeliveryAuth.leafCertificate,
       publicGatewayId,
       publicGatewayPublicKey,
-      publicGatewayPublicAddress,
+      publicGatewayInternetAddress,
       this.keyStores,
       this.cryptoOptions,
     );

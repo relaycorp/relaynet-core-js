@@ -83,7 +83,7 @@ beforeEach(() => {
   );
 });
 
-test('getOutboundRAMFAddress should return public address of public gateway', async () => {
+test('getOutboundRAMFAddress should return Internet address of public gateway', async () => {
   await expect(channel.getOutboundRAMFRecipient()).resolves.toEqual<Recipient>({
     id: publicGatewayId,
     internetAddress: PUBLIC_GATEWAY_INTERNET_ADDRESS,
@@ -209,7 +209,7 @@ describe('Endpoint registration', () => {
 
       const registration = await PrivateNodeRegistration.deserialize(registrationSerialized);
 
-      expect(registration.publicGatewayPublicAddress).toEqual(PUBLIC_GATEWAY_INTERNET_ADDRESS);
+      expect(registration.publicGatewayInternetAddress).toEqual(PUBLIC_GATEWAY_INTERNET_ADDRESS);
     });
 
     test('Session key should be absent from registration', async () => {
