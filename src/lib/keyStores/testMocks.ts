@@ -7,7 +7,7 @@ import { PrivateKeyStore, SessionPrivateKeyData } from './PrivateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
-  public identityKeys: { [privateAddress: string]: CryptoKey } = {};
+  public identityKeys: { [nodeId: string]: CryptoKey } = {};
 
   public sessionKeys: { [keyId: string]: SessionPrivateKeyData } = {};
 
@@ -20,32 +20,28 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     this.sessionKeys = {};
   }
 
-  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
-    return this.identityKeys[privateAddress] ?? null;
+  public async retrieveIdentityKey(nodeId: string): Promise<CryptoKey | null> {
+    return this.identityKeys[nodeId] ?? null;
   }
 
-  public async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
+  public async saveIdentityKey(nodeId: string, privateKey: CryptoKey): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    this.identityKeys[privateAddress] = privateKey;
+    this.identityKeys[nodeId] = privateKey;
   }
 
   protected async saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
-    privateAddress: string,
-    peerPrivateAddress?: string,
+    nodeId: string,
+    peerId?: string,
   ): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
 
-    this.sessionKeys[keyId] = {
-      keySerialized,
-      peerPrivateAddress,
-      privateAddress,
-    };
+    this.sessionKeys[keyId] = { keySerialized, peerId, nodeId };
   }
 
   protected async retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null> {
@@ -58,7 +54,7 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {
-  public identityKeys: { [peerPrivateAddress: string]: Buffer } = {};
+  public identityKeys: { [peerId: string]: Buffer } = {};
 
   public sessionKeys: { [key: string]: SessionPublicKeyData } = {};
 
@@ -71,65 +67,55 @@ export class MockPublicKeyStore extends PublicKeyStore {
     this.identityKeys = {};
   }
 
-  public registerSessionKey(keyData: SessionPublicKeyData, peerPrivateAddress: string): void {
-    this.sessionKeys[peerPrivateAddress] = keyData;
+  public registerSessionKey(keyData: SessionPublicKeyData, peerId: string): void {
+    this.sessionKeys[peerId] = keyData;
   }
 
-  protected async retrieveIdentityKeySerialized(
-    peerPrivateAddress: string,
-  ): Promise<Buffer | null> {
-    return this.identityKeys[peerPrivateAddress] ?? null;
+  protected async retrieveIdentityKeySerialized(peerId: string): Promise<Buffer | null> {
+    return this.identityKeys[peerId] ?? null;
   }
 
-  protected async retrieveSessionKeyData(
-    peerPrivateAddress: string,
-  ): Promise<SessionPublicKeyData | null> {
+  protected async retrieveSessionKeyData(peerId: string): Promise<SessionPublicKeyData | null> {
     if (this.fetchError) {
       throw this.fetchError;
     }
-    const keyData = this.sessionKeys[peerPrivateAddress];
+    const keyData = this.sessionKeys[peerId];
     return keyData ?? null;
   }
 
-  protected async saveIdentityKeySerialized(
-    keySerialized: Buffer,
-    peerPrivateAddress: string,
-  ): Promise<void> {
-    this.identityKeys[peerPrivateAddress] = keySerialized;
+  protected async saveIdentityKeySerialized(keySerialized: Buffer, peerId: string): Promise<void> {
+    this.identityKeys[peerId] = keySerialized;
   }
 
-  protected async saveSessionKeyData(
-    keyData: SessionPublicKeyData,
-    peerPrivateAddress: string,
-  ): Promise<void> {
+  protected async saveSessionKeyData(keyData: SessionPublicKeyData, peerId: string): Promise<void> {
     if (this.failOnSave) {
       throw new Error('Denied');
     }
-    this.sessionKeys[peerPrivateAddress] = keyData;
+    this.sessionKeys[peerId] = keyData;
   }
 }
 
 interface MockStoredCertificateData {
   readonly expiryDate: Date;
   readonly serialization: ArrayBuffer;
-  readonly issuerPrivateAddress: string;
+  readonly issuerId: string;
 }
 
 export class MockCertificateStore extends CertificateStore {
-  public dataByPrivateAddress: {
-    [privateAddress: string]: MockStoredCertificateData[];
+  public dataBySubjectId: {
+    [nodeId: string]: MockStoredCertificateData[];
   } = {};
 
   public clear(): void {
-    this.dataByPrivateAddress = {};
+    this.dataBySubjectId = {};
   }
 
-  public async forceSave(path: CertificationPath, issuerPrivateAddress: string): Promise<void> {
+  public async forceSave(path: CertificationPath, issuerId: string): Promise<void> {
     await this.saveData(
       path.serialize(),
-      await path.leafCertificate.calculateSubjectPrivateAddress(),
+      await path.leafCertificate.calculateSubjectId(),
       path.leafCertificate.expiryDate,
-      issuerPrivateAddress,
+      issuerId,
     );
   }
 
@@ -138,13 +124,11 @@ export class MockCertificateStore extends CertificateStore {
   }
 
   protected async retrieveAllSerializations(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<readonly ArrayBuffer[]> {
-    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    const matchingCertificateData = certificateData.filter(
-      (d) => d.issuerPrivateAddress === issuerPrivateAddress,
-    );
+    const certificateData = this.dataBySubjectId[subjectId] ?? [];
+    const matchingCertificateData = certificateData.filter((d) => d.issuerId === issuerId);
     if (matchingCertificateData.length === 0) {
       return [];
     }
@@ -152,13 +136,11 @@ export class MockCertificateStore extends CertificateStore {
   }
 
   protected async retrieveLatestSerialization(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<ArrayBuffer | null> {
-    const certificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    const matchingCertificateData = certificateData.filter(
-      (d) => d.issuerPrivateAddress === issuerPrivateAddress,
-    );
+    const certificateData = this.dataBySubjectId[subjectId] ?? [];
+    const matchingCertificateData = certificateData.filter((d) => d.issuerId === issuerId);
     if (matchingCertificateData.length === 0) {
       return null;
     }
@@ -170,17 +152,17 @@ export class MockCertificateStore extends CertificateStore {
 
   protected async saveData(
     serialization: ArrayBuffer,
-    subjectPrivateAddress: string,
+    subjectId: string,
     subjectCertificateExpiryDate: Date,
-    issuerPrivateAddress: string,
+    issuerId: string,
   ): Promise<void> {
     const mockData: MockStoredCertificateData = {
       serialization,
       expiryDate: subjectCertificateExpiryDate,
-      issuerPrivateAddress,
+      issuerId,
     };
-    const originalCertificateData = this.dataByPrivateAddress[subjectPrivateAddress] ?? [];
-    this.dataByPrivateAddress[subjectPrivateAddress] = [...originalCertificateData, mockData];
+    const originalCertificateData = this.dataBySubjectId[subjectId] ?? [];
+    this.dataBySubjectId[subjectId] = [...originalCertificateData, mockData];
   }
 }
 

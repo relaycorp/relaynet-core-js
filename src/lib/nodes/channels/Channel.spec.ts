@@ -16,7 +16,7 @@ import { SessionKey } from '../../SessionKey';
 import { NodeError } from '../errors';
 import { Channel } from './Channel';
 
-let peerPrivateAddress: string;
+let peerId: string;
 let peerPublicKey: CryptoKey;
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
@@ -24,7 +24,7 @@ beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   const peerKeyPair = await generateRSAKeyPair();
-  peerPrivateAddress = await getIdFromIdentityKey(peerKeyPair.publicKey);
+  peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerPublicKey = peerKeyPair.publicKey;
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
@@ -65,22 +65,22 @@ describe('wrapMessagePayload', () => {
       keyId: Buffer.from('key id'),
       publicKey: recipientSessionKeyPair.publicKey,
     };
-    await KEY_STORES.publicKeyStore.saveSessionKey(peerSessionKey, peerPrivateAddress, new Date());
+    await KEY_STORES.publicKeyStore.saveSessionKey(peerSessionKey, peerId, new Date());
   });
 
   test('There should be a session key for the recipient', async () => {
-    const unknownPeerPrivateAddress = `not-${peerPrivateAddress}`;
+    const unknownPeerId = `not-${peerId}`;
     const channel = new StubChannel(
       nodePrivateKey,
       nodeCertificate,
-      unknownPeerPrivateAddress,
+      unknownPeerId,
       peerPublicKey,
       KEY_STORES,
     );
 
     await expect(channel.wrapMessagePayload(stubPayload)).rejects.toThrowWithMessage(
       NodeError,
-      `Could not find session key for peer ${unknownPeerPrivateAddress}`,
+      `Could not find session key for peer ${unknownPeerId}`,
     );
   });
 
@@ -88,7 +88,7 @@ describe('wrapMessagePayload', () => {
     const channel = new StubChannel(
       nodePrivateKey,
       nodeCertificate,
-      peerPrivateAddress,
+      peerId,
       peerPublicKey,
       KEY_STORES,
     );
@@ -107,7 +107,7 @@ describe('wrapMessagePayload', () => {
     const channel = new StubChannel(
       nodePrivateKey,
       nodeCertificate,
-      peerPrivateAddress,
+      peerId,
       peerPublicKey,
       KEY_STORES,
     );
@@ -124,7 +124,7 @@ describe('wrapMessagePayload', () => {
     const channel = new StubChannel(
       nodePrivateKey,
       nodeCertificate,
-      peerPrivateAddress,
+      peerId,
       peerPublicKey,
       KEY_STORES,
     );
@@ -138,8 +138,8 @@ describe('wrapMessagePayload', () => {
     await expect(
       KEY_STORES.privateKeyStore.retrieveSessionKey(
         originatorSessionKey.keyId,
-        await nodeCertificate.calculateSubjectPrivateAddress(),
-        peerPrivateAddress,
+        await nodeCertificate.calculateSubjectId(),
+        peerId,
       ),
     ).resolves.toBeTruthy();
   });
@@ -149,7 +149,7 @@ describe('wrapMessagePayload', () => {
     const channel = new StubChannel(
       nodePrivateKey,
       nodeCertificate,
-      peerPrivateAddress,
+      peerId,
       peerPublicKey,
       KEY_STORES,
       { encryption: { aesKeySize } },

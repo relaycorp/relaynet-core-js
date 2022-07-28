@@ -42,35 +42,35 @@ export class PrivateGateway extends Gateway {
       throw new NodeError('Delivery authorization was not issued by public gateway');
     }
 
-    const publicGatewayPrivateAddress = deliveryAuthorization.getIssuerPrivateAddress()!;
+    const publicGatewayId = deliveryAuthorization.getIssuerId()!;
     await this.keyStores.certificateStore.save(
       new CertificationPath(deliveryAuthorization, []),
-      publicGatewayPrivateAddress,
+      publicGatewayId,
     );
     await this.keyStores.publicKeyStore.saveIdentityKey(
       await publicGatewayIdentityCertificate.getPublicKey(),
     );
     await this.keyStores.publicKeyStore.saveSessionKey(
       publicGatewaySessionPublicKey,
-      publicGatewayPrivateAddress,
+      publicGatewayId,
       new Date(),
     );
   }
 
   public async retrievePublicGatewayChannel(
-    publicGatewayPrivateAddress: string,
+    publicGatewayId: string,
     publicGatewayPublicAddress: string,
   ): Promise<PrivatePublicGatewayChannel | null> {
     const publicGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
-      publicGatewayPrivateAddress,
+      publicGatewayId,
     );
     if (!publicGatewayPublicKey) {
       return null;
     }
 
     const privateGatewayDeliveryAuth = await this.keyStores.certificateStore.retrieveLatest(
-      this.privateAddress,
-      publicGatewayPrivateAddress,
+      this.id,
+      publicGatewayId,
     );
     if (!privateGatewayDeliveryAuth) {
       return null;
@@ -79,7 +79,7 @@ export class PrivateGateway extends Gateway {
     return new PrivatePublicGatewayChannel(
       this.identityPrivateKey,
       privateGatewayDeliveryAuth.leafCertificate,
-      publicGatewayPrivateAddress,
+      publicGatewayId,
       publicGatewayPublicKey,
       publicGatewayPublicAddress,
       this.keyStores,

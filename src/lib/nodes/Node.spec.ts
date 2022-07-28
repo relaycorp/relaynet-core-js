@@ -31,7 +31,7 @@ beforeAll(async () => {
       validityEndDate: tomorrow,
     }),
   );
-  nodeCertificateIssuerId = await nodeCertificateIssuer.calculateSubjectPrivateAddress();
+  nodeCertificateIssuerId = await nodeCertificateIssuer.calculateSubjectId();
 
   const nodeKeyPair = await generateRSAKeyPair();
   nodePrivateKey = nodeKeyPair.privateKey;
@@ -107,27 +107,20 @@ describe('generateSessionKey', () => {
 
     await expect(
       derSerializePublicKey(
-        await KEY_STORES.privateKeyStore.retrieveUnboundSessionKey(
-          sessionKey.keyId,
-          node.privateAddress,
-        ),
+        await KEY_STORES.privateKeyStore.retrieveUnboundSessionKey(sessionKey.keyId, node.id),
       ),
     ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
   });
 
   test('Key should be bound to a peer if explicitly set', async () => {
     const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
-    const peerPrivateAddress = `${PRIVATE_ADDRESS}cousin`;
+    const peerId = `${PRIVATE_ADDRESS}cousin`;
 
-    const sessionKey = await node.generateSessionKey(peerPrivateAddress);
+    const sessionKey = await node.generateSessionKey(peerId);
 
     await expect(
       derSerializePublicKey(
-        await KEY_STORES.privateKeyStore.retrieveSessionKey(
-          sessionKey.keyId,
-          node.privateAddress,
-          peerPrivateAddress,
-        ),
+        await KEY_STORES.privateKeyStore.retrieveSessionKey(sessionKey.keyId, node.id, peerId),
       ),
     ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
   });
@@ -182,7 +175,7 @@ describe('unwrapMessagePayload', () => {
     await node.unwrapMessagePayload(message);
 
     const storedKey =
-      KEY_STORES.publicKeyStore.sessionKeys[await peerCertificate.calculateSubjectPrivateAddress()];
+      KEY_STORES.publicKeyStore.sessionKeys[await peerCertificate.calculateSubjectId()];
     expect(storedKey.publicKeyCreationTime).toEqual(message.creationDate);
     expect(storedKey.publicKeyId).toEqual(Buffer.from(dhKeyId));
     expect(storedKey.publicKeyDer).toEqual(

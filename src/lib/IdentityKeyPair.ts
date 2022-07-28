@@ -1,3 +1,3 @@
 export interface IdentityKeyPair extends CryptoKeyPair {
-  readonly privateAddress: string;
+  readonly id: string;
 }

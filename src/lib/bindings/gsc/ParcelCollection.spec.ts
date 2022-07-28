@@ -61,7 +61,7 @@ beforeAll(async () => {
 let recipient: Recipient;
 beforeAll(async () => {
   recipient = {
-    id: await recipientCertificate.calculateSubjectPrivateAddress(),
+    id: await recipientCertificate.calculateSubjectId(),
   };
 });
 

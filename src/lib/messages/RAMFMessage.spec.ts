@@ -127,7 +127,7 @@ describe('RAMFMessage', () => {
 
   test('getSenderCertificationPath should return certification path', async () => {
     const message = new StubMessage(
-      { id: await recipientCertificate.calculateSubjectPrivateAddress() },
+      { id: await recipientCertificate.calculateSubjectId() },
       senderCertificate,
       STUB_PAYLOAD_PLAINTEXT,
       {

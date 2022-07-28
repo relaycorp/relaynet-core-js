@@ -12,30 +12,24 @@ export abstract class NodeManager<N extends Node<any>> {
   ) {}
 
   /**
-   * Get node by `privateAddress`.
+   * Get node by `id`.
    *
-   * @param privateAddress
+   * @param id
    */
-  public async get(privateAddress: string): Promise<N | null>;
+  public async get(id: string): Promise<N | null>;
   /**
-   * Get node by `privateAddress` but return instance of custom `customNodeClass`.
+   * Get node by `id` but return instance of custom `customNodeClass`.
    *
-   * @param privateAddress
+   * @param id
    * @param customNodeClass
    */
-  public async get<C extends N>(
-    privateAddress: string,
-    customNodeClass: NodeConstructor<C>,
-  ): Promise<C | null>;
-  public async get(
-    privateAddress: string,
-    nodeConstructor?: NodeConstructor<N>,
-  ): Promise<N | null> {
-    const nodePrivateKey = await this.keyStores.privateKeyStore.retrieveIdentityKey(privateAddress);
+  public async get<C extends N>(id: string, customNodeClass: NodeConstructor<C>): Promise<C | null>;
+  public async get(id: string, nodeConstructor?: NodeConstructor<N>): Promise<N | null> {
+    const nodePrivateKey = await this.keyStores.privateKeyStore.retrieveIdentityKey(id);
     if (!nodePrivateKey) {
       return null;
     }
     const constructor = nodeConstructor ?? this.defaultNodeConstructor;
-    return new constructor(privateAddress, nodePrivateKey, this.keyStores, this.cryptoOptions);
+    return new constructor(id, nodePrivateKey, this.keyStores, this.cryptoOptions);
   }
 }

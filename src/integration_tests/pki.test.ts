@@ -52,7 +52,7 @@ beforeAll(async () => {
     }),
   );
 
-  peerEndpointId = await peerEndpointCert.calculateSubjectPrivateAddress();
+  peerEndpointId = await peerEndpointCert.calculateSubjectId();
 
   const endpointKeyPair = await generateRSAKeyPair();
   endpointPdaCert = reSerializeCertificate(

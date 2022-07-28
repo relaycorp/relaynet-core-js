@@ -8,32 +8,29 @@ export abstract class CertificateStore {
    * Store `subjectCertificate` as long as it's still valid.
    *
    * @param path
-   * @param issuerPrivateAddress
+   * @param issuerId
    *
-   * Whilst we could take the {issuerPrivateAddress} from the leaf certificate in the {path}, we
+   * Whilst we could take the {issuerId} from the leaf certificate in the {path}, we
    * must not rely on it because we don't have enough information/context here to be certain that
    * the value is legitimate. Additionally, the value has to be present in an X.509 extension,
    * which could be absent if produced by a non-compliant implementation.
    */
-  public async save(path: CertificationPath, issuerPrivateAddress: string): Promise<void> {
+  public async save(path: CertificationPath, issuerId: string): Promise<void> {
     if (new Date() < path.leafCertificate.expiryDate) {
       await this.saveData(
         path.serialize(),
-        await path.leafCertificate.calculateSubjectPrivateAddress(),
+        await path.leafCertificate.calculateSubjectId(),
         path.leafCertificate.expiryDate,
-        issuerPrivateAddress,
+        issuerId,
       );
     }
   }
 
   public async retrieveLatest(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<CertificationPath | null> {
-    const serialization = await this.retrieveLatestSerialization(
-      subjectPrivateAddress,
-      issuerPrivateAddress,
-    );
+    const serialization = await this.retrieveLatestSerialization(subjectId, issuerId);
     if (!serialization) {
       return null;
     }
@@ -42,13 +39,10 @@ export abstract class CertificateStore {
   }
 
   public async retrieveAll(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<readonly CertificationPath[]> {
-    const allSerializations = await this.retrieveAllSerializations(
-      subjectPrivateAddress,
-      issuerPrivateAddress,
-    );
+    const allSerializations = await this.retrieveAllSerializations(subjectId, issuerId);
     return allSerializations
       .map(CertificationPath.deserialize)
       .filter((p) => new Date() < p.leafCertificate.expiryDate);
@@ -58,18 +52,18 @@ export abstract class CertificateStore {
 
   protected abstract saveData(
     serialization: ArrayBuffer,
-    subjectPrivateAddress: string,
+    subjectId: string,
     subjectCertificateExpiryDate: Date,
-    issuerPrivateAddress: string,
+    issuerId: string,
   ): Promise<void>;
 
   protected abstract retrieveLatestSerialization(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<ArrayBuffer | null>;
 
   protected abstract retrieveAllSerializations(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<readonly ArrayBuffer[]>;
 }

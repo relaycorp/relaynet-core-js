@@ -9,10 +9,10 @@ afterEach(() => {
 
 describe('get', () => {
   test('Endpoint instances should be returned', async () => {
-    const { privateAddress } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
+    const { id } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
     const manager = new EndpointManager(KEY_STORES);
 
-    const endpoint = await manager.get(privateAddress);
+    const endpoint = await manager.get(id);
 
     expect(endpoint).toBeInstanceOf(Endpoint);
   });

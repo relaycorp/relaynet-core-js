@@ -121,7 +121,7 @@ export default class Certificate {
   public readonly pkijsCertificate: pkijs.Certificate;
 
   // tslint:disable-next-line:readonly-keyword
-  protected privateAddressCache: string | null = null;
+  protected subjectIdCache: string | null = null;
 
   /**
    * @internal
@@ -199,15 +199,15 @@ export default class Certificate {
     }
   }
 
-  public async calculateSubjectPrivateAddress(): Promise<string> {
-    if (!this.privateAddressCache) {
+  public async calculateSubjectId(): Promise<string> {
+    if (!this.subjectIdCache) {
       // tslint:disable-next-line:no-object-mutation
-      this.privateAddressCache = await getIdFromIdentityKey(await this.getPublicKey());
+      this.subjectIdCache = await getIdFromIdentityKey(await this.getPublicKey());
     }
-    return this.privateAddressCache;
+    return this.subjectIdCache;
   }
 
-  public getIssuerPrivateAddress(): string | null {
+  public getIssuerId(): string | null {
     const authorityKeyAttribute = this.pkijsCertificate.extensions?.find(
       (attr) => attr.extnID === oids.AUTHORITY_KEY,
     );

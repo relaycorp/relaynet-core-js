@@ -10,7 +10,7 @@ import { Signer } from './signatures/Signer';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
-    public readonly privateAddress: string,
+    public readonly id: string,
     protected readonly identityPrivateKey: CryptoKey,
     protected readonly keyStores: KeyStoreSet,
     protected readonly cryptoOptions: Partial<NodeCryptoOptions>,
@@ -23,27 +23,24 @@ export abstract class Node<Payload extends PayloadPlaintext> {
   /**
    * Generate and store a new session key.
    *
-   * @param peerPrivateAddress The peer to bind the key to, unless it's an initial key
+   * @param peerId The peer to bind the key to, unless it's an initial key
    */
-  public async generateSessionKey(peerPrivateAddress?: string): Promise<SessionKey> {
+  public async generateSessionKey(peerId?: string): Promise<SessionKey> {
     const { sessionKey, privateKey } = await SessionKeyPair.generate();
     await this.keyStores.privateKeyStore.saveSessionKey(
       privateKey,
       sessionKey.keyId,
-      this.privateAddress,
-      peerPrivateAddress,
+      this.id,
+      peerId,
     );
     return sessionKey;
   }
 
   public async getGSCSigner<S extends Signer>(
-    peerPrivateAddress: string,
+    peerId: string,
     signerClass: new (certificate: Certificate, privateKey: CryptoKey) => S,
   ): Promise<S | null> {
-    const path = await this.keyStores.certificateStore.retrieveLatest(
-      this.privateAddress,
-      peerPrivateAddress,
-    );
+    const path = await this.keyStores.certificateStore.retrieveLatest(this.id, peerId);
     if (!path) {
       return null;
     }
@@ -58,14 +55,11 @@ export abstract class Node<Payload extends PayloadPlaintext> {
    * @param message
    */
   public async unwrapMessagePayload<P extends Payload>(message: RAMFMessage<P>): Promise<P> {
-    const unwrapResult = await message.unwrapPayload(
-      this.keyStores.privateKeyStore,
-      this.privateAddress,
-    );
+    const unwrapResult = await message.unwrapPayload(this.keyStores.privateKeyStore);
 
     await this.keyStores.publicKeyStore.saveSessionKey(
       unwrapResult.senderSessionKey,
-      await message.senderCertificate.calculateSubjectPrivateAddress(),
+      await message.senderCertificate.calculateSubjectId(),
       message.creationDate,
     );
 

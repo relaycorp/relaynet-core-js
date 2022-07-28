@@ -25,7 +25,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
   constructor(
     privateGatewayPrivateKey: CryptoKey,
     privateGatewayDeliveryAuth: Certificate,
-    publicGatewayPrivateAddress: string,
+    publicGatewayId: string,
     publicGatewayPublicKey: CryptoKey,
     public readonly publicGatewayInternetAddress: string,
     keyStores: KeyStoreSet,
@@ -34,7 +34,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     super(
       privateGatewayPrivateKey,
       privateGatewayDeliveryAuth,
-      publicGatewayPrivateAddress,
+      publicGatewayId,
       publicGatewayPublicKey,
       keyStores,
       cryptoOptions,

@@ -9,11 +9,11 @@ import { issueGatewayCertificate } from '../pki/issuance';
 import { Gateway } from './Gateway';
 import { StubVerifier } from './signatures/_test_utils';
 
-let nodePrivateAddress: string;
+let nodeId: string;
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
 let nodeCertificateIssuer: Certificate;
-let nodeCertificateIssuerPrivateAddress: string;
+let nodeCertificateIssuerId: string;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
@@ -25,8 +25,7 @@ beforeAll(async () => {
       validityEndDate: tomorrow,
     }),
   );
-  nodeCertificateIssuerPrivateAddress =
-    await nodeCertificateIssuer.calculateSubjectPrivateAddress();
+  nodeCertificateIssuerId = await nodeCertificateIssuer.calculateSubjectId();
 
   const nodeKeyPair = await generateRSAKeyPair();
   nodePrivateKey = nodeKeyPair.privateKey;
@@ -38,7 +37,7 @@ beforeAll(async () => {
       validityEndDate: tomorrow,
     }),
   );
-  nodePrivateAddress = await getIdFromIdentityKey(nodeKeyPair.publicKey);
+  nodeId = await getIdFromIdentityKey(nodeKeyPair.publicKey);
 });
 
 const KEY_STORES = new MockKeyStoreSet();
@@ -48,31 +47,25 @@ beforeEach(async () => {
 
 describe('getGSCVerifier', () => {
   test('Certificates from a different issuer should be ignored', async () => {
-    const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    const gateway = new StubGateway(nodeId, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
       new CertificationPath(nodeCertificate, []),
-      nodeCertificateIssuerPrivateAddress,
+      nodeCertificateIssuerId,
     );
 
-    const verifier = await gateway.getGSCVerifier(
-      `not-${nodeCertificateIssuerPrivateAddress}`,
-      StubVerifier,
-    );
+    const verifier = await gateway.getGSCVerifier(`not-${nodeCertificateIssuerId}`, StubVerifier);
 
     expect(verifier.getTrustedCertificates()).toBeEmpty();
   });
 
   test('All certificates should be set as trusted', async () => {
-    const gateway = new StubGateway(nodePrivateAddress, nodePrivateKey, KEY_STORES, {});
+    const gateway = new StubGateway(nodeId, nodePrivateKey, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
       new CertificationPath(nodeCertificate, []),
-      nodeCertificateIssuerPrivateAddress,
+      nodeCertificateIssuerId,
     );
 
-    const verifier = await gateway.getGSCVerifier(
-      nodeCertificateIssuerPrivateAddress,
-      StubVerifier,
-    );
+    const verifier = await gateway.getGSCVerifier(nodeCertificateIssuerId, StubVerifier);
 
     const trustedCertificates = verifier!.getTrustedCertificates();
     expect(trustedCertificates).toHaveLength(1);

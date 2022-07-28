@@ -14,12 +14,9 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
     const now = new Date();
 
     const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
-    const privateAddress = await getIdFromIdentityKey(publicKey);
+    const nodeId = await getIdFromIdentityKey(publicKey);
 
-    const existingIssuerPath = await this.keyStores.certificateStore.retrieveLatest(
-      privateAddress,
-      privateAddress,
-    );
+    const existingIssuerPath = await this.keyStores.certificateStore.retrieveLatest(nodeId, nodeId);
     if (existingIssuerPath) {
       const minExpiryDate = addDays(now, 90);
       if (minExpiryDate <= existingIssuerPath.leafCertificate.expiryDate) {
@@ -34,7 +31,7 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
       validityStartDate: subMinutes(now, 90),
     });
     const path = new CertificationPath(issuer, []);
-    await this.keyStores.certificateStore.save(path, privateAddress);
+    await this.keyStores.certificateStore.save(path, nodeId);
     return issuer;
   }
 
@@ -43,11 +40,8 @@ export abstract class PrivateGatewayChannel extends GatewayChannel {
    */
   public async getCDAIssuers(): Promise<readonly Certificate[]> {
     const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
-    const privateAddress = await getIdFromIdentityKey(publicKey);
-    const issuerPaths = await this.keyStores.certificateStore.retrieveAll(
-      privateAddress,
-      privateAddress,
-    );
+    const nodeId = await getIdFromIdentityKey(publicKey);
+    const issuerPaths = await this.keyStores.certificateStore.retrieveAll(nodeId, nodeId);
     return issuerPaths.map((p) => p.leafCertificate);
   }
 }

@@ -426,13 +426,13 @@ test('getPublicKeyDigestHex should return the SHA-256 hex digest of the public k
   expect(digestHex).toEqual(sha256Hex(await derSerializePublicKey(keyPair.publicKey)));
 });
 
-describe('getPrivateAddressFromIdentityKey', () => {
+describe('getIdFromIdentityKey', () => {
   test('Private address should be computed from identity key', async () => {
     const keyPair = await generateRSAKeyPair();
 
-    const privateAddress = await getIdFromIdentityKey(keyPair.publicKey);
+    const id = await getIdFromIdentityKey(keyPair.publicKey);
 
-    expect(privateAddress).toEqual('0' + sha256Hex(await derSerializePublicKey(keyPair.publicKey)));
+    expect(id).toEqual('0' + sha256Hex(await derSerializePublicKey(keyPair.publicKey)));
   });
 
   test('DH keys should be refused', async () => {

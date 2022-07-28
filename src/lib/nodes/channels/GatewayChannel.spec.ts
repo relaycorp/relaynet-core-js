@@ -28,7 +28,7 @@ const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 
 const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
-let peerPrivateAddress: string;
+let peerId: string;
 let peerPublicKey: CryptoKey;
 let nodePrivateKey: CryptoKey;
 let nodeCertificate: Certificate;
@@ -36,7 +36,7 @@ beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   const peerKeyPair = await generateRSAKeyPair();
-  peerPrivateAddress = await getIdFromIdentityKey(peerKeyPair.publicKey);
+  peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerPublicKey = peerKeyPair.publicKey;
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
@@ -72,7 +72,7 @@ describe('generateCargoes', () => {
   beforeEach(async () => {
     await KEY_STORES.publicKeyStore.saveSessionKey(
       peerSessionKeyPair.sessionKey,
-      peerPrivateAddress,
+      peerId,
       new Date(),
     );
   });
@@ -135,8 +135,8 @@ describe('generateCargoes', () => {
     await expect(
       KEY_STORES.privateKeyStore.retrieveSessionKey(
         originatorKey.keyId,
-        await nodeCertificate.calculateSubjectPrivateAddress(),
-        peerPrivateAddress,
+        await nodeCertificate.calculateSubjectId(),
+        peerId,
       ),
     ).toResolve();
   });
@@ -270,7 +270,7 @@ describe('generateCargoes', () => {
   test('Messages should be encapsulated into as few cargoes as possible', async () => {
     const channel = new StubGatewayChannel();
     const dummyParcel = await generateDummyParcel(
-      peerPrivateAddress,
+      peerId,
       peerSessionKeyPair.sessionKey,
       nodeCertificate,
     );
@@ -329,14 +329,7 @@ class StubGatewayChannel extends GatewayChannel {
   public static readonly OUTBOUND_RAMF_RECIPIENT_ID = '0deadbeef';
 
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(
-      nodePrivateKey,
-      nodeCertificate,
-      peerPrivateAddress,
-      peerPublicKey,
-      KEY_STORES,
-      cryptoOptions,
-    );
+    super(nodePrivateKey, nodeCertificate, peerId, peerPublicKey, KEY_STORES, cryptoOptions);
   }
 
   async getOutboundRAMFRecipient(): Promise<Recipient> {

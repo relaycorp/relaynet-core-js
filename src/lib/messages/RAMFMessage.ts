@@ -82,11 +82,6 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     );
   }
 
-  public async unwrapPayload(privateKey: CryptoKey): Promise<PayloadUnwrapping<Payload>>;
-  public async unwrapPayload(
-    privateKeyStore: PrivateKeyStore,
-    privateAddress?: string,
-  ): Promise<PayloadUnwrapping<Payload>>;
   public async unwrapPayload(
     privateKeyOrStore: CryptoKey | PrivateKeyStore,
   ): Promise<PayloadUnwrapping<Payload>> {
@@ -140,12 +135,8 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     const keyId = payloadEnvelopedData.getRecipientKeyId();
     let privateKey: CryptoKey;
     if (privateKeyOrStore instanceof PrivateKeyStore) {
-      const peerPrivateAddress = await this.senderCertificate.calculateSubjectPrivateAddress();
-      privateKey = await privateKeyOrStore.retrieveSessionKey(
-        keyId,
-        this.recipient.id,
-        peerPrivateAddress,
-      );
+      const peerId = await this.senderCertificate.calculateSubjectId();
+      privateKey = await privateKeyOrStore.retrieveSessionKey(keyId, this.recipient.id, peerId);
     } else {
       privateKey = privateKeyOrStore;
     }
@@ -165,7 +156,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     }
 
     const recipientCertificate = certificationPath[1];
-    const recipientId = await recipientCertificate.calculateSubjectPrivateAddress();
+    const recipientId = await recipientCertificate.calculateSubjectId();
     if (recipientId !== this.recipient.id) {
       throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipient}`);
     }

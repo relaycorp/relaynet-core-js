@@ -17,12 +17,12 @@ import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeError } from './errors';
 import { PrivateGateway } from './PrivateGateway';
 
-const PUBLIC_GATEWAY_PUBLIC_ADDRESS = 'example.com';
+const PUBLIC_GATEWAY_INTERNET_ADDRESS = 'example.com';
 
-let publicGatewayPrivateAddress: string;
+let publicGatewayId: string;
 let publicGatewayPublicKey: CryptoKey;
 let publicGatewayCertificate: Certificate;
-let privateGatewayPrivateAddress: string;
+let privateGatewayId: string;
 let privateGatewayPrivateKey: CryptoKey;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
@@ -31,7 +31,7 @@ beforeAll(async () => {
   // Public gateway
   const publicGatewayKeyPair = await generateRSAKeyPair();
   publicGatewayPublicKey = publicGatewayKeyPair.publicKey;
-  publicGatewayPrivateAddress = await getIdFromIdentityKey(publicGatewayPublicKey);
+  publicGatewayId = await getIdFromIdentityKey(publicGatewayPublicKey);
   publicGatewayCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerPrivateKey: publicGatewayKeyPair.privateKey,
@@ -43,7 +43,7 @@ beforeAll(async () => {
   // Private gateway
   const privateGatewayKeyPair = await generateRSAKeyPair();
   privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
-  privateGatewayPrivateAddress = await getIdFromIdentityKey(privateGatewayKeyPair.publicKey);
+  privateGatewayId = await getIdFromIdentityKey(privateGatewayKeyPair.publicKey);
   privateGatewayPDCCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: publicGatewayCertificate,
@@ -64,7 +64,7 @@ describe('requestPublicGatewayRegistration', () => {
 
   test('Registration authorization should be honoured', async () => {
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
@@ -80,7 +80,7 @@ describe('requestPublicGatewayRegistration', () => {
 
   test('Public key should be honoured', async () => {
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
@@ -106,7 +106,7 @@ describe('savePublicGatewayChannel', () => {
 
   test('Registration should be refused if public gateway did not issue authorization', async () => {
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
@@ -126,7 +126,7 @@ describe('savePublicGatewayChannel', () => {
 
   test('Delivery authorisation should be stored', async () => {
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
@@ -139,8 +139,8 @@ describe('savePublicGatewayChannel', () => {
     );
 
     const path = await KEY_STORES.certificateStore.retrieveLatest(
-      privateGatewayPrivateAddress,
-      publicGatewayPrivateAddress,
+      privateGatewayId,
+      publicGatewayId,
     );
     expect(path!.leafCertificate.isEqual(privateGatewayPDCCertificate));
     expect(path!.certificateAuthorities).toHaveLength(0);
@@ -148,7 +148,7 @@ describe('savePublicGatewayChannel', () => {
 
   test('Public key of public gateway should be stored', async () => {
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
@@ -161,7 +161,7 @@ describe('savePublicGatewayChannel', () => {
     );
 
     const publicGatewayPublicKeyRetrieved = await KEY_STORES.publicKeyStore.retrieveIdentityKey(
-      publicGatewayPrivateAddress,
+      publicGatewayId,
     );
     expect(publicGatewayPublicKeyRetrieved).toBeTruthy();
     await expect(derSerializePublicKey(publicGatewayPublicKeyRetrieved!)).resolves.toEqual(
@@ -171,7 +171,7 @@ describe('savePublicGatewayChannel', () => {
 
   test('Session public key of public gateway should be stored', async () => {
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
@@ -183,7 +183,7 @@ describe('savePublicGatewayChannel', () => {
       publicGatewaySessionPublicKey,
     );
 
-    const keyData = KEY_STORES.publicKeyStore.sessionKeys[publicGatewayPrivateAddress];
+    const keyData = KEY_STORES.publicKeyStore.sessionKeys[publicGatewayId];
     expect(keyData.publicKeyDer).toEqual(
       await derSerializePublicKey(publicGatewaySessionPublicKey.publicKey),
     );
@@ -197,61 +197,55 @@ describe('retrievePublicGatewayChannel', () => {
   test('Null should be returned if public gateway public key is not found', async () => {
     await KEY_STORES.certificateStore.save(
       new CertificationPath(privateGatewayPDCCertificate, []),
-      publicGatewayPrivateAddress,
+      publicGatewayId,
     );
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
     );
 
     await expect(
-      privateGateway.retrievePublicGatewayChannel(
-        publicGatewayPrivateAddress,
-        PUBLIC_GATEWAY_PUBLIC_ADDRESS,
-      ),
+      privateGateway.retrievePublicGatewayChannel(publicGatewayId, PUBLIC_GATEWAY_INTERNET_ADDRESS),
     ).resolves.toBeNull();
   });
 
   test('Null should be returned if delivery authorization is not found', async () => {
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
     );
 
     await expect(
-      privateGateway.retrievePublicGatewayChannel(
-        publicGatewayPrivateAddress,
-        PUBLIC_GATEWAY_PUBLIC_ADDRESS,
-      ),
+      privateGateway.retrievePublicGatewayChannel(publicGatewayId, PUBLIC_GATEWAY_INTERNET_ADDRESS),
     ).resolves.toBeNull();
   });
 
   test('Channel should be returned if it exists', async () => {
     await KEY_STORES.certificateStore.save(
       new CertificationPath(privateGatewayPDCCertificate, []),
-      publicGatewayPrivateAddress,
+      publicGatewayId,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       {},
     );
 
     const channel = await privateGateway.retrievePublicGatewayChannel(
-      publicGatewayPrivateAddress,
-      PUBLIC_GATEWAY_PUBLIC_ADDRESS,
+      publicGatewayId,
+      PUBLIC_GATEWAY_INTERNET_ADDRESS,
     );
 
-    expect(channel!.publicGatewayInternetAddress).toEqual(PUBLIC_GATEWAY_PUBLIC_ADDRESS);
+    expect(channel!.publicGatewayInternetAddress).toEqual(PUBLIC_GATEWAY_INTERNET_ADDRESS);
     expect(channel!.nodeDeliveryAuth.isEqual(privateGatewayPDCCertificate)).toBeTrue();
-    expect(channel!.peerId).toEqual(publicGatewayPrivateAddress);
+    expect(channel!.peerId).toEqual(publicGatewayId);
     await expect(derSerializePublicKey(channel!.peerPublicKey)).resolves.toEqual(
       await derSerializePublicKey(publicGatewayPublicKey),
     );
@@ -260,20 +254,20 @@ describe('retrievePublicGatewayChannel', () => {
   test('Crypto options should be passed', async () => {
     await KEY_STORES.certificateStore.save(
       new CertificationPath(privateGatewayPDCCertificate, []),
-      publicGatewayPrivateAddress,
+      publicGatewayId,
     );
     await KEY_STORES.publicKeyStore.saveIdentityKey(publicGatewayPublicKey);
     const cryptoOptions = { encryption: { aesKeySize: 256 } };
     const privateGateway = new PrivateGateway(
-      privateGatewayPrivateAddress,
+      privateGatewayId,
       privateGatewayPrivateKey,
       KEY_STORES,
       cryptoOptions,
     );
 
     const channel = await privateGateway.retrievePublicGatewayChannel(
-      publicGatewayPrivateAddress,
-      PUBLIC_GATEWAY_PUBLIC_ADDRESS,
+      publicGatewayId,
+      PUBLIC_GATEWAY_INTERNET_ADDRESS,
     );
 
     expect(channel?.cryptoOptions).toEqual(cryptoOptions);

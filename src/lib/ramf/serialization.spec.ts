@@ -252,10 +252,8 @@ describe('MessageSerializer', () => {
 
             const fields = await deserializeFields(messageSerialized);
             const recipientASN1 = getConstructedItemFromConstructed(fields, 0);
-            const privateAddressASN1 = getPrimitiveItemFromConstructed(recipientASN1, 0);
-            expect(Buffer.from(privateAddressASN1.valueBlock.valueHexView)).toEqual(
-              Buffer.from(RECIPIENT_ID),
-            );
+            const idASN1 = getPrimitiveItemFromConstructed(recipientASN1, 0);
+            expect(Buffer.from(idASN1.valueBlock.valueHexView)).toEqual(Buffer.from(RECIPIENT_ID));
           });
 
           test('Id should not span more than 1024 characters', async () => {
@@ -310,8 +308,8 @@ describe('MessageSerializer', () => {
 
             const fields = await deserializeFields(messageSerialized);
             const recipientASN1 = getConstructedItemFromConstructed(fields, 0);
-            const privateAddressASN1 = getPrimitiveItemFromConstructed(recipientASN1, 1);
-            expect(Buffer.from(privateAddressASN1.valueBlock.valueHexView)).toEqual(
+            const idASN1 = getPrimitiveItemFromConstructed(recipientASN1, 1);
+            expect(Buffer.from(idASN1.valueBlock.valueHexView)).toEqual(
               Buffer.from(INTERNET_ADDRESS),
             );
           });
