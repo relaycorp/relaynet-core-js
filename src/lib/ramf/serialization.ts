@@ -8,9 +8,10 @@ import {
   VisibleString,
 } from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
+import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
 
-import { SignatureOptions } from '../..';
+import { Recipient, SignatureOptions } from '../..';
 import {
   asn1DateTimeToDate,
   dateToASN1DateTimeInUTC,
@@ -50,7 +51,7 @@ interface MessageFormatSignature {
 }
 
 interface MessageFieldSet {
-  readonly recipient: string;
+  readonly recipient: Recipient;
   readonly id: string;
   readonly date: Date;
   readonly ttl: number;
@@ -82,7 +83,6 @@ export async function serialize(
   signatureOptions?: Partial<SignatureOptions>,
 ): Promise<ArrayBuffer> {
   //region Validation
-  validateRecipientAddressingLength(message.recipientAddress);
   validateMessageIdLength(message.id);
   validateTtl(message.ttl);
   validatePayloadLength(message.payloadSerialized);
@@ -94,7 +94,7 @@ export async function serialize(
   );
 
   const fieldSetSerialized = makeImplicitlyTaggedSequence(
-    encodeRecipientField(message),
+    encodeRecipientField(message.recipient),
     new VisibleString({ value: message.id }),
     dateToASN1DateTimeInUTC(message.creationDate),
     new Integer({ value: message.ttl }),
@@ -122,8 +122,16 @@ export async function serialize(
   return serialization;
 }
 
-function encodeRecipientField(message: RAMFMessage<any>): Sequence {
-  return makeImplicitlyTaggedSequence(new VisibleString({ value: message.recipientAddress }));
+function encodeRecipientField(recipient: Recipient): Sequence {
+  validateRecipientFieldsLength(recipient);
+
+  const additionalItems = recipient.internetAddress
+    ? [new VisibleString({ value: recipient.internetAddress })]
+    : [];
+  return makeImplicitlyTaggedSequence(
+    new VisibleString({ value: recipient.id }),
+    ...additionalItems,
+  );
 }
 
 function validateMessageLength(serialization: ArrayBuffer): void {
@@ -151,8 +159,7 @@ export async function deserialize<M extends RAMFMessage<any>>(
   const signatureVerification = await verifySignature(serialization.slice(10));
 
   const messageFields = parseMessageFields(signatureVerification.plaintext);
-  validateRecipientAddressingLength(messageFields.recipient);
-  validateRecipientAddress(messageFields.recipient);
+  validateRecipient(messageFields.recipient);
   validateMessageIdLength(messageFields.id);
   validateTtl(messageFields.ttl);
   validatePayloadLength(messageFields.payload);
@@ -202,26 +209,34 @@ function validateFileFormatSignature(
   //endregion
 }
 
-function validateRecipientAddress(recipientAddress: string): void {
-  try {
-    // tslint:disable-next-line:no-unused-expression
-    new URL(recipientAddress);
-  } catch (_) {
-    // The address isn't public. Check if it's private:
-    if (!recipientAddress.match(PRIVATE_ADDRESS_REGEX)) {
-      throw new RAMFValidationError(
-        `Recipient address should be a valid node address (got: "${recipientAddress}")`,
-      );
-    }
+function validateRecipient(recipient: Recipient): void {
+  validateRecipientFieldsLength(recipient);
+
+  if (!recipient.id.match(PRIVATE_ADDRESS_REGEX)) {
+    throw new RAMFSyntaxError(`Recipient id is malformed ("${recipient.id}")`);
+  }
+
+  if (recipient.internetAddress && !isValidDomain(recipient.internetAddress)) {
+    throw new RAMFSyntaxError(
+      `Recipient Internet address is malformed ("${recipient.internetAddress}")`,
+    );
   }
 }
 
-function validateRecipientAddressingLength(recipientAddress: string): void {
-  const length = recipientAddress.length;
-  if (MAX_RECIPIENT_ADDRESS_LENGTH < length) {
+function validateRecipientFieldsLength(recipient: Recipient): void {
+  const idLength = recipient.id.length;
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < idLength) {
     throw new RAMFSyntaxError(
-      `Recipient address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} characters ` +
-        `(got ${length})`,
+      `Recipient id should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} characters ` +
+        `(got ${idLength})`,
+    );
+  }
+
+  const internetAddressLength = recipient.internetAddress?.length ?? 0;
+  if (MAX_RECIPIENT_ADDRESS_LENGTH < internetAddressLength) {
+    throw new RAMFSyntaxError(
+      `Recipient Internet address should not span more than ${MAX_RECIPIENT_ADDRESS_LENGTH} ` +
+        `characters (got ${internetAddressLength})`,
     );
   }
 }
@@ -279,12 +294,17 @@ function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {
   if (recipientSequence.length === 0) {
     throw new RAMFSyntaxError('Recipient SEQUENCE should at least contain the private address');
   }
+  const recipientId = textDecoder.decode(recipientSequence[0].valueBlock.valueHex);
+  const recipientInternetAddress =
+    2 <= recipientSequence.length
+      ? textDecoder.decode(recipientSequence[1].valueBlock.valueHex)
+      : undefined;
 
   return {
     date: getDateFromPrimitiveBlock(messageBlock.date),
     id: textDecoder.decode(messageBlock.id.valueBlock.valueHex),
     payload: Buffer.from(messageBlock.payload.valueBlock.valueHex),
-    recipient: textDecoder.decode(recipientSequence[0].valueBlock.valueHex),
+    recipient: { id: recipientId, internetAddress: recipientInternetAddress },
     ttl: Number(ttlBigInt), // Cannot exceed Number.MAX_SAFE_INTEGER anyway
   };
 }
