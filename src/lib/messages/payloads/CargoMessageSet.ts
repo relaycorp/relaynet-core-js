@@ -132,7 +132,7 @@ export default class CargoMessageSet implements PayloadPlaintext {
 function getItemClass(itemSerialized: ArrayBuffer): {
   readonly deserialize: (s: ArrayBuffer) => CargoMessageSetItem | Promise<CargoMessageSetItem>;
 } {
-  const messageFormatSignature = Buffer.from(itemSerialized.slice(0, 10));
+  const messageFormatSignature = Buffer.from(itemSerialized.slice(0, 7));
 
   if (messageFormatSignature.equals(ParcelCollectionAck.FORMAT_SIGNATURE)) {
     return ParcelCollectionAck;

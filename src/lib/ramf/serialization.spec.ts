@@ -87,7 +87,7 @@ describe('MessageSerializer', () => {
         stubMessage = new StubMessage(RECIPIENT, senderCertificate, PAYLOAD);
       });
 
-      test('The ASCII string "Relaynet" should be at the start', async () => {
+      test('The ASCII string "Awala" should be at the start', async () => {
         const messageSerialized = await serialize(
           stubMessage,
           stubConcreteMessageTypeOctet,
@@ -95,7 +95,7 @@ describe('MessageSerializer', () => {
           senderPrivateKey,
         );
         const formatSignature = parseFormatSignature(messageSerialized);
-        expect(formatSignature).toHaveProperty('magic', 'Relaynet');
+        expect(formatSignature).toHaveProperty('magic', 'Awala');
       });
 
       test('The concrete message type should be represented with an octet', async () => {
@@ -521,7 +521,7 @@ describe('MessageSerializer', () => {
 
       async function deserializeFields(messageSerialized: ArrayBuffer): Promise<Sequence> {
         // Skip format signature
-        const cmsSignedDataSerialized = messageSerialized.slice(10);
+        const cmsSignedDataSerialized = messageSerialized.slice(7);
         const { plaintext } = await cmsSignedData.verifySignature(cmsSignedDataSerialized);
         return derDeserialize(plaintext) as Sequence;
       }
@@ -544,7 +544,7 @@ describe('MessageSerializer', () => {
         ),
       ).rejects.toThrowWithMessage(
         RAMFSyntaxError,
-        'RAMF format signature does not begin with "Relaynet"',
+        'RAMF format signature does not begin with "Awala"',
       );
     });
 
@@ -566,7 +566,7 @@ describe('MessageSerializer', () => {
 
     describe('Format signature', () => {
       test('Input should be long enough to contain format signature', async () => {
-        const serialization = bufferToArray(Buffer.from('a'.repeat(9)));
+        const serialization = bufferToArray(Buffer.from('a'.repeat(6)));
         await expect(
           deserialize(
             serialization,
@@ -580,7 +580,7 @@ describe('MessageSerializer', () => {
         );
       });
 
-      test('Input should be refused if it does not start with "Relaynet"', async () => {
+      test('Input should be refused if it does not start with "Awala"', async () => {
         const serialization = bufferToArray(Buffer.from('Relaycorp00'));
         await expect(
           deserialize(
@@ -591,7 +591,7 @@ describe('MessageSerializer', () => {
           ),
         ).rejects.toThrowWithMessage(
           RAMFSyntaxError,
-          'RAMF format signature does not begin with "Relaynet"',
+          'RAMF format signature does not begin with "Awala"',
         );
       });
 
@@ -714,7 +714,7 @@ describe('MessageSerializer', () => {
     describe('Fields', () => {
       test('Fields should be DER-encoded', async () => {
         const serializer = new SmartBuffer();
-        serializer.writeString('Relaynet');
+        serializer.writeString('Awala');
         serializer.writeUInt8(stubConcreteMessageTypeOctet);
         serializer.writeUInt8(stubConcreteMessageVersionOctet);
         serializer.writeBuffer(
@@ -740,7 +740,7 @@ describe('MessageSerializer', () => {
 
       test('Fields should be serialized as a sequence', async () => {
         const serializer = new SmartBuffer();
-        serializer.writeString('Relaynet');
+        serializer.writeString('Awala');
         serializer.writeUInt8(stubConcreteMessageTypeOctet);
         serializer.writeUInt8(stubConcreteMessageVersionOctet);
 
@@ -1172,7 +1172,7 @@ describe('MessageSerializer', () => {
       customSenderCertificate?: Certificate,
     ): Promise<ArrayBuffer> {
       const serializer = new SmartBuffer();
-      serializer.writeString('Relaynet');
+      serializer.writeString('Awala');
       serializer.writeUInt8(stubConcreteMessageTypeOctet);
       serializer.writeUInt8(stubConcreteMessageVersionOctet);
 
@@ -1197,8 +1197,8 @@ interface MessageFormatSignature {
 function parseFormatSignature(messageSerialized: ArrayBuffer): MessageFormatSignature {
   const buffer = Buffer.from(messageSerialized);
   return {
-    concreteMessageType: buffer.readUInt8(8),
-    concreteMessageVersion: buffer.readUInt8(9),
-    magic: buffer.slice(0, 8).toString(),
+    concreteMessageType: buffer.readUInt8(5),
+    concreteMessageVersion: buffer.readUInt8(6),
+    magic: buffer.slice(0, 5).toString(),
   };
 }

@@ -43,7 +43,8 @@ const NODE_ID_REGEX = /^[a-f\d]+$/;
  */
 export const MAX_SDU_PLAINTEXT_LENGTH = 8322048;
 
-const FORMAT_SIGNATURE_CONSTANT = Buffer.from('Relaynet');
+const FORMAT_SIGNATURE_CONSTANT = Buffer.from('Awala');
+const FORMAT_SIGNATURE_LENGTH = FORMAT_SIGNATURE_CONSTANT.byteLength + 2;
 
 interface MessageFormatSignature {
   readonly concreteMessageType: number;
@@ -149,14 +150,14 @@ export async function deserialize<M extends RAMFMessage<any>>(
   messageClass: new (...args: readonly any[]) => M,
 ): Promise<M> {
   validateMessageLength(serialization);
-  const messageFormatSignature = parseMessageFormatSignature(serialization.slice(0, 10));
+  const messageFormatSignature = parseMessageFormatSignature(serialization);
   validateFileFormatSignature(
     messageFormatSignature,
     concreteMessageTypeOctet,
     concreteMessageVersionOctet,
   );
 
-  const signatureVerification = await verifySignature(serialization.slice(10));
+  const signatureVerification = await verifySignature(serialization.slice(FORMAT_SIGNATURE_LENGTH));
 
   const messageFields = parseMessageFields(signatureVerification.plaintext);
   validateRecipient(messageFields.recipient);
@@ -271,14 +272,15 @@ function validatePayloadLength(payloadBuffer: ArrayBuffer): void {
 //region Deserialization validation
 
 function parseMessageFormatSignature(serialization: ArrayBuffer): MessageFormatSignature {
-  if (serialization.byteLength < 10) {
+  if (serialization.byteLength < FORMAT_SIGNATURE_LENGTH) {
     throw new RAMFSyntaxError('Serialization is too small to contain RAMF format signature');
   }
-  const formatSignature = Buffer.from(serialization.slice(0, 10));
-  if (!FORMAT_SIGNATURE_CONSTANT.equals(formatSignature.slice(0, 8))) {
-    throw new RAMFSyntaxError('RAMF format signature does not begin with "Relaynet"');
+  const formatSignature = Buffer.from(serialization.slice(0, FORMAT_SIGNATURE_LENGTH));
+  const formatSignatureConstant = formatSignature.slice(0, FORMAT_SIGNATURE_CONSTANT.byteLength);
+  if (!FORMAT_SIGNATURE_CONSTANT.equals(formatSignatureConstant)) {
+    throw new RAMFSyntaxError('RAMF format signature does not begin with "Awala"');
   }
-  return { concreteMessageType: formatSignature[8], concreteMessageVersion: formatSignature[9] };
+  return { concreteMessageType: formatSignature[5], concreteMessageVersion: formatSignature[6] };
 }
 
 function parseMessageFields(serialization: ArrayBuffer): MessageFieldSet {

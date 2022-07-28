@@ -21,10 +21,10 @@ describe('ParcelCollectionAck', () => {
       const pcaSerialized = pca.serialize();
 
       const expectedFormatSignature = Buffer.concat([
-        Buffer.from('Relaynet'),
+        Buffer.from('Awala'),
         Buffer.from([0x51, 0x00]),
       ]);
-      expect(Buffer.from(pcaSerialized).slice(0, 10)).toEqual(expectedFormatSignature);
+      expect(Buffer.from(pcaSerialized).slice(0, 7)).toEqual(expectedFormatSignature);
     });
 
     test('An ACK should be serialized as a 3-item sequence', () => {
@@ -52,7 +52,7 @@ describe('ParcelCollectionAck', () => {
     });
 
     function skipFormatSignatureFromSerialization(pcaSerialized: ArrayBuffer): ArrayBuffer {
-      return pcaSerialized.slice(10);
+      return pcaSerialized.slice(7);
     }
 
     function parsePCA(pcaSerialized: ArrayBuffer): asn1js.Sequence {

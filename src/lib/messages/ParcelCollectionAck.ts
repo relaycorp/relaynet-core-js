@@ -16,7 +16,7 @@ export class ParcelCollectionAck {
       throw new InvalidMessageError('Format signature should be that of a PCA');
     }
 
-    const pcaSequenceSerialized = pcaSerialized.slice(10);
+    const pcaSequenceSerialized = pcaSerialized.slice(7);
     const result = verifySchema(pcaSequenceSerialized, ParcelCollectionAck.SCHEMA);
     if (!result.verified) {
       throw new InvalidMessageError('PCA did not meet required structure');
