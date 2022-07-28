@@ -36,12 +36,12 @@ export class PrivateNodeRegistration {
     }
 
     const textDecoder = new TextDecoder();
-    const publicGatewayInternetAddress = textDecoder.decode(
-      registrationASN1.publicGatewayInternetAddress.valueBlock.valueHex,
+    const internetGatewayInternetAddress = textDecoder.decode(
+      registrationASN1.internetGatewayInternetAddress.valueBlock.valueHex,
     );
-    if (!isValidDomain(publicGatewayInternetAddress)) {
+    if (!isValidDomain(internetGatewayInternetAddress)) {
       throw new InvalidMessageError(
-        `Malformed public gateway address (${publicGatewayInternetAddress})`,
+        `Malformed Internet gateway address (${internetGatewayInternetAddress})`,
       );
     }
 
@@ -50,7 +50,7 @@ export class PrivateNodeRegistration {
     return new PrivateNodeRegistration(
       privateNodeCertificate,
       gatewayCertificate,
-      publicGatewayInternetAddress,
+      internetGatewayInternetAddress,
       sessionKey,
     );
   }
@@ -58,7 +58,7 @@ export class PrivateNodeRegistration {
   private static readonly SCHEMA = makeHeterogeneousSequenceSchema('PrivateNodeRegistration', [
     new Primitive({ name: 'privateNodeCertificate' }),
     new Primitive({ name: 'gatewayCertificate' }),
-    new Primitive({ name: 'publicGatewayInternetAddress' }),
+    new Primitive({ name: 'internetGatewayInternetAddress' }),
     new Constructed({
       name: 'sessionKey',
       optional: true,
@@ -72,7 +72,7 @@ export class PrivateNodeRegistration {
   constructor(
     public readonly privateNodeCertificate: Certificate,
     public readonly gatewayCertificate: Certificate,
-    public readonly publicGatewayInternetAddress: string,
+    public readonly internetGatewayInternetAddress: string,
     public readonly sessionKey: SessionKey | null = null,
   ) {}
 
@@ -89,7 +89,7 @@ export class PrivateNodeRegistration {
     return makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: this.privateNodeCertificate.serialize() }),
       new OctetString({ valueHex: this.gatewayCertificate.serialize() }),
-      new VisibleString({ value: this.publicGatewayInternetAddress }),
+      new VisibleString({ value: this.internetGatewayInternetAddress }),
       ...(sessionKeySequence ? [sessionKeySequence] : []),
     ).toBER();
   }

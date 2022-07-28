@@ -14,19 +14,19 @@ import { issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 
-let publicGatewayId: string;
-let publicGatewayPublicKey: CryptoKey;
-let publicGatewayCertificate: Certificate;
+let internetGatewayId: string;
+let internetGatewayPublicKey: CryptoKey;
+let internetGatewayCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   // Public gateway
-  const publicGatewayKeyPair = await generateRSAKeyPair();
-  publicGatewayPublicKey = publicGatewayKeyPair.publicKey;
-  publicGatewayId = await getIdFromIdentityKey(publicGatewayPublicKey);
-  publicGatewayCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: publicGatewayKeyPair.privateKey,
-    subjectPublicKey: publicGatewayPublicKey,
+  const internetGatewayKeyPair = await generateRSAKeyPair();
+  internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
+  internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
+  internetGatewayCertificate = await issueGatewayCertificate({
+    issuerPrivateKey: internetGatewayKeyPair.privateKey,
+    subjectPublicKey: internetGatewayPublicKey,
     validityEndDate: tomorrow,
   });
 });
@@ -41,10 +41,10 @@ beforeEach(async () => {
   // Private gateway
   privateGatewayPrivateKey = privateKey;
   privateGatewayPDCCertificate = await issueGatewayCertificate({
-    issuerCertificate: publicGatewayCertificate,
+    issuerCertificate: internetGatewayCertificate,
     issuerPrivateKey: privateKey,
     subjectPublicKey: publicKey,
-    validityEndDate: publicGatewayCertificate.expiryDate,
+    validityEndDate: internetGatewayCertificate.expiryDate,
   });
   privateGatewayId = id;
 });
@@ -192,8 +192,8 @@ class StubPrivateGatewayChannel extends PrivateGatewayChannel {
     super(
       privateGatewayPrivateKey,
       privateGatewayPDCCertificate,
-      publicGatewayId,
-      publicGatewayPublicKey,
+      internetGatewayId,
+      internetGatewayPublicKey,
       KEY_STORES,
       cryptoOptions,
     );

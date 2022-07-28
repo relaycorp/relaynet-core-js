@@ -2,17 +2,17 @@ import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegis
 import Certificate from '../crypto_wrappers/x509/Certificate';
 import { CertificationPath } from '../pki/CertificationPath';
 import { SessionKey } from '../SessionKey';
-import { PrivatePublicGatewayChannel } from './channels/PrivatePublicGatewayChannel';
+import { PrivateInternetGatewayChannel } from './channels/PrivateInternetGatewayChannel';
 import { NodeError } from './errors';
 import { Gateway } from './Gateway';
 
 export class PrivateGateway extends Gateway {
   /**
-   * Produce a `PrivateNodeRegistrationRequest` to register with a public gateway.
+   * Produce a `PrivateNodeRegistrationRequest` to register with a Internet gateway.
    *
    * @param authorizationSerialized
    */
-  public async requestPublicGatewayRegistration(
+  public async requestInternetGatewayRegistration(
     authorizationSerialized: ArrayBuffer,
   ): Promise<ArrayBuffer> {
     const request = new PrivateNodeRegistrationRequest(
@@ -23,65 +23,65 @@ export class PrivateGateway extends Gateway {
   }
 
   /**
-   * Create channel with public gateway using registration details.
+   * Create channel with Internet gateway using registration details.
    *
    * @param deliveryAuthorization
-   * @param publicGatewayIdentityCertificate
-   * @param publicGatewaySessionPublicKey
-   * @throws NodeError if the `publicGatewayIdentityCertificate` didn't issue
+   * @param internetGatewayIdentityCertificate
+   * @param internetGatewaySessionPublicKey
+   * @throws NodeError if the `internetGatewayIdentityCertificate` didn't issue
    *    `deliveryAuthorization`
    */
-  public async savePublicGatewayChannel(
+  public async saveInternetGatewayChannel(
     deliveryAuthorization: Certificate,
-    publicGatewayIdentityCertificate: Certificate,
-    publicGatewaySessionPublicKey: SessionKey,
+    internetGatewayIdentityCertificate: Certificate,
+    internetGatewaySessionPublicKey: SessionKey,
   ): Promise<void> {
     try {
-      await deliveryAuthorization.getCertificationPath([], [publicGatewayIdentityCertificate]);
+      await deliveryAuthorization.getCertificationPath([], [internetGatewayIdentityCertificate]);
     } catch (_) {
-      throw new NodeError('Delivery authorization was not issued by public gateway');
+      throw new NodeError('Delivery authorization was not issued by Internet gateway');
     }
 
-    const publicGatewayId = deliveryAuthorization.getIssuerId()!;
+    const internetGatewayId = deliveryAuthorization.getIssuerId()!;
     await this.keyStores.certificateStore.save(
       new CertificationPath(deliveryAuthorization, []),
-      publicGatewayId,
+      internetGatewayId,
     );
     await this.keyStores.publicKeyStore.saveIdentityKey(
-      await publicGatewayIdentityCertificate.getPublicKey(),
+      await internetGatewayIdentityCertificate.getPublicKey(),
     );
     await this.keyStores.publicKeyStore.saveSessionKey(
-      publicGatewaySessionPublicKey,
-      publicGatewayId,
+      internetGatewaySessionPublicKey,
+      internetGatewayId,
       new Date(),
     );
   }
 
-  public async retrievePublicGatewayChannel(
-    publicGatewayId: string,
-    publicGatewayInternetAddress: string,
-  ): Promise<PrivatePublicGatewayChannel | null> {
-    const publicGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
-      publicGatewayId,
+  public async retrieveInternetGatewayChannel(
+    internetGatewayId: string,
+    internetGatewayInternetAddress: string,
+  ): Promise<PrivateInternetGatewayChannel | null> {
+    const internetGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
+      internetGatewayId,
     );
-    if (!publicGatewayPublicKey) {
+    if (!internetGatewayPublicKey) {
       return null;
     }
 
     const privateGatewayDeliveryAuth = await this.keyStores.certificateStore.retrieveLatest(
       this.id,
-      publicGatewayId,
+      internetGatewayId,
     );
     if (!privateGatewayDeliveryAuth) {
       return null;
     }
 
-    return new PrivatePublicGatewayChannel(
+    return new PrivateInternetGatewayChannel(
       this.identityPrivateKey,
       privateGatewayDeliveryAuth.leafCertificate,
-      publicGatewayId,
-      publicGatewayPublicKey,
-      publicGatewayInternetAddress,
+      internetGatewayId,
+      internetGatewayPublicKey,
+      internetGatewayInternetAddress,
       this.keyStores,
       this.cryptoOptions,
     );

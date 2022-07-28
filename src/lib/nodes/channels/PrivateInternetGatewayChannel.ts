@@ -16,33 +16,33 @@ const CLOCK_DRIFT_TOLERANCE_MINUTES = 90;
 const OUTBOUND_CARGO_TTL_DAYS = 14;
 
 /**
- * Channel between a private gateway (the node) and its public gateway (the peer).
+ * Channel between a private gateway (the node) and its Internet gateway (the peer).
  */
-export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
+export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
   /**
    * @internal
    */
   constructor(
     privateGatewayPrivateKey: CryptoKey,
     privateGatewayDeliveryAuth: Certificate,
-    publicGatewayId: string,
-    publicGatewayPublicKey: CryptoKey,
-    public readonly publicGatewayInternetAddress: string,
+    internetGatewayId: string,
+    internetGatewayPublicKey: CryptoKey,
+    public readonly internetGatewayInternetAddress: string,
     keyStores: KeyStoreSet,
     cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
     super(
       privateGatewayPrivateKey,
       privateGatewayDeliveryAuth,
-      publicGatewayId,
-      publicGatewayPublicKey,
+      internetGatewayId,
+      internetGatewayPublicKey,
       keyStores,
       cryptoOptions,
     );
   }
 
   async getOutboundRAMFRecipient(): Promise<Recipient> {
-    return { id: this.peerId, internetAddress: this.publicGatewayInternetAddress };
+    return { id: this.peerId, internetAddress: this.internetGatewayInternetAddress };
   }
 
   //region Private endpoint registration
@@ -94,7 +94,7 @@ export class PrivatePublicGatewayChannel extends PrivateGatewayChannel {
     const registration = new PrivateNodeRegistration(
       endpointCertificate,
       this.nodeDeliveryAuth,
-      this.publicGatewayInternetAddress,
+      this.internetGatewayInternetAddress,
     );
     return registration.serialize();
   }

@@ -20,14 +20,14 @@ beforeAll(async () => {
   sessionKey = (await SessionKeyPair.generate()).sessionKey;
 });
 
-const PUBLIC_GATEWAY_INTERNET_ADDRESS = 'westeros.relaycorp.cloud';
+const INTERNET_GATEWAY_INTERNET_ADDRESS = 'westeros.relaycorp.cloud';
 
 describe('serialize', () => {
   test('Private node certificate should be serialized', async () => {
     const registration = new PrivateNodeRegistration(
       privateNodeCertificate,
       gatewayCertificate,
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
 
     const serialization = await registration.serialize();
@@ -44,7 +44,7 @@ describe('serialize', () => {
     const registration = new PrivateNodeRegistration(
       privateNodeCertificate,
       gatewayCertificate,
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
 
     const serialization = await registration.serialize();
@@ -57,11 +57,11 @@ describe('serialize', () => {
     );
   });
 
-  test('Internet address of public gateway should be serialized', async () => {
+  test('Internet address of Internet gateway should be serialized', async () => {
     const registration = new PrivateNodeRegistration(
       privateNodeCertificate,
       gatewayCertificate,
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
 
     const serialization = await registration.serialize();
@@ -69,7 +69,7 @@ describe('serialize', () => {
     const sequence = derDeserialize(serialization);
     const addressPrimitive = (sequence as Sequence).valueBlock.value[2] as Primitive;
     expect(Buffer.from(addressPrimitive.valueBlock.valueHexView).toString()).toEqual(
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
   });
 
@@ -78,7 +78,7 @@ describe('serialize', () => {
       const registration = new PrivateNodeRegistration(
         privateNodeCertificate,
         gatewayCertificate,
-        PUBLIC_GATEWAY_INTERNET_ADDRESS,
+        INTERNET_GATEWAY_INTERNET_ADDRESS,
       );
 
       const serialization = await registration.serialize();
@@ -91,7 +91,7 @@ describe('serialize', () => {
       const registration = new PrivateNodeRegistration(
         privateNodeCertificate,
         gatewayCertificate,
-        PUBLIC_GATEWAY_INTERNET_ADDRESS,
+        INTERNET_GATEWAY_INTERNET_ADDRESS,
         sessionKey,
       );
 
@@ -106,7 +106,7 @@ describe('serialize', () => {
       const registration = new PrivateNodeRegistration(
         privateNodeCertificate,
         gatewayCertificate,
-        PUBLIC_GATEWAY_INTERNET_ADDRESS,
+        INTERNET_GATEWAY_INTERNET_ADDRESS,
         sessionKey,
       );
 
@@ -122,7 +122,7 @@ describe('serialize', () => {
       const registration = new PrivateNodeRegistration(
         privateNodeCertificate,
         gatewayCertificate,
-        PUBLIC_GATEWAY_INTERNET_ADDRESS,
+        INTERNET_GATEWAY_INTERNET_ADDRESS,
         sessionKey,
       );
 
@@ -169,7 +169,7 @@ describe('deserialize', () => {
     const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: arrayBufferFrom('not a certificate') }),
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
-      new VisibleString({ value: PUBLIC_GATEWAY_INTERNET_ADDRESS }),
+      new VisibleString({ value: INTERNET_GATEWAY_INTERNET_ADDRESS }),
     ).toBER();
 
     await expect(() =>
@@ -181,7 +181,7 @@ describe('deserialize', () => {
     const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
       new OctetString({ valueHex: arrayBufferFrom('not a certificate') }),
-      new VisibleString({ value: PUBLIC_GATEWAY_INTERNET_ADDRESS }),
+      new VisibleString({ value: INTERNET_GATEWAY_INTERNET_ADDRESS }),
     ).toBER();
 
     await expect(() =>
@@ -189,8 +189,8 @@ describe('deserialize', () => {
     ).rejects.toThrowWithMessage(InvalidMessageError, /^Gateway certificate is invalid:/);
   });
 
-  test('Malformed Internet address of public gateway should be refused', async () => {
-    const invalidAddress = `${PUBLIC_GATEWAY_INTERNET_ADDRESS}-`;
+  test('Malformed Internet address of Internet gateway should be refused', async () => {
+    const invalidAddress = `${INTERNET_GATEWAY_INTERNET_ADDRESS}-`;
     const invalidSerialization = makeImplicitlyTaggedSequence(
       new OctetString({ valueHex: gatewayCertificate.serialize() }),
       new OctetString({ valueHex: privateNodeCertificate.serialize() }),
@@ -201,7 +201,7 @@ describe('deserialize', () => {
       PrivateNodeRegistration.deserialize(invalidSerialization),
     ).rejects.toThrowWithMessage(
       InvalidMessageError,
-      `Malformed public gateway address (${invalidAddress})`,
+      `Malformed Internet gateway address (${invalidAddress})`,
     );
   });
 
@@ -210,7 +210,7 @@ describe('deserialize', () => {
       const invalidSerialization = makeImplicitlyTaggedSequence(
         new OctetString({ valueHex: gatewayCertificate.serialize() }),
         new OctetString({ valueHex: privateNodeCertificate.serialize() }),
-        new VisibleString({ value: PUBLIC_GATEWAY_INTERNET_ADDRESS }),
+        new VisibleString({ value: INTERNET_GATEWAY_INTERNET_ADDRESS }),
         makeImplicitlyTaggedSequence(
           new OctetString({ valueHex: bufferToArray(sessionKey.keyId) }),
         ),
@@ -228,7 +228,7 @@ describe('deserialize', () => {
       const invalidRegistration = new PrivateNodeRegistration(
         privateNodeCertificate,
         gatewayCertificate,
-        PUBLIC_GATEWAY_INTERNET_ADDRESS,
+        INTERNET_GATEWAY_INTERNET_ADDRESS,
         {
           keyId: sessionKey.keyId,
           publicKey: await gatewayCertificate.getPublicKey(), // Invalid key type (RSA)
@@ -249,7 +249,7 @@ describe('deserialize', () => {
     const registration = new PrivateNodeRegistration(
       privateNodeCertificate,
       gatewayCertificate,
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
       sessionKey,
     );
 
@@ -260,8 +260,8 @@ describe('deserialize', () => {
       registrationDeserialized.privateNodeCertificate.isEqual(privateNodeCertificate),
     ).toBeTrue();
     expect(registrationDeserialized.gatewayCertificate.isEqual(gatewayCertificate)).toBeTrue();
-    expect(registrationDeserialized.publicGatewayInternetAddress).toEqual(
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+    expect(registrationDeserialized.internetGatewayInternetAddress).toEqual(
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
     expect(registrationDeserialized.sessionKey!!.keyId).toEqual(sessionKey.keyId);
     await expect(
@@ -273,7 +273,7 @@ describe('deserialize', () => {
     const registration = new PrivateNodeRegistration(
       privateNodeCertificate,
       gatewayCertificate,
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
 
     const serialization = await registration.serialize();
@@ -283,8 +283,8 @@ describe('deserialize', () => {
       registrationDeserialized.privateNodeCertificate.isEqual(privateNodeCertificate),
     ).toBeTrue();
     expect(registrationDeserialized.gatewayCertificate.isEqual(gatewayCertificate)).toBeTrue();
-    expect(registrationDeserialized.publicGatewayInternetAddress).toEqual(
-      PUBLIC_GATEWAY_INTERNET_ADDRESS,
+    expect(registrationDeserialized.internetGatewayInternetAddress).toEqual(
+      INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
   });
 });
