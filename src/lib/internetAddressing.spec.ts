@@ -36,14 +36,6 @@ import {
 describe('resolveInternetAddress', () => {
   const MALFORMED_ANSWER_ERROR = new InternetAddressingError('DNS answer is malformed');
 
-  test('DNS resolution should be skipped if host name contains port', async () => {
-    const address = await resolveInternetAddress(`${HOST}:${TARGET_PORT}`, BindingType.PDC);
-
-    expect(address).toHaveProperty('host', HOST);
-    expect(address).toHaveProperty('port', TARGET_PORT);
-    expect(mockGetDNS).not.toBeCalled();
-  });
-
   test('Specified domain name should be requested', async () => {
     await resolveInternetAddress(HOST, BindingType.PDC);
 
