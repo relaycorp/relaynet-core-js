@@ -32,11 +32,4 @@ describe('resolveInternetAddress', () => {
   test('Non-existing addresses should not be resolved', async () => {
     await expect(resolveInternetAddress(NON_EXISTING_ADDRESS, BindingType.PDC)).resolves.toBeNull();
   });
-
-  test('Non-existing address should resolve if port is contained', async () => {
-    const port = 1234;
-    await expect(
-      resolveInternetAddress(`${NON_EXISTING_ADDRESS}:${port}`, BindingType.PDC),
-    ).resolves.toEqual({ host: NON_EXISTING_ADDRESS, port });
-  });
 });
