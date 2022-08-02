@@ -33,9 +33,6 @@ export class UnreachableResolverError extends RelaynetError {}
  * `null` is returned when `hostName` is an IP address or a non-existing SRV record for the service
  * in `bindingType`.
  *
- * If `hostName` contains the port number (e.g., `example.com:443`), no DNS lookup will be done
- * and the resulting address will simply be the result of parsing the input.
- *
  * DNS resolution is done with DNS-over-HTTPS.
  */
 export async function resolveInternetAddress(
@@ -43,12 +40,6 @@ export async function resolveInternetAddress(
   bindingType: BindingType,
   resolverURL = CLOUDFLARE_RESOLVER_URL,
 ): Promise<PublicNodeAddress | null> {
-  const urlParts = new URL(`scheme://${hostName}`);
-  if (urlParts.port !== '') {
-    const port = parseInt(urlParts.port, 10);
-    return { host: urlParts.hostname, port };
-  }
-
   const name = `_${bindingType}._tcp.${hostName}`;
   const doh = new DNSoverHTTPS({ url: resolverURL });
   let result: LookupResult;
