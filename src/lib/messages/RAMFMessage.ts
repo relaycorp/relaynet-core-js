@@ -103,10 +103,18 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   /**
    * Report whether the message is valid.
    *
-   * @param trustedCertificates? If present, will check that the sender is authorized to send
-   *   the message based on the trusted certificates.
-   * @return The certification path from the sender to one of the `trustedCertificates` (if present)
+   * This doesn't check whether the sender is authorised.
    */
+  public async validate(): Promise<null>;
+  /**
+   * Report whether the message is valid and the sender was authorised by one of the
+   * `trustedCertificates`.
+   *
+   * @return The certification path from the sender to one of the `trustedCertificates`
+   */
+  public async validate(
+    trustedCertificates: readonly Certificate[],
+  ): Promise<readonly Certificate[]>;
   public async validate(
     trustedCertificates?: readonly Certificate[],
   ): Promise<readonly Certificate[] | null> {
