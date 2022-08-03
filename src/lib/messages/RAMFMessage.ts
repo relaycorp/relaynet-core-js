@@ -166,7 +166,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     const recipientCertificate = certificationPath[1];
     const recipientId = await recipientCertificate.calculateSubjectId();
     if (recipientId !== this.recipient.id) {
-      throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipient}`);
+      throw new InvalidMessageError(`Sender is not authorized to reach ${this.recipient.id}`);
     }
 
     return certificationPath;
