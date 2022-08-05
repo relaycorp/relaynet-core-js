@@ -1,7 +1,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
+import { setMilliseconds } from 'date-fns';
 import uuid4 from 'uuid4';
 
-import { makeDateWithSecondPrecision } from '../_utils';
 import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
 import Certificate from '../crypto_wrappers/x509/Certificate';
@@ -42,7 +42,7 @@ export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
     options: Partial<MessageOptions> = {},
   ) {
     this.id = options.id || uuid4();
-    this.creationDate = makeDateWithSecondPrecision(options.creationDate);
+    this.creationDate = setMilliseconds(options.creationDate ?? new Date(), 0);
     this.ttl = options.ttl !== undefined ? options.ttl : DEFAULT_TTL_SECONDS;
 
     this.senderCaCertificateChain =
