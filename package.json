@@ -51,7 +51,7 @@
     "moment": "^2.29.4",
     "pkijs": "^3.0.5",
     "smart-buffer": "^4.2.0",
-    "uuid4": "^2.0.2",
+    "uuid4": "^2.0.3",
     "verror": "^1.10.1",
     "webcrypto-core": "^1.7.5"
   },
