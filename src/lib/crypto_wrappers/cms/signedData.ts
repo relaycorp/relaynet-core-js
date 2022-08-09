@@ -1,7 +1,6 @@
 // tslint:disable:no-object-mutation
 
 import * as asn1js from 'asn1js';
-import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { CMS_OIDS } from '../../oids';
@@ -27,19 +26,10 @@ interface SignedDataOptions extends SignatureOptions {
 export class SignedData {
   /**
    * The signed plaintext, if it was encapsulated.
-   *
-   * TODO: Cache output because computation can be relatively expensive
    */
   get plaintext(): ArrayBuffer | null {
-    if (this.pkijsSignedData.encapContentInfo.eContent === undefined) {
-      return null;
-    }
-    // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
-    const contentOctetStringChunks =
-      this.pkijsSignedData.encapContentInfo.eContent.valueBlock.value;
-    const contentChunks = contentOctetStringChunks.map((os) => os.valueBeforeDecodeView);
-    const content = Buffer.concat(contentChunks);
-    return bufferToArray(content);
+    const eContent = this.pkijsSignedData.encapContentInfo.eContent;
+    return eContent?.getValue() ?? null;
   }
 
   /**
@@ -237,7 +227,7 @@ export async function verifySignature(
 
   return {
     attachedCertificates: Array.from(signedData.certificates),
-    plaintext: signedData.plaintext as ArrayBuffer,
+    plaintext: signedData.plaintext!,
     signerCertificate: signedData.signerCertificate as Certificate,
   };
 }
