@@ -207,10 +207,7 @@ describe('sign', () => {
       expect(encapContentInfo).toBeInstanceOf(pkijs.EncapsulatedContentInfo);
       expect(encapContentInfo).toHaveProperty('eContentType', CMS_OIDS.DATA);
       expect(encapContentInfo).toHaveProperty('eContent');
-      if (!encapContentInfo.eContent) {
-        throw new Error('encapContentInfo.eContent is empty');
-      }
-      const plaintextOctetString = encapContentInfo.eContent.valueBlock
+      const plaintextOctetString = encapContentInfo.eContent!.valueBlock
         .value[0] as asn1js.OctetString;
       expectArrayBuffersToEqual(
         plaintextOctetString.valueBlock.valueHexView.slice().buffer,
@@ -368,10 +365,8 @@ describe('verify', () => {
 
 describe('plaintext', () => {
   test('Nothing should be output if plaintext is absent', async () => {
-    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
-    // @ts-ignore
-    // tslint:disable-next-line:no-delete
-    delete signedData.pkijsSignedData.encapContentInfo.eContent;
+    const pkijsSignedData = new pkijs.SignedData();
+    const signedData = new SignedData(pkijsSignedData);
 
     await expect(signedData.plaintext).toBeNull();
   });
@@ -379,14 +374,14 @@ describe('plaintext', () => {
   test('Plaintext should be output if present', async () => {
     const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
 
-    expect(signedData.plaintext).toEqual(plaintext);
+    expectArrayBuffersToEqual(plaintext, signedData.plaintext!);
   });
 
   test('Large plaintexts chunked by PKI.js should be put back together', async () => {
     const largePlaintext = arrayBufferFrom('a'.repeat(2 ** 20));
     const signedData = await SignedData.sign(largePlaintext, keyPair.privateKey, certificate);
 
-    expect(signedData.plaintext).toEqual(largePlaintext);
+    expectArrayBuffersToEqual(largePlaintext, signedData.plaintext!);
   });
 });
 
