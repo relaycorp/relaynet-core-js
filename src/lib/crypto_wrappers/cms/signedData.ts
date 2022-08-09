@@ -37,11 +37,8 @@ export class SignedData {
     // ASN1.js splits the payload into 65 kib chunks, so we need to put them back together
     const contentOctetStringChunks =
       this.pkijsSignedData.encapContentInfo.eContent.valueBlock.value;
-    const contentChunks = contentOctetStringChunks.map(
-      (os) => (os as asn1js.OctetString).valueBlock.valueHex,
-    );
-    const content = Buffer.concat(contentChunks.map((c) => new Uint8Array(c)));
-
+    const contentChunks = contentOctetStringChunks.map((os) => os.valueBeforeDecodeView);
+    const content = Buffer.concat(contentChunks);
     return bufferToArray(content);
   }
 
