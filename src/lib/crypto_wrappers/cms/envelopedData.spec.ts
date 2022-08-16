@@ -28,7 +28,7 @@ import { assertPkiType } from './_utils';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
-const OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '0.4.0.127.0.17.0.1.0';
+const OID_AWALA_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '1.3.6.1.4.1.58708.0.1.0';
 
 const plaintext = arrayBufferFrom('Winter is coming');
 
@@ -322,7 +322,7 @@ describe('SessionEnvelopedData', () => {
       )[0];
       expect(dhKeyIdAttribute).toHaveProperty(
         'type',
-        OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+        OID_AWALA_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
       );
       const dhKeyIdAttributeValue = (dhKeyIdAttribute as any).values[0];
       expect(dhKeyIdAttributeValue).toBeInstanceOf(asn1js.OctetString);
@@ -396,7 +396,7 @@ describe('SessionEnvelopedData', () => {
 
       test('Call should fail if attribute for originator key id is empty', async () => {
         const invalidAttribute = new pkijs.Attribute({
-          type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+          type: OID_AWALA_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
           values: [],
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
@@ -408,7 +408,7 @@ describe('SessionEnvelopedData', () => {
 
       test('Call should fail if attribute for originator key id is multi-valued', async () => {
         const invalidAttribute = new pkijs.Attribute({
-          type: OID_RELAYNET_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
+          type: OID_AWALA_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER,
           values: [new asn1js.Integer({ value: 1 }), new asn1js.Integer({ value: 2 })],
         });
         envelopedData.pkijsEnvelopedData.unprotectedAttrs = [invalidAttribute];
