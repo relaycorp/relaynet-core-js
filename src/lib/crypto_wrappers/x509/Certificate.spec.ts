@@ -128,27 +128,17 @@ describe('issue()', () => {
   });
 
   test('should generate a positive serial number', async () => {
-    let anySignFlipped = false;
     for (let index = 0; index < 10; index++) {
       const cert = await Certificate.issue({
         ...baseCertificateOptions,
         issuerPrivateKey: subjectKeyPair.privateKey,
         subjectPublicKey: subjectKeyPair.publicKey,
       });
-      const serialNumberSerialized = new Uint8Array(
-        cert.pkijsCertificate.serialNumber.valueBlock.valueHex,
-      );
-      if (serialNumberSerialized.length === 9) {
-        expect(serialNumberSerialized[0]).toEqual(0);
-        anySignFlipped = true;
-      } else {
-        expect(serialNumberSerialized).toHaveLength(8);
-        expect(serialNumberSerialized[0]).toBeGreaterThanOrEqual(0);
-        expect(serialNumberSerialized[0]).toBeLessThanOrEqual(127);
-      }
+      const serialNumberSerialized = cert.pkijsCertificate.serialNumber.valueBlock.valueHexView;
+      expect(serialNumberSerialized).toHaveLength(8);
+      expect(serialNumberSerialized[0]).toBeGreaterThanOrEqual(0);
+      expect(serialNumberSerialized[0]).toBeLessThanOrEqual(127);
     }
-
-    expect(anySignFlipped).toBeTrue();
   });
 
   test('should create a certificate valid from now by default', async () => {

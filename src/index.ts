@@ -106,6 +106,6 @@ export { PrivateInternetGatewayChannel } from './lib/nodes/channels/PrivateInter
 //endregion
 
 export { NodeCryptoOptions } from './lib/nodes/NodeCryptoOptions';
-export { PublicNodeConnectionParams } from './lib/nodes/PublicNodeConnectionParams';
+export { NodeConnectionParams } from './lib/nodes/NodeConnectionParams';
 export * from './lib/nodes/errors';
 export * from './lib/internetAddressing';

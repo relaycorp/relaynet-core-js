@@ -280,19 +280,14 @@ export default class Certificate {
 }
 
 function generatePositiveASN1Integer(): Integer {
-  const signedInteger = new Uint8Array(generateRandom64BitValue());
+  const potentiallySignedInteger = new Uint8Array(generateRandom64BitValue());
 
-  let unsignedInteger = signedInteger;
-  if (127 < signedInteger[0]) {
-    // The integer is negative, so let's flip the sign by prepending a 0x00 octet. See:
-    // https://docs.microsoft.com/en-us/windows/win32/seccertenroll/about-integer
-    unsignedInteger = new Uint8Array(signedInteger.byteLength + 1);
-    unsignedInteger.set(signedInteger, 1); // Skip the first octet, leaving it as 0x00
-  }
+  // ASN.1 BER/DER INTEGER uses two's complement with big endian, so we ensure the integer is
+  // positive by keeping the leftmost octet below 128.
+  const positiveInteger = new Uint8Array(potentiallySignedInteger);
+  positiveInteger.set([Math.min(potentiallySignedInteger[0], 127)], 0);
 
-  return new Integer({
-    valueHex: unsignedInteger,
-  } as any);
+  return new Integer({ valueHex: positiveInteger });
 }
 
 //region Extensions
