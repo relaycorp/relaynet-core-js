@@ -46,7 +46,9 @@ export abstract class Channel {
     return envelopedData.serialize();
   }
 
-  public abstract getOutboundRAMFRecipient(): Promise<Recipient>;
+  public getOutboundRAMFRecipient(): Recipient {
+    return { id: this.peerId };
+  }
 
   protected async getNodeId(): Promise<string> {
     return getIdFromIdentityKey(this.nodePrivateKey);

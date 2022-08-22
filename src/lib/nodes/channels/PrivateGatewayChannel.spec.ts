@@ -8,7 +8,6 @@ import {
 } from '../../crypto_wrappers/keys';
 import Certificate from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
-import { Recipient } from '../../messages/Recipient';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
@@ -197,9 +196,5 @@ class StubPrivateGatewayChannel extends PrivateGatewayChannel {
       KEY_STORES,
       cryptoOptions,
     );
-  }
-
-  async getOutboundRAMFRecipient(): Promise<Recipient> {
-    throw new Error('not implemented');
   }
 }

@@ -16,7 +16,6 @@ import Cargo from '../../messages/Cargo';
 import Parcel from '../../messages/Parcel';
 import CargoMessageSet from '../../messages/payloads/CargoMessageSet';
 import ServiceMessage from '../../messages/payloads/ServiceMessage';
-import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { SessionKey } from '../../SessionKey';
@@ -92,7 +91,7 @@ describe('generateCargoes', () => {
     );
 
     const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-    expect(cargo.recipient.id).toEqual(StubGatewayChannel.OUTBOUND_RAMF_RECIPIENT_ID);
+    expect(cargo.recipient.id).toEqual(peerId);
   });
 
   test('Payload should be encrypted with session key', async () => {
@@ -326,13 +325,7 @@ async function generateDummyParcel(
 }
 
 class StubGatewayChannel extends GatewayChannel {
-  public static readonly OUTBOUND_RAMF_RECIPIENT_ID = '0deadbeef';
-
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
     super(nodePrivateKey, nodeCertificate, peerId, peerPublicKey, KEY_STORES, cryptoOptions);
-  }
-
-  async getOutboundRAMFRecipient(): Promise<Recipient> {
-    return { id: StubGatewayChannel.OUTBOUND_RAMF_RECIPIENT_ID };
   }
 }

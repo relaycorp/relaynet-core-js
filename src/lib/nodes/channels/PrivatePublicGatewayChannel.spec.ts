@@ -83,8 +83,8 @@ beforeEach(() => {
   );
 });
 
-test('getOutboundRAMFAddress should return Internet address of Internet gateway', async () => {
-  await expect(channel.getOutboundRAMFRecipient()).resolves.toEqual<Recipient>({
+test('getOutboundRAMFRecipient should return Internet address of Internet gateway', async () => {
+  expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({
     id: internetGatewayId,
     internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
   });
