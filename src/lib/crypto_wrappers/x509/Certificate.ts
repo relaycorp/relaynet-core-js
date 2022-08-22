@@ -284,10 +284,10 @@ function generatePositiveASN1Integer(): Integer {
 
   // ASN.1 BER/DER INTEGER uses two's complement with big endian, so we ensure the integer is
   // positive by keeping the leftmost octet below 128.
-  const unsignedInteger = new Uint8Array(potentiallySignedInteger);
-  unsignedInteger.set([Math.min(potentiallySignedInteger[0], 127)], 0);
+  const positiveInteger = new Uint8Array(potentiallySignedInteger);
+  positiveInteger.set([Math.min(potentiallySignedInteger[0], 127)], 0);
 
-  return new Integer({ valueHex: unsignedInteger });
+  return new Integer({ valueHex: positiveInteger });
 }
 
 //region Extensions
