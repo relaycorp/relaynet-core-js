@@ -165,8 +165,18 @@ describe('wrapMessagePayload', () => {
   });
 });
 
-class StubChannel extends Channel {
-  async getOutboundRAMFRecipient(): Promise<Recipient> {
-    throw new Error('not implemented');
-  }
-}
+describe('getOutboundRAMFRecipient', () => {
+  test('Id should be output', () => {
+    const channel = new StubChannel(
+      nodePrivateKey,
+      nodeCertificate,
+      peerId,
+      peerPublicKey,
+      KEY_STORES,
+    );
+
+    expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({ id: peerId });
+  });
+});
+
+class StubChannel extends Channel {}

@@ -41,8 +41,11 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     );
   }
 
-  async getOutboundRAMFRecipient(): Promise<Recipient> {
-    return { id: this.peerId, internetAddress: this.internetGatewayInternetAddress };
+  override getOutboundRAMFRecipient(): Recipient {
+    return {
+      ...super.getOutboundRAMFRecipient(),
+      internetAddress: this.internetGatewayInternetAddress,
+    };
   }
 
   //region Private endpoint registration
@@ -116,7 +119,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     const ccr = new CargoCollectionRequest(cargoDeliveryAuthorization);
     const ccaPayload = await this.wrapMessagePayload(ccr);
     const cca = new CargoCollectionAuthorization(
-      await this.getOutboundRAMFRecipient(),
+      this.getOutboundRAMFRecipient(),
       this.nodeDeliveryAuth,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },
