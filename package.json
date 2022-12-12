@@ -48,7 +48,7 @@
     "dohdec": "^3.1.0",
     "is-valid-domain": "^0.1.6",
     "moment": "^2.29.4",
-    "pkijs": "^3.0.7",
+    "pkijs": "^3.0.10",
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.3",
     "verror": "^1.10.1",
