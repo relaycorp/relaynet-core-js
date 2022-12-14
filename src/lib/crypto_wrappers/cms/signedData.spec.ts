@@ -315,7 +315,7 @@ describe('verify', () => {
     );
   });
 
-  test('Invalid signature without encapsulated plaintext should be rejected', async () => {
+  test('Different detached plaintext should be rejected', async () => {
     const signedData = await SignedData.sign(
       plaintext,
       keyPair.privateKey,
@@ -330,7 +330,7 @@ describe('verify', () => {
     await expect(signedData.verify(differentPlaintext)).rejects.toBeInstanceOf(CMSError);
   });
 
-  test('Invalid signature with encapsulated plaintext should be rejected', async () => {
+  test('Different encapsulated plaintext should be rejected', async () => {
     // Let's tamper with the payload
     const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
     const differentPlaintext = arrayBufferFrom('Different');
@@ -341,6 +341,21 @@ describe('verify', () => {
     });
 
     await expect(signedData.verify()).rejects.toBeInstanceOf(CMSError);
+  });
+
+  test('Invalid signature should be rejected', async () => {
+    // Let's tamper with the signature
+    const signedData = await SignedData.sign(plaintext, keyPair.privateKey, certificate);
+    const differentSignature = arrayBufferFrom('Different');
+    // tslint:disable-next-line:no-object-mutation
+    signedData.pkijsSignedData.signerInfos[0].signature = new asn1js.OctetString({
+      valueHex: differentSignature,
+    });
+
+    await expect(signedData.verify()).rejects.toThrowWithMessage(
+      CMSError,
+      'Invalid signature (PKI.js code: 14)',
+    );
   });
 
   test('Valid signature without encapsulated plaintext should be accepted', async () => {
