@@ -145,12 +145,12 @@ export class SignedData {
         extendedMode: true,
         signer: 0,
       });
-
-      if (!verificationResult.signatureVerified) {
-        throw verificationResult;
-      }
     } catch (err: any) {
       throw new CMSError(`Invalid signature: ${err.message} (PKI.js code: ${err.code})`);
+    }
+
+    if (!verificationResult.signatureVerified) {
+      throw new CMSError(`Invalid signature (PKI.js code: ${verificationResult.code})`);
     }
   }
 }
