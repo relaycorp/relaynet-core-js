@@ -20,7 +20,6 @@ import {
   generateStubCert,
   getConstructedItemFromConstructed,
   getPrimitiveItemFromConstructed,
-  getPromiseRejection,
 } from '../_test_utils';
 import { dateToASN1DateTimeInUTC, makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto_wrappers/_utils';
@@ -653,16 +652,17 @@ describe('MessageSerializer', () => {
           differentSignerCertificate,
         );
 
-        const error = await getPromiseRejection<RAMFValidationError>(
+        await expect(
           deserialize(
             messageSerialized,
             stubConcreteMessageTypeOctet,
             stubConcreteMessageVersionOctet,
             StubMessage,
           ),
+        ).rejects.toThrowWithMessage(
+          RAMFValidationError,
+          /^Invalid RAMF message signature: Invalid signature/,
         );
-        expect(error).toBeInstanceOf(RAMFValidationError);
-        expect(error.message).toStartWith('Invalid RAMF message signature: Invalid signature:');
       });
 
       test('Sender certificate should be extracted from signature', async () => {
