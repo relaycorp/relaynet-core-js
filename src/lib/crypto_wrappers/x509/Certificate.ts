@@ -351,10 +351,5 @@ function cloneAsn1jsValue<T extends BaseBlock>(value: T): T {
 }
 
 function isCertificateInArray(certificate: Certificate, array: readonly Certificate[]): boolean {
-  for (const certInArray of array) {
-    if (certInArray.isEqual(certificate)) {
-      return true;
-    }
-  }
-  return false;
+  return array.some((c) => c.isEqual(certificate));
 }
