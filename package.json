@@ -35,7 +35,7 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@peculiar/webcrypto": "^1.4.0",
+    "@peculiar/webcrypto": "^1.4.1",
     "@stablelib/aes-kw": "^1.0.1",
     "@types/verror": "^1.10.6",
     "asn1js": "^3.0.5",
