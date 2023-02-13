@@ -48,7 +48,7 @@
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.3",
     "verror": "^1.10.1",
-    "webcrypto-core": "^1.7.5"
+    "webcrypto-core": "^1.7.6"
   },
   "peerDependencies": {
     "@peculiar/webcrypto": "< 2",
