@@ -28,7 +28,7 @@
     "static-checks:lint": "tslint --project .",
     "static-checks:prettier": "prettier \"src/**/*.ts\" --list-different",
     "test:integration": "jest --config src/integration_tests/jest.config.js",
-    "doc-api": "typedoc src/index.ts --out build/docs/api",
+    "doc-api": "typedoc src/index.ts --out build/docs",
     "clean": "del-cli build test"
   },
   "engines": {
