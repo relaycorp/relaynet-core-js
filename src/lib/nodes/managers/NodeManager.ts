@@ -7,7 +7,7 @@ export abstract class NodeManager<N extends Node<any>> {
   protected abstract readonly defaultNodeConstructor: NodeConstructor<N>;
 
   constructor(
-    protected keyStores: KeyStoreSet,
+    public keyStores: KeyStoreSet,
     protected cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
