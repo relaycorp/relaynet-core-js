@@ -11,8 +11,8 @@ import { Signer } from './signatures/Signer';
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
     public readonly id: string,
-    protected readonly identityPrivateKey: CryptoKey,
-    protected readonly keyStores: KeyStoreSet,
+    public readonly identityPrivateKey: CryptoKey,
+    public readonly keyStores: KeyStoreSet,
     protected readonly cryptoOptions: Partial<NodeCryptoOptions>,
   ) {}
 
