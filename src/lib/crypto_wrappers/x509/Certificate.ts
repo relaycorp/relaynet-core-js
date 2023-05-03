@@ -12,11 +12,6 @@ import { assertPkiType, assertUndefined } from '../cms/_utils';
 
 const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 
-type FindIssuerSignature = (
-  cert: pkijs.Certificate,
-  engine: pkijs.CertificateChainValidationEngine,
-) => Promise<readonly pkijs.Certificate[]>;
-
 /**
  * X.509 Certificate.
  *
@@ -233,23 +228,6 @@ export default class Certificate {
     intermediateCaCertificates: readonly Certificate[],
     trustedCertificates: readonly Certificate[],
   ): Promise<readonly Certificate[]> {
-    async function findIssuer(
-      pkijsCertificate: pkijs.Certificate,
-      validationEngine: { readonly defaultFindIssuer: FindIssuerSignature },
-    ): Promise<readonly pkijs.Certificate[]> {
-      const issuers = await validationEngine.defaultFindIssuer(
-        pkijsCertificate,
-        validationEngine as any,
-      );
-      if (issuers.length !== 0) {
-        return issuers;
-      }
-      // If the certificate is actually an intermediate certificate but it's passed as a trusted
-      // certificate, accepted it.
-      const certificate = new Certificate(pkijsCertificate);
-      return isCertificateInArray(certificate, trustedCertificates) ? [pkijsCertificate] : [];
-    }
-
     // Ignore any intermediate certificate that's also the issuer of a trusted certificate.
     // The main reason for doing this isn't performance, but the fact that PKI.js would fail to
     // compute the path.
@@ -264,7 +242,6 @@ export default class Certificate {
 
     const chainValidator = new pkijs.CertificateChainValidationEngine({
       certs: [...intermediateCertsSanitized.map((c) => c.pkijsCertificate), this.pkijsCertificate],
-      findIssuer: findIssuer as unknown as pkijs.FindIssuerCallback, // Use unknown to fix TS error, because findIssuer returns `readonly Certificate[]` instead of `Certificate[]`
       trustedCerts: trustedCertificates.map((c) => c.pkijsCertificate),
     });
     const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
@@ -348,13 +325,4 @@ function validateIssuerCertificate(issuerCertificate: Certificate): void {
 function cloneAsn1jsValue<T extends BaseBlock>(value: T): T {
   const valueSerialized = value.toBER(false);
   return derDeserialize(valueSerialized) as T;
-}
-
-function isCertificateInArray(certificate: Certificate, array: readonly Certificate[]): boolean {
-  for (const certInArray of array) {
-    if (certInArray.isEqual(certificate)) {
-      return true;
-    }
-  }
-  return false;
 }
