@@ -7,6 +7,7 @@ import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
+import InvalidMessageError from '../messages/InvalidMessageError';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
@@ -45,6 +46,27 @@ export abstract class Node<Payload extends PayloadPlaintext> {
       return null;
     }
     return new signerClass(path.leafCertificate, this.identityPrivateKey);
+  }
+
+  /**
+   * Validate the `message` and report whether it's correctly bound for this node.
+   * @param message The message to validate
+   * @param trustedCertificates If authorisation should be verified
+   * @throws {InvalidMessageError} If the message is invalid
+   */
+  public async validateMessage(
+    message: RAMFMessage<Payload>,
+    trustedCertificates?: readonly Certificate[],
+  ): Promise<void> {
+    if (trustedCertificates) {
+      await message.validate(trustedCertificates);
+    } else {
+      await message.validate();
+    }
+
+    if (message.recipient.id !== this.id) {
+      throw new InvalidMessageError(`Message is bound for another node (${message.recipient.id})`);
+    }
   }
 
   /**
