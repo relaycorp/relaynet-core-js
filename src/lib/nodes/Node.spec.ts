@@ -1,4 +1,4 @@
-import { addDays, setMilliseconds } from 'date-fns';
+import { addDays, setMilliseconds, subDays } from 'date-fns';
 
 import { arrayBufferFrom, expectArrayBuffersToEqual, reSerializeCertificate } from '../_test_utils';
 import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
@@ -14,6 +14,7 @@ import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { StubMessage } from '../ramf/_test_utils';
 import { StubNode } from './_test_utils';
+import InvalidMessageError from '../messages/InvalidMessageError';
 
 let nodeId: string;
 let nodePrivateKey: CryptoKey;
@@ -44,6 +45,19 @@ beforeAll(async () => {
     }),
   );
   nodeId = await getIdFromIdentityKey(nodeKeyPair.publicKey);
+});
+
+let peerId: string;
+let peerCertificate: Certificate;
+beforeAll(async () => {
+  const peerKeyPair = await generateRSAKeyPair();
+  peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
+  peerCertificate = await issueGatewayCertificate({
+    issuerCertificate: nodeCertificate,
+    issuerPrivateKey: nodePrivateKey,
+    subjectPublicKey: peerKeyPair.publicKey,
+    validityEndDate: addDays(new Date(), 1),
+  });
 });
 
 const KEY_STORES = new MockKeyStoreSet();
@@ -113,7 +127,6 @@ describe('generateSessionKey', () => {
 
   test('Key should be bound to a peer if explicitly set', async () => {
     const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
-    const peerId = '0deadbeef';
 
     const sessionKey = await node.generateSessionKey(peerId);
 
@@ -125,20 +138,59 @@ describe('generateSessionKey', () => {
   });
 });
 
+describe('validateMessage', () => {
+  test('Invalid message should be refused', async () => {
+    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const expiredMessage = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]), {
+      creationDate: subDays(new Date(), 1),
+      ttl: 1,
+    });
+
+    await expect(node.validateMessage(expiredMessage)).rejects.toThrowWithMessage(
+      InvalidMessageError,
+      /expired/,
+    );
+  });
+
+  test('Valid message with untrusted sender should be refused', async () => {
+    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const message = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]));
+
+    await expect(node.validateMessage(message, [])).rejects.toThrowWithMessage(
+      InvalidMessageError,
+      /authorized/,
+    );
+  });
+
+  test('Valid message with trusted sender should be allowed', async () => {
+    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const message = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]), {
+      senderCaCertificateChain: [peerCertificate],
+    });
+
+    await expect(node.validateMessage(message, [nodeCertificate])).toResolve();
+  });
+
+  test('Message recipient should match node id', async () => {
+    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const message = new StubMessage({ id: `not${nodeId}` }, peerCertificate, Buffer.from([]));
+
+    await expect(node.validateMessage(message)).rejects.toThrowWithMessage(
+      InvalidMessageError,
+      `Message is bound for another node (${message.recipient.id})`,
+    );
+  });
+
+  test('Valid message should be allowed', async () => {
+    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const message = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]));
+
+    await expect(node.validateMessage(message)).toResolve();
+  });
+});
+
 describe('unwrapMessagePayload', () => {
   const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
-
-  let peerId: string;
-  let peerCertificate: Certificate;
-  beforeAll(async () => {
-    const peerKeyPair = await generateRSAKeyPair();
-    peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
-    peerCertificate = await issueGatewayCertificate({
-      issuerPrivateKey: peerKeyPair.privateKey,
-      subjectPublicKey: peerKeyPair.publicKey,
-      validityEndDate: addDays(new Date(), 1),
-    });
-  });
 
   test('Payload plaintext should be returned', async () => {
     const node = new StubNode(peerId, nodePrivateKey, KEY_STORES, {});
