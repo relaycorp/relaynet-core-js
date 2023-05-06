@@ -1,4 +1,4 @@
-import RelaynetError from '../RelaynetError';
+import { RelaynetError } from '../RelaynetError';
 
 /**
  * Error thrown when there was a failure in the communication with the backing service.

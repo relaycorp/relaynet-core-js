@@ -8,7 +8,7 @@ import { SessionKeyPair } from '../SessionKeyPair';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPrivateKeyData } from './PrivateKeyStore';
 import { MockPrivateKeyStore } from './testMocks';
-import UnknownKeyError from './UnknownKeyError';
+import { UnknownKeyError } from './UnknownKeyError';
 
 const MOCK_STORE = new MockPrivateKeyStore();
 beforeEach(() => {

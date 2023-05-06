@@ -9,7 +9,7 @@ import {
 } from '../crypto_wrappers/keys';
 import { IdentityKeyPair } from '../IdentityKeyPair';
 import { KeyStoreError } from './KeyStoreError';
-import UnknownKeyError from './UnknownKeyError';
+import { UnknownKeyError } from './UnknownKeyError';
 
 /**
  * Data for a private key of a session key pair.

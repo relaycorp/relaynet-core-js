@@ -8,8 +8,8 @@ import {
 } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
-import InvalidMessageError from '../InvalidMessageError';
-import ServiceMessage from './ServiceMessage';
+import { InvalidMessageError } from '../InvalidMessageError';
+import { ServiceMessage } from './ServiceMessage';
 
 const TYPE = 'the type';
 const CONTENT = Buffer.from('the content');

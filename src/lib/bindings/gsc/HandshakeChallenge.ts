@@ -1,7 +1,7 @@
 import { OctetString, Primitive, verifySchema } from 'asn1js';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
-import InvalidMessageError from '../../messages/InvalidMessageError';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
 
 export class HandshakeChallenge {
   public static deserialize(serialization: ArrayBuffer): HandshakeChallenge {

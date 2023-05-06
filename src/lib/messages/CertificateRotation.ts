@@ -1,6 +1,6 @@
 import { CertificationPath } from '../pki/CertificationPath';
 import { generateFormatSignature } from './formatSignature';
-import InvalidMessageError from './InvalidMessageError';
+import { InvalidMessageError } from './InvalidMessageError';
 
 export const CERTIFICATE_ROTATION_FORMAT_SIGNATURE = generateFormatSignature(0x10, 0);
 

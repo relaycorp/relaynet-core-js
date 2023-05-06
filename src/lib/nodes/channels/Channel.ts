@@ -1,8 +1,8 @@
 import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
 import { getIdFromIdentityKey } from '../../crypto_wrappers/keys';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
-import PayloadPlaintext from '../../messages/payloads/PayloadPlaintext';
+import { PayloadPlaintext } from '../../messages/payloads/PayloadPlaintext';
 import { Recipient } from '../../messages/Recipient';
 import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';

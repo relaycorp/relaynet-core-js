@@ -13,7 +13,7 @@ setEngine('nodeEngine', cryptoEngine);
 
 //region Exports
 
-export { default as RelaynetError } from './lib/RelaynetError';
+export { RelaynetError } from './lib/RelaynetError';
 export {
   derDeserializeECDHPrivateKey,
   derDeserializeECDHPublicKey,
@@ -36,9 +36,9 @@ export { IdentityKeyPair } from './lib/IdentityKeyPair';
 export * from './lib/cargoRelay';
 
 // PKI
-export { default as Certificate } from './lib/crypto_wrappers/x509/Certificate';
+export { Certificate } from './lib/crypto_wrappers/x509/Certificate';
 export { CertificationPath } from './lib/pki/CertificationPath';
-export { default as CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
+export { CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
 export * from './lib/pki/issuance';
 
 // Key stores
@@ -46,35 +46,37 @@ export { PrivateKeyStore, SessionPrivateKeyData } from './lib/keyStores/PrivateK
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
 export { CertificateStore } from './lib/keyStores/CertificateStore';
-export * from './lib/keyStores/testMocks';
+export {
+  MockKeyStoreSet,
+  MockCertificateStore,
+  MockPublicKeyStore,
+  MockPrivateKeyStore,
+} from './lib/keyStores/testMocks';
 export { KeyStoreError } from './lib/keyStores/KeyStoreError';
-export { default as UnknownKeyError } from './lib/keyStores/UnknownKeyError';
+export { UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 // CMS
 export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
 export { SessionKey } from './lib/SessionKey';
 export { SessionKeyPair } from './lib/SessionKeyPair';
 export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
-export { default as CMSError } from './lib/crypto_wrappers/cms/CMSError';
+export { CMSError } from './lib/crypto_wrappers/cms/CMSError';
 
 // RAMF
-export { default as Payload } from './lib/messages/payloads/PayloadPlaintext';
-export { default as RAMFError } from './lib/ramf/RAMFError';
-export { default as RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';
+export { PayloadPlaintext as Payload } from './lib/messages/payloads/PayloadPlaintext';
+export { RAMFError } from './lib/ramf/RAMFError';
+export { RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';
 export { MAX_RAMF_MESSAGE_LENGTH } from './lib/ramf/serialization';
-export { default as RAMFMessage } from './lib/messages/RAMFMessage';
+export { RAMFMessage } from './lib/messages/RAMFMessage';
 export { Recipient } from './lib/messages/Recipient';
-export { default as Parcel } from './lib/messages/Parcel';
-export { default as ServiceMessage } from './lib/messages/payloads/ServiceMessage';
-export { default as Cargo } from './lib/messages/Cargo';
-export {
-  default as CargoMessageSet,
-  CargoMessageSetItem,
-} from './lib/messages/payloads/CargoMessageSet';
+export { Parcel } from './lib/messages/Parcel';
+export { ServiceMessage } from './lib/messages/payloads/ServiceMessage';
+export { Cargo } from './lib/messages/Cargo';
+export { CargoMessageSet, CargoMessageSetItem } from './lib/messages/payloads/CargoMessageSet';
 export { CargoCollectionAuthorization } from './lib/messages/CargoCollectionAuthorization';
 export { CargoCollectionRequest } from './lib/messages/payloads/CargoCollectionRequest';
-export { default as InvalidMessageError } from './lib/messages/InvalidMessageError';
-export { default as RAMFValidationError } from './lib/ramf/RAMFValidationError';
+export { InvalidMessageError } from './lib/messages/InvalidMessageError';
+export { RAMFValidationError } from './lib/ramf/RAMFValidationError';
 
 // Control messages
 export * from './lib/messages/ParcelCollectionAck';

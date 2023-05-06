@@ -4,6 +4,6 @@
  * Not to be confused with the final RAMF payload; e.g., a CMS EnvelopedData value containing the
  * ciphertext representation of the plaintext.
  */
-export default interface PayloadPlaintext {
+export interface PayloadPlaintext {
   readonly serialize: () => ArrayBuffer;
 }

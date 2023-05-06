@@ -1,5 +1,5 @@
-import BasicCertificateIssuanceOptions from './BasicCertificateIssuanceOptions';
-import Certificate from './Certificate';
+import { BasicCertificateIssuanceOptions } from './BasicCertificateIssuanceOptions';
+import { Certificate } from './Certificate';
 
 export default interface FullCertificateIssuanceOptions extends BasicCertificateIssuanceOptions {
   readonly isCA?: boolean; // Basic Constraints extension

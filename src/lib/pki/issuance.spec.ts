@@ -2,8 +2,8 @@ import * as pkijs from 'pkijs';
 
 import { generateStubCert } from '../_test_utils';
 import { generateRSAKeyPair, getPublicKeyDigestHex } from '../crypto_wrappers/keys';
-import BasicCertificateIssuanceOptions from '../crypto_wrappers/x509/BasicCertificateIssuanceOptions';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { BasicCertificateIssuanceOptions } from '../crypto_wrappers/x509/BasicCertificateIssuanceOptions';
+import { Certificate } from '../crypto_wrappers/x509/Certificate';
 import {
   DeliveryAuthorizationIssuanceOptions,
   GatewayCertificateIssuanceOptions,

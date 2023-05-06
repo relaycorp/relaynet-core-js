@@ -1,6 +1,6 @@
-import RelaynetError from '../../RelaynetError';
+import { RelaynetError } from '../../RelaynetError';
 
 /**
  * Error while processing CMS value.
  */
-export default class CMSError extends RelaynetError {}
+export class CMSError extends RelaynetError {}

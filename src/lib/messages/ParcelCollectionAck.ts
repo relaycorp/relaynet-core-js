@@ -3,7 +3,7 @@ import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../asn1';
 import { generateFormatSignature } from './formatSignature';
-import InvalidMessageError from './InvalidMessageError';
+import { InvalidMessageError } from './InvalidMessageError';
 
 export class ParcelCollectionAck {
   public static readonly FORMAT_SIGNATURE = generateFormatSignature(0x51, 0);

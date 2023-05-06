@@ -1,7 +1,7 @@
 // tslint:disable:max-classes-per-file
 
 import { SignedData } from '../../crypto_wrappers/cms/signedData';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
 import { makeSafePlaintext } from './utils';
 
 // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected

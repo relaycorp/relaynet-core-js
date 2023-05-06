@@ -6,9 +6,9 @@ import * as pkijs from 'pkijs';
 import { CMS_OIDS } from '../../oids';
 import { getPkijsCrypto } from '../_utils';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
-import Certificate from '../x509/Certificate';
+import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
-import CMSError from './CMSError';
+import { CMSError } from './CMSError';
 import { SignatureOptions } from './SignatureOptions';
 
 const pkijsCrypto = getPkijsCrypto();

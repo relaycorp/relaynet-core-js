@@ -1,8 +1,8 @@
-import RAMFSyntaxError from '../ramf/RAMFSyntaxError';
+import { RAMFSyntaxError } from '../ramf/RAMFSyntaxError';
 import { describeMessage } from './_test_utils';
-import InvalidMessageError from './InvalidMessageError';
-import Parcel from './Parcel';
-import CargoMessageSet from './payloads/CargoMessageSet';
+import { InvalidMessageError } from './InvalidMessageError';
+import { Parcel } from './Parcel';
+import { CargoMessageSet } from './payloads/CargoMessageSet';
 
 describe('Parcel', () => {
   describeMessage(Parcel, 0x50, 0x0);

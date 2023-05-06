@@ -17,9 +17,9 @@ import { HashingAlgorithm } from '../algorithms';
 import { generateRSAKeyPair } from '../keys';
 import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
-import Certificate from '../x509/Certificate';
+import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';
-import CMSError from './CMSError';
+import { CMSError } from './CMSError';
 import { SignedData } from './signedData';
 
 const plaintext = arrayBufferFrom('Winter is coming');

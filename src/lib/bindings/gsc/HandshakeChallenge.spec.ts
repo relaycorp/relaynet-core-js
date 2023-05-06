@@ -1,7 +1,7 @@
 import { Primitive, Sequence } from 'asn1js';
 import { arrayBufferFrom, expectArrayBuffersToEqual } from '../../_test_utils';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
-import InvalidMessageError from '../../messages/InvalidMessageError';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { HandshakeChallenge } from './HandshakeChallenge';
 
 const NONCE = arrayBufferFrom('The nonce');

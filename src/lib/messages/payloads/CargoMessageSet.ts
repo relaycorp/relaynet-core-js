@@ -3,10 +3,10 @@ import { derSerializeHomogeneousSequence } from '../../asn1';
 
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
 import { CERTIFICATE_ROTATION_FORMAT_SIGNATURE, CertificateRotation } from '../CertificateRotation';
-import InvalidMessageError from '../InvalidMessageError';
-import Parcel from '../Parcel';
+import { InvalidMessageError } from '../InvalidMessageError';
+import { Parcel } from '../Parcel';
 import { ParcelCollectionAck } from '../ParcelCollectionAck';
-import PayloadPlaintext from './PayloadPlaintext';
+import { PayloadPlaintext } from './PayloadPlaintext';
 
 /**
  * Number of octets needed to represent the type and length of an 8 MiB value in DER.
@@ -25,7 +25,7 @@ export type CargoMessageSetItem = Parcel | ParcelCollectionAck | CertificateRota
  *
  * That is, the set of RAMF messages the cargo contains.
  */
-export default class CargoMessageSet implements PayloadPlaintext {
+export class CargoMessageSet implements PayloadPlaintext {
   /**
    * Maximum number of octets for any serialized message to be included in a cargo.
    *

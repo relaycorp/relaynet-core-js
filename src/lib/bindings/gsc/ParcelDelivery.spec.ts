@@ -3,7 +3,7 @@ import { Integer, Primitive, Sequence } from 'asn1js';
 import { arrayBufferFrom, expectArrayBuffersToEqual } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
-import InvalidMessageError from '../../messages/InvalidMessageError';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { ParcelDelivery } from './ParcelDelivery';
 
 const DELIVERY_ID = 'the id';

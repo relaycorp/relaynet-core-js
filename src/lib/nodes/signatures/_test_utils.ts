@@ -1,6 +1,6 @@
 // tslint:disable:max-classes-per-file
 
-import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
 import { Signer } from './Signer';
 import { Verifier } from './Verifier';
 

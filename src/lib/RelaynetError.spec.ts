@@ -1,4 +1,4 @@
-import RelaynetError from './RelaynetError';
+import { RelaynetError } from './RelaynetError';
 
 test('.name should be taken from the name of the class', () => {
   class FooError extends RelaynetError {}

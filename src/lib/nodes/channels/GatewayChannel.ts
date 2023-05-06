@@ -1,6 +1,6 @@
 import bufferToArray from 'buffer-to-arraybuffer';
-import Cargo from '../../messages/Cargo';
-import CargoMessageSet, { MessageWithExpiryDate } from '../../messages/payloads/CargoMessageSet';
+import { Cargo } from '../../messages/Cargo';
+import { CargoMessageSet, MessageWithExpiryDate } from '../../messages/payloads/CargoMessageSet';
 import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { CargoMessageStream } from '../CargoMessageStream';
 import { Channel } from './Channel';

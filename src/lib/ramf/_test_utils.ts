@@ -2,8 +2,8 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
-import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
-import RAMFMessage from '../messages/RAMFMessage';
+import { PayloadPlaintext } from '../messages/payloads/PayloadPlaintext';
+import { RAMFMessage } from '../messages/RAMFMessage';
 
 export class StubPayload implements PayloadPlaintext {
   constructor(public readonly content: ArrayBuffer) {}

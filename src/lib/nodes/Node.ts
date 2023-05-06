@@ -1,13 +1,13 @@
 import { getRSAPublicKeyFromPrivate } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto_wrappers/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
-import PayloadPlaintext from '../messages/payloads/PayloadPlaintext';
-import RAMFMessage from '../messages/RAMFMessage';
+import { PayloadPlaintext } from '../messages/payloads/PayloadPlaintext';
+import { RAMFMessage } from '../messages/RAMFMessage';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
-import InvalidMessageError from '../messages/InvalidMessageError';
+import { InvalidMessageError } from '../messages/InvalidMessageError';
 
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(

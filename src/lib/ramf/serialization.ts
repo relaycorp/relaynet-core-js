@@ -20,9 +20,9 @@ import {
 } from '../asn1';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
-import RAMFMessage from '../messages/RAMFMessage';
-import RAMFSyntaxError from './RAMFSyntaxError';
-import RAMFValidationError from './RAMFValidationError';
+import { RAMFMessage } from '../messages/RAMFMessage';
+import { RAMFSyntaxError } from './RAMFSyntaxError';
+import { RAMFValidationError } from './RAMFValidationError';
 
 /**
  * Maximum length of any RAMF message per RS-001.

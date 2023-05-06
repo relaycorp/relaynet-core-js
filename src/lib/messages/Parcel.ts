@@ -2,15 +2,15 @@
 
 import { SignatureOptions } from '../..';
 import * as serialization from '../ramf/serialization';
-import InvalidMessageError from './InvalidMessageError';
-import CargoMessageSet from './payloads/CargoMessageSet';
-import ServiceMessage from './payloads/ServiceMessage';
-import RAMFMessage from './RAMFMessage';
+import { InvalidMessageError } from './InvalidMessageError';
+import { CargoMessageSet } from './payloads/CargoMessageSet';
+import { ServiceMessage } from './payloads/ServiceMessage';
+import { RAMFMessage } from './RAMFMessage';
 
 const concreteMessageTypeOctet = 0x50;
 const concreteMessageVersionOctet = 0;
 
-export default class Parcel extends RAMFMessage<ServiceMessage> {
+export class Parcel extends RAMFMessage<ServiceMessage> {
   public static async deserialize(parcelSerialized: ArrayBuffer): Promise<Parcel> {
     if (CargoMessageSet.MAX_MESSAGE_LENGTH < parcelSerialized.byteLength) {
       throw new InvalidMessageError(

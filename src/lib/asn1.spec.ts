@@ -19,7 +19,7 @@ import {
   makeImplicitlyTaggedSequence,
 } from './asn1';
 import { derDeserialize } from './crypto_wrappers/_utils';
-import InvalidMessageError from './messages/InvalidMessageError';
+import { InvalidMessageError } from './messages/InvalidMessageError';
 
 describe('makeImplicitlyTaggedSequence', () => {
   test('An empty input should result in an empty sequence', () => {

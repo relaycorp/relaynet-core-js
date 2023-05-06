@@ -15,9 +15,9 @@ import {
 import { CMS_OIDS } from '../../oids';
 import { SessionKey } from '../../SessionKey';
 import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../keys';
-import Certificate from '../x509/Certificate';
+import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
-import CMSError from './CMSError';
+import { CMSError } from './CMSError';
 import {
   EncryptionOptions,
   EnvelopedData,
