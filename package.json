@@ -33,7 +33,7 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@peculiar/webcrypto": "< 2",
+    "@peculiar/webcrypto": "^1.4.3",
     "@stablelib/aes-kw": "^1.0.1",
     "@types/verror": "^1.10.6",
     "asn1js": "^3.0.5",
@@ -46,11 +46,7 @@
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.3",
     "verror": "^1.10.1",
-    "webcrypto-core": "< 2"
-  },
-  "peerDependencies": {
-    "@peculiar/webcrypto": "< 2",
-    "webcrypto-core": "< 2"
+    "webcrypto-core": "^1.7.7"
   },
   "devDependencies": {
     "@relaycorp/shared-config": "^1.9.4",
