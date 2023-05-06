@@ -4,12 +4,12 @@ import uuid4 from 'uuid4';
 
 import { EnvelopedData, SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
 import { SignatureOptions } from '../crypto_wrappers/cms/SignatureOptions';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto_wrappers/x509/Certificate';
 import { PrivateKeyStore } from '../keyStores/PrivateKeyStore';
-import RAMFError from '../ramf/RAMFError';
+import { RAMFError } from '../ramf/RAMFError';
 import { SessionKey } from '../SessionKey';
-import InvalidMessageError from './InvalidMessageError';
-import PayloadPlaintext from './payloads/PayloadPlaintext';
+import { InvalidMessageError } from './InvalidMessageError';
+import { PayloadPlaintext } from './payloads/PayloadPlaintext';
 import { Recipient } from './Recipient';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
@@ -29,7 +29,7 @@ interface PayloadUnwrapping<Payload extends PayloadPlaintext> {
 /**
  * Relaynet Abstract Message Format, version 1.
  */
-export default abstract class RAMFMessage<Payload extends PayloadPlaintext> {
+export abstract class RAMFMessage<Payload extends PayloadPlaintext> {
   public readonly id: string;
   public readonly creationDate: Date;
   public readonly ttl: number;

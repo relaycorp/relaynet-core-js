@@ -3,13 +3,13 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
-import InvalidMessageError from '../InvalidMessageError';
-import PayloadPlaintext from './PayloadPlaintext';
+import { InvalidMessageError } from '../InvalidMessageError';
+import { PayloadPlaintext } from './PayloadPlaintext';
 
 /**
  * Service message as encapsulated in a parcel.
  */
-export default class ServiceMessage implements PayloadPlaintext {
+export class ServiceMessage implements PayloadPlaintext {
   /**
    * Initialize a service message from the `serialization`.
    *

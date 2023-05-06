@@ -7,16 +7,16 @@ import {
   reSerializeCertificate,
 } from '../../_test_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
-import InvalidMessageError from '../../messages/InvalidMessageError';
-import Parcel from '../../messages/Parcel';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
+import { Parcel } from '../../messages/Parcel';
 import { Recipient } from '../../messages/Recipient';
 import {
   issueDeliveryAuthorization,
   issueEndpointCertificate,
   issueGatewayCertificate,
 } from '../../pki/issuance';
-import RAMFSyntaxError from '../../ramf/RAMFSyntaxError';
+import { RAMFSyntaxError } from '../../ramf/RAMFSyntaxError';
 import { ParcelCollection } from './ParcelCollection';
 
 const PARCEL_SERIALIZED = arrayBufferFrom('the parcel serialized');

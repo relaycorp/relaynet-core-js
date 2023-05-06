@@ -8,7 +8,7 @@ import { arrayBufferFrom, getPrimitiveItemFromConstructed } from '../../_test_ut
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import { verify } from '../../crypto_wrappers/rsaSigning';
-import InvalidMessageError from '../../messages/InvalidMessageError';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
 
 const authorizationSerialized = arrayBufferFrom('The PNRA');

@@ -8,8 +8,8 @@ import {
 } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
-import InvalidMessageError from '../InvalidMessageError';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { InvalidMessageError } from '../InvalidMessageError';
 import { CargoCollectionRequest } from './CargoCollectionRequest';
 
 let cargoDeliveryAuthorization: Certificate;

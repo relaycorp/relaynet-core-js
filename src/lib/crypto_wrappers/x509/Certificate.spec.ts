@@ -11,8 +11,8 @@ import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from 
 import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
-import Certificate from './Certificate';
-import CertificateError from './CertificateError';
+import { Certificate } from './Certificate';
+import { CertificateError } from './CertificateError';
 
 const pkijsCrypto = getPkijsCrypto();
 

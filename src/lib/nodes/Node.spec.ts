@@ -7,14 +7,14 @@ import {
   generateRSAKeyPair,
   getIdFromIdentityKey,
 } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { StubMessage } from '../ramf/_test_utils';
 import { StubNode } from './_test_utils';
-import InvalidMessageError from '../messages/InvalidMessageError';
+import { InvalidMessageError } from '../messages/InvalidMessageError';
 
 let nodeId: string;
 let nodePrivateKey: CryptoKey;

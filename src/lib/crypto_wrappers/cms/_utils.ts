@@ -1,7 +1,7 @@
 import * as pkijs from 'pkijs';
 
 import { derDeserialize } from '../_utils';
-import CMSError from './CMSError';
+import { CMSError } from './CMSError';
 
 export function deserializeContentInfo(derValue: ArrayBuffer): pkijs.ContentInfo {
   try {

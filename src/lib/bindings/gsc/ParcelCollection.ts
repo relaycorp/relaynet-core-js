@@ -1,5 +1,5 @@
-import Certificate from '../../crypto_wrappers/x509/Certificate';
-import Parcel from '../../messages/Parcel';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { Parcel } from '../../messages/Parcel';
 
 export class ParcelCollection {
   constructor(

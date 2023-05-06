@@ -2,7 +2,7 @@
 
 import { DNSoverHTTPS, LookupResult } from 'dohdec';
 
-import RelaynetError from './RelaynetError';
+import { RelaynetError } from './RelaynetError';
 
 const CLOUDFLARE_RESOLVER_URL = 'https://cloudflare-dns.com/dns-query';
 

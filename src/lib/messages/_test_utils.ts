@@ -2,7 +2,7 @@ import { arrayBufferFrom, generateStubCert, getMockContext, mockSpy } from '../_
 import { HashingAlgorithm } from '../crypto_wrappers/algorithms';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
 import * as serialization from '../ramf/serialization';
-import RAMFMessage from './RAMFMessage';
+import { RAMFMessage } from './RAMFMessage';
 
 interface MessageClass<M extends RAMFMessage<any>> {
   readonly deserialize: (serialization: ArrayBuffer) => Promise<M>;

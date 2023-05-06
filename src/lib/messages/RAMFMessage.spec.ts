@@ -9,13 +9,13 @@ import {
   SessionlessEnvelopedData,
 } from '../crypto_wrappers/cms/envelopedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
-import CertificateError from '../crypto_wrappers/x509/CertificateError';
+import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { CertificateError } from '../crypto_wrappers/x509/CertificateError';
 import { MockPrivateKeyStore } from '../keyStores/testMocks';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
-import RAMFError from '../ramf/RAMFError';
+import { RAMFError } from '../ramf/RAMFError';
 import { SessionKeyPair } from '../SessionKeyPair';
-import InvalidMessageError from './InvalidMessageError';
+import { InvalidMessageError } from './InvalidMessageError';
 import { Recipient } from './Recipient';
 
 const mockStubUuid4 = '56e95d8a-6be2-4020-bb36-5dd0da36c181';

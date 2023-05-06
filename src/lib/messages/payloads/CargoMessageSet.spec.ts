@@ -11,15 +11,15 @@ import {
 } from '../../_test_utils';
 import { derDeserialize } from '../../crypto_wrappers/_utils';
 import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { MAX_SDU_PLAINTEXT_LENGTH } from '../../ramf/serialization';
-import Cargo from '../Cargo';
+import { Cargo } from '../Cargo';
 import { CertificateRotation } from '../CertificateRotation';
-import InvalidMessageError from '../InvalidMessageError';
-import Parcel from '../Parcel';
+import { InvalidMessageError } from '../InvalidMessageError';
+import { Parcel } from '../Parcel';
 import { ParcelCollectionAck } from '../ParcelCollectionAck';
-import CargoMessageSet, { MessageWithExpiryDate } from './CargoMessageSet';
+import { CargoMessageSet, MessageWithExpiryDate } from './CargoMessageSet';
 
 const STUB_MESSAGE = arrayBufferFrom('hiya');
 

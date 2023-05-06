@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
 import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
-import Certificate from './crypto_wrappers/x509/Certificate';
+import { Certificate } from './crypto_wrappers/x509/Certificate';
 import FullCertificateIssuanceOptions from './crypto_wrappers/x509/FullCertificateIssuanceOptions';
 
 export const CRYPTO_OIDS = {

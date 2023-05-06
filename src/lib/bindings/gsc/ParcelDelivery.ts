@@ -2,7 +2,7 @@ import { OctetString, Primitive, verifySchema, VisibleString } from 'asn1js';
 import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
-import InvalidMessageError from '../../messages/InvalidMessageError';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
 
 export class ParcelDelivery {
   public static deserialize(serialization: ArrayBuffer): ParcelDelivery {

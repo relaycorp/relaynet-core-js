@@ -3,7 +3,7 @@
 import { SignatureOptions } from '../..';
 import * as serialization from '../ramf/serialization';
 import { CargoCollectionRequest } from './payloads/CargoCollectionRequest';
-import RAMFMessage from './RAMFMessage';
+import { RAMFMessage } from './RAMFMessage';
 
 const concreteMessageTypeOctet = 0x44;
 const concreteMessageVersionOctet = 0;

@@ -9,10 +9,10 @@ import {
   generateRSAKeyPair,
   getIdFromIdentityKey,
 } from '../../crypto_wrappers/keys';
-import Certificate from '../../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../../crypto_wrappers/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
-import InvalidMessageError from '../../messages/InvalidMessageError';
+import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { SessionKeyPair } from '../../SessionKeyPair';

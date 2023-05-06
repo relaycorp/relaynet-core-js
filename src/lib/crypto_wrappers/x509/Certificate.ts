@@ -6,7 +6,7 @@ import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
 import { getIdFromIdentityKey, getPublicKeyDigest } from '../keys';
 import { getEngineForPrivateKey } from '../webcrypto/engine';
-import CertificateError from './CertificateError';
+import { CertificateError } from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
 import { assertPkiType, assertUndefined } from '../cms/_utils';
 
@@ -18,7 +18,7 @@ const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
  * This is a high-level class on top of PKI.js Certificate, to make the use of Relaynet
  * certificates easy and safe.
  */
-export default class Certificate {
+export class Certificate {
   get startDate(): Date {
     return this.pkijsCertificate.notBefore.value;
   }

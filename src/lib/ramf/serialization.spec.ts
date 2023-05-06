@@ -26,11 +26,11 @@ import { derDeserialize } from '../crypto_wrappers/_utils';
 import { HashingAlgorithm } from '../crypto_wrappers/algorithms';
 import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
 import { generateRSAKeyPair } from '../crypto_wrappers/keys';
-import Certificate from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto_wrappers/x509/Certificate';
 import { Recipient } from '../messages/Recipient';
 import { StubMessage } from './_test_utils';
-import RAMFSyntaxError from './RAMFSyntaxError';
-import RAMFValidationError from './RAMFValidationError';
+import { RAMFSyntaxError } from './RAMFSyntaxError';
+import { RAMFValidationError } from './RAMFValidationError';
 import { deserialize, serialize } from './serialization';
 
 const PAYLOAD = Buffer.from('Hi');

@@ -2,13 +2,13 @@
 
 import { SignatureOptions } from '../..';
 import * as serialization from '../ramf/serialization';
-import CargoMessageSet from './payloads/CargoMessageSet';
-import RAMFMessage from './RAMFMessage';
+import { CargoMessageSet } from './payloads/CargoMessageSet';
+import { RAMFMessage } from './RAMFMessage';
 
 const concreteMessageTypeOctet = 0x43;
 const concreteMessageVersionOctet = 0;
 
-export default class Cargo extends RAMFMessage<CargoMessageSet> {
+export class Cargo extends RAMFMessage<CargoMessageSet> {
   public static async deserialize(cargoSerialized: ArrayBuffer): Promise<Cargo> {
     return serialization.deserialize(
       cargoSerialized,

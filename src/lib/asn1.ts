@@ -2,7 +2,7 @@ import { BaseBlock, Constructed, DateTime, GeneralizedTime, Primitive, Sequence 
 import moment from 'moment';
 import { TextDecoder } from 'util';
 
-import InvalidMessageError from './messages/InvalidMessageError';
+import { InvalidMessageError } from './messages/InvalidMessageError';
 
 /**
  * Create implicitly tagged SEQUENCE from the `items`.

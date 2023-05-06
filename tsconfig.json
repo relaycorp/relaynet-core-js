@@ -4,6 +4,8 @@
     "outDir": "build/main",
     "rootDir": "src",
     "stripInternal": true,
+    "target": "es2021",
+    "lib": ["es2021", "dom"],
     "types": ["node", "jest"],
     "typeRoots": ["node_modules/@types", "src/types"]
   },
