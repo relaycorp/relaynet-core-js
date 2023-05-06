@@ -17,5 +17,3 @@ tslint.json
 .idea/
 
 .github/
-.circleci/
-.dependabot/

@@ -9,7 +9,6 @@
   "description": "Relaynet core library",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
-  "module": "build/module/index.js",
   "repository": "https://github.com/relaycorp/relaynet-core-js",
   "homepage": "https://docs.relaycorp.tech/relaynet-core-js/",
   "license": "MIT",
@@ -17,9 +16,8 @@
     "relaynet"
   ],
   "scripts": {
-    "build": "run-s clean && run-p build:*",
-    "build:main": "tsc -p tsconfig.json",
-    "build:module": "tsc -p tsconfig.module.json",
+    "build": "run-s clean tsc",
+    "tsc": "tsc -p tsconfig.json",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
