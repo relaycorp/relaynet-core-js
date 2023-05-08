@@ -102,7 +102,7 @@ describe('issue()', () => {
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
       subjectKeyPair.privateKey,
       ((subjectKeyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name,
-      undefined,
+      expect.anything(),
     );
   });
 

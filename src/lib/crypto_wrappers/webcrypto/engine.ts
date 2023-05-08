@@ -1,4 +1,4 @@
-import { CryptoEngine } from 'pkijs';
+import { CryptoEngine, getEngine, type ICryptoEngine } from 'pkijs';
 import { ProviderCrypto } from 'webcrypto-core';
 
 import { PrivateKey } from '../PrivateKey';
@@ -9,11 +9,9 @@ const ENGINE_BY_PROVIDER = new WeakMap<ProviderCrypto, CryptoEngine>();
 /**
  * Generate and cache PKI.js engine for specified private key.
  */
-export function getEngineForPrivateKey(
-  privateKey: PrivateKey | CryptoKey,
-): CryptoEngine | undefined {
+export function getEngineForPrivateKey(privateKey: PrivateKey | CryptoKey): ICryptoEngine {
   if (!(privateKey instanceof PrivateKey)) {
-    return undefined;
+    return getEngine().crypto!;
   }
 
   const cachedEngine = ENGINE_BY_PROVIDER.get(privateKey.provider);

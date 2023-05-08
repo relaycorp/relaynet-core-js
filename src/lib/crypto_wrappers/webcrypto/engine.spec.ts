@@ -3,14 +3,17 @@ import { SubtleCrypto } from 'webcrypto-core';
 import { RsaPssPrivateKey } from '../PrivateKey';
 import { MockRsaPssProvider } from './_test_utils';
 import { getEngineForPrivateKey } from './engine';
+import { getEngine } from 'pkijs';
 
-describe('getEngine', () => {
+describe('getEngineForPrivateKey', () => {
   const PROVIDER = new MockRsaPssProvider();
 
-  test('undefined should be returned if CryptoKey is used', () => {
+  test('Default engine should be returned if CryptoKey is used', () => {
     const engine = getEngineForPrivateKey(null as unknown as CryptoKey);
 
-    expect(engine).toBeUndefined();
+    const { crypto: defaultEngine } = getEngine();
+    expect(engine).toBe(defaultEngine);
+    expect(engine).not.toBeNull();
   });
 
   test('Nameless engine should be returned if PrivateKey is used', () => {
