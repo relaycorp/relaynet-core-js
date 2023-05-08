@@ -2,7 +2,7 @@ import { addDays, addMonths, differenceInSeconds, subMinutes } from 'date-fns';
 
 import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
-import { getRSAPublicKeyFromPrivate } from '../../crypto/keys';
+import { getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';

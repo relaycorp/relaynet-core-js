@@ -7,12 +7,13 @@ import * as pkijs from 'pkijs';
 import { generateStubCert, reSerializeCertificate, sha256Hex } from '../../_test_utils';
 import * as oids from '../../oids';
 import { derDeserialize, getPkijsCrypto } from '../_utils';
-import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../keys';
-import { RsaPssPrivateKey } from '../PrivateKey';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../keys/generation';
+import { RsaPssPrivateKey } from '../keys/PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
-import { getEngineForPrivateKey } from '../webcrypto/engine';
+import { getEngineForPrivateKey } from '../pkijs';
 import { Certificate } from './Certificate';
 import { CertificateError } from './CertificateError';
+import { derSerializePublicKey } from '../keys/serialisation';
 
 const pkijsCrypto = getPkijsCrypto();
 

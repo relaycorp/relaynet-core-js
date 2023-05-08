@@ -25,7 +25,7 @@ import { dateToASN1DateTimeInUTC, makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto/_utils';
 import { HashingAlgorithm } from '../crypto/algorithms';
 import * as cmsSignedData from '../crypto/cms/signedData';
-import { generateRSAKeyPair } from '../crypto/keys';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { Recipient } from '../messages/Recipient';
 import { StubMessage } from './_test_utils';

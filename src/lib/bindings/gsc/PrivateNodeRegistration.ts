@@ -4,10 +4,13 @@ import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
-import { derDeserializeECDHPublicKey, derSerializePublicKey } from '../../crypto/keys';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { SessionKey } from '../../SessionKey';
+import {
+  derDeserializeECDHPublicKey,
+  derSerializePublicKey,
+} from '../../crypto/keys/serialisation';
 
 export class PrivateNodeRegistration {
   public static async deserialize(serialization: ArrayBuffer): Promise<PrivateNodeRegistration> {

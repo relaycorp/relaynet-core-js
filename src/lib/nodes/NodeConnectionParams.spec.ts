@@ -4,10 +4,11 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { arrayBufferFrom } from '../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto/_utils';
-import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../crypto/keys';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../crypto/keys/generation';
 import { SessionKey } from '../SessionKey';
 import { InvalidNodeConnectionParams } from './errors';
 import { NodeConnectionParams } from './NodeConnectionParams';
+import { derSerializePublicKey } from '../crypto/keys/serialisation';
 
 const INTERNET_ADDRESS = 'example.com';
 

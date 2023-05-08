@@ -2,7 +2,7 @@
 
 import { CryptoKey, KeyAlgorithm, KeyUsages, ProviderCrypto } from 'webcrypto-core';
 
-import { HashingAlgorithm } from './algorithms';
+import { HashingAlgorithm } from '../algorithms';
 
 export class PrivateKey extends CryptoKey {
   public override readonly extractable = true; // The **public** key is extractable as SPKI

@@ -4,12 +4,12 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
 import { derDeserialize } from '../../crypto/_utils';
-import { derSerializePublicKey } from '../../crypto/keys';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { SessionKey } from '../../SessionKey';
 import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivateNodeRegistration } from './PrivateNodeRegistration';
+import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 
 let privateNodeCertificate: Certificate;
 let gatewayCertificate: Certificate;

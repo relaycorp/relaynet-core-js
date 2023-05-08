@@ -1,6 +1,6 @@
 import { arrayBufferFrom, generateStubCert, getMockContext, mockSpy } from '../_test_utils';
 import { HashingAlgorithm } from '../crypto/algorithms';
-import { generateRSAKeyPair } from '../crypto/keys';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
 import * as serialization from '../ramf/serialization';
 import { RAMFMessage } from './RAMFMessage';
 

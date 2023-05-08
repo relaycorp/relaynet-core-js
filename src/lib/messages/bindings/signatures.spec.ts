@@ -1,5 +1,5 @@
 import { generateStubCert } from '../../_test_utils';
-import { generateRSAKeyPair } from '../../crypto/keys';
+import { generateRSAKeyPair } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { RELAYNET_OIDS } from '../../oids';
 import {

@@ -1,5 +1,5 @@
 import { SessionEnvelopedData } from '../../crypto/cms/envelopedData';
-import { getIdFromIdentityKey } from '../../crypto/keys';
+import { getIdFromIdentityKey } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { PayloadPlaintext } from '../../messages/payloads/PayloadPlaintext';

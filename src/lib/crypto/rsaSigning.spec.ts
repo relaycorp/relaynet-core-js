@@ -1,7 +1,7 @@
 import { arrayBufferFrom } from '../_test_utils';
 import * as utils from './_utils';
-import { generateRSAKeyPair } from './keys';
-import { RsaPssPrivateKey } from './PrivateKey';
+import { generateRSAKeyPair } from './keys/generation';
+import { RsaPssPrivateKey } from './keys/PrivateKey';
 import { sign, verify } from './rsaSigning';
 import { MockRsaPssProvider } from './webcrypto/_test_utils';
 

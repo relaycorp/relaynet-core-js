@@ -5,7 +5,7 @@ import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert, reSerializeCertificate } from '../_test_utils';
 import { SessionEnvelopedData, SessionlessEnvelopedData } from '../crypto/cms/envelopedData';
-import { generateRSAKeyPair } from '../crypto/keys';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { CertificateError } from '../crypto/x509/CertificateError';
 import { MockPrivateKeyStore } from '../keyStores/testMocks';

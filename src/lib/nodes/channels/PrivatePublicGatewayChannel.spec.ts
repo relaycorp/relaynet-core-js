@@ -4,7 +4,7 @@ import { arrayBufferFrom, reSerializeCertificate } from '../../_test_utils';
 import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 
-import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto/keys';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
@@ -13,6 +13,7 @@ import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivateInternetGatewayChannel } from './PrivateInternetGatewayChannel';
+import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 
 let internetGatewayId: string;
 let internetGatewayPublicKey: CryptoKey;

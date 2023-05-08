@@ -3,7 +3,7 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
-import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto/keys';
+import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto/keys/generation';
 import { Certificate } from './crypto/x509/Certificate';
 import FullCertificateIssuanceOptions from './crypto/x509/FullCertificateIssuanceOptions';
 

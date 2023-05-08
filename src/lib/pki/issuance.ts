@@ -1,4 +1,4 @@
-import { getPublicKeyDigest } from '../crypto/keys';
+import { getPublicKeyDigest } from '../crypto/keys/generation';
 import { BasicCertificateIssuanceOptions } from '../crypto/x509/BasicCertificateIssuanceOptions';
 import { Certificate } from '../crypto/x509/Certificate';
 

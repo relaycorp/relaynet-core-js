@@ -1,7 +1,7 @@
 import * as pkijs from 'pkijs';
 
 import { generateStubCert } from '../_test_utils';
-import { generateRSAKeyPair, getPublicKeyDigestHex } from '../crypto/keys';
+import { generateRSAKeyPair, getPublicKeyDigestHex } from '../crypto/keys/generation';
 import { BasicCertificateIssuanceOptions } from '../crypto/x509/BasicCertificateIssuanceOptions';
 import { Certificate } from '../crypto/x509/Certificate';
 import {

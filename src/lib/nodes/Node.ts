@@ -1,4 +1,4 @@
-import { getRSAPublicKeyFromPrivate } from '../crypto/keys';
+import { getRSAPublicKeyFromPrivate } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import { PayloadPlaintext } from '../messages/payloads/PayloadPlaintext';

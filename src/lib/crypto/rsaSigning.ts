@@ -4,7 +4,7 @@
  */
 
 import * as utils from './_utils';
-import { PrivateKey } from './PrivateKey';
+import { PrivateKey } from './keys/PrivateKey';
 
 const rsaPssParams = {
   hash: { name: 'SHA-256' },

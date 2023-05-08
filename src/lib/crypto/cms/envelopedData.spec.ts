@@ -14,7 +14,7 @@ import {
 } from '../../_test_utils';
 import { CMS_OIDS } from '../../oids';
 import { SessionKey } from '../../SessionKey';
-import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../keys';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../keys/generation';
 import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo } from './_test_utils';
 import { CMSError } from './CMSError';
@@ -25,6 +25,7 @@ import {
   SessionlessEnvelopedData,
 } from './envelopedData';
 import { assertPkiType } from './_utils';
+import { derSerializePublicKey } from '../keys/serialisation';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';

@@ -1,8 +1,8 @@
 import { SubtleCrypto } from 'webcrypto-core';
 
-import { RsaPssPrivateKey } from '../PrivateKey';
-import { MockRsaPssProvider } from './_test_utils';
-import { getEngineForPrivateKey } from './engine';
+import { RsaPssPrivateKey } from './keys/PrivateKey';
+import { MockRsaPssProvider } from './webcrypto/_test_utils';
+import { getEngineForPrivateKey } from './pkijs';
 import { getEngine } from 'pkijs';
 
 describe('getEngineForPrivateKey', () => {

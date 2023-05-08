@@ -1,10 +1,12 @@
 import { CryptoEngine, getEngine, type ICryptoEngine } from 'pkijs';
 import { ProviderCrypto } from 'webcrypto-core';
 
-import { PrivateKey } from '../PrivateKey';
-import { AwalaCrypto } from './AwalaCrypto';
+import { PrivateKey } from './keys/PrivateKey';
+import { AwalaCrypto } from './webcrypto/AwalaCrypto';
 
 const ENGINE_BY_PROVIDER = new WeakMap<ProviderCrypto, CryptoEngine>();
+
+export const NODE_ENGINE = new CryptoEngine({ crypto: new AwalaCrypto(), name: 'node' });
 
 /**
  * Generate and cache PKI.js engine for specified private key.

@@ -2,7 +2,11 @@ import { addDays, setMilliseconds } from 'date-fns';
 
 import { arrayBufferFrom, CRYPTO_OIDS, reSerializeCertificate } from '../../_test_utils';
 import { SessionEnvelopedData } from '../../crypto/cms/envelopedData';
-import { generateECDHKeyPair, generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto/keys';
+import {
+  generateECDHKeyPair,
+  generateRSAKeyPair,
+  getIdFromIdentityKey,
+} from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { Recipient } from '../../messages/Recipient';

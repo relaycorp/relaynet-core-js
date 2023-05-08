@@ -1,5 +1,5 @@
-import { derSerializePublicKey } from './crypto/keys';
 import { SessionKeyPair } from './SessionKeyPair';
+import { derSerializePublicKey } from './crypto/keys/serialisation';
 
 describe('generate', () => {
   test('keyId should be randomly generated, 64-bit value', async () => {

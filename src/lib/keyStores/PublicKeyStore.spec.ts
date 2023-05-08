@@ -1,12 +1,12 @@
 import {
-  derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
   getIdFromIdentityKey,
-} from '../crypto/keys';
+} from '../crypto/keys/generation';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPublicKeyData } from './PublicKeyStore';
 import { MockPublicKeyStore } from './testMocks';
+import { derSerializePublicKey } from '../crypto/keys/serialisation';
 
 const STORE = new MockPublicKeyStore();
 beforeEach(() => {

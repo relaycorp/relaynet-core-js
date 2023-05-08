@@ -15,12 +15,6 @@ setEngine('nodeEngine', cryptoEngine);
 
 export { RelaynetError } from './lib/RelaynetError';
 export {
-  derDeserializeECDHPrivateKey,
-  derDeserializeECDHPublicKey,
-  derDeserializeRSAPrivateKey,
-  derDeserializeRSAPublicKey,
-  derSerializePrivateKey,
-  derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
   getPublicKeyDigest,
@@ -28,8 +22,8 @@ export {
   getRSAPublicKeyFromPrivate,
   getIdFromIdentityKey,
   RSAKeyGenOptions,
-} from './lib/crypto/keys';
-export { PrivateKey, RsaPssPrivateKey } from './lib/crypto/PrivateKey';
+} from './lib/crypto/keys/generation';
+export { PrivateKey, RsaPssPrivateKey } from './lib/crypto/keys/PrivateKey';
 export { ECDHCurveName } from './lib/crypto/algorithms';
 export { IdentityKeyPair } from './lib/IdentityKeyPair';
 
@@ -111,3 +105,9 @@ export { NodeCryptoOptions } from './lib/nodes/NodeCryptoOptions';
 export { NodeConnectionParams } from './lib/nodes/NodeConnectionParams';
 export * from './lib/nodes/errors';
 export * from './lib/internetAddressing';
+export { derDeserializeECDHPrivateKey } from './lib/crypto/keys/serialisation';
+export { derDeserializeRSAPrivateKey } from './lib/crypto/keys/serialisation';
+export { derDeserializeECDHPublicKey } from './lib/crypto/keys/serialisation';
+export { derDeserializeRSAPublicKey } from './lib/crypto/keys/serialisation';
+export { derSerializePrivateKey } from './lib/crypto/keys/serialisation';
+export { derSerializePublicKey } from './lib/crypto/keys/serialisation';

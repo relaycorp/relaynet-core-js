@@ -5,7 +5,7 @@ import * as pkijs from 'pkijs';
 
 import { CMS_OIDS } from '../../oids';
 import { getPkijsCrypto } from '../_utils';
-import { getEngineForPrivateKey } from '../webcrypto/engine';
+import { getEngineForPrivateKey } from '../pkijs';
 import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
 import { CMSError } from './CMSError';

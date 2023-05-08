@@ -7,10 +7,10 @@ import * as pkijs from 'pkijs';
 import { CMS_OIDS, RELAYNET_OIDS } from '../../oids';
 import { SessionKey } from '../../SessionKey';
 import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
-import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
 import { Certificate } from '../x509/Certificate';
 import { assertPkiType, assertUndefined, deserializeContentInfo } from './_utils';
 import { CMSError } from './CMSError';
+import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys/serialisation';
 
 const pkijsCrypto = getPkijsCrypto();
 

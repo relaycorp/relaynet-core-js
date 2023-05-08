@@ -1,7 +1,7 @@
 import { addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 import { expectArrayBuffersToEqual } from '../_test_utils';
 
-import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto/keys';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';

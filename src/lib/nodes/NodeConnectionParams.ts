@@ -4,13 +4,13 @@ import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../asn1';
+import { SessionKey } from '../SessionKey';
+import { InvalidNodeConnectionParams } from './errors';
 import {
   derDeserializeECDHPublicKey,
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
-} from '../crypto/keys';
-import { SessionKey } from '../SessionKey';
-import { InvalidNodeConnectionParams } from './errors';
+} from '../crypto/keys/serialisation';
 
 export class NodeConnectionParams {
   public static async deserialize(serialization: ArrayBuffer): Promise<NodeConnectionParams> {

@@ -4,7 +4,7 @@ import { addDays } from 'date-fns';
 import { expectArrayBuffersToEqual } from '../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../asn1';
 import { derDeserialize } from '../crypto/_utils';
-import { generateRSAKeyPair } from '../crypto/keys';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { InvalidMessageError } from '../messages/InvalidMessageError';
 import { CertificationPath } from './CertificationPath';

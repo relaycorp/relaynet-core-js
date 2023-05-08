@@ -1,7 +1,7 @@
-import { HashingAlgorithm } from './algorithms';
+import { HashingAlgorithm } from '../algorithms';
 import { PrivateKey, RsaPssPrivateKey } from './PrivateKey';
-import { MockAesKwProvider } from './webcrypto/_test_utils';
-import { AwalaAesKwProvider } from './webcrypto/AwalaAesKwProvider';
+import { MockAesKwProvider } from '../webcrypto/_test_utils';
+import { AwalaAesKwProvider } from '../webcrypto/AwalaAesKwProvider';
 
 const PROVIDER = new AwalaAesKwProvider(new MockAesKwProvider());
 

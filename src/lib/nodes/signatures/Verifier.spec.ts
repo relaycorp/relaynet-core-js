@@ -1,6 +1,6 @@
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
 import { CMSError } from '../../crypto/cms/CMSError';
-import { generateRSAKeyPair } from '../../crypto/keys';
+import { generateRSAKeyPair } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { CertificateError } from '../../crypto/x509/CertificateError';
 import { StubSigner, StubVerifier } from './_test_utils';
