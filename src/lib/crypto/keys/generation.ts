@@ -1,8 +1,6 @@
-import bufferToArray from 'buffer-to-arraybuffer';
-
 import { ECDHCurveName, HashingAlgorithm, RSAModulus } from '../algorithms';
 import { NODE_ENGINE } from '../pkijs';
-import { derSerializePublicKey } from './serialisation';
+import { derDeserializeRSAPublicKey, derSerializePublicKey } from './serialisation';
 
 export interface RSAKeyGenOptions {
   readonly modulus: RSAModulus;
@@ -54,6 +52,6 @@ export async function generateECDHKeyPair(
 }
 
 export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
-  const publicKeyDer = bufferToArray(await derSerializePublicKey(privateKey));
-  return NODE_ENGINE.importKey('spki', publicKeyDer, privateKey.algorithm, true, ['verify']);
+  const publicKeyDer = await derSerializePublicKey(privateKey);
+  return derDeserializeRSAPublicKey(publicKeyDer);
 }

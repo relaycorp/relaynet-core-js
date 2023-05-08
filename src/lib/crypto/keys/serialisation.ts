@@ -1,7 +1,6 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { PrivateKey } from './PrivateKey';
-import { NODE_ENGINE } from '../pkijs';
+import { getEngineForKey, NODE_ENGINE } from '../pkijs';
 
 const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
   hash: { name: 'SHA-256' },
@@ -14,10 +13,8 @@ const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
  * @param publicKey
  */
 export async function derSerializePublicKey(publicKey: CryptoKey): Promise<Buffer> {
-  const publicKeyDer =
-    publicKey instanceof PrivateKey
-      ? ((await publicKey.provider.exportKey('spki', publicKey)) as ArrayBuffer)
-      : await NODE_ENGINE.exportKey('spki', publicKey);
+  const engine = getEngineForKey(publicKey);
+  const publicKeyDer = await engine.exportKey('spki', publicKey);
   return Buffer.from(publicKeyDer);
 }
 

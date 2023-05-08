@@ -2,15 +2,16 @@ import { createHash } from 'crypto';
 
 import { generateECDHKeyPair, generateRSAKeyPair } from './generation';
 import { derSerializePublicKey } from './serialisation';
-import { arrayBufferFrom, sha256Hex } from '../../_test_utils';
-import { MockRsaPssProvider } from '../webcrypto/_test_utils';
-import { RsaPssPrivateKey } from './PrivateKey';
+import { sha256Hex } from '../../_test_utils';
 import { getIdFromIdentityKey, getPublicKeyDigest, getPublicKeyDigestHex } from './digest';
 
 describe('getPublicKeyDigest', () => {
-  test('SHA-256 digest should be returned in hex', async () => {
-    const keyPair = await generateRSAKeyPair();
+  let keyPair: CryptoKeyPair;
+  beforeAll(async () => {
+    keyPair = await generateRSAKeyPair();
+  });
 
+  test('SHA-256 digest should be returned in hex', async () => {
     const digest = await getPublicKeyDigest(keyPair.publicKey);
 
     expect(Buffer.from(digest)).toEqual(
@@ -21,15 +22,12 @@ describe('getPublicKeyDigest', () => {
   });
 
   test('Public key should be extracted first if input is private key', async () => {
-    const mockPublicKeySerialized = arrayBufferFrom('the public key');
-    const provider = new MockRsaPssProvider();
-    provider.onExportKey.mockResolvedValue(mockPublicKeySerialized);
-    const privateKey = new RsaPssPrivateKey('SHA-256', provider);
-
-    const digest = await getPublicKeyDigest(privateKey);
+    const digest = await getPublicKeyDigest(keyPair.privateKey);
 
     expect(Buffer.from(digest)).toEqual(
-      createHash('sha256').update(Buffer.from(mockPublicKeySerialized)).digest(),
+      createHash('sha256')
+        .update(await derSerializePublicKey(keyPair.publicKey))
+        .digest(),
     );
   });
 });

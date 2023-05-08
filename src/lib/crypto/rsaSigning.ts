@@ -3,8 +3,7 @@
  * doesn't (yet) have a certificate.
  */
 
-import { PrivateKey } from './keys/PrivateKey';
-import { NODE_ENGINE } from './pkijs';
+import { getEngineForKey } from './pkijs';
 
 const rsaPssParams = {
   hash: { name: 'SHA-256' },
@@ -13,10 +12,8 @@ const rsaPssParams = {
 };
 
 export async function sign(plaintext: ArrayBuffer, privateKey: CryptoKey): Promise<ArrayBuffer> {
-  if (privateKey instanceof PrivateKey) {
-    return privateKey.provider.sign(rsaPssParams, privateKey, plaintext);
-  }
-  return NODE_ENGINE.sign(rsaPssParams, privateKey, plaintext);
+  const engine = getEngineForKey(privateKey);
+  return engine.sign(rsaPssParams, privateKey, plaintext);
 }
 
 export async function verify(
@@ -24,5 +21,6 @@ export async function verify(
   publicKey: CryptoKey,
   expectedPlaintext: ArrayBuffer,
 ): Promise<boolean> {
-  return NODE_ENGINE.verify(rsaPssParams, publicKey, signature, expectedPlaintext);
+  const engine = getEngineForKey(publicKey);
+  return engine.verify(rsaPssParams, publicKey, signature, expectedPlaintext);
 }
