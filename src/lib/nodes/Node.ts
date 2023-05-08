@@ -1,4 +1,3 @@
-import { getRSAPublicKeyFromPrivate } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import { PayloadPlaintext } from '../messages/payloads/PayloadPlaintext';
@@ -12,14 +11,10 @@ import { InvalidMessageError } from '../messages/InvalidMessageError';
 export abstract class Node<Payload extends PayloadPlaintext> {
   constructor(
     public readonly id: string,
-    public readonly identityPrivateKey: CryptoKey,
+    public readonly identityKeyPair: CryptoKeyPair,
     public readonly keyStores: KeyStoreSet,
-    protected readonly cryptoOptions: Partial<NodeCryptoOptions>,
+    public readonly cryptoOptions: Partial<NodeCryptoOptions>,
   ) {}
-
-  public async getIdentityPublicKey(): Promise<CryptoKey> {
-    return getRSAPublicKeyFromPrivate(this.identityPrivateKey);
-  }
 
   /**
    * Generate and store a new session key.
@@ -45,7 +40,7 @@ export abstract class Node<Payload extends PayloadPlaintext> {
     if (!path) {
       return null;
     }
-    return new signerClass(path.leafCertificate, this.identityPrivateKey);
+    return new signerClass(path.leafCertificate, this.identityKeyPair.privateKey);
   }
 
   /**

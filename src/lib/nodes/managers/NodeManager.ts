@@ -2,6 +2,7 @@ import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { Node } from '../Node';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { NodeConstructor } from './NodeConstructor';
+import { getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
 
 export abstract class NodeManager<N extends Node<any>> {
   protected abstract readonly defaultNodeConstructor: NodeConstructor<N>;
@@ -29,7 +30,11 @@ export abstract class NodeManager<N extends Node<any>> {
     if (!nodePrivateKey) {
       return null;
     }
+    const nodeKeyPair: CryptoKeyPair = {
+      privateKey: nodePrivateKey,
+      publicKey: await getRSAPublicKeyFromPrivate(nodePrivateKey),
+    };
     const constructor = nodeConstructor ?? this.defaultNodeConstructor;
-    return new constructor(id, nodePrivateKey, this.keyStores, this.cryptoOptions);
+    return new constructor(id, nodeKeyPair, this.keyStores, this.cryptoOptions);
   }
 }

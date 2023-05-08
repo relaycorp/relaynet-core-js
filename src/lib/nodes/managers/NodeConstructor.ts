@@ -4,7 +4,7 @@ import { Node } from '../Node';
 
 export type NodeConstructor<N extends Node<any>> = new (
   id: string,
-  identityPrivateKey: CryptoKey,
+  identityKeyPair: CryptoKeyPair,
   keyStores: KeyStoreSet,
   cryptoOptions: Partial<NodeCryptoOptions>,
 ) => N;

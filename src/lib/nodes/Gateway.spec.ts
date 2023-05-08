@@ -11,7 +11,7 @@ import { StubVerifier } from './signatures/_test_utils';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 let nodeId: string;
-let nodePrivateKey: CryptoKey;
+let nodeKeyPair: CryptoKeyPair;
 let nodeCertificate: Certificate;
 let nodeCertificateIssuer: Certificate;
 let nodeCertificateIssuerId: string;
@@ -28,8 +28,7 @@ beforeAll(async () => {
   );
   nodeCertificateIssuerId = await nodeCertificateIssuer.calculateSubjectId();
 
-  const nodeKeyPair = await generateRSAKeyPair();
-  nodePrivateKey = nodeKeyPair.privateKey;
+  nodeKeyPair = await generateRSAKeyPair();
   nodeCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: nodeCertificateIssuer,
@@ -48,7 +47,7 @@ beforeEach(async () => {
 
 describe('getGSCVerifier', () => {
   test('Certificates from a different issuer should be ignored', async () => {
-    const gateway = new StubGateway(nodeId, nodePrivateKey, KEY_STORES, {});
+    const gateway = new StubGateway(nodeId, nodeKeyPair, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
       new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerId,
@@ -60,7 +59,7 @@ describe('getGSCVerifier', () => {
   });
 
   test('All certificates should be set as trusted', async () => {
-    const gateway = new StubGateway(nodeId, nodePrivateKey, KEY_STORES, {});
+    const gateway = new StubGateway(nodeId, nodeKeyPair, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
       new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerId,

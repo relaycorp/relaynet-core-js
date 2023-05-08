@@ -16,10 +16,10 @@ export class PrivateGateway extends Gateway {
     authorizationSerialized: ArrayBuffer,
   ): Promise<ArrayBuffer> {
     const request = new PrivateNodeRegistrationRequest(
-      await this.getIdentityPublicKey(),
+      this.identityKeyPair.publicKey,
       authorizationSerialized,
     );
-    return request.serialize(this.identityPrivateKey);
+    return request.serialize(this.identityKeyPair.privateKey);
   }
 
   /**
@@ -77,7 +77,7 @@ export class PrivateGateway extends Gateway {
     }
 
     return new PrivateInternetGatewayChannel(
-      this.identityPrivateKey,
+      this.identityKeyPair.privateKey,
       privateGatewayDeliveryAuth.leafCertificate,
       internetGatewayId,
       internetGatewayPublicKey,

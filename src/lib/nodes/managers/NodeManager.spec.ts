@@ -1,9 +1,6 @@
-import { mockSpy } from '../../_test_utils';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
-import * as nodeTestUtils from '../_test_utils';
 import { StubNodeManager } from './_test_utils';
-
-const MOCK_NODE_CLASS = mockSpy(jest.spyOn(nodeTestUtils, 'StubNode'));
+import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 
 const KEY_STORES = new MockKeyStoreSet();
 afterEach(() => {
@@ -23,22 +20,29 @@ describe('get', () => {
 
     const gateway = await manager.get(id);
 
-    expect(MOCK_NODE_CLASS).toBeCalledWith(id, privateKey, KEY_STORES, {});
-    expect(gateway).toEqual(MOCK_NODE_CLASS.mock.instances[0]);
+    expect(gateway?.id).toBe(id);
+    expect(gateway?.identityKeyPair.privateKey).toBe(privateKey);
+  });
+
+  test('Identity public key should be derived from private key', async () => {
+    const { publicKey, id } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
+    const manager = new StubNodeManager(KEY_STORES);
+
+    const node = await manager.get(id);
+
+    const publicKeySerialised = await derSerializePublicKey(publicKey);
+    await expect(derSerializePublicKey(node!.identityKeyPair.privateKey)).resolves.toMatchObject(
+      publicKeySerialised,
+    );
   });
 
   test('Key stores should be passed on', async () => {
     const { id } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
     const manager = new StubNodeManager(KEY_STORES);
 
-    await manager.get(id);
+    const node = await manager.get(id);
 
-    expect(MOCK_NODE_CLASS).toBeCalledWith(
-      expect.anything(),
-      expect.anything(),
-      KEY_STORES,
-      expect.anything(),
-    );
+    expect(node?.keyStores).toBe(KEY_STORES);
   });
 
   test('Crypto options should be honoured if passed', async () => {
@@ -46,25 +50,26 @@ describe('get', () => {
     const cryptoOptions = { encryption: { aesKeySize: 256 } };
     const manager = new StubNodeManager(KEY_STORES, cryptoOptions);
 
-    await manager.get(id);
+    const node = await manager.get(id);
 
-    expect(MOCK_NODE_CLASS).toBeCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-      cryptoOptions,
-    );
+    expect(node?.cryptoOptions).toBe(cryptoOptions);
   });
 
   test('Custom PrivateGateway subclass should be used if applicable', async () => {
     const customPrivateGateway = {};
     const customPrivateGatewayConstructor = jest.fn().mockReturnValue(customPrivateGateway);
     const manager = new StubNodeManager(KEY_STORES);
-    const { privateKey, id } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
+    const { privateKey, publicKey, id } =
+      await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
 
     const gateway = await manager.get(id, customPrivateGatewayConstructor);
 
     expect(gateway).toBe(customPrivateGateway);
-    expect(customPrivateGatewayConstructor).toBeCalledWith(id, privateKey, KEY_STORES, {});
+    expect(customPrivateGatewayConstructor).toBeCalledWith(
+      id,
+      { privateKey, publicKey },
+      KEY_STORES,
+      {},
+    );
   });
 });

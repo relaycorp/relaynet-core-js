@@ -15,7 +15,7 @@ import { derSerializePublicKey } from '../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 let nodeId: string;
-let nodePrivateKey: CryptoKey;
+let nodeKeyPair: CryptoKeyPair;
 let nodeCertificate: Certificate;
 let nodeCertificateIssuer: Certificate;
 let nodeCertificateIssuerId: string;
@@ -32,8 +32,7 @@ beforeAll(async () => {
   );
   nodeCertificateIssuerId = await nodeCertificateIssuer.calculateSubjectId();
 
-  const nodeKeyPair = await generateRSAKeyPair();
-  nodePrivateKey = nodeKeyPair.privateKey;
+  nodeKeyPair = await generateRSAKeyPair();
   nodeCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: nodeCertificateIssuer,
@@ -52,7 +51,7 @@ beforeAll(async () => {
   peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerCertificate = await issueGatewayCertificate({
     issuerCertificate: nodeCertificate,
-    issuerPrivateKey: nodePrivateKey,
+    issuerPrivateKey: nodeKeyPair.privateKey,
     subjectPublicKey: peerKeyPair.publicKey,
     validityEndDate: addDays(new Date(), 1),
   });
@@ -63,19 +62,9 @@ beforeEach(async () => {
   KEY_STORES.clear();
 });
 
-describe('getIdentityPublicKey', () => {
-  test('Public key should be returned', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
-
-    await expect(derSerializePublicKey(await node.getIdentityPublicKey())).resolves.toEqual(
-      await derSerializePublicKey(nodePrivateKey),
-    );
-  });
-});
-
 describe('getGSCSigner', () => {
   test('Nothing should be returned if certificate does not exist', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
 
     await expect(
       node.getGSCSigner(nodeCertificateIssuerId, ParcelDeliverySigner),
@@ -83,7 +72,7 @@ describe('getGSCSigner', () => {
   });
 
   test('Signer should be of the type requested if certificate exists', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
       new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerId,
@@ -95,7 +84,7 @@ describe('getGSCSigner', () => {
   });
 
   test('Signer should receive the certificate and private key of the node', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     await KEY_STORES.certificateStore.save(
       new CertificationPath(nodeCertificate, []),
       nodeCertificateIssuerId,
@@ -112,7 +101,7 @@ describe('getGSCSigner', () => {
 
 describe('generateSessionKey', () => {
   test('Key should not be bound to any peer by default', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
 
     const sessionKey = await node.generateSessionKey();
 
@@ -124,7 +113,7 @@ describe('generateSessionKey', () => {
   });
 
   test('Key should be bound to a peer if explicitly set', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
 
     const sessionKey = await node.generateSessionKey(peerId);
 
@@ -138,7 +127,7 @@ describe('generateSessionKey', () => {
 
 describe('validateMessage', () => {
   test('Invalid message should be refused', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     const expiredMessage = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]), {
       creationDate: subDays(new Date(), 1),
       ttl: 1,
@@ -151,7 +140,7 @@ describe('validateMessage', () => {
   });
 
   test('Valid message with untrusted sender should be refused', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     const message = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]));
 
     await expect(node.validateMessage(message, [])).rejects.toThrowWithMessage(
@@ -161,7 +150,7 @@ describe('validateMessage', () => {
   });
 
   test('Valid message with trusted sender should be allowed', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     const message = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]), {
       senderCaCertificateChain: [peerCertificate],
     });
@@ -170,7 +159,7 @@ describe('validateMessage', () => {
   });
 
   test('Message recipient should match node id', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     const message = new StubMessage({ id: `not${nodeId}` }, peerCertificate, Buffer.from([]));
 
     await expect(node.validateMessage(message)).rejects.toThrowWithMessage(
@@ -180,7 +169,7 @@ describe('validateMessage', () => {
   });
 
   test('Valid message should be allowed', async () => {
-    const node = new StubNode(nodeId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
     const message = new StubMessage({ id: nodeId }, peerCertificate, Buffer.from([]));
 
     await expect(node.validateMessage(message)).toResolve();
@@ -191,7 +180,7 @@ describe('unwrapMessagePayload', () => {
   const PAYLOAD_PLAINTEXT_CONTENT = arrayBufferFrom('payload content');
 
   test('Payload plaintext should be returned', async () => {
-    const node = new StubNode(peerId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(peerId, nodeKeyPair, KEY_STORES, {});
     const sessionKey = await node.generateSessionKey(peerId);
     const { envelopedData } = await SessionEnvelopedData.encrypt(
       PAYLOAD_PLAINTEXT_CONTENT,
@@ -209,7 +198,7 @@ describe('unwrapMessagePayload', () => {
   });
 
   test('Originator session key should be stored', async () => {
-    const node = new StubNode(peerId, nodePrivateKey, KEY_STORES, {});
+    const node = new StubNode(peerId, nodeKeyPair, KEY_STORES, {});
     const sessionKey = await node.generateSessionKey(peerId);
     const { envelopedData, dhKeyId } = await SessionEnvelopedData.encrypt(
       PAYLOAD_PLAINTEXT_CONTENT,

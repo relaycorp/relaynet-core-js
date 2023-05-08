@@ -2,7 +2,7 @@ import { addDays, setMilliseconds, subSeconds } from 'date-fns';
 
 import { arrayBufferFrom, reSerializeCertificate } from '../_test_utils';
 import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegistrationRequest';
-import { generateRSAKeyPair, getRSAPublicKeyFromPrivate } from '../crypto/keys/generation';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { CertificationPath } from '../pki/CertificationPath';
@@ -20,7 +20,7 @@ let internetGatewayId: string;
 let internetGatewayPublicKey: CryptoKey;
 let internetGatewayCertificate: Certificate;
 let privateGatewayId: string;
-let privateGatewayPrivateKey: CryptoKey;
+let privateGatewayIdKeyPair: CryptoKeyPair;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
@@ -38,14 +38,13 @@ beforeAll(async () => {
   );
 
   // Private gateway
-  const privateGatewayKeyPair = await generateRSAKeyPair();
-  privateGatewayPrivateKey = privateGatewayKeyPair.privateKey;
-  privateGatewayId = await getIdFromIdentityKey(privateGatewayKeyPair.publicKey);
+  privateGatewayIdKeyPair = await generateRSAKeyPair();
+  privateGatewayId = await getIdFromIdentityKey(privateGatewayIdKeyPair.publicKey);
   privateGatewayPDCCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: internetGatewayCertificate,
       issuerPrivateKey: internetGatewayKeyPair.privateKey,
-      subjectPublicKey: privateGatewayKeyPair.publicKey,
+      subjectPublicKey: privateGatewayIdKeyPair.publicKey,
       validityEndDate: tomorrow,
     }),
   );
@@ -62,7 +61,7 @@ describe('requestInternetGatewayRegistration', () => {
   test('Registration authorization should be honoured', async () => {
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -78,7 +77,7 @@ describe('requestInternetGatewayRegistration', () => {
   test('Public key should be honoured', async () => {
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -89,7 +88,7 @@ describe('requestInternetGatewayRegistration', () => {
 
     const request = await PrivateNodeRegistrationRequest.deserialize(requestSerialized);
     await expect(derSerializePublicKey(request.privateNodePublicKey)).resolves.toEqual(
-      await derSerializePublicKey(await getRSAPublicKeyFromPrivate(privateGatewayPrivateKey)),
+      await derSerializePublicKey(privateGatewayIdKeyPair.publicKey),
     );
   });
 });
@@ -104,7 +103,7 @@ describe('saveInternetGatewayChannel', () => {
   test('Registration should be refused if Internet gateway did not issue authorization', async () => {
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -124,7 +123,7 @@ describe('saveInternetGatewayChannel', () => {
   test('Delivery authorisation should be stored', async () => {
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -146,7 +145,7 @@ describe('saveInternetGatewayChannel', () => {
   test('Public key of Internet gateway should be stored', async () => {
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -169,7 +168,7 @@ describe('saveInternetGatewayChannel', () => {
   test('Session public key of Internet gateway should be stored', async () => {
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -198,7 +197,7 @@ describe('retrieveInternetGatewayChannel', () => {
     );
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -215,7 +214,7 @@ describe('retrieveInternetGatewayChannel', () => {
     await KEY_STORES.publicKeyStore.saveIdentityKey(internetGatewayPublicKey);
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -236,7 +235,7 @@ describe('retrieveInternetGatewayChannel', () => {
     await KEY_STORES.publicKeyStore.saveIdentityKey(internetGatewayPublicKey);
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       {},
     );
@@ -263,7 +262,7 @@ describe('retrieveInternetGatewayChannel', () => {
     const cryptoOptions = { encryption: { aesKeySize: 256 } };
     const privateGateway = new PrivateGateway(
       privateGatewayId,
-      privateGatewayPrivateKey,
+      privateGatewayIdKeyPair,
       KEY_STORES,
       cryptoOptions,
     );
