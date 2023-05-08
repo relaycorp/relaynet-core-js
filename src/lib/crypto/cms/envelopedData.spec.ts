@@ -26,6 +26,7 @@ import {
 } from './envelopedData';
 import { assertPkiType } from './_utils';
 import { derSerializePublicKey } from '../keys/serialisation';
+import { NODE_ENGINE } from '../pkijs';
 
 const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
@@ -140,6 +141,7 @@ describe('EnvelopedData', () => {
         nodeCertificate.pkijsCertificate,
         {},
         1,
+        NODE_ENGINE,
       );
       const contentInfo = new pkijs.ContentInfo({
         content: envelopedData.pkijsEnvelopedData.toSchema(),

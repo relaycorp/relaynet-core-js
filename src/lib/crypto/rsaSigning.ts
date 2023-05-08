@@ -3,8 +3,8 @@
  * doesn't (yet) have a certificate.
  */
 
-import * as utils from './_utils';
 import { PrivateKey } from './keys/PrivateKey';
+import { NODE_ENGINE } from './pkijs';
 
 const rsaPssParams = {
   hash: { name: 'SHA-256' },
@@ -12,13 +12,11 @@ const rsaPssParams = {
   saltLength: 32,
 };
 
-const pkijsCrypto = utils.getPkijsCrypto();
-
 export async function sign(plaintext: ArrayBuffer, privateKey: CryptoKey): Promise<ArrayBuffer> {
   if (privateKey instanceof PrivateKey) {
     return privateKey.provider.sign(rsaPssParams, privateKey, plaintext);
   }
-  return pkijsCrypto.sign(rsaPssParams, privateKey, plaintext);
+  return NODE_ENGINE.sign(rsaPssParams, privateKey, plaintext);
 }
 
 export async function verify(
@@ -26,5 +24,5 @@ export async function verify(
   publicKey: CryptoKey,
   expectedPlaintext: ArrayBuffer,
 ): Promise<boolean> {
-  return pkijsCrypto.verify(rsaPssParams, publicKey, signature, expectedPlaintext);
+  return NODE_ENGINE.verify(rsaPssParams, publicKey, signature, expectedPlaintext);
 }

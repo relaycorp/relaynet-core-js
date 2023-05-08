@@ -1,18 +1,3 @@
-//region Configure PKI.js
-import { CryptoEngine, setEngine } from 'pkijs';
-import { AwalaCrypto } from './lib/crypto/webcrypto/AwalaCrypto';
-
-const crypto = new AwalaCrypto();
-const cryptoEngine = new CryptoEngine({
-  crypto,
-  name: 'nodeEngine',
-  subtle: crypto.subtle,
-});
-setEngine('nodeEngine', cryptoEngine);
-//endregion
-
-//region Exports
-
 export { RelaynetError } from './lib/RelaynetError';
 export {
   generateECDHKeyPair,

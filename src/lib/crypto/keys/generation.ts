@@ -1,5 +1,4 @@
 import bufferToArray from 'buffer-to-arraybuffer';
-import { getAlgorithmParameters } from 'pkijs';
 
 import { ECDHCurveName, HashingAlgorithm, RSAModulus } from '../algorithms';
 import { NODE_ENGINE } from '../pkijs';
@@ -30,7 +29,7 @@ export async function generateRSAKeyPair(
     throw new Error('SHA-1 is disallowed by RS-018');
   }
 
-  const algorithm = getAlgorithmParameters('RSA-PSS', 'generateKey');
+  const algorithm = NODE_ENGINE.getAlgorithmParameters('RSA-PSS', 'generateKey');
   const rsaAlgorithm = algorithm.algorithm as RsaHashedKeyAlgorithm;
   // tslint:disable-next-line:no-object-mutation
   rsaAlgorithm.hash.name = hashingAlgorithm;

@@ -8,6 +8,7 @@ import { AwalaCrypto } from './AwalaCrypto';
 
 jest.mock('crypto', () => ({
   getCiphers: jest.fn().mockReturnValue([]),
+  getHashes: jest.fn().mockReturnValue([]),
 }));
 
 const CIPHERS: readonly string[] = [

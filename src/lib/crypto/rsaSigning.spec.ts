@@ -1,13 +1,11 @@
 import { arrayBufferFrom } from '../_test_utils';
-import * as utils from './_utils';
 import { generateRSAKeyPair } from './keys/generation';
 import { RsaPssPrivateKey } from './keys/PrivateKey';
 import { sign, verify } from './rsaSigning';
 import { MockRsaPssProvider } from './webcrypto/_test_utils';
+import { NODE_ENGINE } from './pkijs';
 
 const plaintext = arrayBufferFrom('the plaintext');
-
-const pkijsCrypto = utils.getPkijsCrypto();
 
 let keyPair: CryptoKeyPair;
 beforeAll(async () => {
@@ -24,7 +22,7 @@ describe('sign', () => {
   test('The plaintext should be signed with RSA-PSS, SHA-256 and a salt of 32', async () => {
     const signature = await sign(plaintext, keyPair.privateKey);
 
-    await pkijsCrypto.verify(RSA_PSS_PARAMS, keyPair.publicKey, signature, plaintext);
+    await NODE_ENGINE.verify(RSA_PSS_PARAMS, keyPair.publicKey, signature, plaintext);
   });
 
   test('The plaintext should be signed with PrivateKey if requested', async () => {
@@ -54,7 +52,7 @@ describe('verify', () => {
       name: 'RSA-PSS',
       saltLength: 20,
     };
-    const invalidSignature = await pkijsCrypto.sign(algorithmParams, keyPair.privateKey, plaintext);
+    const invalidSignature = await NODE_ENGINE.sign(algorithmParams, keyPair.privateKey, plaintext);
 
     await expect(verify(invalidSignature, keyPair.publicKey, plaintext)).resolves.toBeFalse();
   });

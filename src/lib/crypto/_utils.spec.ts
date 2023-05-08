@@ -1,30 +1,11 @@
-import { Crypto } from '@peculiar/webcrypto';
 import * as asn1js from 'asn1js';
 import bufferToArray from 'buffer-to-arraybuffer';
 import * as pkijs from 'pkijs';
 
 import { mockSpy } from '../_test_utils';
-import { derDeserialize, generateRandom64BitValue, getPkijsCrypto } from './_utils';
-
-const stubCrypto = new Crypto();
+import { derDeserialize, generateRandom64BitValue } from './_utils';
 
 const mockGetCrypto = mockSpy(jest.spyOn(pkijs, 'getCrypto'));
-
-describe('getPkijsCrypto', () => {
-  test('It should pass on the crypto object it got', () => {
-    mockGetCrypto.mockReturnValue(stubCrypto.subtle as any);
-
-    const crypto = getPkijsCrypto();
-
-    expect(crypto).toBe(stubCrypto.subtle);
-  });
-
-  test('It should error out if there is no crypto object', () => {
-    mockGetCrypto.mockReturnValue(undefined as any);
-
-    expect(getPkijsCrypto).toThrow('PKI.js crypto engine is undefined');
-  });
-});
 
 describe('deserializeDer', () => {
   test('should return ASN.1 object given a valid DER-encoded buffer', () => {
