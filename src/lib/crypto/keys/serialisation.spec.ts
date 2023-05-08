@@ -3,8 +3,6 @@ import { CryptoEngine } from 'pkijs';
 
 import { generateRSAKeyPair } from './generation';
 import { arrayBufferFrom } from '../../_test_utils';
-import { MockRsaPssProvider } from '../webcrypto/_test_utils';
-import { RsaPssPrivateKey } from './PrivateKey';
 import {
   derDeserializeECDHPrivateKey,
   derDeserializeECDHPublicKey,
@@ -13,6 +11,7 @@ import {
   derSerializePrivateKey,
   derSerializePublicKey,
 } from './serialisation';
+import { NODE_ENGINE } from '../pkijs';
 
 describe('Key serializers', () => {
   let stubKeyPair: CryptoKeyPair;
@@ -20,37 +19,22 @@ describe('Key serializers', () => {
     stubKeyPair = await generateRSAKeyPair();
   });
 
-  const stubExportedKeyDer = arrayBufferFrom('Hey');
-  const mockExportKey = jest.spyOn(CryptoEngine.prototype, 'exportKey');
-  beforeEach(async () => {
-    mockExportKey.mockReset();
-    mockExportKey.mockResolvedValue(stubExportedKeyDer);
-  });
-
-  afterAll(() => {
-    mockExportKey.mockRestore();
-  });
-
   describe('derSerializePublicKey', () => {
+    let stubPublicKeyDer: ArrayBuffer;
+    beforeAll(async () => {
+      stubPublicKeyDer = await NODE_ENGINE.exportKey('spki', stubKeyPair.publicKey);
+    });
+
     test('Public key should be converted to buffer', async () => {
       const publicKeyDer = await derSerializePublicKey(stubKeyPair.publicKey);
 
-      expect(publicKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
-
-      expect(mockExportKey).toBeCalledTimes(1);
-      expect(mockExportKey).toBeCalledWith('spki', stubKeyPair.publicKey);
+      expect(publicKeyDer).toEqual(Buffer.from(stubPublicKeyDer));
     });
 
     test('Public key should be extracted first if input is PrivateKey', async () => {
-      const provider = new MockRsaPssProvider();
-      provider.onExportKey.mockResolvedValue(stubExportedKeyDer);
-      const privateKey = new RsaPssPrivateKey('SHA-256', provider);
+      const publicKeyDer = await derSerializePublicKey(stubKeyPair.privateKey);
 
-      await expect(derSerializePublicKey(privateKey)).resolves.toEqual(
-        Buffer.from(stubExportedKeyDer),
-      );
-
-      expect(mockExportKey).not.toBeCalled();
+      expect(publicKeyDer).toEqual(Buffer.from(stubPublicKeyDer));
     });
   });
 
@@ -58,10 +42,10 @@ describe('Key serializers', () => {
     test('derSerializePrivateKey should convert private key to buffer', async () => {
       const privateKeyDer = await derSerializePrivateKey(stubKeyPair.privateKey);
 
-      expect(privateKeyDer).toEqual(Buffer.from(stubExportedKeyDer));
-
-      expect(mockExportKey).toBeCalledTimes(1);
-      expect(mockExportKey).toBeCalledWith('pkcs8', stubKeyPair.privateKey);
+      const expectedSerialisation = Buffer.from(
+        await NODE_ENGINE.exportKey('pkcs8', stubKeyPair.privateKey),
+      );
+      expect(privateKeyDer).toEqual(expectedSerialisation);
     });
   });
 });
