@@ -1,6 +1,6 @@
 import { generateStubCert } from '../../_test_utils';
-import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { generateRSAKeyPair } from '../../crypto/keys';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { RELAYNET_OIDS } from '../../oids';
 import {
   ParcelCollectionHandshakeSigner,

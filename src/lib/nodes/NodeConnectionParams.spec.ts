@@ -3,12 +3,8 @@ import bufferToArray from 'buffer-to-arraybuffer';
 
 import { arrayBufferFrom } from '../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../asn1';
-import { derDeserialize } from '../crypto_wrappers/_utils';
-import {
-  derSerializePublicKey,
-  generateECDHKeyPair,
-  generateRSAKeyPair,
-} from '../crypto_wrappers/keys';
+import { derDeserialize } from '../crypto/_utils';
+import { derSerializePublicKey, generateECDHKeyPair, generateRSAKeyPair } from '../crypto/keys';
 import { SessionKey } from '../SessionKey';
 import { InvalidNodeConnectionParams } from './errors';
 import { NodeConnectionParams } from './NodeConnectionParams';

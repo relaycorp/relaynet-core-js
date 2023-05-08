@@ -1,13 +1,9 @@
 import { addDays, setMilliseconds, subDays } from 'date-fns';
 
 import { arrayBufferFrom, expectArrayBuffersToEqual, reSerializeCertificate } from '../_test_utils';
-import { SessionEnvelopedData } from '../crypto_wrappers/cms/envelopedData';
-import {
-  derSerializePublicKey,
-  generateRSAKeyPair,
-  getIdFromIdentityKey,
-} from '../crypto_wrappers/keys';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { SessionEnvelopedData } from '../crypto/cms/envelopedData';
+import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../crypto/keys';
+import { Certificate } from '../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { ParcelDeliverySigner, ParcelDeliveryVerifier } from '../messages/bindings/signatures';
 import { CertificationPath } from '../pki/CertificationPath';

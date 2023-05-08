@@ -18,7 +18,7 @@ import {
   makeHeterogeneousSequenceSchema,
   makeImplicitlyTaggedSequence,
 } from '../asn1';
-import * as cmsSignedData from '../crypto_wrappers/cms/signedData';
+import * as cmsSignedData from '../crypto/cms/signedData';
 import { generateFormatSignature } from '../messages/formatSignature';
 import { RAMFMessage } from '../messages/RAMFMessage';
 import { RAMFSyntaxError } from './RAMFSyntaxError';

@@ -1,7 +1,7 @@
 import * as pkijs from 'pkijs';
 
 import { EnvelopedData, generateECDHKeyPair, SessionEnvelopedData } from '..';
-import { assertPkiType } from '../lib/crypto_wrappers/cms/_utils';
+import { assertPkiType } from '../lib/crypto/cms/_utils';
 
 import { arrayBufferFrom, expectArrayBuffersToEqual } from '../lib/_test_utils';
 

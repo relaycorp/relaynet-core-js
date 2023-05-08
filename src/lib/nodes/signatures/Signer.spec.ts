@@ -2,9 +2,9 @@ import { ObjectIdentifier, OctetString } from 'asn1js';
 
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
-import { SignedData } from '../../crypto_wrappers/cms/signedData';
-import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { SignedData } from '../../crypto/cms/signedData';
+import { generateRSAKeyPair } from '../../crypto/keys';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { STUB_OID_VALUE, StubSigner } from './_test_utils';
 
 let signerPrivateKey: CryptoKey;

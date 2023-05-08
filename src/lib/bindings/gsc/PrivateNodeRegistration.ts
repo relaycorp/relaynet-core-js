@@ -4,8 +4,8 @@ import isValidDomain from 'is-valid-domain';
 import { TextDecoder } from 'util';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
-import { derDeserializeECDHPublicKey, derSerializePublicKey } from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { derDeserializeECDHPublicKey, derSerializePublicKey } from '../../crypto/keys';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { SessionKey } from '../../SessionKey';
 

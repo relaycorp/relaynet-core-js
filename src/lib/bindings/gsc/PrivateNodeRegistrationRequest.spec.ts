@@ -6,8 +6,8 @@ import {
 } from '../../../index';
 import { arrayBufferFrom, getPrimitiveItemFromConstructed } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
-import { derDeserialize } from '../../crypto_wrappers/_utils';
-import { verify } from '../../crypto_wrappers/rsaSigning';
+import { derDeserialize } from '../../crypto/_utils';
+import { verify } from '../../crypto/rsaSigning';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
 

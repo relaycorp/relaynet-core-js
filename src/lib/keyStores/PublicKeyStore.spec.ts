@@ -3,7 +3,7 @@ import {
   generateECDHKeyPair,
   generateRSAKeyPair,
   getIdFromIdentityKey,
-} from '../crypto_wrappers/keys';
+} from '../crypto/keys';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPublicKeyData } from './PublicKeyStore';
 import { MockPublicKeyStore } from './testMocks';

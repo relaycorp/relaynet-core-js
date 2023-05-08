@@ -2,7 +2,7 @@ import { VisibleString } from 'asn1js';
 
 import { arrayBufferFrom, catchError, generateStubCert } from '../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../asn1';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto/x509/Certificate';
 import { CertificationPath } from '../pki/CertificationPath';
 import { CERTIFICATE_ROTATION_FORMAT_SIGNATURE, CertificateRotation } from './CertificateRotation';
 import { InvalidMessageError } from './InvalidMessageError';

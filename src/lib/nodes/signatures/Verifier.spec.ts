@@ -1,8 +1,8 @@
 import { arrayBufferFrom, generateStubCert } from '../../_test_utils';
-import { CMSError } from '../../crypto_wrappers/cms/CMSError';
-import { generateRSAKeyPair } from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
-import { CertificateError } from '../../crypto_wrappers/x509/CertificateError';
+import { CMSError } from '../../crypto/cms/CMSError';
+import { generateRSAKeyPair } from '../../crypto/keys';
+import { Certificate } from '../../crypto/x509/Certificate';
+import { CertificateError } from '../../crypto/x509/CertificateError';
 import { StubSigner, StubVerifier } from './_test_utils';
 
 let signerPrivateKey: CryptoKey;

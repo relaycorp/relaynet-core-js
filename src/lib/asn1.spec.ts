@@ -18,7 +18,7 @@ import {
   makeHeterogeneousSequenceSchema,
   makeImplicitlyTaggedSequence,
 } from './asn1';
-import { derDeserialize } from './crypto_wrappers/_utils';
+import { derDeserialize } from './crypto/_utils';
 import { InvalidMessageError } from './messages/InvalidMessageError';
 
 describe('makeImplicitlyTaggedSequence', () => {

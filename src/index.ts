@@ -1,6 +1,6 @@
 //region Configure PKI.js
 import { CryptoEngine, setEngine } from 'pkijs';
-import { AwalaCrypto } from './lib/crypto_wrappers/webcrypto/AwalaCrypto';
+import { AwalaCrypto } from './lib/crypto/webcrypto/AwalaCrypto';
 
 const crypto = new AwalaCrypto();
 const cryptoEngine = new CryptoEngine({
@@ -28,17 +28,17 @@ export {
   getRSAPublicKeyFromPrivate,
   getIdFromIdentityKey,
   RSAKeyGenOptions,
-} from './lib/crypto_wrappers/keys';
-export { PrivateKey, RsaPssPrivateKey } from './lib/crypto_wrappers/PrivateKey';
-export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
+} from './lib/crypto/keys';
+export { PrivateKey, RsaPssPrivateKey } from './lib/crypto/PrivateKey';
+export { ECDHCurveName } from './lib/crypto/algorithms';
 export { IdentityKeyPair } from './lib/IdentityKeyPair';
 
 export * from './lib/cargoRelay';
 
 // PKI
-export { Certificate } from './lib/crypto_wrappers/x509/Certificate';
+export { Certificate } from './lib/crypto/x509/Certificate';
 export { CertificationPath } from './lib/pki/CertificationPath';
-export { CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
+export { CertificateError } from './lib/crypto/x509/CertificateError';
 export * from './lib/pki/issuance';
 
 // Key stores
@@ -56,11 +56,11 @@ export { KeyStoreError } from './lib/keyStores/KeyStoreError';
 export { UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 // CMS
-export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
+export * from './lib/crypto/cms/envelopedData'; // TODO: Remove
 export { SessionKey } from './lib/SessionKey';
 export { SessionKeyPair } from './lib/SessionKeyPair';
-export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
-export { CMSError } from './lib/crypto_wrappers/cms/CMSError';
+export { SignatureOptions } from './lib/crypto/cms/SignatureOptions';
+export { CMSError } from './lib/crypto/cms/CMSError';
 
 // RAMF
 export { PayloadPlaintext as Payload } from './lib/messages/payloads/PayloadPlaintext';

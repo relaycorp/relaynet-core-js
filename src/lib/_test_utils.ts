@@ -3,9 +3,9 @@ import bufferToArray from 'buffer-to-arraybuffer';
 import { createHash } from 'crypto';
 import * as pkijs from 'pkijs';
 
-import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto_wrappers/keys';
-import { Certificate } from './crypto_wrappers/x509/Certificate';
-import FullCertificateIssuanceOptions from './crypto_wrappers/x509/FullCertificateIssuanceOptions';
+import { generateRSAKeyPair, getPublicKeyDigestHex } from './crypto/keys';
+import { Certificate } from './crypto/x509/Certificate';
+import FullCertificateIssuanceOptions from './crypto/x509/FullCertificateIssuanceOptions';
 
 export const CRYPTO_OIDS = {
   AES_CBC_128: '2.16.840.1.101.3.4.1.2',

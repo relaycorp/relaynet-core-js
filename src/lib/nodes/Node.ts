@@ -1,5 +1,5 @@
-import { getRSAPublicKeyFromPrivate } from '../crypto_wrappers/keys';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { getRSAPublicKeyFromPrivate } from '../crypto/keys';
+import { Certificate } from '../crypto/x509/Certificate';
 import { KeyStoreSet } from '../keyStores/KeyStoreSet';
 import { PayloadPlaintext } from '../messages/payloads/PayloadPlaintext';
 import { RAMFMessage } from '../messages/RAMFMessage';

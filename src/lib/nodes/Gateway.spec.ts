@@ -1,8 +1,8 @@
 import { addDays, setMilliseconds } from 'date-fns';
 
 import { reSerializeCertificate } from '../_test_utils';
-import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto_wrappers/keys';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto/keys';
+import { Certificate } from '../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';

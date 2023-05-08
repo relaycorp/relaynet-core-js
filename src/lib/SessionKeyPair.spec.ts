@@ -1,4 +1,4 @@
-import { derSerializePublicKey } from './crypto_wrappers/keys';
+import { derSerializePublicKey } from './crypto/keys';
 import { SessionKeyPair } from './SessionKeyPair';
 
 describe('generate', () => {

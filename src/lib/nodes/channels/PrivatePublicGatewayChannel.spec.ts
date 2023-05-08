@@ -4,12 +4,8 @@ import { arrayBufferFrom, reSerializeCertificate } from '../../_test_utils';
 import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 
-import {
-  derSerializePublicKey,
-  generateRSAKeyPair,
-  getIdFromIdentityKey,
-} from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto/keys';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';

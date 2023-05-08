@@ -8,7 +8,7 @@ import {
   derDeserializeECDHPublicKey,
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
-} from '../crypto_wrappers/keys';
+} from '../crypto/keys';
 import { SessionKey } from '../SessionKey';
 import { InvalidNodeConnectionParams } from './errors';
 

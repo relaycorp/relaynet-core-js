@@ -6,7 +6,7 @@ import {
   generateRSAKeyPair,
   getIdFromIdentityKey,
   RSAKeyGenOptions,
-} from '../crypto_wrappers/keys';
+} from '../crypto/keys';
 import { IdentityKeyPair } from '../IdentityKeyPair';
 import { KeyStoreError } from './KeyStoreError';
 import { UnknownKeyError } from './UnknownKeyError';

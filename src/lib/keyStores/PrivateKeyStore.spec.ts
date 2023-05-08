@@ -1,9 +1,9 @@
-import { HashingAlgorithm, RSAModulus } from '../crypto_wrappers/algorithms';
+import { HashingAlgorithm, RSAModulus } from '../crypto/algorithms';
 import {
   derSerializePrivateKey,
   derSerializePublicKey,
   getIdFromIdentityKey,
-} from '../crypto_wrappers/keys';
+} from '../crypto/keys';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPrivateKeyData } from './PrivateKeyStore';

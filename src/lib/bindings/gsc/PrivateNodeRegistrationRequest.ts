@@ -1,8 +1,8 @@
 import { ObjectIdentifier, OctetString, Primitive, verifySchema } from 'asn1js';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../../asn1';
-import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../crypto_wrappers/keys';
-import { sign, verify } from '../../crypto_wrappers/rsaSigning';
+import { derDeserializeRSAPublicKey, derSerializePublicKey } from '../../crypto/keys';
+import { sign, verify } from '../../crypto/rsaSigning';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
 

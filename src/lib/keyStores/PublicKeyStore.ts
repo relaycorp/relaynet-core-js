@@ -3,7 +3,7 @@ import {
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
   getIdFromIdentityKey,
-} from '../crypto_wrappers/keys';
+} from '../crypto/keys';
 import { SessionKey } from '../SessionKey';
 import { KeyStoreError } from './KeyStoreError';
 
