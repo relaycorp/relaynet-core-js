@@ -2,11 +2,7 @@ import { addDays, setMilliseconds, subSeconds } from 'date-fns';
 
 import { arrayBufferFrom, reSerializeCertificate } from '../_test_utils';
 import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegistrationRequest';
-import {
-  generateRSAKeyPair,
-  getIdFromIdentityKey,
-  getRSAPublicKeyFromPrivate,
-} from '../crypto/keys/generation';
+import { generateRSAKeyPair, getRSAPublicKeyFromPrivate } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { CertificationPath } from '../pki/CertificationPath';
@@ -16,6 +12,7 @@ import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeError } from './errors';
 import { PrivateGateway } from './PrivateGateway';
 import { derSerializePublicKey } from '../crypto/keys/serialisation';
+import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
 

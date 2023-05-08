@@ -5,8 +5,6 @@ import { ECDHCurveName, HashingAlgorithm, RSAModulus } from '../algorithms';
 import { NODE_ENGINE } from '../pkijs';
 import { derSerializePublicKey } from './serialisation';
 
-//region Key generators
-
 export interface RSAKeyGenOptions {
   readonly modulus: RSAModulus;
   readonly hashingAlgorithm: HashingAlgorithm;
@@ -59,43 +57,4 @@ export async function generateECDHKeyPair(
 export async function getRSAPublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
   const publicKeyDer = bufferToArray(await derSerializePublicKey(privateKey));
   return NODE_ENGINE.importKey('spki', publicKeyDer, privateKey.algorithm, true, ['verify']);
-}
-
-//endregion
-
-//region Key serialization
-
-//endregion
-
-//region key deserialization
-
-//endregion
-
-/**
- * Return SHA-256 digest of public key.
- *
- * @param publicKey
- */
-export async function getPublicKeyDigest(publicKey: CryptoKey): Promise<ArrayBuffer> {
-  const publicKeyDer = await derSerializePublicKey(publicKey);
-  return NODE_ENGINE.digest({ name: 'SHA-256' }, publicKeyDer);
-}
-
-/**
- * Return hexadecimal, SHA-256 digest of public key.
- *
- * @param publicKey
- */
-export async function getPublicKeyDigestHex(publicKey: CryptoKey): Promise<string> {
-  const digest = Buffer.from(await getPublicKeyDigest(publicKey));
-  return digest.toString('hex');
-}
-
-export async function getIdFromIdentityKey(identityPublicKey: CryptoKey): Promise<string> {
-  const algorithmName = identityPublicKey.algorithm.name;
-  if (!algorithmName.startsWith('RSA-')) {
-    throw new Error(`Only RSA keys are supported (got ${algorithmName})`);
-  }
-  const keyDigest = await getPublicKeyDigestHex(identityPublicKey);
-  return `0${keyDigest}`;
 }

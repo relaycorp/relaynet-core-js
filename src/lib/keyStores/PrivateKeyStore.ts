@@ -1,14 +1,11 @@
 /* tslint:disable:max-classes-per-file */
 
-import {
-  generateRSAKeyPair,
-  getIdFromIdentityKey,
-  RSAKeyGenOptions,
-} from '../crypto/keys/generation';
+import { generateRSAKeyPair, RSAKeyGenOptions } from '../crypto/keys/generation';
 import { IdentityKeyPair } from '../IdentityKeyPair';
 import { KeyStoreError } from './KeyStoreError';
 import { UnknownKeyError } from './UnknownKeyError';
 import { derDeserializeECDHPrivateKey, derSerializePrivateKey } from '../crypto/keys/serialisation';
+import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 /**
  * Data for a private key of a session key pair.

@@ -4,11 +4,11 @@ import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
-import { getIdFromIdentityKey, getPublicKeyDigest } from '../keys/generation';
 import { getEngineForPrivateKey } from '../pkijs';
 import { CertificateError } from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
 import { assertPkiType, assertUndefined } from '../cms/_utils';
+import { getIdFromIdentityKey, getPublicKeyDigest } from '../keys/digest';
 
 const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 

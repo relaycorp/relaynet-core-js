@@ -17,10 +17,7 @@ export { RelaynetError } from './lib/RelaynetError';
 export {
   generateECDHKeyPair,
   generateRSAKeyPair,
-  getPublicKeyDigest,
-  getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
-  getIdFromIdentityKey,
   RSAKeyGenOptions,
 } from './lib/crypto/keys/generation';
 export { PrivateKey, RsaPssPrivateKey } from './lib/crypto/keys/PrivateKey';
@@ -111,3 +108,6 @@ export { derDeserializeECDHPublicKey } from './lib/crypto/keys/serialisation';
 export { derDeserializeRSAPublicKey } from './lib/crypto/keys/serialisation';
 export { derSerializePrivateKey } from './lib/crypto/keys/serialisation';
 export { derSerializePublicKey } from './lib/crypto/keys/serialisation';
+export { getIdFromIdentityKey } from './lib/crypto/keys/digest';
+export { getPublicKeyDigestHex } from './lib/crypto/keys/digest';
+export { getPublicKeyDigest } from './lib/crypto/keys/digest';

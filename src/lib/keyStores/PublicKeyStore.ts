@@ -1,4 +1,3 @@
-import { getIdFromIdentityKey } from '../crypto/keys/generation';
 import { SessionKey } from '../SessionKey';
 import { KeyStoreError } from './KeyStoreError';
 import {
@@ -6,6 +5,7 @@ import {
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
 } from '../crypto/keys/serialisation';
+import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 export interface SessionPublicKeyData {
   readonly publicKeyId: Buffer;

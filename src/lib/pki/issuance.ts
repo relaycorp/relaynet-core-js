@@ -1,6 +1,6 @@
-import { getPublicKeyDigest } from '../crypto/keys/generation';
 import { BasicCertificateIssuanceOptions } from '../crypto/x509/BasicCertificateIssuanceOptions';
 import { Certificate } from '../crypto/x509/Certificate';
+import { getPublicKeyDigest } from '../crypto/keys/digest';
 
 export interface GatewayCertificateIssuanceOptions extends BasicCertificateIssuanceOptions {
   readonly issuerCertificate?: Certificate; // Absent/self-issued when gateway is public
