@@ -1,14 +1,11 @@
-import { HashingAlgorithm, RSAModulus } from '../crypto_wrappers/algorithms';
-import {
-  derSerializePrivateKey,
-  derSerializePublicKey,
-  getIdFromIdentityKey,
-} from '../crypto_wrappers/keys';
+import { HashingAlgorithm, RSAModulus } from '../crypto/algorithms';
 import { SessionKeyPair } from '../SessionKeyPair';
 import { KeyStoreError } from './KeyStoreError';
 import { SessionPrivateKeyData } from './PrivateKeyStore';
 import { MockPrivateKeyStore } from './testMocks';
 import { UnknownKeyError } from './UnknownKeyError';
+import { derSerializePrivateKey, derSerializePublicKey } from '../crypto/keys/serialisation';
+import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 const MOCK_STORE = new MockPrivateKeyStore();
 beforeEach(() => {

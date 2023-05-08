@@ -1,10 +1,11 @@
 import { addDays, subMinutes } from 'date-fns';
 
-import { getIdFromIdentityKey, getRSAPublicKeyFromPrivate } from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { GatewayChannel } from './GatewayChannel';
+import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 
 /**
  * Channel whose node is a private gateway.

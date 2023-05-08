@@ -1,7 +1,7 @@
 import * as asn1js from 'asn1js';
 
 import { arrayBufferFrom } from '../_test_utils';
-import { derDeserialize } from '../crypto_wrappers/_utils';
+import { derDeserialize } from '../crypto/_utils';
 import { InvalidMessageError } from './InvalidMessageError';
 import { ParcelCollectionAck } from './ParcelCollectionAck';
 

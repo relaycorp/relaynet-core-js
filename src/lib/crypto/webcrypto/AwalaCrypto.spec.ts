@@ -6,7 +6,10 @@ import { MockAesKwProvider } from './_test_utils';
 import { AwalaAesKwProvider } from './AwalaAesKwProvider';
 import { AwalaCrypto } from './AwalaCrypto';
 
-jest.mock('crypto');
+jest.mock('crypto', () => ({
+  getCiphers: jest.fn().mockReturnValue([]),
+  getHashes: jest.fn().mockReturnValue([]),
+}));
 
 const CIPHERS: readonly string[] = [
   'aes-128-cbc',
@@ -18,7 +21,9 @@ const CIPHERS: readonly string[] = [
 ];
 
 beforeEach(() => {
-  getMockInstance(getCiphers).mockReturnValue(CIPHERS);
+  const mockGetCiphers = getMockInstance(getCiphers);
+  mockGetCiphers.mockReset();
+  mockGetCiphers.mockReturnValue(CIPHERS);
 });
 
 describe('Constructor', () => {

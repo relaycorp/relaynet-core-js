@@ -1,17 +1,14 @@
 import { addDays, setMilliseconds, subMinutes, subSeconds } from 'date-fns';
 
-import {
-  derSerializePublicKey,
-  generateRSAKeyPair,
-  getIdFromIdentityKey,
-  getRSAPublicKeyFromPrivate,
-} from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { generateRSAKeyPair, getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
+import { derSerializePublicKey } from '../../crypto/keys/serialisation';
+import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 
 let internetGatewayId: string;
 let internetGatewayPublicKey: CryptoKey;

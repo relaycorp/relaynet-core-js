@@ -1,5 +1,5 @@
 import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegistrationRequest';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto/x509/Certificate';
 import { CertificationPath } from '../pki/CertificationPath';
 import { SessionKey } from '../SessionKey';
 import { PrivateInternetGatewayChannel } from './channels/PrivateInternetGatewayChannel';

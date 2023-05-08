@@ -1,44 +1,20 @@
-//region Configure PKI.js
-import { CryptoEngine, setEngine } from 'pkijs';
-import { AwalaCrypto } from './lib/crypto_wrappers/webcrypto/AwalaCrypto';
-
-const crypto = new AwalaCrypto();
-const cryptoEngine = new CryptoEngine({
-  crypto,
-  name: 'nodeEngine',
-  subtle: crypto.subtle,
-});
-setEngine('nodeEngine', cryptoEngine);
-//endregion
-
-//region Exports
-
 export { RelaynetError } from './lib/RelaynetError';
 export {
-  derDeserializeECDHPrivateKey,
-  derDeserializeECDHPublicKey,
-  derDeserializeRSAPrivateKey,
-  derDeserializeRSAPublicKey,
-  derSerializePrivateKey,
-  derSerializePublicKey,
   generateECDHKeyPair,
   generateRSAKeyPair,
-  getPublicKeyDigest,
-  getPublicKeyDigestHex,
   getRSAPublicKeyFromPrivate,
-  getIdFromIdentityKey,
   RSAKeyGenOptions,
-} from './lib/crypto_wrappers/keys';
-export { PrivateKey, RsaPssPrivateKey } from './lib/crypto_wrappers/PrivateKey';
-export { ECDHCurveName } from './lib/crypto_wrappers/algorithms';
+} from './lib/crypto/keys/generation';
+export { PrivateKey, RsaPssPrivateKey } from './lib/crypto/keys/PrivateKey';
+export { ECDHCurveName } from './lib/crypto/algorithms';
 export { IdentityKeyPair } from './lib/IdentityKeyPair';
 
 export * from './lib/cargoRelay';
 
 // PKI
-export { Certificate } from './lib/crypto_wrappers/x509/Certificate';
+export { Certificate } from './lib/crypto/x509/Certificate';
 export { CertificationPath } from './lib/pki/CertificationPath';
-export { CertificateError } from './lib/crypto_wrappers/x509/CertificateError';
+export { CertificateError } from './lib/crypto/x509/CertificateError';
 export * from './lib/pki/issuance';
 
 // Key stores
@@ -56,11 +32,11 @@ export { KeyStoreError } from './lib/keyStores/KeyStoreError';
 export { UnknownKeyError } from './lib/keyStores/UnknownKeyError';
 
 // CMS
-export * from './lib/crypto_wrappers/cms/envelopedData'; // TODO: Remove
+export * from './lib/crypto/cms/envelopedData'; // TODO: Remove
 export { SessionKey } from './lib/SessionKey';
 export { SessionKeyPair } from './lib/SessionKeyPair';
-export { SignatureOptions } from './lib/crypto_wrappers/cms/SignatureOptions';
-export { CMSError } from './lib/crypto_wrappers/cms/CMSError';
+export { SignatureOptions } from './lib/crypto/cms/SignatureOptions';
+export { CMSError } from './lib/crypto/cms/CMSError';
 
 // RAMF
 export { PayloadPlaintext as Payload } from './lib/messages/payloads/PayloadPlaintext';
@@ -111,3 +87,12 @@ export { NodeCryptoOptions } from './lib/nodes/NodeCryptoOptions';
 export { NodeConnectionParams } from './lib/nodes/NodeConnectionParams';
 export * from './lib/nodes/errors';
 export * from './lib/internetAddressing';
+export { derDeserializeECDHPrivateKey } from './lib/crypto/keys/serialisation';
+export { derDeserializeRSAPrivateKey } from './lib/crypto/keys/serialisation';
+export { derDeserializeECDHPublicKey } from './lib/crypto/keys/serialisation';
+export { derDeserializeRSAPublicKey } from './lib/crypto/keys/serialisation';
+export { derSerializePrivateKey } from './lib/crypto/keys/serialisation';
+export { derSerializePublicKey } from './lib/crypto/keys/serialisation';
+export { getIdFromIdentityKey } from './lib/crypto/keys/digest';
+export { getPublicKeyDigestHex } from './lib/crypto/keys/digest';
+export { getPublicKeyDigest } from './lib/crypto/keys/digest';

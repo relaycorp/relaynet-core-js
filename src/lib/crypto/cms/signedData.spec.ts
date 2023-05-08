@@ -14,8 +14,8 @@ import {
 } from '../../_test_utils';
 import { CMS_OIDS } from '../../oids';
 import { HashingAlgorithm } from '../algorithms';
-import { generateRSAKeyPair } from '../keys';
-import { RsaPssPrivateKey } from '../PrivateKey';
+import { generateRSAKeyPair } from '../keys/generation';
+import { RsaPssPrivateKey } from '../keys/PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
 import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo, serializeContentInfo } from './_test_utils';

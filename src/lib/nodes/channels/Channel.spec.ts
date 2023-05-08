@@ -1,13 +1,9 @@
 import { addDays, setMilliseconds } from 'date-fns';
 
 import { arrayBufferFrom, CRYPTO_OIDS, reSerializeCertificate } from '../../_test_utils';
-import { SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
-import {
-  generateECDHKeyPair,
-  generateRSAKeyPair,
-  getIdFromIdentityKey,
-} from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { SessionEnvelopedData } from '../../crypto/cms/envelopedData';
+import { generateECDHKeyPair, generateRSAKeyPair } from '../../crypto/keys/generation';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
@@ -15,6 +11,7 @@ import { StubPayload } from '../../ramf/_test_utils';
 import { SessionKey } from '../../SessionKey';
 import { NodeError } from '../errors';
 import { Channel } from './Channel';
+import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 
 let peerId: string;
 let peerPublicKey: CryptoKey;

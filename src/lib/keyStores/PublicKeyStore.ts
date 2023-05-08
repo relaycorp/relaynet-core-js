@@ -1,11 +1,11 @@
+import { SessionKey } from '../SessionKey';
+import { KeyStoreError } from './KeyStoreError';
 import {
   derDeserializeECDHPublicKey,
   derDeserializeRSAPublicKey,
   derSerializePublicKey,
-  getIdFromIdentityKey,
-} from '../crypto_wrappers/keys';
-import { SessionKey } from '../SessionKey';
-import { KeyStoreError } from './KeyStoreError';
+} from '../crypto/keys/serialisation';
+import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 export interface SessionPublicKeyData {
   readonly publicKeyId: Buffer;

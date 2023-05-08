@@ -4,8 +4,8 @@ import { generateRSAKeyPair } from '../../../index';
 
 import { arrayBufferFrom } from '../../_test_utils';
 import { dateToASN1DateTimeInUTC, makeImplicitlyTaggedSequence } from '../../asn1';
-import { derDeserialize } from '../../crypto_wrappers/_utils';
-import { verify } from '../../crypto_wrappers/rsaSigning';
+import { derDeserialize } from '../../crypto/_utils';
+import { verify } from '../../crypto/rsaSigning';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
 import { PrivateNodeRegistrationAuthorization } from './PrivateNodeRegistrationAuthorization';

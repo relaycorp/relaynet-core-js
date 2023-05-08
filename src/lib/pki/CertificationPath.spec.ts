@@ -3,9 +3,9 @@ import { addDays } from 'date-fns';
 
 import { expectArrayBuffersToEqual } from '../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../asn1';
-import { derDeserialize } from '../crypto_wrappers/_utils';
-import { generateRSAKeyPair } from '../crypto_wrappers/keys';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { derDeserialize } from '../crypto/_utils';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
+import { Certificate } from '../crypto/x509/Certificate';
 import { InvalidMessageError } from '../messages/InvalidMessageError';
 import { CertificationPath } from './CertificationPath';
 import { issueGatewayCertificate } from './issuance';

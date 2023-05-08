@@ -6,13 +6,12 @@ import * as pkijs from 'pkijs';
 
 import { CMS_OIDS, RELAYNET_OIDS } from '../../oids';
 import { SessionKey } from '../../SessionKey';
-import { generateRandom64BitValue, getPkijsCrypto } from '../_utils';
-import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys';
+import { generateRandom64BitValue } from '../_utils';
 import { Certificate } from '../x509/Certificate';
 import { assertPkiType, assertUndefined, deserializeContentInfo } from './_utils';
 import { CMSError } from './CMSError';
-
-const pkijsCrypto = getPkijsCrypto();
+import { derDeserializeECDHPublicKey, derSerializePrivateKey } from '../keys/serialisation';
+import { NODE_ENGINE } from '../pkijs';
 
 // CBC mode is temporary. See: https://github.com/relaycorp/relayverse/issues/16
 const AES_CIPHER_MODE = 'AES-CBC';
@@ -107,10 +106,11 @@ export abstract class EnvelopedData {
    */
   public async decrypt(privateKey: CryptoKey): Promise<ArrayBuffer> {
     const privateKeyDer = await derSerializePrivateKey(privateKey);
+    const params = {
+      recipientPrivateKey: bufferToArray(privateKeyDer),
+    };
     try {
-      return await this.pkijsEnvelopedData.decrypt(0, {
-        recipientPrivateKey: bufferToArray(privateKeyDer),
-      });
+      return await this.pkijsEnvelopedData.decrypt(0, params, NODE_ENGINE);
     } catch (error) {
       throw new CMSError(error as Error, 'Decryption failed');
     }
@@ -152,12 +152,14 @@ export class SessionlessEnvelopedData extends EnvelopedData {
       certificate.pkijsCertificate,
       { oaepHashAlgorithm: 'SHA-256' },
       1,
+      NODE_ENGINE,
     );
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     await pkijsEnvelopedData.encrypt(
       { name: AES_CIPHER_MODE, length: aesKeySize } as any,
       plaintext,
+      NODE_ENGINE,
     );
 
     return new SessionlessEnvelopedData(pkijsEnvelopedData);
@@ -211,12 +213,15 @@ export class SessionEnvelopedData extends EnvelopedData {
     pkijsEnvelopedData.addRecipientByKeyIdentifier(
       recipientSessionKey.publicKey,
       recipientSessionKey.keyId,
+      undefined,
+      NODE_ENGINE,
     );
 
     const aesKeySize = getAesKeySize(options.aesKeySize);
     const [pkijsEncryptionResult] = await pkijsEnvelopedData.encrypt(
       { name: AES_CIPHER_MODE, length: aesKeySize } as any,
       plaintext,
+      NODE_ENGINE,
     );
     assertUndefined(pkijsEncryptionResult, 'pkijsEncryptionResult');
     const dhPrivateKey = pkijsEncryptionResult.ecdhPrivateKey;
@@ -241,10 +246,10 @@ export class SessionEnvelopedData extends EnvelopedData {
 
     const curveOid = originator.algorithm.algorithmParams.valueBlock.toString();
     // @ts-ignore
-    const curveParams = pkijsCrypto.getAlgorithmByOID(curveOid);
+    const curveParams = NODE_ENGINE.getAlgorithmByOID(curveOid);
     const publicKey = await derDeserializeECDHPublicKey(
       Buffer.from(publicKeyDer),
-      curveParams.name,
+      (curveParams as any).name,
     );
     return { keyId, publicKey };
   }

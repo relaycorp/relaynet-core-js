@@ -4,14 +4,11 @@ import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
 import { CMS_OIDS } from '../../oids';
-import { getPkijsCrypto } from '../_utils';
-import { getEngineForPrivateKey } from '../webcrypto/engine';
+import { getEngineForKey, NODE_ENGINE } from '../pkijs';
 import { Certificate } from '../x509/Certificate';
 import { deserializeContentInfo } from './_utils';
 import { CMSError } from './CMSError';
 import { SignatureOptions } from './SignatureOptions';
-
-const pkijsCrypto = getPkijsCrypto();
 
 export interface SignatureVerification {
   readonly plaintext: ArrayBuffer;
@@ -71,7 +68,7 @@ export class SignedData {
     }
 
     const hashingAlgorithmName = options.hashingAlgorithmName || 'SHA-256';
-    const digest = await pkijsCrypto.digest({ name: hashingAlgorithmName }, plaintext);
+    const digest = await NODE_ENGINE.digest({ name: hashingAlgorithmName }, plaintext);
     const signerInfo = initSignerInfo(signerCertificate, digest);
     const encapsulatePlaintext = options.encapsulatePlaintext ?? true;
     const pkijsSignedData = new pkijs.SignedData({
@@ -88,7 +85,7 @@ export class SignedData {
       0,
       hashingAlgorithmName,
       encapsulatePlaintext ? undefined : plaintext,
-      getEngineForPrivateKey(privateKey),
+      getEngineForKey(privateKey),
     );
 
     return SignedData.reDeserialize(pkijsSignedData);
@@ -138,13 +135,14 @@ export class SignedData {
       throw new CMSError('Plaintext should be encapsulated or explicitly set');
     }
 
+    const verificationParams = {
+      data: isPlaintextEncapsulated ? undefined : expectedPlaintext,
+      extendedMode: true,
+      signer: 0,
+    } as const;
     let verificationResult;
     try {
-      verificationResult = await this.pkijsSignedData.verify({
-        data: isPlaintextEncapsulated ? undefined : expectedPlaintext,
-        extendedMode: true,
-        signer: 0,
-      });
+      verificationResult = await this.pkijsSignedData.verify(verificationParams, NODE_ENGINE);
     } catch (err: any) {
       throw new CMSError(`Invalid signature: ${err.message} (PKI.js code: ${err.code})`);
     }

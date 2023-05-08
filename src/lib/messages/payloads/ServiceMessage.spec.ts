@@ -7,7 +7,7 @@ import {
   getPrimitiveItemFromConstructed,
 } from '../../_test_utils';
 import { makeImplicitlyTaggedSequence } from '../../asn1';
-import { derDeserialize } from '../../crypto_wrappers/_utils';
+import { derDeserialize } from '../../crypto/_utils';
 import { InvalidMessageError } from '../InvalidMessageError';
 import { ServiceMessage } from './ServiceMessage';
 

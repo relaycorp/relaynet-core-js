@@ -4,11 +4,11 @@ import * as pkijs from 'pkijs';
 
 import * as oids from '../../oids';
 import { derDeserialize, generateRandom64BitValue } from '../_utils';
-import { getIdFromIdentityKey, getPublicKeyDigest } from '../keys';
-import { getEngineForPrivateKey } from '../webcrypto/engine';
+import { getEngineForKey, NODE_ENGINE } from '../pkijs';
 import { CertificateError } from './CertificateError';
 import FullCertificateIssuanceOptions from './FullCertificateIssuanceOptions';
 import { assertPkiType, assertUndefined } from '../cms/_utils';
+import { getIdFromIdentityKey, getPublicKeyDigest } from '../keys/digest';
 
 const MAX_PATH_LENGTH_CONSTRAINT = 2; // Per Relaynet PKI
 
@@ -65,7 +65,7 @@ export class Certificate {
     //endregion
 
     const issuerPublicKey = issuerCertificate
-      ? await issuerCertificate.pkijsCertificate.getPublicKey()
+      ? await issuerCertificate.pkijsCertificate.getPublicKey(undefined, NODE_ENGINE)
       : options.subjectPublicKey;
     const pkijsCert = new pkijs.Certificate({
       extensions: [
@@ -101,11 +101,14 @@ export class Certificate {
         }),
     );
 
-    await pkijsCert.subjectPublicKeyInfo.importKey(options.subjectPublicKey);
+    await pkijsCert.subjectPublicKeyInfo.importKey(
+      options.subjectPublicKey,
+      getEngineForKey(options.subjectPublicKey),
+    );
 
     const signatureHashAlgo = (options.issuerPrivateKey.algorithm as RsaHashedKeyGenParams)
       .hash as Algorithm;
-    const engine = getEngineForPrivateKey(options.issuerPrivateKey);
+    const engine = getEngineForKey(options.issuerPrivateKey);
     await pkijsCert.sign(options.issuerPrivateKey, signatureHashAlgo.name, engine);
     return new Certificate(pkijsCert);
   }
@@ -162,7 +165,7 @@ export class Certificate {
   }
 
   public async getPublicKey(): Promise<CryptoKey> {
-    return this.pkijsCertificate.getPublicKey();
+    return this.pkijsCertificate.getPublicKey(undefined, NODE_ENGINE);
   }
 
   /**
@@ -244,7 +247,10 @@ export class Certificate {
       certs: [...intermediateCertsSanitized.map((c) => c.pkijsCertificate), this.pkijsCertificate],
       trustedCerts: trustedCertificates.map((c) => c.pkijsCertificate),
     });
-    const verification = await chainValidator.verify({ passedWhenNotRevValues: false });
+    const verification = await chainValidator.verify(
+      { passedWhenNotRevValues: false },
+      NODE_ENGINE,
+    );
 
     if (!verification.result) {
       throw new CertificateError(verification.resultMessage);

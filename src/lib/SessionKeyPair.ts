@@ -1,5 +1,5 @@
-import { generateRandom64BitValue } from './crypto_wrappers/_utils';
-import { generateECDHKeyPair } from './crypto_wrappers/keys';
+import { generateRandom64BitValue } from './crypto/_utils';
+import { generateECDHKeyPair } from './crypto/keys/generation';
 import { SessionKey } from './SessionKey';
 
 export class SessionKeyPair {

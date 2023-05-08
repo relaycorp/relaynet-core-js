@@ -4,13 +4,10 @@ import { addMinutes, addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 import * as jestDateMock from 'jest-date-mock';
 
 import { generateStubCert, reSerializeCertificate } from '../_test_utils';
-import {
-  SessionEnvelopedData,
-  SessionlessEnvelopedData,
-} from '../crypto_wrappers/cms/envelopedData';
-import { generateRSAKeyPair } from '../crypto_wrappers/keys';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
-import { CertificateError } from '../crypto_wrappers/x509/CertificateError';
+import { SessionEnvelopedData, SessionlessEnvelopedData } from '../crypto/cms/envelopedData';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
+import { Certificate } from '../crypto/x509/Certificate';
+import { CertificateError } from '../crypto/x509/CertificateError';
 import { MockPrivateKeyStore } from '../keyStores/testMocks';
 import { StubMessage, StubPayload } from '../ramf/_test_utils';
 import { RAMFError } from '../ramf/RAMFError';

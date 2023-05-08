@@ -1,9 +1,9 @@
 import * as pkijs from 'pkijs';
 
 import { generateStubCert } from '../_test_utils';
-import { generateRSAKeyPair, getPublicKeyDigestHex } from '../crypto_wrappers/keys';
-import { BasicCertificateIssuanceOptions } from '../crypto_wrappers/x509/BasicCertificateIssuanceOptions';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
+import { BasicCertificateIssuanceOptions } from '../crypto/x509/BasicCertificateIssuanceOptions';
+import { Certificate } from '../crypto/x509/Certificate';
 import {
   DeliveryAuthorizationIssuanceOptions,
   GatewayCertificateIssuanceOptions,
@@ -11,6 +11,7 @@ import {
   issueEndpointCertificate,
   issueGatewayCertificate,
 } from './issuance';
+import { getPublicKeyDigestHex } from '../crypto/keys/digest';
 
 let stubSubjectKeyPair: CryptoKeyPair;
 let stubCertificate: Certificate;

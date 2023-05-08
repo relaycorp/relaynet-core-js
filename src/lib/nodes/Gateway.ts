@@ -1,4 +1,4 @@
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto/x509/Certificate';
 import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequest';
 import { CargoMessageSet } from '../messages/payloads/CargoMessageSet';
 import { Node } from './Node';

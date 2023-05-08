@@ -6,7 +6,7 @@ import {
   makeHeterogeneousSequenceSchema,
   makeImplicitlyTaggedSequence,
 } from '../../asn1';
-import { sign, verify } from '../../crypto_wrappers/rsaSigning';
+import { sign, verify } from '../../crypto/rsaSigning';
 import { InvalidMessageError } from '../../messages/InvalidMessageError';
 import { RELAYNET_OIDS } from '../../oids';
 

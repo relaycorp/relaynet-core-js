@@ -1,11 +1,12 @@
 import { addSeconds, setMilliseconds, subSeconds } from 'date-fns';
 import { expectArrayBuffersToEqual } from '../_test_utils';
 
-import { generateRSAKeyPair, getIdFromIdentityKey } from '../crypto_wrappers/keys';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { generateRSAKeyPair } from '../crypto/keys/generation';
+import { Certificate } from '../crypto/x509/Certificate';
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { MockCertificateStore } from './testMocks';
+import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 const store = new MockCertificateStore();
 beforeEach(() => {

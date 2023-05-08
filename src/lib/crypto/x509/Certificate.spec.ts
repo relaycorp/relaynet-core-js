@@ -6,15 +6,15 @@ import * as pkijs from 'pkijs';
 
 import { generateStubCert, reSerializeCertificate, sha256Hex } from '../../_test_utils';
 import * as oids from '../../oids';
-import { derDeserialize, getPkijsCrypto } from '../_utils';
-import { derSerializePublicKey, generateRSAKeyPair, getIdFromIdentityKey } from '../keys';
-import { RsaPssPrivateKey } from '../PrivateKey';
+import { derDeserialize } from '../_utils';
+import { generateRSAKeyPair } from '../keys/generation';
+import { RsaPssPrivateKey } from '../keys/PrivateKey';
 import { MockRsaPssProvider } from '../webcrypto/_test_utils';
-import { getEngineForPrivateKey } from '../webcrypto/engine';
+import { getEngineForKey, NODE_ENGINE } from '../pkijs';
 import { Certificate } from './Certificate';
 import { CertificateError } from './CertificateError';
-
-const pkijsCrypto = getPkijsCrypto();
+import { derSerializePublicKey } from '../keys/serialisation';
+import { getIdFromIdentityKey } from '../keys/digest';
 
 const baseCertificateOptions = {
   commonName: 'the CN',
@@ -87,7 +87,10 @@ describe('issue()', () => {
     });
 
     expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledTimes(1);
-    expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledWith(subjectKeyPair.publicKey);
+    expect(pkijs.PublicKeyInfo.prototype.importKey).toBeCalledWith(
+      subjectKeyPair.publicKey,
+      NODE_ENGINE,
+    );
   });
 
   test('should be signed with the specified private key', async () => {
@@ -102,7 +105,7 @@ describe('issue()', () => {
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
       subjectKeyPair.privateKey,
       ((subjectKeyPair.privateKey.algorithm as RsaHashedKeyGenParams).hash as Algorithm).name,
-      undefined,
+      expect.anything(),
     );
   });
 
@@ -118,7 +121,7 @@ describe('issue()', () => {
       }),
     ).toResolve();
 
-    const engine = getEngineForPrivateKey(privateKey);
+    const engine = getEngineForKey(privateKey);
     expect(engine).toBeInstanceOf(pkijs.CryptoEngine);
     expect(pkijs.Certificate.prototype.sign).toBeCalledWith(
       expect.anything(),
@@ -939,6 +942,6 @@ function getBasicConstraintsExtension(cert: Certificate): pkijs.BasicConstraints
 
 async function getPublicKeyDigest(publicKey: CryptoKey): Promise<string> {
   // @ts-ignore
-  const publicKeyDer = await pkijsCrypto.exportKey('spki', publicKey);
+  const publicKeyDer = await NODE_ENGINE.exportKey('spki', publicKey);
   return sha256Hex(publicKeyDer);
 }

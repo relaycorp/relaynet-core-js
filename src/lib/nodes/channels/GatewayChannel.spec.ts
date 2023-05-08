@@ -7,10 +7,10 @@ import {
   CRYPTO_OIDS,
   reSerializeCertificate,
 } from '../../_test_utils';
-import { EnvelopedData, SessionEnvelopedData } from '../../crypto_wrappers/cms/envelopedData';
-import { SignatureOptions } from '../../crypto_wrappers/cms/SignatureOptions';
-import { generateRSAKeyPair, getIdFromIdentityKey } from '../../crypto_wrappers/keys';
-import { Certificate } from '../../crypto_wrappers/x509/Certificate';
+import { EnvelopedData, SessionEnvelopedData } from '../../crypto/cms/envelopedData';
+import { SignatureOptions } from '../../crypto/cms/SignatureOptions';
+import { generateRSAKeyPair } from '../../crypto/keys/generation';
+import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { Cargo } from '../../messages/Cargo';
 import { Parcel } from '../../messages/Parcel';
@@ -22,6 +22,7 @@ import { SessionKey } from '../../SessionKey';
 import { SessionKeyPair } from '../../SessionKeyPair';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { GatewayChannel } from './GatewayChannel';
+import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 
 const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 

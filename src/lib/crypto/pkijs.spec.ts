@@ -1,22 +1,23 @@
 import { SubtleCrypto } from 'webcrypto-core';
 
-import { RsaPssPrivateKey } from '../PrivateKey';
-import { MockRsaPssProvider } from './_test_utils';
-import { getEngineForPrivateKey } from './engine';
+import { RsaPssPrivateKey } from './keys/PrivateKey';
+import { MockRsaPssProvider } from './webcrypto/_test_utils';
+import { getEngineForKey, NODE_ENGINE } from './pkijs';
+import { CryptoKeyWithProvider } from './keys/CryptoKeyWithProvider';
 
-describe('getEngine', () => {
+describe('getEngineForKey', () => {
   const PROVIDER = new MockRsaPssProvider();
 
-  test('undefined should be returned if CryptoKey is used', () => {
-    const engine = getEngineForPrivateKey(null as unknown as CryptoKey);
+  test('Default engine should be returned if CryptoKey is used', () => {
+    const engine = getEngineForKey({} as unknown as CryptoKeyWithProvider);
 
-    expect(engine).toBeUndefined();
+    expect(engine).toBe(NODE_ENGINE);
   });
 
   test('Nameless engine should be returned if PrivateKey is used', () => {
     const key = new RsaPssPrivateKey('SHA-256', PROVIDER);
 
-    const engine = getEngineForPrivateKey(key);
+    const engine = getEngineForKey(key);
 
     expect(engine?.name).toBeEmpty();
   });
@@ -24,7 +25,7 @@ describe('getEngine', () => {
   test('Engine crypto should use provider from private key', () => {
     const key = new RsaPssPrivateKey('SHA-256', PROVIDER);
 
-    const engine = getEngineForPrivateKey(key);
+    const engine = getEngineForKey(key);
 
     expect((engine?.crypto.subtle as SubtleCrypto).providers.get(PROVIDER.name)).toBe(PROVIDER);
   });
@@ -34,8 +35,8 @@ describe('getEngine', () => {
     const key1 = new RsaPssPrivateKey('SHA-256', PROVIDER);
     const key2 = new RsaPssPrivateKey('SHA-256', PROVIDER);
 
-    const engine1 = getEngineForPrivateKey(key1);
-    const engine2 = getEngineForPrivateKey(key2);
+    const engine1 = getEngineForKey(key1);
+    const engine2 = getEngineForKey(key2);
 
     expect(engine1).toBe(engine2);
   });
@@ -44,8 +45,8 @@ describe('getEngine', () => {
     const key1 = new RsaPssPrivateKey('SHA-256', PROVIDER);
     const key2 = new RsaPssPrivateKey('SHA-256', new MockRsaPssProvider());
 
-    const engine1 = getEngineForPrivateKey(key1);
-    const engine2 = getEngineForPrivateKey(key2);
+    const engine1 = getEngineForKey(key1);
+    const engine2 = getEngineForKey(key2);
 
     expect(engine1).not.toBe(engine2);
   });

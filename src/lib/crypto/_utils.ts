@@ -1,13 +1,6 @@
 import * as asn1js from 'asn1js';
-import { getCrypto } from 'pkijs';
 
-export function getPkijsCrypto(): SubtleCrypto {
-  const cryptoEngine = getCrypto();
-  if (!cryptoEngine) {
-    throw new Error('PKI.js crypto engine is undefined');
-  }
-  return cryptoEngine;
-}
+import { NODE_ENGINE } from './pkijs';
 
 export function derDeserialize(derValue: ArrayBuffer): asn1js.AsnType {
   const asn1Value = asn1js.fromBER(derValue);
@@ -20,6 +13,6 @@ export function derDeserialize(derValue: ArrayBuffer): asn1js.AsnType {
 export function generateRandom64BitValue(): ArrayBuffer {
   const value = new ArrayBuffer(8);
   // @ts-ignore
-  getPkijsCrypto().getRandomValues(new Uint8Array(value));
+  NODE_ENGINE.getRandomValues(new Uint8Array(value));
   return value;
 }

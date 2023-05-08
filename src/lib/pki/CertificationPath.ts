@@ -1,7 +1,7 @@
 import { Constructed, OctetString, Primitive, Sequence, verifySchema } from 'asn1js';
 
 import { makeHeterogeneousSequenceSchema, makeImplicitlyTaggedSequence } from '../asn1';
-import { Certificate } from '../crypto_wrappers/x509/Certificate';
+import { Certificate } from '../crypto/x509/Certificate';
 import { InvalidMessageError } from '../messages/InvalidMessageError';
 
 export class CertificationPath {
