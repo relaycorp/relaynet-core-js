@@ -15,12 +15,12 @@ import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivateInternetGatewayChannel } from './PrivateInternetGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { PrivateGateway } from '../PrivateGateway';
 
 let internetGatewayId: string;
 let internetGatewayPublicKey: CryptoKey;
 let internetGatewayCertificate: Certificate;
-let privateGatewayId: string;
-let privateGatewayKeyPair: CryptoKeyPair;
+let privateGateway: StubPrivateGateway;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const nextYear = setMilliseconds(addDays(new Date(), 360), 0);
@@ -36,7 +36,7 @@ beforeAll(async () => {
   });
 
   // Private gateway
-  privateGatewayKeyPair = await generateRSAKeyPair();
+  const privateGatewayKeyPair = await generateRSAKeyPair();
   privateGatewayPDCCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: internetGatewayCertificate,
@@ -45,7 +45,12 @@ beforeAll(async () => {
       validityEndDate: nextYear,
     }),
   );
-  privateGatewayId = await getIdFromIdentityKey(privateGatewayKeyPair.publicKey);
+  privateGateway = new StubPrivateGateway(
+    await getIdFromIdentityKey(privateGatewayKeyPair.publicKey),
+    privateGatewayKeyPair,
+    KEY_STORES,
+    {},
+  );
 });
 
 let internetGatewaySessionKeyPair: SessionKeyPair;
@@ -71,7 +76,7 @@ const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
 let channel: PrivateInternetGatewayChannel;
 beforeEach(() => {
   channel = new PrivateInternetGatewayChannel(
-    privateGatewayKeyPair.privateKey!,
+    privateGateway,
     privateGatewayPDCCertificate,
     internetGatewayId,
     internetGatewayPublicKey,
@@ -101,7 +106,7 @@ describe('Endpoint registration', () => {
 
       const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
         authorizationSerialized,
-        privateGatewayKeyPair.publicKey,
+        privateGateway.identityKeyPair.publicKey,
       );
       expect(authorization.gatewayData).toEqual(GATEWAY_DATA);
     });
@@ -114,7 +119,7 @@ describe('Endpoint registration', () => {
 
       const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
         authorizationSerialized,
-        privateGatewayKeyPair.publicKey,
+        privateGateway.identityKeyPair.publicKey,
       );
       expect(authorization.expiryDate).toEqual(EXPIRY_DATE);
     });
@@ -291,8 +296,8 @@ describe('generateCCA', () => {
 
       const cargoDeliveryAuthorization = await extractCDA(ccaSerialized);
       const cdaIssuer = await KEY_STORES.certificateStore.retrieveLatest(
-        privateGatewayId,
-        privateGatewayId,
+        privateGateway.id,
+        privateGateway.id,
       );
       await expect(
         cargoDeliveryAuthorization.getCertificationPath([], [cdaIssuer!.leafCertificate]),
@@ -306,3 +311,5 @@ describe('generateCCA', () => {
     }
   });
 });
+
+class StubPrivateGateway extends PrivateGateway {}

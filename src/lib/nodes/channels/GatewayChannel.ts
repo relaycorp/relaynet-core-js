@@ -4,13 +4,14 @@ import { CargoMessageSet, MessageWithExpiryDate } from '../../messages/payloads/
 import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { CargoMessageStream } from '../CargoMessageStream';
 import { Channel } from './Channel';
+import { GatewayPayload } from '../Gateway';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
 
 /**
  * Channel whose node is a gateway.
  */
-export abstract class GatewayChannel extends Channel {
+export abstract class GatewayChannel extends Channel<GatewayPayload> {
   public async *generateCargoes(messages: CargoMessageStream): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
@@ -20,12 +21,12 @@ export abstract class GatewayChannel extends Channel {
       const ttl = getSecondsBetweenDates(creationDate, expiryDate);
       const cargo = new Cargo(
         recipient,
-        this.nodeDeliveryAuth,
+        this.deliveryAuth,
         await this.encryptPayload(messageSerialized),
         { creationDate, ttl: Math.min(ttl, RAMF_MAX_TTL) },
       );
       const cargoSerialized = await cargo.serialize(
-        this.nodePrivateKey,
+        this.node.identityKeyPair.privateKey,
         this.cryptoOptions.signature,
       );
       yield Buffer.from(cargoSerialized);

@@ -2,7 +2,6 @@ import { addDays, addMonths, differenceInSeconds, subMinutes } from 'date-fns';
 
 import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
-import { getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
@@ -11,6 +10,7 @@ import { Recipient } from '../../messages/Recipient';
 import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/issuance';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
+import { PrivateGateway } from '../PrivateGateway';
 
 const CLOCK_DRIFT_TOLERANCE_MINUTES = 90;
 const OUTBOUND_CARGO_TTL_DAYS = 14;
@@ -23,7 +23,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
    * @internal
    */
   constructor(
-    privateGatewayPrivateKey: CryptoKey,
+    privateGateway: PrivateGateway,
     privateGatewayDeliveryAuth: Certificate,
     internetGatewayId: string,
     internetGatewayPublicKey: CryptoKey,
@@ -32,7 +32,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
     super(
-      privateGatewayPrivateKey,
+      privateGateway,
       privateGatewayDeliveryAuth,
       internetGatewayId,
       internetGatewayPublicKey,
@@ -61,7 +61,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     expiryDate: Date,
   ): Promise<ArrayBuffer> {
     const authorization = new PrivateNodeRegistrationAuthorization(expiryDate, gatewayData);
-    return authorization.serialize(this.nodePrivateKey);
+    return authorization.serialize(this.node.identityKeyPair.privateKey);
   }
 
   /**
@@ -73,10 +73,9 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
   public async verifyEndpointRegistrationAuthorization(
     authorizationSerialized: ArrayBuffer,
   ): Promise<ArrayBuffer> {
-    const publicKey = await getRSAPublicKeyFromPrivate(this.nodePrivateKey);
     const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
       authorizationSerialized,
-      publicKey,
+      this.node.identityKeyPair.publicKey,
     );
     return authorization.gatewayData;
   }
@@ -89,14 +88,14 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
    */
   public async registerEndpoint(endpointPublicKey: CryptoKey): Promise<ArrayBuffer> {
     const endpointCertificate = await issueEndpointCertificate({
-      issuerCertificate: this.nodeDeliveryAuth,
-      issuerPrivateKey: this.nodePrivateKey,
+      issuerCertificate: this.deliveryAuth,
+      issuerPrivateKey: this.node.identityKeyPair.privateKey,
       subjectPublicKey: endpointPublicKey,
       validityEndDate: addMonths(new Date(), 6),
     });
     const registration = new PrivateNodeRegistration(
       endpointCertificate,
-      this.nodeDeliveryAuth,
+      this.deliveryAuth,
       this.internetGatewayInternetAddress,
     );
     return registration.serialize();
@@ -112,7 +111,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     const cdaIssuer = await this.getOrCreateCDAIssuer();
     const cargoDeliveryAuthorization = await issueGatewayCertificate({
       issuerCertificate: cdaIssuer,
-      issuerPrivateKey: this.nodePrivateKey,
+      issuerPrivateKey: this.node.identityKeyPair.privateKey,
       subjectPublicKey: this.peerPublicKey,
       validityEndDate: endDate,
     });
@@ -120,10 +119,10 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     const ccaPayload = await this.wrapMessagePayload(ccr);
     const cca = new CargoCollectionAuthorization(
       this.getOutboundRAMFRecipient(),
-      this.nodeDeliveryAuth,
+      this.deliveryAuth,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },
     );
-    return cca.serialize(this.nodePrivateKey);
+    return cca.serialize(this.node.identityKeyPair.privateKey);
   }
 }

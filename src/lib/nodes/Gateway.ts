@@ -4,7 +4,9 @@ import { CargoMessageSet } from '../messages/payloads/CargoMessageSet';
 import { Node } from './Node';
 import { Verifier } from './signatures/Verifier';
 
-export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {
+export type GatewayPayload = CargoMessageSet | CargoCollectionRequest;
+
+export abstract class Gateway extends Node<GatewayPayload> {
   public async getGSCVerifier<V extends Verifier>(
     peerId: string,
     verifierClass: new (trustedCertificates: readonly Certificate[]) => V,

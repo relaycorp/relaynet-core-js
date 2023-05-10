@@ -1,17 +1,17 @@
 import { SessionEnvelopedData } from '../../crypto/cms/envelopedData';
-import { Certificate } from '../../crypto/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { PayloadPlaintext } from '../../messages/payloads/PayloadPlaintext';
 import { Recipient } from '../../messages/Recipient';
 import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
-import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { Node } from '../Node';
+import { Certificate } from '../../crypto/x509/Certificate';
 
-export abstract class Channel {
+export abstract class Channel<Payload extends PayloadPlaintext> {
   // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
   constructor(
-    protected readonly nodePrivateKey: CryptoKey,
-    public readonly nodeDeliveryAuth: Certificate,
+    public readonly node: Node<Payload>,
+    public readonly deliveryAuth: Certificate,
     public readonly peerId: string,
     public readonly peerPublicKey: CryptoKey,
     protected readonly keyStores: KeyStoreSet,
@@ -25,7 +25,7 @@ export abstract class Channel {
    *
    * Also store the new ephemeral session key.
    */
-  public async wrapMessagePayload(payload: PayloadPlaintext | ArrayBuffer): Promise<ArrayBuffer> {
+  public async wrapMessagePayload(payload: Payload | ArrayBuffer): Promise<ArrayBuffer> {
     const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
       this.peerId,
     );
@@ -40,7 +40,7 @@ export abstract class Channel {
     await this.keyStores.privateKeyStore.saveSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
-      await this.getNodeId(),
+      this.node.id,
       this.peerId,
     );
     return envelopedData.serialize();
@@ -48,9 +48,5 @@ export abstract class Channel {
 
   public getOutboundRAMFRecipient(): Recipient {
     return { id: this.peerId };
-  }
-
-  protected async getNodeId(): Promise<string> {
-    return getIdFromIdentityKey(this.nodePrivateKey);
   }
 }

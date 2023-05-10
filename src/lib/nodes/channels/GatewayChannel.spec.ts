@@ -23,6 +23,7 @@ import { SessionKeyPair } from '../../SessionKeyPair';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { GatewayChannel } from './GatewayChannel';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { StubGateway } from './_test_utils';
 
 const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 
@@ -30,8 +31,8 @@ const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
 let peerId: string;
 let peerPublicKey: CryptoKey;
-let nodePrivateKey: CryptoKey;
-let nodeCertificate: Certificate;
+let node: StubGateway;
+let deliveryAuth: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
@@ -47,8 +48,13 @@ beforeAll(async () => {
   );
 
   const nodeKeyPair = await generateRSAKeyPair();
-  nodePrivateKey = nodeKeyPair.privateKey;
-  nodeCertificate = reSerializeCertificate(
+  node = new StubGateway(
+    await getIdFromIdentityKey(nodeKeyPair.publicKey),
+    nodeKeyPair,
+    KEY_STORES,
+    {},
+  );
+  deliveryAuth = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: peerCertificate,
       issuerPrivateKey: peerKeyPair.privateKey,
@@ -135,7 +141,7 @@ describe('generateCargoes', () => {
     await expect(
       KEY_STORES.privateKeyStore.retrieveSessionKey(
         originatorKey.keyId,
-        await nodeCertificate.calculateSubjectId(),
+        await deliveryAuth.calculateSubjectId(),
         peerId,
       ),
     ).toResolve();
@@ -176,7 +182,7 @@ describe('generateCargoes', () => {
     );
 
     const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-    expect(nodeCertificate.isEqual(cargo.senderCertificate)).toBeTrue();
+    expect(deliveryAuth.isEqual(cargo.senderCertificate)).toBeTrue();
   });
 
   test('Signature options should be honored if present', async () => {
@@ -272,9 +278,9 @@ describe('generateCargoes', () => {
     const dummyParcel = await generateDummyParcel(
       peerId,
       peerSessionKeyPair.sessionKey,
-      nodeCertificate,
+      deliveryAuth,
     );
-    const dummyParcelSerialized = await dummyParcel.serialize(nodePrivateKey);
+    const dummyParcelSerialized = await dummyParcel.serialize(node.identityKeyPair.privateKey);
 
     const cargoesSerialized = await asyncIterableToArray(
       channel.generateCargoes(
@@ -327,6 +333,6 @@ async function generateDummyParcel(
 
 class StubGatewayChannel extends GatewayChannel {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(nodePrivateKey, nodeCertificate, peerId, peerPublicKey, KEY_STORES, cryptoOptions);
+    super(node, deliveryAuth, peerId, peerPublicKey, KEY_STORES, cryptoOptions);
   }
 }
