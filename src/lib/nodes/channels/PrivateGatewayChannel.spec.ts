@@ -10,20 +10,22 @@ import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { StubGateway } from './_test_utils';
+import { Peer } from '../Peer';
 
-let internetGatewayId: string;
-let internetGatewayPublicKey: CryptoKey;
+let internetGateway: Peer;
 let internetGatewayCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   // Internet gateway
   const internetGatewayKeyPair = await generateRSAKeyPair();
-  internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
-  internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
+  internetGateway = {
+    id: await getIdFromIdentityKey(internetGatewayKeyPair.publicKey),
+    identityPublicKey: internetGatewayKeyPair.publicKey,
+  };
   internetGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: internetGatewayKeyPair.privateKey,
-    subjectPublicKey: internetGatewayPublicKey,
+    subjectPublicKey: internetGatewayKeyPair.publicKey,
     validityEndDate: tomorrow,
   });
 });
@@ -184,13 +186,6 @@ describe('getCDAIssuers', () => {
 
 class StubPrivateGatewayChannel extends PrivateGatewayChannel {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(
-      privateGateway,
-      privateGatewayPDCCertificate,
-      internetGatewayId,
-      internetGatewayPublicKey,
-      KEY_STORES,
-      cryptoOptions,
-    );
+    super(privateGateway, privateGatewayPDCCertificate, internetGateway, KEY_STORES, cryptoOptions);
   }
 }

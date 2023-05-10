@@ -6,14 +6,14 @@ import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { Node } from '../Node';
 import { Certificate } from '../../crypto/x509/Certificate';
+import { Peer } from '../Peer';
 
 export abstract class Channel<Payload extends PayloadPlaintext> {
   // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
   constructor(
     public readonly node: Node<Payload>,
     public readonly deliveryAuth: Certificate,
-    public readonly peerId: string,
-    public readonly peerPublicKey: CryptoKey,
+    public readonly peer: Peer,
     protected readonly keyStores: KeyStoreSet,
     public cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
@@ -27,10 +27,10 @@ export abstract class Channel<Payload extends PayloadPlaintext> {
    */
   public async wrapMessagePayload(payload: Payload | ArrayBuffer): Promise<ArrayBuffer> {
     const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
-      this.peerId,
+      this.peer.id,
     );
     if (!recipientSessionKey) {
-      throw new NodeError(`Could not find session key for peer ${this.peerId}`);
+      throw new NodeError(`Could not find session key for peer ${this.peer.id}`);
     }
     const { envelopedData, dhKeyId, dhPrivateKey } = await SessionEnvelopedData.encrypt(
       payload instanceof ArrayBuffer ? payload : payload.serialize(),
@@ -41,12 +41,12 @@ export abstract class Channel<Payload extends PayloadPlaintext> {
       dhPrivateKey,
       Buffer.from(dhKeyId),
       this.node.id,
-      this.peerId,
+      this.peer.id,
     );
     return envelopedData.serialize();
   }
 
   public getOutboundRAMFRecipient(): Recipient {
-    return { id: this.peerId };
+    return { id: this.peer.id };
   }
 }

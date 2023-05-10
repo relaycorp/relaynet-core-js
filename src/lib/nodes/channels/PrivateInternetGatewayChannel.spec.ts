@@ -16,22 +16,24 @@ import { PrivateInternetGatewayChannel } from './PrivateInternetGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { PrivateGateway } from '../PrivateGateway';
+import { Peer } from '../Peer';
 
-let internetGatewayId: string;
-let internetGatewayPublicKey: CryptoKey;
 let internetGatewayCertificate: Certificate;
 let privateGateway: StubPrivateGateway;
+let internetGateway: Peer;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const nextYear = setMilliseconds(addDays(new Date(), 360), 0);
 
   // Internet gateway
   const internetGatewayKeyPair = await generateRSAKeyPair();
-  internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
-  internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
+  internetGateway = {
+    id: await getIdFromIdentityKey(internetGatewayKeyPair.publicKey),
+    identityPublicKey: internetGatewayKeyPair.publicKey,
+  };
   internetGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: internetGatewayKeyPair.privateKey,
-    subjectPublicKey: internetGatewayPublicKey,
+    subjectPublicKey: internetGatewayKeyPair.publicKey,
     validityEndDate: nextYear,
   });
 
@@ -63,7 +65,7 @@ beforeEach(async () => {
   await KEY_STORES.publicKeyStore.saveIdentityKey(await internetGatewayCertificate.getPublicKey());
   await KEY_STORES.publicKeyStore.saveSessionKey(
     internetGatewaySessionKeyPair.sessionKey,
-    internetGatewayId,
+    internetGateway.id,
     new Date(),
   );
 });
@@ -78,8 +80,7 @@ beforeEach(() => {
   channel = new PrivateInternetGatewayChannel(
     privateGateway,
     privateGatewayPDCCertificate,
-    internetGatewayId,
-    internetGatewayPublicKey,
+    internetGateway,
     INTERNET_GATEWAY_INTERNET_ADDRESS,
     KEY_STORES,
     {},
@@ -88,7 +89,7 @@ beforeEach(() => {
 
 test('getOutboundRAMFRecipient should return Internet address of Internet gateway', async () => {
   expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({
-    id: internetGatewayId,
+    id: internetGateway.id,
     internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
   });
 });
@@ -232,7 +233,7 @@ describe('generateCCA', () => {
 
     const cca = await CargoCollectionAuthorization.deserialize(ccaSerialized);
     expect(cca.recipient).toEqual<Recipient>({
-      id: internetGatewayId,
+      id: internetGateway.id,
       internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
     });
   });

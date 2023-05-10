@@ -11,6 +11,7 @@ import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/iss
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 import { PrivateGateway } from '../PrivateGateway';
+import { Peer } from '../Peer';
 
 const CLOCK_DRIFT_TOLERANCE_MINUTES = 90;
 const OUTBOUND_CARGO_TTL_DAYS = 14;
@@ -25,20 +26,12 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
   constructor(
     privateGateway: PrivateGateway,
     privateGatewayDeliveryAuth: Certificate,
-    internetGatewayId: string,
-    internetGatewayPublicKey: CryptoKey,
+    internetGateway: Peer,
     public readonly internetGatewayInternetAddress: string,
     keyStores: KeyStoreSet,
     cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
-    super(
-      privateGateway,
-      privateGatewayDeliveryAuth,
-      internetGatewayId,
-      internetGatewayPublicKey,
-      keyStores,
-      cryptoOptions,
-    );
+    super(privateGateway, privateGatewayDeliveryAuth, internetGateway, keyStores, cryptoOptions);
   }
 
   override getOutboundRAMFRecipient(): Recipient {
@@ -112,7 +105,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     const cargoDeliveryAuthorization = await issueGatewayCertificate({
       issuerCertificate: cdaIssuer,
       issuerPrivateKey: this.node.identityKeyPair.privateKey,
-      subjectPublicKey: this.peerPublicKey,
+      subjectPublicKey: this.peer.identityPublicKey,
       validityEndDate: endDate,
     });
     const ccr = new CargoCollectionRequest(cargoDeliveryAuthorization);

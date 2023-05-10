@@ -79,8 +79,7 @@ export class PrivateGateway extends Gateway {
     return new PrivateInternetGatewayChannel(
       this,
       privateGatewayDeliveryAuth.leafCertificate,
-      internetGatewayId,
-      internetGatewayPublicKey,
+      { id: internetGatewayId, identityPublicKey: internetGatewayPublicKey },
       internetGatewayInternetAddress,
       this.keyStores,
       this.cryptoOptions,
