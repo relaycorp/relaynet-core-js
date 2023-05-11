@@ -25,6 +25,7 @@ import { GatewayChannel } from './GatewayChannel';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { StubGateway } from './_test_utils';
 import { Peer } from '../peer';
+import { CertificationPath } from '../../pki/CertificationPath';
 
 const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 
@@ -336,6 +337,7 @@ async function generateDummyParcel(
 
 class StubGatewayChannel extends GatewayChannel<undefined> {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(node, peer, deliveryAuth, KEY_STORES, cryptoOptions);
+    const deliveryAuthPath = new CertificationPath(deliveryAuth, []);
+    super(node, peer, deliveryAuthPath, KEY_STORES, cryptoOptions);
   }
 }

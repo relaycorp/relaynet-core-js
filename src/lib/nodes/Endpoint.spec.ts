@@ -127,7 +127,7 @@ describe('savePrivateEndpointChannel', () => {
       identityPublicKey: peerIdentityKeyPair.publicKey,
       internetAddress: INTERNET_ADDRESS,
     });
-    expect(channel.deliveryAuth).toBe(connectionParams.deliveryAuth.leafCertificate);
+    expect(channel.deliveryAuthPath).toBe(connectionParams.deliveryAuth);
   });
 
   test('Key store should be propagated', async () => {

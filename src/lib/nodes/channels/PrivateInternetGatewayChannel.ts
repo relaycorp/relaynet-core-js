@@ -62,14 +62,14 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel<string>
    */
   public async registerEndpoint(endpointPublicKey: CryptoKey): Promise<ArrayBuffer> {
     const endpointCertificate = await issueEndpointCertificate({
-      issuerCertificate: this.deliveryAuth,
+      issuerCertificate: this.deliveryAuthPath.leafCertificate,
       issuerPrivateKey: this.node.identityKeyPair.privateKey,
       subjectPublicKey: endpointPublicKey,
       validityEndDate: addMonths(new Date(), 6),
     });
     const registration = new PrivateNodeRegistration(
       endpointCertificate,
-      this.deliveryAuth,
+      this.deliveryAuthPath.leafCertificate,
       this.peer.internetAddress,
     );
     return registration.serialize();
@@ -93,7 +93,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel<string>
     const ccaPayload = await this.wrapMessagePayload(ccr);
     const cca = new CargoCollectionAuthorization(
       this.getOutboundRAMFRecipient(),
-      this.deliveryAuth,
+      this.deliveryAuthPath.leafCertificate,
       Buffer.from(ccaPayload),
       { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },
     );

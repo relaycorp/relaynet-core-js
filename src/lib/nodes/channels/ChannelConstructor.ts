@@ -1,10 +1,10 @@
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
-import { Certificate } from '../../crypto/x509/Certificate';
 import { Peer, PeerInternetAddress } from '../peer';
 import { Channel } from './Channel';
 import { Node } from '../Node';
 import { PayloadPlaintext } from '../../messages/payloads/PayloadPlaintext';
+import { CertificationPath } from '../../pki/CertificationPath';
 
 export type ChannelConstructor<
   Payload extends PayloadPlaintext,
@@ -12,7 +12,7 @@ export type ChannelConstructor<
 > = new (
   node: Node<any, any>,
   peer: Peer<any>,
-  deliveryAuth: Certificate,
+  deliveryAuthPath: CertificationPath,
   keyStores: KeyStoreSet,
   cryptoOptions: Partial<NodeCryptoOptions>,
 ) => Channel<Payload, PeerAddress>;

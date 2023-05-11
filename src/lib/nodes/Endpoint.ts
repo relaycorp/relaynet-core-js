@@ -16,8 +16,7 @@ export abstract class Endpoint<PeerAddress extends PeerInternetAddress> extends 
   public async savePrivateEndpointChannel(
     connectionParams: PrivateEndpointConnParams,
   ): Promise<Channel<ServiceMessage, PeerAddress>> {
-    const leafCertificate = connectionParams.deliveryAuth.leafCertificate;
-    const authSubjectId = await leafCertificate.calculateSubjectId();
+    const authSubjectId = await connectionParams.deliveryAuth.leafCertificate.calculateSubjectId();
     if (authSubjectId !== this.id) {
       throw new InvalidNodeConnectionParams(
         `Delivery authorization was granted to another node (${authSubjectId})`,
@@ -41,7 +40,7 @@ export abstract class Endpoint<PeerAddress extends PeerInternetAddress> extends 
     return new this.channelConstructor(
       this,
       peer,
-      leafCertificate,
+      connectionParams.deliveryAuth,
       this.keyStores,
       this.cryptoOptions,
     );

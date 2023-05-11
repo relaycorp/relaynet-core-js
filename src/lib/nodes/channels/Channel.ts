@@ -5,8 +5,8 @@ import { Recipient } from '../../messages/Recipient';
 import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { Node } from '../Node';
-import { Certificate } from '../../crypto/x509/Certificate';
 import { Peer, PeerInternetAddress } from '../peer';
+import { CertificationPath } from '../../pki/CertificationPath';
 
 export abstract class Channel<
   Payload extends PayloadPlaintext,
@@ -16,7 +16,7 @@ export abstract class Channel<
   constructor(
     public readonly node: Node<Payload, PeerAddress>,
     public readonly peer: Peer<PeerAddress>,
-    public readonly deliveryAuth: Certificate,
+    public readonly deliveryAuthPath: CertificationPath,
     public readonly keyStores: KeyStoreSet,
     public cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}

@@ -25,7 +25,7 @@ export abstract class GatewayChannel<PeerAddress extends PeerInternetAddress> ex
       const ttl = getSecondsBetweenDates(creationDate, expiryDate);
       const cargo = new Cargo(
         recipient,
-        this.deliveryAuth,
+        this.deliveryAuthPath.leafCertificate,
         await this.encryptPayload(messageSerialized),
         { creationDate, ttl: Math.min(ttl, RAMF_MAX_TTL) },
       );

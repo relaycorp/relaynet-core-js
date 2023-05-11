@@ -17,6 +17,7 @@ import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { PrivateGateway } from '../PrivateGateway';
 import { Peer } from '../peer';
+import { CertificationPath } from '../../pki/CertificationPath';
 
 const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
 
@@ -81,7 +82,7 @@ beforeEach(() => {
   channel = new PrivateInternetGatewayChannel(
     privateGateway,
     internetGateway,
-    privateGatewayPDCCertificate,
+    new CertificationPath(privateGatewayPDCCertificate, []),
     KEY_STORES,
     {},
   );

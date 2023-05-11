@@ -187,6 +187,7 @@ describe('getCDAIssuers', () => {
 
 class StubPrivateGatewayChannel extends PrivateGatewayChannel<undefined> {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(privateGateway, internetGateway, privateGatewayPDCCertificate, KEY_STORES, cryptoOptions);
+    const deliveryAuthPath = new CertificationPath(privateGatewayPDCCertificate, []);
+    super(privateGateway, internetGateway, deliveryAuthPath, KEY_STORES, cryptoOptions);
   }
 }

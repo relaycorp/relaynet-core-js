@@ -228,10 +228,8 @@ describe('retrieveInternetGatewayChannel', () => {
   });
 
   test('Channel should be returned if it exists', async () => {
-    await KEY_STORES.certificateStore.save(
-      new CertificationPath(privateGatewayPDCCertificate, []),
-      internetGatewayId,
-    );
+    const authPath = new CertificationPath(privateGatewayPDCCertificate, []);
+    await KEY_STORES.certificateStore.save(authPath, internetGatewayId);
     await KEY_STORES.publicKeyStore.saveIdentityKey(internetGatewayPublicKey);
     const privateGateway = new PrivateGateway(
       privateGatewayId,
@@ -246,7 +244,7 @@ describe('retrieveInternetGatewayChannel', () => {
     );
 
     expect(channel!.peer.internetAddress).toEqual(INTERNET_GATEWAY_INTERNET_ADDRESS);
-    expect(channel!.deliveryAuth.isEqual(privateGatewayPDCCertificate)).toBeTrue();
+    expect(channel!.deliveryAuthPath.leafCertificate.isEqual(authPath.leafCertificate)).toBeTrue();
     expect(channel!.peer.id).toEqual(internetGatewayId);
     await expect(derSerializePublicKey(channel!.peer.identityPublicKey)).resolves.toEqual(
       await derSerializePublicKey(internetGatewayPublicKey),
