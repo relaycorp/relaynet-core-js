@@ -1,21 +1,18 @@
 import { ServiceMessage } from '../messages/payloads/ServiceMessage';
 import { Node } from './Node';
-import { Peer, PeerInternetAddress } from './peer';
+import { Peer } from './peer';
 import { Channel } from './channels/Channel';
 import { PrivateEndpointConnParams } from './PrivateEndpointConnParams';
 import { InvalidNodeConnectionParams } from './errors';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
-export abstract class Endpoint<PeerAddress extends PeerInternetAddress> extends Node<
-  ServiceMessage,
-  PeerAddress
-> {
+export abstract class Endpoint extends Node<ServiceMessage, string> {
   /**
    * Create or update a channel with a private endpoint.
    */
   public async savePrivateEndpointChannel(
     connectionParams: PrivateEndpointConnParams,
-  ): Promise<Channel<ServiceMessage, PeerAddress>> {
+  ): Promise<Channel<ServiceMessage, string>> {
     const authSubjectId = await connectionParams.deliveryAuth.leafCertificate.calculateSubjectId();
     if (authSubjectId !== this.id) {
       throw new InvalidNodeConnectionParams(

@@ -1,6 +1,6 @@
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { EndpointManager } from './EndpointManager';
-import { StubNode } from '../_test_utils';
+import { StubEndpoint } from '../_test_utils';
 
 const KEY_STORES = new MockKeyStoreSet();
 afterEach(() => {
@@ -14,10 +14,10 @@ describe('get', () => {
 
     const endpoint = await manager.get(id);
 
-    expect(endpoint).toBeInstanceOf(StubNode);
+    expect(endpoint).toBeInstanceOf(StubEndpoint);
   });
 });
 
-class StubEndpointManager extends EndpointManager<undefined> {
-  protected readonly defaultNodeConstructor = StubNode;
+class StubEndpointManager extends EndpointManager {
+  protected readonly defaultNodeConstructor = StubEndpoint;
 }
