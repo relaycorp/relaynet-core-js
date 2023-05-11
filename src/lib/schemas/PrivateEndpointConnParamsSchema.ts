@@ -11,9 +11,9 @@ export class PrivateEndpointConnParamsSchema {
   @AsnProp({ type: AsnPropTypes.VisibleString, context: 1, implicit: true })
   public internetGatewayAddress!: string;
 
-  @AsnProp({ type: SessionKeySchema, context: 2, implicit: true })
-  public sessionKey!: SessionKeySchema;
-
-  @AsnProp({ type: CertificationPathSchema, context: 3, implicit: true })
+  @AsnProp({ type: CertificationPathSchema, context: 2, implicit: true })
   public deliveryAuth!: CertificationPathSchema;
+
+  @AsnProp({ type: SessionKeySchema, context: 3, implicit: true, optional: true })
+  public sessionKey?: SessionKeySchema;
 }

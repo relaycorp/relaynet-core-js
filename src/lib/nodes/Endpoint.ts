@@ -31,11 +31,14 @@ export abstract class Endpoint<PeerAddress extends PeerInternetAddress> extends 
 
     await this.keyStores.certificateStore.save(connectionParams.deliveryAuth, peer.id);
     await this.keyStores.publicKeyStore.saveIdentityKey(peer.identityPublicKey);
-    await this.keyStores.publicKeyStore.saveSessionKey(
-      connectionParams.sessionKey,
-      peer.id,
-      new Date(),
-    );
+
+    if (connectionParams.sessionKey) {
+      await this.keyStores.publicKeyStore.saveSessionKey(
+        connectionParams.sessionKey,
+        peer.id,
+        new Date(),
+      );
+    }
 
     return new this.channelConstructor(
       this,

@@ -56,8 +56,8 @@ describe('PrivateEndpointConnParams', () => {
       const params = new PrivateEndpointConnParams(
         peerIdentityKeyPair.publicKey,
         INTERNET_ADDRESS,
-        peerSessionKey,
         deliveryAuth,
+        peerSessionKey,
       );
 
       const serialisation = await params.serialize();
@@ -75,8 +75,8 @@ describe('PrivateEndpointConnParams', () => {
       const params = new PrivateEndpointConnParams(
         peerIdentityKeyPair.publicKey,
         INTERNET_ADDRESS,
-        peerSessionKey,
         deliveryAuth,
+        peerSessionKey,
       );
 
       const serialisation = await params.serialize();
@@ -85,29 +85,12 @@ describe('PrivateEndpointConnParams', () => {
       expect(paramsDeserialized.internetGatewayAddress).toStrictEqual(INTERNET_ADDRESS);
     });
 
-    test('Session key should be serialised', async () => {
-      const params = new PrivateEndpointConnParams(
-        peerIdentityKeyPair.publicKey,
-        INTERNET_ADDRESS,
-        peerSessionKey,
-        deliveryAuth,
-      );
-
-      const serialisation = await params.serialize();
-
-      const paramsDeserialized = AsnParser.parse(serialisation, PrivateEndpointConnParamsSchema);
-      expect(Buffer.from(paramsDeserialized.sessionKey.keyId)).toStrictEqual(peerSessionKey.keyId);
-      expect(
-        Buffer.from(AsnSerializer.serialize(paramsDeserialized.sessionKey.publicKey)),
-      ).toStrictEqual(await derSerializePublicKey(peerSessionKey.publicKey));
-    });
-
     test('Delivery authorisation should be serialised', async () => {
       const params = new PrivateEndpointConnParams(
         peerIdentityKeyPair.publicKey,
         INTERNET_ADDRESS,
-        peerSessionKey,
         deliveryAuth,
+        peerSessionKey,
       );
 
       const serialisation = await params.serialize();
@@ -122,6 +105,36 @@ describe('PrivateEndpointConnParams', () => {
         Buffer.from(deliveryAuth.certificateAuthorities[0].serialize()),
       );
     });
+
+    test('Session key should be serialised if present', async () => {
+      const params = new PrivateEndpointConnParams(
+        peerIdentityKeyPair.publicKey,
+        INTERNET_ADDRESS,
+        deliveryAuth,
+        peerSessionKey,
+      );
+
+      const serialisation = await params.serialize();
+
+      const paramsDeserialized = AsnParser.parse(serialisation, PrivateEndpointConnParamsSchema);
+      expect(Buffer.from(paramsDeserialized.sessionKey!.keyId)).toStrictEqual(peerSessionKey.keyId);
+      expect(
+        Buffer.from(AsnSerializer.serialize(paramsDeserialized.sessionKey!.publicKey)),
+      ).toStrictEqual(await derSerializePublicKey(peerSessionKey.publicKey));
+    });
+
+    test('Session key should be skipped if missing', async () => {
+      const params = new PrivateEndpointConnParams(
+        peerIdentityKeyPair.publicKey,
+        INTERNET_ADDRESS,
+        deliveryAuth,
+      );
+
+      const serialisation = await params.serialize();
+
+      const paramsDeserialized = AsnParser.parse(serialisation, PrivateEndpointConnParamsSchema);
+      expect(paramsDeserialized.sessionKey).toBeUndefined();
+    });
   });
 
   describe('deserialize', () => {
@@ -130,8 +143,8 @@ describe('PrivateEndpointConnParams', () => {
       const params = new PrivateEndpointConnParams(
         peerIdentityKeyPair.publicKey,
         INTERNET_ADDRESS,
-        peerSessionKey,
         deliveryAuth,
+        peerSessionKey,
       );
       paramsSerialized = await params.serialize();
     });
@@ -159,15 +172,6 @@ describe('PrivateEndpointConnParams', () => {
       expect(params.internetGatewayAddress).toStrictEqual(INTERNET_ADDRESS);
     });
 
-    test('Session key should be output', async () => {
-      const params = await PrivateEndpointConnParams.deserialize(paramsSerialized);
-
-      expect(params.sessionKey.keyId).toStrictEqual(peerSessionKey.keyId);
-      await expect(derSerializePublicKey(params.sessionKey.publicKey)).resolves.toStrictEqual(
-        await derSerializePublicKey(peerSessionKey.publicKey),
-      );
-    });
-
     test('Delivery authorisation should be output', async () => {
       const params = await PrivateEndpointConnParams.deserialize(paramsSerialized);
 
@@ -178,6 +182,28 @@ describe('PrivateEndpointConnParams', () => {
           deliveryAuth.certificateAuthorities[0],
         ),
       ).toBeTrue();
+    });
+
+    test('Session key should be output if present', async () => {
+      const params = await PrivateEndpointConnParams.deserialize(paramsSerialized);
+
+      expect(params.sessionKey!.keyId).toStrictEqual(peerSessionKey.keyId);
+      await expect(derSerializePublicKey(params.sessionKey!.publicKey)).resolves.toStrictEqual(
+        await derSerializePublicKey(peerSessionKey.publicKey),
+      );
+    });
+
+    test('Session should be skipped if absent', async () => {
+      const params = new PrivateEndpointConnParams(
+        peerIdentityKeyPair.publicKey,
+        INTERNET_ADDRESS,
+        deliveryAuth,
+      );
+      const serialization = await params.serialize();
+
+      const paramsDeserialized = await PrivateEndpointConnParams.deserialize(serialization);
+
+      expect(paramsDeserialized.sessionKey).toBeUndefined();
     });
   });
 });

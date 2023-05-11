@@ -27,24 +27,22 @@ export class PrivateEndpointConnParams {
     const identityKey = await derDeserializeRSAPublicKey(
       AsnSerializer.serialize(schema.identityKey),
     );
-    const sessionPublicKey = await derDeserializeECDHPublicKey(
-      AsnSerializer.serialize(schema.sessionKey.publicKey),
-    );
+    const sessionKey = schema.sessionKey ? await decodeSessionKey(schema.sessionKey) : undefined;
     const leafCertificate = convertAsnToCertificate(schema.deliveryAuth.leaf);
     const cas = schema.deliveryAuth.certificateAuthorities.map(convertAsnToCertificate);
     return new PrivateEndpointConnParams(
       identityKey,
       schema.internetGatewayAddress,
-      { keyId: Buffer.from(schema.sessionKey.keyId), publicKey: sessionPublicKey },
       new CertificationPath(leafCertificate, cas),
+      sessionKey,
     );
   }
 
   public constructor(
     public readonly identityKey: CryptoKey,
     public readonly internetGatewayAddress: string,
-    public readonly sessionKey: SessionKey,
     public readonly deliveryAuth: CertificationPath,
+    public readonly sessionKey?: SessionKey,
   ) {}
 
   public async serialize(): Promise<ArrayBuffer> {
@@ -57,18 +55,13 @@ export class PrivateEndpointConnParams {
 
     schema.internetGatewayAddress = this.internetGatewayAddress;
 
-    schema.sessionKey = new SessionKeySchema();
-    schema.sessionKey.keyId = this.sessionKey.keyId;
-    schema.sessionKey.publicKey = AsnParser.parse(
-      await derSerializePublicKey(this.sessionKey.publicKey),
-      SubjectPublicKeyInfo,
-    );
-
     schema.deliveryAuth = new CertificationPathSchema();
     schema.deliveryAuth.leaf = convertCertificateToAsn(this.deliveryAuth.leafCertificate);
     schema.deliveryAuth.certificateAuthorities = new CertificateSetSchema(
       this.deliveryAuth.certificateAuthorities.map(convertCertificateToAsn),
     );
+
+    schema.sessionKey = this.sessionKey ? await encodeSessionKey(this.sessionKey) : undefined;
 
     return AsnSerializer.serialize(schema);
   }
@@ -80,4 +73,24 @@ function convertCertificateToAsn(certificate: Certificate): CertificateSchema {
 
 function convertAsnToCertificate(asn: CertificateSchema): Certificate {
   return Certificate.deserialize(AsnSerializer.serialize(asn));
+}
+
+async function decodeSessionKey(schema: SessionKeySchema): Promise<SessionKey> {
+  const sessionPublicKey = await derDeserializeECDHPublicKey(
+    AsnSerializer.serialize(schema.publicKey),
+  );
+  return {
+    keyId: Buffer.from(schema.keyId),
+    publicKey: sessionPublicKey,
+  };
+}
+
+async function encodeSessionKey(key: SessionKey): Promise<SessionKeySchema> {
+  const schema = new SessionKeySchema();
+  schema.keyId = key.keyId;
+  schema.publicKey = AsnParser.parse(
+    await derSerializePublicKey(key.publicKey),
+    SubjectPublicKeyInfo,
+  );
+  return schema;
 }

@@ -56,11 +56,9 @@ describe('savePrivateEndpointChannel', () => {
   let connectionParams: PrivateEndpointConnParams;
   beforeAll(async () => {
     const deliveryAuth = new CertificationPath(nodeCertificate, [peerCertificate]);
-    const { sessionKey } = await SessionKeyPair.generate();
     connectionParams = new PrivateEndpointConnParams(
       peerIdentityKeyPair.publicKey,
       INTERNET_ADDRESS,
-      sessionKey,
       deliveryAuth,
     );
   });
@@ -101,14 +99,21 @@ describe('savePrivateEndpointChannel', () => {
   test('Session public key of peer should be stored if set', async () => {
     const node = new StubEndpoint(nodeId, nodeKeyPair, KEY_STORES, {});
     const dateBeforeSave = new Date();
+    const { sessionKey } = await SessionKeyPair.generate();
+    const paramsWithSessionKey = new PrivateEndpointConnParams(
+      connectionParams.identityKey,
+      connectionParams.internetGatewayAddress,
+      connectionParams.deliveryAuth,
+      sessionKey,
+    );
 
-    await node.savePrivateEndpointChannel(connectionParams);
+    await node.savePrivateEndpointChannel(paramsWithSessionKey);
 
     expect(KEY_STORES.publicKeyStore.sessionKeys).toHaveProperty(
       peerId,
       expect.objectContaining<SessionPublicKeyData>({
-        publicKeyId: connectionParams.sessionKey.keyId,
-        publicKeyDer: await derSerializePublicKey(connectionParams.sessionKey.publicKey),
+        publicKeyId: sessionKey.keyId,
+        publicKeyDer: await derSerializePublicKey(sessionKey.publicKey),
         publicKeyCreationTime: expect.toSatisfy<Date>(
           (date) => date <= new Date() && dateBeforeSave <= date,
         ),
