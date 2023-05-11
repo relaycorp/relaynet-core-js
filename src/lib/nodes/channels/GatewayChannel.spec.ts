@@ -335,6 +335,6 @@ async function generateDummyParcel(
 
 class StubGatewayChannel extends GatewayChannel {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(node, deliveryAuth, peer, KEY_STORES, cryptoOptions);
+    super(node, peer, deliveryAuth, KEY_STORES, cryptoOptions);
   }
 }

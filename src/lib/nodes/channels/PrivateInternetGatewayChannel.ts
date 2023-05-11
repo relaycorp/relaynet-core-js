@@ -31,7 +31,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     keyStores: KeyStoreSet,
     cryptoOptions: Partial<NodeCryptoOptions>,
   ) {
-    super(privateGateway, privateGatewayDeliveryAuth, internetGateway, keyStores, cryptoOptions);
+    super(privateGateway, internetGateway, privateGatewayDeliveryAuth, keyStores, cryptoOptions);
   }
 
   override getOutboundRAMFRecipient(): Recipient {
