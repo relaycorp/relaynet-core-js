@@ -13,7 +13,7 @@ import { NodeError } from '../errors';
 import { Channel } from './Channel';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { StubNode } from '../_test_utils';
-import { Peer } from '../Peer';
+import { Peer } from '../peer';
 
 const KEY_STORES = new MockKeyStoreSet();
 beforeEach(() => {
@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 let node: StubNode;
-let peer: Peer;
+let peer: Peer<undefined>;
 let nodeDeliveryAuth: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
@@ -30,6 +30,7 @@ beforeAll(async () => {
   peer = {
     id: await getIdFromIdentityKey(peerKeyPair.publicKey),
     identityPublicKey: peerKeyPair.publicKey,
+    internetAddress: undefined,
   };
 
   const peerCertificate = reSerializeCertificate(
@@ -156,4 +157,4 @@ describe('getOutboundRAMFRecipient', () => {
   });
 });
 
-class StubChannel extends Channel<StubPayload> {}
+class StubChannel extends Channel<StubPayload, undefined> {}

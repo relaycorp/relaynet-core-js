@@ -5,13 +5,17 @@ import { RAMF_MAX_TTL } from '../../ramf/serialization';
 import { CargoMessageStream } from '../CargoMessageStream';
 import { Channel } from './Channel';
 import { GatewayPayload } from '../Gateway';
+import { PeerInternetAddress } from '../peer';
 
 const CLOCK_DRIFT_TOLERANCE_HOURS = 3;
 
 /**
  * Channel whose node is a gateway.
  */
-export abstract class GatewayChannel extends Channel<GatewayPayload> {
+export abstract class GatewayChannel<PeerAddress extends PeerInternetAddress> extends Channel<
+  GatewayPayload,
+  PeerAddress
+> {
   public async *generateCargoes(messages: CargoMessageStream): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);

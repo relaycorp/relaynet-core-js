@@ -245,7 +245,7 @@ describe('retrieveInternetGatewayChannel', () => {
       INTERNET_GATEWAY_INTERNET_ADDRESS,
     );
 
-    expect(channel!.internetGatewayInternetAddress).toEqual(INTERNET_GATEWAY_INTERNET_ADDRESS);
+    expect(channel!.peer.internetAddress).toEqual(INTERNET_GATEWAY_INTERNET_ADDRESS);
     expect(channel!.deliveryAuth.isEqual(privateGatewayPDCCertificate)).toBeTrue();
     expect(channel!.peer.id).toEqual(internetGatewayId);
     await expect(derSerializePublicKey(channel!.peer.identityPublicKey)).resolves.toEqual(

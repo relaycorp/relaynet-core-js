@@ -4,11 +4,14 @@ import { Certificate } from '../../crypto/x509/Certificate';
 import { CertificationPath } from '../../pki/CertificationPath';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { GatewayChannel } from './GatewayChannel';
+import { PeerInternetAddress } from '../peer';
 
 /**
  * Channel whose node is a private gateway.
  */
-export abstract class PrivateGatewayChannel extends GatewayChannel {
+export abstract class PrivateGatewayChannel<
+  PeerAddress extends PeerInternetAddress,
+> extends GatewayChannel<PeerAddress> {
   public async getOrCreateCDAIssuer(): Promise<Certificate> {
     const now = new Date();
 

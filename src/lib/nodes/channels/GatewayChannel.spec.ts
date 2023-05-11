@@ -24,14 +24,14 @@ import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { GatewayChannel } from './GatewayChannel';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { StubGateway } from './_test_utils';
-import { Peer } from '../Peer';
+import { Peer } from '../peer';
 
 const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 
 const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
 let node: StubGateway;
-let peer: Peer;
+let peer: Peer<undefined>;
 let deliveryAuth: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
@@ -40,6 +40,7 @@ beforeAll(async () => {
   peer = {
     id: await getIdFromIdentityKey(peerKeyPair.publicKey),
     identityPublicKey: peerKeyPair.publicKey,
+    internetAddress: undefined,
   };
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
@@ -333,7 +334,7 @@ async function generateDummyParcel(
   return new Parcel({ id: recipientId }, finalSenderCertificate, payloadSerialized);
 }
 
-class StubGatewayChannel extends GatewayChannel {
+class StubGatewayChannel extends GatewayChannel<undefined> {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
     super(node, peer, deliveryAuth, KEY_STORES, cryptoOptions);
   }

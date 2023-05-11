@@ -6,13 +6,16 @@ import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { Node } from '../Node';
 import { Certificate } from '../../crypto/x509/Certificate';
-import { Peer } from '../Peer';
+import { Peer, PeerInternetAddress } from '../peer';
 
-export abstract class Channel<Payload extends PayloadPlaintext> {
+export abstract class Channel<
+  Payload extends PayloadPlaintext,
+  PeerAddress extends PeerInternetAddress,
+> {
   // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
   constructor(
     public readonly node: Node<Payload>,
-    public readonly peer: Peer,
+    public readonly peer: Peer<PeerAddress>,
     public readonly deliveryAuth: Certificate,
     protected readonly keyStores: KeyStoreSet,
     public cryptoOptions: Partial<NodeCryptoOptions> = {},

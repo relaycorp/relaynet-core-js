@@ -2,16 +2,11 @@ import { addDays, addMonths, differenceInSeconds, subMinutes } from 'date-fns';
 
 import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistration';
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
-import { Certificate } from '../../crypto/x509/Certificate';
-import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
 import { Recipient } from '../../messages/Recipient';
 import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/issuance';
-import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
-import { PrivateGateway } from '../PrivateGateway';
-import { Peer } from '../Peer';
 
 const CLOCK_DRIFT_TOLERANCE_MINUTES = 90;
 const OUTBOUND_CARGO_TTL_DAYS = 14;
@@ -19,25 +14,11 @@ const OUTBOUND_CARGO_TTL_DAYS = 14;
 /**
  * Channel between a private gateway (the node) and its Internet gateway (the peer).
  */
-export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
-  /**
-   * @internal
-   */
-  constructor(
-    privateGateway: PrivateGateway,
-    privateGatewayDeliveryAuth: Certificate,
-    internetGateway: Peer,
-    public readonly internetGatewayInternetAddress: string,
-    keyStores: KeyStoreSet,
-    cryptoOptions: Partial<NodeCryptoOptions>,
-  ) {
-    super(privateGateway, internetGateway, privateGatewayDeliveryAuth, keyStores, cryptoOptions);
-  }
-
+export class PrivateInternetGatewayChannel extends PrivateGatewayChannel<string> {
   override getOutboundRAMFRecipient(): Recipient {
     return {
       ...super.getOutboundRAMFRecipient(),
-      internetAddress: this.internetGatewayInternetAddress,
+      internetAddress: this.peer.internetAddress,
     };
   }
 
@@ -89,7 +70,7 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel {
     const registration = new PrivateNodeRegistration(
       endpointCertificate,
       this.deliveryAuth,
-      this.internetGatewayInternetAddress,
+      this.peer.internetAddress,
     );
     return registration.serialize();
   }

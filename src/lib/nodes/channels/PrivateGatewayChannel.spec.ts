@@ -10,9 +10,9 @@ import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { StubGateway } from './_test_utils';
-import { Peer } from '../Peer';
+import { Peer } from '../peer';
 
-let internetGateway: Peer;
+let internetGateway: Peer<undefined>;
 let internetGatewayCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
@@ -22,6 +22,7 @@ beforeAll(async () => {
   internetGateway = {
     id: await getIdFromIdentityKey(internetGatewayKeyPair.publicKey),
     identityPublicKey: internetGatewayKeyPair.publicKey,
+    internetAddress: undefined,
   };
   internetGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: internetGatewayKeyPair.privateKey,
@@ -184,7 +185,7 @@ describe('getCDAIssuers', () => {
   });
 });
 
-class StubPrivateGatewayChannel extends PrivateGatewayChannel {
+class StubPrivateGatewayChannel extends PrivateGatewayChannel<undefined> {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
     super(privateGateway, internetGateway, privateGatewayPDCCertificate, KEY_STORES, cryptoOptions);
   }

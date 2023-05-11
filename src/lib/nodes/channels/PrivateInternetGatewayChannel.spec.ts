@@ -16,11 +16,13 @@ import { PrivateInternetGatewayChannel } from './PrivateInternetGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { PrivateGateway } from '../PrivateGateway';
-import { Peer } from '../Peer';
+import { Peer } from '../peer';
+
+const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
 
 let internetGatewayCertificate: Certificate;
 let privateGateway: StubPrivateGateway;
-let internetGateway: Peer;
+let internetGateway: Peer<string>;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const nextYear = setMilliseconds(addDays(new Date(), 360), 0);
@@ -30,6 +32,7 @@ beforeAll(async () => {
   internetGateway = {
     id: await getIdFromIdentityKey(internetGatewayKeyPair.publicKey),
     identityPublicKey: internetGatewayKeyPair.publicKey,
+    internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
   };
   internetGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: internetGatewayKeyPair.privateKey,
@@ -73,15 +76,12 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
-const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
-
 let channel: PrivateInternetGatewayChannel;
 beforeEach(() => {
   channel = new PrivateInternetGatewayChannel(
     privateGateway,
-    privateGatewayPDCCertificate,
     internetGateway,
-    INTERNET_GATEWAY_INTERNET_ADDRESS,
+    privateGatewayPDCCertificate,
     KEY_STORES,
     {},
   );

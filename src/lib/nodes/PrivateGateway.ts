@@ -76,11 +76,15 @@ export class PrivateGateway extends Gateway {
       return null;
     }
 
+    const internetGateway = {
+      id: internetGatewayId,
+      identityPublicKey: internetGatewayPublicKey,
+      internetAddress: internetGatewayInternetAddress,
+    };
     return new PrivateInternetGatewayChannel(
       this,
+      internetGateway,
       privateGatewayDeliveryAuth.leafCertificate,
-      { id: internetGatewayId, identityPublicKey: internetGatewayPublicKey },
-      internetGatewayInternetAddress,
       this.keyStores,
       this.cryptoOptions,
     );
