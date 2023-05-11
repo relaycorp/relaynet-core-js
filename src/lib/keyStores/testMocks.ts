@@ -56,7 +56,7 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 export class MockPublicKeyStore extends PublicKeyStore {
   public identityKeys: { [peerId: string]: Buffer } = {};
 
-  public sessionKeys: { [key: string]: SessionPublicKeyData } = {};
+  public sessionKeys: { [peerId: string]: SessionPublicKeyData } = {};
 
   constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
     super();

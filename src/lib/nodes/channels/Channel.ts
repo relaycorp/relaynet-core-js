@@ -17,7 +17,7 @@ export abstract class Channel<
     public readonly node: Node<Payload, PeerAddress>,
     public readonly peer: Peer<PeerAddress>,
     public readonly deliveryAuth: Certificate,
-    protected readonly keyStores: KeyStoreSet,
+    public readonly keyStores: KeyStoreSet,
     public cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
