@@ -33,7 +33,9 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@peculiar/webcrypto": "^1.4.3",
+    "@peculiar/asn1-schema": "^2.3.6",
+    "@peculiar/asn1-x509": "^2.3.6",
+    "@peculiar/webcrypto": "< 2",
     "@stablelib/aes-kw": "^1.0.1",
     "@types/verror": "^1.10.6",
     "asn1js": "^3.0.5",
@@ -46,7 +48,7 @@
     "smart-buffer": "^4.2.0",
     "uuid4": "^2.0.3",
     "verror": "^1.10.1",
-    "webcrypto-core": "^1.7.7"
+    "webcrypto-core": "< 2"
   },
   "peerDependencies": {
     "@peculiar/webcrypto": "< 2",
