@@ -1,3 +1,4 @@
+/* tslint:disable:max-classes-per-file */
 import { addDays } from 'date-fns';
 
 import { CertificationPath } from '../pki/CertificationPath';
@@ -7,7 +8,6 @@ import { getIdFromIdentityKey } from '../crypto/keys/digest';
 import { generateRSAKeyPair } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { reSerializeCertificate } from '../_test_utils';
-import { StubNodeChannel } from './channels/_test_utils';
 import { Endpoint } from './Endpoint';
 import { PrivateEndpointConnParams } from './PrivateEndpointConnParams';
 import { SessionKeyPair } from '../SessionKeyPair';
@@ -15,6 +15,8 @@ import { derSerializePublicKey } from '../crypto/keys/serialisation';
 import { SessionPublicKeyData } from '../keyStores/PublicKeyStore';
 import { InvalidNodeConnectionParams } from './errors';
 import { Peer } from './peer';
+import { Channel } from './channels/Channel';
+import { StubPayload } from '../ramf/_test_utils';
 
 const INTERNET_ADDRESS = 'example.com';
 
@@ -154,6 +156,8 @@ describe('savePrivateEndpointChannel', () => {
   });
 });
 
-export class StubEndpoint extends Endpoint<undefined> {
-  protected readonly channelConstructor = StubNodeChannel;
+export class StubEndpointChannel extends Channel<StubPayload, string> {}
+
+export class StubEndpoint extends Endpoint {
+  protected readonly channelConstructor = StubEndpointChannel;
 }
