@@ -23,21 +23,26 @@ import { SessionKeyPair } from '../../SessionKeyPair';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { GatewayChannel } from './GatewayChannel';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { StubGateway } from './_test_utils';
+import { Peer } from '../peer';
+import { CertificationPath } from '../../pki/CertificationPath';
 
 const MESSAGE = Buffer.from('This is a message to be included in a cargo');
 
 const TOMORROW = setMilliseconds(addDays(new Date(), 1), 0);
 
-let peerId: string;
-let peerPublicKey: CryptoKey;
-let nodePrivateKey: CryptoKey;
-let nodeCertificate: Certificate;
+let node: StubGateway;
+let peer: Peer<undefined>;
+let deliveryAuth: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   const peerKeyPair = await generateRSAKeyPair();
-  peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
-  peerPublicKey = peerKeyPair.publicKey;
+  peer = {
+    id: await getIdFromIdentityKey(peerKeyPair.publicKey),
+    identityPublicKey: peerKeyPair.publicKey,
+    internetAddress: undefined,
+  };
   const peerCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerPrivateKey: peerKeyPair.privateKey,
@@ -47,8 +52,13 @@ beforeAll(async () => {
   );
 
   const nodeKeyPair = await generateRSAKeyPair();
-  nodePrivateKey = nodeKeyPair.privateKey;
-  nodeCertificate = reSerializeCertificate(
+  node = new StubGateway(
+    await getIdFromIdentityKey(nodeKeyPair.publicKey),
+    nodeKeyPair,
+    KEY_STORES,
+    {},
+  );
+  deliveryAuth = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: peerCertificate,
       issuerPrivateKey: peerKeyPair.privateKey,
@@ -72,7 +82,7 @@ describe('generateCargoes', () => {
   beforeEach(async () => {
     await KEY_STORES.publicKeyStore.saveSessionKey(
       peerSessionKeyPair.sessionKey,
-      peerId,
+      peer.id,
       new Date(),
     );
   });
@@ -92,7 +102,7 @@ describe('generateCargoes', () => {
     );
 
     const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-    expect(cargo.recipient.id).toEqual(peerId);
+    expect(cargo.recipient.id).toEqual(peer.id);
   });
 
   test('Payload should be encrypted with session key', async () => {
@@ -135,8 +145,8 @@ describe('generateCargoes', () => {
     await expect(
       KEY_STORES.privateKeyStore.retrieveSessionKey(
         originatorKey.keyId,
-        await nodeCertificate.calculateSubjectId(),
-        peerId,
+        await deliveryAuth.calculateSubjectId(),
+        peer.id,
       ),
     ).toResolve();
   });
@@ -176,7 +186,7 @@ describe('generateCargoes', () => {
     );
 
     const cargo = await Cargo.deserialize(bufferToArray(cargoesSerialized[0]));
-    expect(nodeCertificate.isEqual(cargo.senderCertificate)).toBeTrue();
+    expect(deliveryAuth.isEqual(cargo.senderCertificate)).toBeTrue();
   });
 
   test('Signature options should be honored if present', async () => {
@@ -270,11 +280,11 @@ describe('generateCargoes', () => {
   test('Messages should be encapsulated into as few cargoes as possible', async () => {
     const channel = new StubGatewayChannel();
     const dummyParcel = await generateDummyParcel(
-      peerId,
+      peer.id,
       peerSessionKeyPair.sessionKey,
-      nodeCertificate,
+      deliveryAuth,
     );
-    const dummyParcelSerialized = await dummyParcel.serialize(nodePrivateKey);
+    const dummyParcelSerialized = await dummyParcel.serialize(node.identityKeyPair.privateKey);
 
     const cargoesSerialized = await asyncIterableToArray(
       channel.generateCargoes(
@@ -325,8 +335,9 @@ async function generateDummyParcel(
   return new Parcel({ id: recipientId }, finalSenderCertificate, payloadSerialized);
 }
 
-class StubGatewayChannel extends GatewayChannel {
+class StubGatewayChannel extends GatewayChannel<undefined> {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(nodePrivateKey, nodeCertificate, peerId, peerPublicKey, KEY_STORES, cryptoOptions);
+    const deliveryAuthPath = new CertificationPath(deliveryAuth, []);
+    super(node, peer, deliveryAuthPath, KEY_STORES, cryptoOptions);
   }
 }

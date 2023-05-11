@@ -6,7 +6,9 @@ import { PrivateInternetGatewayChannel } from './channels/PrivateInternetGateway
 import { NodeError } from './errors';
 import { Gateway } from './Gateway';
 
-export class PrivateGateway extends Gateway {
+export class PrivateGateway extends Gateway<string> {
+  protected readonly channelConstructor = PrivateInternetGatewayChannel;
+
   /**
    * Produce a `PrivateNodeRegistrationRequest` to register with a Internet gateway.
    *
@@ -76,12 +78,15 @@ export class PrivateGateway extends Gateway {
       return null;
     }
 
+    const internetGateway = {
+      id: internetGatewayId,
+      identityPublicKey: internetGatewayPublicKey,
+      internetAddress: internetGatewayInternetAddress,
+    };
     return new PrivateInternetGatewayChannel(
-      this.identityKeyPair.privateKey,
-      privateGatewayDeliveryAuth.leafCertificate,
-      internetGatewayId,
-      internetGatewayPublicKey,
-      internetGatewayInternetAddress,
+      this,
+      internetGateway,
+      privateGatewayDeliveryAuth,
       this.keyStores,
       this.cryptoOptions,
     );

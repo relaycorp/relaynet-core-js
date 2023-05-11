@@ -1,6 +1,7 @@
 {
   "extends": "@relaycorp/shared-config",
   "compilerOptions": {
+    "experimentalDecorators": true,
     "outDir": "build/main",
     "rootDir": "src",
     "stripInternal": true,

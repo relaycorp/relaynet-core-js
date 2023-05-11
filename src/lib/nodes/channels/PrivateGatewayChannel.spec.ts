@@ -1,6 +1,6 @@
 import { addDays, setMilliseconds, subMinutes, subSeconds } from 'date-fns';
 
-import { generateRSAKeyPair, getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
+import { generateRSAKeyPair } from '../../crypto/keys/generation';
 import { Certificate } from '../../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
 import { CertificationPath } from '../../pki/CertificationPath';
@@ -9,40 +9,42 @@ import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { StubGateway } from './_test_utils';
+import { Peer } from '../peer';
 
-let internetGatewayId: string;
-let internetGatewayPublicKey: CryptoKey;
+let internetGateway: Peer<undefined>;
 let internetGatewayCertificate: Certificate;
 beforeAll(async () => {
   const tomorrow = setMilliseconds(addDays(new Date(), 1), 0);
 
   // Internet gateway
   const internetGatewayKeyPair = await generateRSAKeyPair();
-  internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
-  internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
+  internetGateway = {
+    id: await getIdFromIdentityKey(internetGatewayKeyPair.publicKey),
+    identityPublicKey: internetGatewayKeyPair.publicKey,
+    internetAddress: undefined,
+  };
   internetGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: internetGatewayKeyPair.privateKey,
-    subjectPublicKey: internetGatewayPublicKey,
+    subjectPublicKey: internetGatewayKeyPair.publicKey,
     validityEndDate: tomorrow,
   });
 });
 
 const KEY_STORES = new MockKeyStoreSet();
-let privateGatewayId: string;
-let privateGatewayPrivateKey: CryptoKey;
+let privateGateway: StubGateway;
 let privateGatewayPDCCertificate: Certificate;
 beforeEach(async () => {
   const { privateKey, publicKey, id } = await KEY_STORES.privateKeyStore.generateIdentityKeyPair();
 
   // Private gateway
-  privateGatewayPrivateKey = privateKey;
   privateGatewayPDCCertificate = await issueGatewayCertificate({
     issuerCertificate: internetGatewayCertificate,
     issuerPrivateKey: privateKey,
     subjectPublicKey: publicKey,
     validityEndDate: internetGatewayCertificate.expiryDate,
   });
-  privateGatewayId = id;
+  privateGateway = new StubGateway(id, { privateKey, publicKey }, KEY_STORES, {});
 });
 afterEach(() => {
   KEY_STORES.clear();
@@ -61,8 +63,8 @@ describe('getOrCreateCDAIssuer', () => {
   test('Certificate be regenerated if latest expires in 90 days', async () => {
     const cutoffDate = addDays(new Date(), 90);
     const expiringIssuer = await issueGatewayCertificate({
-      subjectPublicKey: await getRSAPublicKeyFromPrivate(privateGatewayPrivateKey),
-      issuerPrivateKey: privateGatewayPrivateKey,
+      subjectPublicKey: privateGateway.identityKeyPair.publicKey,
+      issuerPrivateKey: privateGateway.identityKeyPair.privateKey,
       validityEndDate: subSeconds(cutoffDate, 1),
     });
     await saveCDAIssuer(expiringIssuer);
@@ -90,7 +92,7 @@ describe('getOrCreateCDAIssuer', () => {
     const issuer = await channel.getOrCreateCDAIssuer();
 
     await expect(derSerializePublicKey(await issuer.getPublicKey())).resolves.toEqual(
-      await derSerializePublicKey(await getRSAPublicKeyFromPrivate(privateGatewayPrivateKey)),
+      await derSerializePublicKey(privateGateway.identityKeyPair.publicKey),
     );
   });
 
@@ -99,7 +101,7 @@ describe('getOrCreateCDAIssuer', () => {
 
     const issuer = await channel.getOrCreateCDAIssuer();
 
-    await expect(issuer.calculateSubjectId()).resolves.toEqual(privateGatewayId);
+    await expect(issuer.calculateSubjectId()).resolves.toEqual(privateGateway.id);
   });
 
   test('Certificate should be valid from 90 minutes in the past', async () => {
@@ -124,8 +126,8 @@ describe('getOrCreateCDAIssuer', () => {
 
   async function retrieveCDAIssuer(): Promise<Certificate | null> {
     const issuerPath = await KEY_STORES.certificateStore.retrieveLatest(
-      privateGatewayId,
-      privateGatewayId,
+      privateGateway.id,
+      privateGateway.id,
     );
     return issuerPath?.leafCertificate ?? null;
   }
@@ -149,13 +151,13 @@ describe('getCDAIssuers', () => {
     const differentSubjectKeyPair = await generateRSAKeyPair();
     const differentSubjectCertificate = await issueGatewayCertificate({
       issuerCertificate: privateGatewayPDCCertificate,
-      issuerPrivateKey: privateGatewayPrivateKey,
+      issuerPrivateKey: privateGateway.identityKeyPair.privateKey,
       subjectPublicKey: differentSubjectKeyPair.publicKey,
       validityEndDate: privateGatewayPDCCertificate.expiryDate,
     });
     await KEY_STORES.certificateStore.save(
       new CertificationPath(differentSubjectCertificate, []),
-      privateGatewayId,
+      privateGateway.id,
     );
     const channel = new StubPrivateGatewayChannel();
 
@@ -165,7 +167,7 @@ describe('getCDAIssuers', () => {
   test('Other issuers should be ignored', async () => {
     await KEY_STORES.certificateStore.save(
       new CertificationPath(privateGatewayPDCCertificate, []),
-      `not-${privateGatewayId}`,
+      `not-${privateGateway.id}`,
     );
     const channel = new StubPrivateGatewayChannel();
 
@@ -183,15 +185,9 @@ describe('getCDAIssuers', () => {
   });
 });
 
-class StubPrivateGatewayChannel extends PrivateGatewayChannel {
+class StubPrivateGatewayChannel extends PrivateGatewayChannel<undefined> {
   constructor(cryptoOptions: Partial<NodeCryptoOptions> = {}) {
-    super(
-      privateGatewayPrivateKey,
-      privateGatewayPDCCertificate,
-      internetGatewayId,
-      internetGatewayPublicKey,
-      KEY_STORES,
-      cryptoOptions,
-    );
+    const deliveryAuthPath = new CertificationPath(privateGatewayPDCCertificate, []);
+    super(privateGateway, internetGateway, deliveryAuthPath, KEY_STORES, cryptoOptions);
   }
 }

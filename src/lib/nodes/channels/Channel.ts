@@ -1,20 +1,23 @@
 import { SessionEnvelopedData } from '../../crypto/cms/envelopedData';
-import { Certificate } from '../../crypto/x509/Certificate';
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
 import { PayloadPlaintext } from '../../messages/payloads/PayloadPlaintext';
 import { Recipient } from '../../messages/Recipient';
 import { NodeError } from '../errors';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
-import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { Node } from '../Node';
+import { Peer, PeerInternetAddress } from '../peer';
+import { CertificationPath } from '../../pki/CertificationPath';
 
-export abstract class Channel {
+export abstract class Channel<
+  Payload extends PayloadPlaintext,
+  PeerAddress extends PeerInternetAddress,
+> {
   // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
   constructor(
-    protected readonly nodePrivateKey: CryptoKey,
-    public readonly nodeDeliveryAuth: Certificate,
-    public readonly peerId: string,
-    public readonly peerPublicKey: CryptoKey,
-    protected readonly keyStores: KeyStoreSet,
+    public readonly node: Node<Payload, PeerAddress>,
+    public readonly peer: Peer<PeerAddress>,
+    public readonly deliveryAuthPath: CertificationPath,
+    public readonly keyStores: KeyStoreSet,
     public cryptoOptions: Partial<NodeCryptoOptions> = {},
   ) {}
 
@@ -25,12 +28,12 @@ export abstract class Channel {
    *
    * Also store the new ephemeral session key.
    */
-  public async wrapMessagePayload(payload: PayloadPlaintext | ArrayBuffer): Promise<ArrayBuffer> {
+  public async wrapMessagePayload(payload: Payload | ArrayBuffer): Promise<ArrayBuffer> {
     const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
-      this.peerId,
+      this.peer.id,
     );
     if (!recipientSessionKey) {
-      throw new NodeError(`Could not find session key for peer ${this.peerId}`);
+      throw new NodeError(`Could not find session key for peer ${this.peer.id}`);
     }
     const { envelopedData, dhKeyId, dhPrivateKey } = await SessionEnvelopedData.encrypt(
       payload instanceof ArrayBuffer ? payload : payload.serialize(),
@@ -40,17 +43,13 @@ export abstract class Channel {
     await this.keyStores.privateKeyStore.saveSessionKey(
       dhPrivateKey,
       Buffer.from(dhKeyId),
-      await this.getNodeId(),
-      this.peerId,
+      this.node.id,
+      this.peer.id,
     );
     return envelopedData.serialize();
   }
 
   public getOutboundRAMFRecipient(): Recipient {
-    return { id: this.peerId };
-  }
-
-  protected async getNodeId(): Promise<string> {
-    return getIdFromIdentityKey(this.nodePrivateKey);
+    return { id: this.peer.id };
   }
 }

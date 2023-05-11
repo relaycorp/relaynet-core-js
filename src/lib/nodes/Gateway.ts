@@ -3,8 +3,14 @@ import { CargoCollectionRequest } from '../messages/payloads/CargoCollectionRequ
 import { CargoMessageSet } from '../messages/payloads/CargoMessageSet';
 import { Node } from './Node';
 import { Verifier } from './signatures/Verifier';
+import { PeerInternetAddress } from './peer';
 
-export abstract class Gateway extends Node<CargoMessageSet | CargoCollectionRequest> {
+export type GatewayPayload = CargoMessageSet | CargoCollectionRequest;
+
+export abstract class Gateway<PeerAddress extends PeerInternetAddress> extends Node<
+  GatewayPayload,
+  PeerAddress
+> {
   public async getGSCVerifier<V extends Verifier>(
     peerId: string,
     verifierClass: new (trustedCertificates: readonly Certificate[]) => V,

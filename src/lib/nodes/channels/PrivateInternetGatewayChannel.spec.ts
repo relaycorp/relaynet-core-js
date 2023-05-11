@@ -15,28 +15,34 @@ import { SessionKeyPair } from '../../SessionKeyPair';
 import { PrivateInternetGatewayChannel } from './PrivateInternetGatewayChannel';
 import { derSerializePublicKey } from '../../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
+import { PrivateGateway } from '../PrivateGateway';
+import { Peer } from '../peer';
+import { CertificationPath } from '../../pki/CertificationPath';
 
-let internetGatewayId: string;
-let internetGatewayPublicKey: CryptoKey;
+const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
+
 let internetGatewayCertificate: Certificate;
-let privateGatewayId: string;
-let privateGatewayKeyPair: CryptoKeyPair;
+let privateGateway: PrivateGateway;
+let internetGateway: Peer<string>;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
   const nextYear = setMilliseconds(addDays(new Date(), 360), 0);
 
   // Internet gateway
   const internetGatewayKeyPair = await generateRSAKeyPair();
-  internetGatewayPublicKey = internetGatewayKeyPair.publicKey;
-  internetGatewayId = await getIdFromIdentityKey(internetGatewayPublicKey);
+  internetGateway = {
+    id: await getIdFromIdentityKey(internetGatewayKeyPair.publicKey),
+    identityPublicKey: internetGatewayKeyPair.publicKey,
+    internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
+  };
   internetGatewayCertificate = await issueGatewayCertificate({
     issuerPrivateKey: internetGatewayKeyPair.privateKey,
-    subjectPublicKey: internetGatewayPublicKey,
+    subjectPublicKey: internetGatewayKeyPair.publicKey,
     validityEndDate: nextYear,
   });
 
   // Private gateway
-  privateGatewayKeyPair = await generateRSAKeyPair();
+  const privateGatewayKeyPair = await generateRSAKeyPair();
   privateGatewayPDCCertificate = reSerializeCertificate(
     await issueGatewayCertificate({
       issuerCertificate: internetGatewayCertificate,
@@ -45,7 +51,12 @@ beforeAll(async () => {
       validityEndDate: nextYear,
     }),
   );
-  privateGatewayId = await getIdFromIdentityKey(privateGatewayKeyPair.publicKey);
+  privateGateway = new PrivateGateway(
+    await getIdFromIdentityKey(privateGatewayKeyPair.publicKey),
+    privateGatewayKeyPair,
+    KEY_STORES,
+    {},
+  );
 });
 
 let internetGatewaySessionKeyPair: SessionKeyPair;
@@ -58,7 +69,7 @@ beforeEach(async () => {
   await KEY_STORES.publicKeyStore.saveIdentityKey(await internetGatewayCertificate.getPublicKey());
   await KEY_STORES.publicKeyStore.saveSessionKey(
     internetGatewaySessionKeyPair.sessionKey,
-    internetGatewayId,
+    internetGateway.id,
     new Date(),
   );
 });
@@ -66,16 +77,12 @@ afterEach(() => {
   KEY_STORES.clear();
 });
 
-const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
-
 let channel: PrivateInternetGatewayChannel;
 beforeEach(() => {
   channel = new PrivateInternetGatewayChannel(
-    privateGatewayKeyPair.privateKey!,
-    privateGatewayPDCCertificate,
-    internetGatewayId,
-    internetGatewayPublicKey,
-    INTERNET_GATEWAY_INTERNET_ADDRESS,
+    privateGateway,
+    internetGateway,
+    new CertificationPath(privateGatewayPDCCertificate, []),
     KEY_STORES,
     {},
   );
@@ -83,7 +90,7 @@ beforeEach(() => {
 
 test('getOutboundRAMFRecipient should return Internet address of Internet gateway', async () => {
   expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({
-    id: internetGatewayId,
+    id: internetGateway.id,
     internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
   });
 });
@@ -101,7 +108,7 @@ describe('Endpoint registration', () => {
 
       const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
         authorizationSerialized,
-        privateGatewayKeyPair.publicKey,
+        privateGateway.identityKeyPair.publicKey,
       );
       expect(authorization.gatewayData).toEqual(GATEWAY_DATA);
     });
@@ -114,7 +121,7 @@ describe('Endpoint registration', () => {
 
       const authorization = await PrivateNodeRegistrationAuthorization.deserialize(
         authorizationSerialized,
-        privateGatewayKeyPair.publicKey,
+        privateGateway.identityKeyPair.publicKey,
       );
       expect(authorization.expiryDate).toEqual(EXPIRY_DATE);
     });
@@ -227,7 +234,7 @@ describe('generateCCA', () => {
 
     const cca = await CargoCollectionAuthorization.deserialize(ccaSerialized);
     expect(cca.recipient).toEqual<Recipient>({
-      id: internetGatewayId,
+      id: internetGateway.id,
       internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
     });
   });
@@ -291,8 +298,8 @@ describe('generateCCA', () => {
 
       const cargoDeliveryAuthorization = await extractCDA(ccaSerialized);
       const cdaIssuer = await KEY_STORES.certificateStore.retrieveLatest(
-        privateGatewayId,
-        privateGatewayId,
+        privateGateway.id,
+        privateGateway.id,
       );
       await expect(
         cargoDeliveryAuthorization.getCertificationPath([], [cdaIssuer!.leafCertificate]),
