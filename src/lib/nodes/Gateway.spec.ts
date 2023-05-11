@@ -6,9 +6,9 @@ import { Certificate } from '../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
 import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
-import { Gateway } from './Gateway';
 import { StubVerifier } from './signatures/_test_utils';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
+import { StubGateway } from './channels/_test_utils';
 
 let nodeId: string;
 let nodeKeyPair: CryptoKeyPair;
@@ -72,5 +72,3 @@ describe('getGSCVerifier', () => {
     expect(nodeCertificate.isEqual(trustedCertificates[0])).toBeTrue();
   });
 });
-
-class StubGateway extends Gateway {}

@@ -10,10 +10,10 @@ import { issueGatewayCertificate } from '../../pki/issuance';
 import { StubPayload } from '../../ramf/_test_utils';
 import { SessionKey } from '../../SessionKey';
 import { NodeError } from '../errors';
-import { Channel } from './Channel';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
 import { StubNode } from '../_test_utils';
 import { Peer } from '../peer';
+import { StubNodeChannel } from './_test_utils';
 
 const KEY_STORES = new MockKeyStoreSet();
 beforeEach(() => {
@@ -78,7 +78,7 @@ describe('wrapMessagePayload', () => {
 
   test('There should be a session key for the recipient', async () => {
     const unknownPeerId = `not-${peer.id}`;
-    const channel = new StubChannel(
+    const channel = new StubNodeChannel(
       node,
       { ...peer, id: unknownPeerId },
       nodeDeliveryAuth,
@@ -92,7 +92,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('Payload should be encrypted with the session key of the recipient', async () => {
-    const channel = new StubChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
+    const channel = new StubNodeChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
 
     const payloadSerialized = await channel.wrapMessagePayload(stubPayload);
 
@@ -105,7 +105,7 @@ describe('wrapMessagePayload', () => {
 
   test('Passing the payload as an ArrayBuffer should be supported', async () => {
     const payloadPlaintext = stubPayload.serialize();
-    const channel = new StubChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
+    const channel = new StubNodeChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
 
     const payloadSerialized = await channel.wrapMessagePayload(stubPayload);
 
@@ -116,7 +116,7 @@ describe('wrapMessagePayload', () => {
   });
 
   test('The new ephemeral session key of the sender should be stored', async () => {
-    const channel = new StubChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
+    const channel = new StubNodeChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
 
     const payloadSerialized = await channel.wrapMessagePayload(stubPayload);
 
@@ -135,7 +135,7 @@ describe('wrapMessagePayload', () => {
 
   test('Encryption options should be honoured if set', async () => {
     const aesKeySize = 192;
-    const channel = new StubChannel(node, peer, nodeDeliveryAuth, KEY_STORES, {
+    const channel = new StubNodeChannel(node, peer, nodeDeliveryAuth, KEY_STORES, {
       encryption: { aesKeySize },
     });
 
@@ -151,10 +151,8 @@ describe('wrapMessagePayload', () => {
 
 describe('getOutboundRAMFRecipient', () => {
   test('Id should be output', () => {
-    const channel = new StubChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
+    const channel = new StubNodeChannel(node, peer, nodeDeliveryAuth, KEY_STORES);
 
     expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({ id: peer.id });
   });
 });
-
-class StubChannel extends Channel<StubPayload, undefined> {}

@@ -7,8 +7,15 @@ import { SessionKeyPair } from '../SessionKeyPair';
 import { NodeCryptoOptions } from './NodeCryptoOptions';
 import { Signer } from './signatures/Signer';
 import { InvalidMessageError } from '../messages/InvalidMessageError';
+import { PeerInternetAddress } from './peer';
+import { ChannelConstructor } from './channels/ChannelConstructor';
 
-export abstract class Node<Payload extends PayloadPlaintext> {
+export abstract class Node<
+  Payload extends PayloadPlaintext,
+  PeerAddress extends PeerInternetAddress,
+> {
+  protected abstract readonly channelConstructor: ChannelConstructor<Payload, PeerAddress>;
+
   constructor(
     public readonly id: string,
     public readonly identityKeyPair: CryptoKeyPair,

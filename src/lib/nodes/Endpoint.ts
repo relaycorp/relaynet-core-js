@@ -1,4 +1,8 @@
 import { ServiceMessage } from '../messages/payloads/ServiceMessage';
 import { Node } from './Node';
+import { PeerInternetAddress } from './peer';
 
-export class Endpoint extends Node<ServiceMessage> {}
+export abstract class Endpoint<PeerAddress extends PeerInternetAddress> extends Node<
+  ServiceMessage,
+  PeerAddress
+> {}

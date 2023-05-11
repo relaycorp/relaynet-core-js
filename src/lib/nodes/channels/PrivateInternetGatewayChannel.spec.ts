@@ -21,7 +21,7 @@ import { Peer } from '../peer';
 const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
 
 let internetGatewayCertificate: Certificate;
-let privateGateway: StubPrivateGateway;
+let privateGateway: PrivateGateway;
 let internetGateway: Peer<string>;
 let privateGatewayPDCCertificate: Certificate;
 beforeAll(async () => {
@@ -50,7 +50,7 @@ beforeAll(async () => {
       validityEndDate: nextYear,
     }),
   );
-  privateGateway = new StubPrivateGateway(
+  privateGateway = new PrivateGateway(
     await getIdFromIdentityKey(privateGatewayKeyPair.publicKey),
     privateGatewayKeyPair,
     KEY_STORES,
@@ -312,5 +312,3 @@ describe('generateCCA', () => {
     }
   });
 });
-
-class StubPrivateGateway extends PrivateGateway {}

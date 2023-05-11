@@ -6,7 +6,9 @@ import { PrivateInternetGatewayChannel } from './channels/PrivateInternetGateway
 import { NodeError } from './errors';
 import { Gateway } from './Gateway';
 
-export class PrivateGateway extends Gateway {
+export class PrivateGateway extends Gateway<string> {
+  protected readonly channelConstructor = PrivateInternetGatewayChannel;
+
   /**
    * Produce a `PrivateNodeRegistrationRequest` to register with a Internet gateway.
    *

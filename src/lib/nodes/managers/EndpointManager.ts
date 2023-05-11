@@ -1,6 +1,8 @@
-import { Endpoint } from '../Endpoint';
 import { NodeManager } from './NodeManager';
+import { PeerInternetAddress } from '../peer';
+import { ServiceMessage } from '../../messages/payloads/ServiceMessage';
 
-export class EndpointManager extends NodeManager<Endpoint> {
-  protected readonly defaultNodeConstructor = Endpoint;
-}
+export abstract class EndpointManager<PeerAddress extends PeerInternetAddress> extends NodeManager<
+  ServiceMessage,
+  PeerAddress
+> {}

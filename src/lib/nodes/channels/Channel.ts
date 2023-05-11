@@ -14,7 +14,7 @@ export abstract class Channel<
 > {
   // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
   constructor(
-    public readonly node: Node<Payload>,
+    public readonly node: Node<Payload, PeerAddress>,
     public readonly peer: Peer<PeerAddress>,
     public readonly deliveryAuth: Certificate,
     protected readonly keyStores: KeyStoreSet,

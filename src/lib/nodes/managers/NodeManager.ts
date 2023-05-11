@@ -1,11 +1,16 @@
 import { KeyStoreSet } from '../../keyStores/KeyStoreSet';
-import { Node } from '../Node';
 import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { NodeConstructor } from './NodeConstructor';
 import { getRSAPublicKeyFromPrivate } from '../../crypto/keys/generation';
+import { PayloadPlaintext } from '../../messages/payloads/PayloadPlaintext';
+import { PeerInternetAddress } from '../peer';
+import { Node } from '../Node';
 
-export abstract class NodeManager<N extends Node<any>> {
-  protected abstract readonly defaultNodeConstructor: NodeConstructor<N>;
+export abstract class NodeManager<
+  Payload extends PayloadPlaintext,
+  PeerAddress extends PeerInternetAddress,
+> {
+  protected abstract readonly defaultNodeConstructor: NodeConstructor<Payload, PeerAddress>;
 
   constructor(
     public keyStores: KeyStoreSet,
@@ -17,15 +22,21 @@ export abstract class NodeManager<N extends Node<any>> {
    *
    * @param id
    */
-  public async get(id: string): Promise<N | null>;
+  public async get(id: string): Promise<Node<Payload, PeerAddress> | null>;
   /**
    * Get node by `id` but return instance of custom `customNodeClass`.
    *
    * @param id
    * @param customNodeClass
    */
-  public async get<C extends N>(id: string, customNodeClass: NodeConstructor<C>): Promise<C | null>;
-  public async get(id: string, nodeConstructor?: NodeConstructor<N>): Promise<N | null> {
+  public async get<N extends Node<Payload, PeerAddress>>(
+    id: string,
+    customNodeClass: NodeConstructor<Payload, PeerAddress>,
+  ): Promise<N | null>;
+  public async get(
+    id: string,
+    nodeConstructor?: NodeConstructor<Payload, PeerAddress>,
+  ): Promise<Node<Payload, PeerAddress> | null> {
     const nodePrivateKey = await this.keyStores.privateKeyStore.retrieveIdentityKey(id);
     if (!nodePrivateKey) {
       return null;
