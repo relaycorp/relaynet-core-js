@@ -85,6 +85,7 @@ export { PrivateInternetGatewayChannel } from './lib/nodes/channels/PrivateInter
 
 export { NodeCryptoOptions } from './lib/nodes/NodeCryptoOptions';
 export { NodeConnectionParams } from './lib/nodes/NodeConnectionParams';
+export { PrivateEndpointConnParams } from './lib/nodes/PrivateEndpointConnParams';
 export * from './lib/nodes/errors';
 export * from './lib/internetAddressing';
 export { derDeserializeECDHPrivateKey } from './lib/crypto/keys/serialisation';
