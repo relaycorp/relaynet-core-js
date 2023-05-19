@@ -19,27 +19,15 @@ export abstract class GatewayChannel<PeerAddress extends PeerInternetAddress> ex
   public async *generateCargoes(messages: CargoMessageStream): AsyncIterable<Buffer> {
     const messagesAsArrayBuffers = convertBufferMessagesToArrayBuffer(messages);
     const cargoMessageSets = CargoMessageSet.batchMessagesSerialized(messagesAsArrayBuffers);
-    const recipient = this.getOutboundRAMFRecipient();
     for await (const { messageSerialized, expiryDate } of cargoMessageSets) {
       const creationDate = getCargoCreationTime();
       const ttl = getSecondsBetweenDates(creationDate, expiryDate);
-      const cargo = new Cargo(
-        recipient,
-        this.deliveryAuthPath.leafCertificate,
-        await this.encryptPayload(messageSerialized),
-        { creationDate, ttl: Math.min(ttl, RAMF_MAX_TTL) },
-      );
-      const cargoSerialized = await cargo.serialize(
-        this.node.identityKeyPair.privateKey,
-        this.cryptoOptions.signature,
-      );
+      const cargoSerialized = await this.makeMessage(messageSerialized, Cargo, {
+        creationDate,
+        ttl: Math.min(ttl, RAMF_MAX_TTL),
+      });
       yield Buffer.from(cargoSerialized);
     }
-  }
-
-  protected async encryptPayload(payloadPlaintext: ArrayBuffer): Promise<Buffer> {
-    const ciphertext = await this.wrapMessagePayload(payloadPlaintext);
-    return Buffer.from(ciphertext);
   }
 }
 

@@ -12,6 +12,9 @@ export const CRYPTO_OIDS = {
   AES_CBC_128: '2.16.840.1.101.3.4.1.2',
   AES_CBC_192: '2.16.840.1.101.3.4.1.22',
   AES_CBC_256: '2.16.840.1.101.3.4.1.42',
+
+  SHA_256: '2.16.840.1.101.3.4.2.1',
+  SHA_384: '2.16.840.1.101.3.4.2.2',
 };
 
 type PkijsValueType = pkijs.RelativeDistinguishedNames | pkijs.Certificate;

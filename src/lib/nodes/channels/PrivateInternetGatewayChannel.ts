@@ -90,13 +90,9 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel<string>
       validityEndDate: endDate,
     });
     const ccr = new CargoCollectionRequest(cargoDeliveryAuthorization);
-    const ccaPayload = await this.wrapMessagePayload(ccr);
-    const cca = new CargoCollectionAuthorization(
-      this.getOutboundRAMFRecipient(),
-      this.deliveryAuthPath.leafCertificate,
-      Buffer.from(ccaPayload),
-      { creationDate: startDate, ttl: differenceInSeconds(endDate, startDate) },
-    );
-    return cca.serialize(this.node.identityKeyPair.privateKey);
+    return this.makeMessage(ccr, CargoCollectionAuthorization, {
+      creationDate: startDate,
+      ttl: differenceInSeconds(endDate, startDate),
+    });
   }
 }

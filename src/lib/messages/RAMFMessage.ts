@@ -14,7 +14,7 @@ import { Recipient } from './Recipient';
 
 const DEFAULT_TTL_SECONDS = 5 * 60; // 5 minutes
 
-interface MessageOptions {
+export interface MessageOptions {
   readonly id: string;
   readonly creationDate: Date;
   readonly ttl: number;
