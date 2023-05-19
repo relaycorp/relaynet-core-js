@@ -9,6 +9,7 @@ import { Signer } from './signatures/Signer';
 import { InvalidMessageError } from '../messages/InvalidMessageError';
 import { PeerInternetAddress } from './peer';
 import { ChannelConstructor } from './channels/ChannelConstructor';
+import { Channel } from './channels/Channel';
 
 export abstract class Node<
   Payload extends PayloadPlaintext,
@@ -88,5 +89,38 @@ export abstract class Node<
     );
 
     return unwrapResult.payload;
+  }
+
+  public async getChannel(
+    peerId: string,
+    peerInternetAddress: PeerAddress,
+  ): Promise<Channel<Payload, PeerAddress> | null> {
+    const internetGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
+      peerId,
+    );
+    if (!internetGatewayPublicKey) {
+      return null;
+    }
+
+    const privateGatewayDeliveryAuth = await this.keyStores.certificateStore.retrieveLatest(
+      this.id,
+      peerId,
+    );
+    if (!privateGatewayDeliveryAuth) {
+      return null;
+    }
+
+    const internetGateway = {
+      id: peerId,
+      identityPublicKey: internetGatewayPublicKey,
+      internetAddress: peerInternetAddress,
+    };
+    return new this.channelConstructor(
+      this,
+      internetGateway,
+      privateGatewayDeliveryAuth,
+      this.keyStores,
+      this.cryptoOptions,
+    );
   }
 }

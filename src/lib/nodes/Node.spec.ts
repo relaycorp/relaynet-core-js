@@ -13,6 +13,9 @@ import { StubNode } from './_test_utils';
 import { InvalidMessageError } from '../messages/InvalidMessageError';
 import { derSerializePublicKey } from '../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
+import { PrivateGateway } from './PrivateGateway';
+
+const PEER_INTERNET_ADDRESS = 'example.com';
 
 let nodeId: string;
 let nodeKeyPair: CryptoKeyPair;
@@ -45,9 +48,11 @@ beforeAll(async () => {
 });
 
 let peerId: string;
+let peerIdentityPublicKey: CryptoKey;
 let peerCertificate: Certificate;
 beforeAll(async () => {
   const peerKeyPair = await generateRSAKeyPair();
+  peerIdentityPublicKey = peerKeyPair.publicKey;
   peerId = await getIdFromIdentityKey(peerKeyPair.publicKey);
   peerCertificate = await issueGatewayCertificate({
     issuerCertificate: nodeCertificate,
@@ -219,5 +224,90 @@ describe('unwrapMessagePayload', () => {
     expect(storedKey.publicKeyDer).toEqual(
       await derSerializePublicKey((await envelopedData.getOriginatorKey()).publicKey),
     );
+  });
+});
+
+describe('getChannel', () => {
+  test('Null should be returned if the peer public key is not found', async () => {
+    await KEY_STORES.certificateStore.save(new CertificationPath(nodeCertificate, []), peerId);
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    await expect(node.getChannel(peerId, undefined)).resolves.toBeNull();
+  });
+
+  test('Null should be returned if delivery authorization is not found', async () => {
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    await expect(node.getChannel(peerId, undefined)).resolves.toBeNull();
+  });
+
+  test('Node in returned channel should be current one', async () => {
+    const authPath = new CertificationPath(nodeCertificate, []);
+    await KEY_STORES.certificateStore.save(authPath, peerId);
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    const channel = await node.getChannel(peerId, undefined);
+
+    expect(channel!.node).toBe(node);
+  });
+
+  test('Delivery authorisation in returned channel should be correct', async () => {
+    const authPath = new CertificationPath(nodeCertificate, []);
+    await KEY_STORES.certificateStore.save(authPath, peerId);
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    const channel = await node.getChannel(peerId, undefined);
+
+    expect(channel!.deliveryAuthPath.leafCertificate.isEqual(authPath.leafCertificate)).toBeTrue();
+  });
+
+  test('Peer in returned channel should be current one', async () => {
+    const authPath = new CertificationPath(nodeCertificate, []);
+    await KEY_STORES.certificateStore.save(authPath, peerId);
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    const channel = await node.getChannel(peerId, undefined);
+
+    expect(channel!.peer.id).toEqual(peerId);
+    await expect(derSerializePublicKey(channel!.peer.identityPublicKey)).resolves.toEqual(
+      await derSerializePublicKey(peerIdentityPublicKey),
+    );
+  });
+
+  test('Peer Internet address in channel should be honoured if set', async () => {
+    const authPath = new CertificationPath(nodeCertificate, []);
+    await KEY_STORES.certificateStore.save(authPath, peerId);
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const node = new PrivateGateway(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    const channel = await node.getChannel(peerId, PEER_INTERNET_ADDRESS);
+
+    expect(channel!.peer.internetAddress).toEqual(PEER_INTERNET_ADDRESS);
+  });
+
+  test('Peer Internet address in channel should be absent if unset', async () => {
+    const authPath = new CertificationPath(nodeCertificate, []);
+    await KEY_STORES.certificateStore.save(authPath, peerId);
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
+
+    const channel = await node.getChannel(peerId, undefined);
+
+    expect(channel!.peer.internetAddress).toBeUndefined();
+  });
+
+  test('Crypto options should be passed', async () => {
+    await KEY_STORES.certificateStore.save(new CertificationPath(nodeCertificate, []), peerId);
+    await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
+    const cryptoOptions = { encryption: { aesKeySize: 256 } };
+    const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, cryptoOptions);
+
+    const channel = await node.getChannel(peerId, undefined);
+
+    expect(channel?.cryptoOptions).toEqual(cryptoOptions);
   });
 });
