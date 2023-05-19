@@ -58,37 +58,4 @@ export class PrivateGateway extends Gateway<string> {
       new Date(),
     );
   }
-
-  public async retrieveInternetGatewayChannel(
-    internetGatewayId: string,
-    internetGatewayInternetAddress: string,
-  ): Promise<PrivateInternetGatewayChannel | null> {
-    const internetGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
-      internetGatewayId,
-    );
-    if (!internetGatewayPublicKey) {
-      return null;
-    }
-
-    const privateGatewayDeliveryAuth = await this.keyStores.certificateStore.retrieveLatest(
-      this.id,
-      internetGatewayId,
-    );
-    if (!privateGatewayDeliveryAuth) {
-      return null;
-    }
-
-    const internetGateway = {
-      id: internetGatewayId,
-      identityPublicKey: internetGatewayPublicKey,
-      internetAddress: internetGatewayInternetAddress,
-    };
-    return new PrivateInternetGatewayChannel(
-      this,
-      internetGateway,
-      privateGatewayDeliveryAuth,
-      this.keyStores,
-      this.cryptoOptions,
-    );
-  }
 }

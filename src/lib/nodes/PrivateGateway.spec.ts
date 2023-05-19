@@ -5,7 +5,6 @@ import { PrivateNodeRegistrationRequest } from '../bindings/gsc/PrivateNodeRegis
 import { generateRSAKeyPair } from '../crypto/keys/generation';
 import { Certificate } from '../crypto/x509/Certificate';
 import { MockKeyStoreSet } from '../keyStores/testMocks';
-import { CertificationPath } from '../pki/CertificationPath';
 import { issueGatewayCertificate } from '../pki/issuance';
 import { SessionKey } from '../SessionKey';
 import { SessionKeyPair } from '../SessionKeyPair';
@@ -13,8 +12,6 @@ import { NodeError } from './errors';
 import { PrivateGateway } from './PrivateGateway';
 import { derSerializePublicKey } from '../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
-
-const INTERNET_GATEWAY_INTERNET_ADDRESS = 'example.com';
 
 let internetGatewayId: string;
 let internetGatewayPublicKey: CryptoKey;
@@ -186,90 +183,5 @@ describe('saveInternetGatewayChannel', () => {
     expect(keyData.publicKeyId).toEqual(internetGatewaySessionPublicKey.keyId);
     expect(keyData.publicKeyCreationTime).toBeBeforeOrEqualTo(new Date());
     expect(keyData.publicKeyCreationTime).toBeAfter(subSeconds(new Date(), 10));
-  });
-});
-
-describe('retrieveInternetGatewayChannel', () => {
-  test('Null should be returned if Internet gateway public key is not found', async () => {
-    await KEY_STORES.certificateStore.save(
-      new CertificationPath(privateGatewayPDCCertificate, []),
-      internetGatewayId,
-    );
-    const privateGateway = new PrivateGateway(
-      privateGatewayId,
-      privateGatewayIdKeyPair,
-      KEY_STORES,
-      {},
-    );
-
-    await expect(
-      privateGateway.retrieveInternetGatewayChannel(
-        internetGatewayId,
-        INTERNET_GATEWAY_INTERNET_ADDRESS,
-      ),
-    ).resolves.toBeNull();
-  });
-
-  test('Null should be returned if delivery authorization is not found', async () => {
-    await KEY_STORES.publicKeyStore.saveIdentityKey(internetGatewayPublicKey);
-    const privateGateway = new PrivateGateway(
-      privateGatewayId,
-      privateGatewayIdKeyPair,
-      KEY_STORES,
-      {},
-    );
-
-    await expect(
-      privateGateway.retrieveInternetGatewayChannel(
-        internetGatewayId,
-        INTERNET_GATEWAY_INTERNET_ADDRESS,
-      ),
-    ).resolves.toBeNull();
-  });
-
-  test('Channel should be returned if it exists', async () => {
-    const authPath = new CertificationPath(privateGatewayPDCCertificate, []);
-    await KEY_STORES.certificateStore.save(authPath, internetGatewayId);
-    await KEY_STORES.publicKeyStore.saveIdentityKey(internetGatewayPublicKey);
-    const privateGateway = new PrivateGateway(
-      privateGatewayId,
-      privateGatewayIdKeyPair,
-      KEY_STORES,
-      {},
-    );
-
-    const channel = await privateGateway.retrieveInternetGatewayChannel(
-      internetGatewayId,
-      INTERNET_GATEWAY_INTERNET_ADDRESS,
-    );
-
-    expect(channel!.peer.internetAddress).toEqual(INTERNET_GATEWAY_INTERNET_ADDRESS);
-    expect(channel!.deliveryAuthPath.leafCertificate.isEqual(authPath.leafCertificate)).toBeTrue();
-    expect(channel!.peer.id).toEqual(internetGatewayId);
-    await expect(derSerializePublicKey(channel!.peer.identityPublicKey)).resolves.toEqual(
-      await derSerializePublicKey(internetGatewayPublicKey),
-    );
-  });
-
-  test('Crypto options should be passed', async () => {
-    await KEY_STORES.certificateStore.save(
-      new CertificationPath(privateGatewayPDCCertificate, []),
-      internetGatewayId,
-    );
-    await KEY_STORES.publicKeyStore.saveIdentityKey(internetGatewayPublicKey);
-    const cryptoOptions = { encryption: { aesKeySize: 256 } };
-    const privateGateway = new PrivateGateway(
-      privateGatewayId,
-      privateGatewayIdKeyPair,
-      KEY_STORES,
-      cryptoOptions,
-    );
-
-    const channel = await privateGateway.retrieveInternetGatewayChannel(
-      internetGatewayId,
-      INTERNET_GATEWAY_INTERNET_ADDRESS,
-    );
-
-    expect(channel?.cryptoOptions).toEqual(cryptoOptions);
   });
 });
