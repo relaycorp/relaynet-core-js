@@ -34,13 +34,9 @@ export abstract class Channel<
     messageConstructor: RAMFMessageConstructor<Payload>,
     options: Partial<Omit<MessageOptions, 'senderCaCertificateChain'>> = {},
   ): Promise<ArrayBuffer> {
-    const recipient: Recipient = {
-      id: this.peer.id,
-      internetAddress: this.peer.internetAddress,
-    };
     const payloadSerialised = await this.wrapMessagePayload(payload);
     const message = new messageConstructor(
-      recipient,
+      this.getOutboundRAMFRecipient(),
       this.deliveryAuthPath.leafCertificate,
       Buffer.from(payloadSerialised),
       {
