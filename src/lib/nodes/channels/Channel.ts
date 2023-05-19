@@ -7,6 +7,8 @@ import { NodeCryptoOptions } from '../NodeCryptoOptions';
 import { Node } from '../Node';
 import { Peer, PeerInternetAddress } from '../peer';
 import { CertificationPath } from '../../pki/CertificationPath';
+import { RAMFMessageConstructor } from '../../messages/RAMFMessageConstructor';
+import { MessageOptions } from '../../messages/RAMFMessage';
 
 export abstract class Channel<
   Payload extends PayloadPlaintext,
@@ -22,13 +24,41 @@ export abstract class Channel<
   ) {}
 
   /**
+   * Generate and serialise a message with the given `payload`.
+   * @param payload The payload to encrypt and encapsulate
+   * @param messageConstructor The message class constructor
+   * @param options
+   */
+  public async makeMessage(
+    payload: Payload | ArrayBuffer,
+    messageConstructor: RAMFMessageConstructor<Payload>,
+    options: Partial<Omit<MessageOptions, 'senderCaCertificateChain'>> = {},
+  ): Promise<ArrayBuffer> {
+    const recipient: Recipient = {
+      id: this.peer.id,
+      internetAddress: this.peer.internetAddress,
+    };
+    const payloadSerialised = await this.wrapMessagePayload(payload);
+    const message = new messageConstructor(
+      recipient,
+      this.deliveryAuthPath.leafCertificate,
+      Buffer.from(payloadSerialised),
+      {
+        ...options,
+        senderCaCertificateChain: this.deliveryAuthPath.certificateAuthorities,
+      },
+    );
+    return message.serialize(this.node.identityKeyPair.privateKey, this.cryptoOptions.signature);
+  }
+
+  /**
    * Encrypt and serialize the `payload`.
    *
    * @param payload
    *
    * Also store the new ephemeral session key.
    */
-  public async wrapMessagePayload(payload: Payload | ArrayBuffer): Promise<ArrayBuffer> {
+  private async wrapMessagePayload(payload: Payload | ArrayBuffer): Promise<ArrayBuffer> {
     const recipientSessionKey = await this.keyStores.publicKeyStore.retrieveLastSessionKey(
       this.peer.id,
     );

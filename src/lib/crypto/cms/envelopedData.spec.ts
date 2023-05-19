@@ -6,8 +6,8 @@ import * as pkijs from 'pkijs';
 import {
   arrayBufferFrom,
   CRYPTO_OIDS,
-  expectAsn1ValuesToBeEqual,
   expectArrayBuffersToEqual,
+  expectAsn1ValuesToBeEqual,
   expectPkijsValuesToBeEqual,
   generateStubCert,
   getMockContext,
@@ -28,7 +28,6 @@ import { assertPkiType } from './_utils';
 import { derSerializePublicKey } from '../keys/serialisation';
 import { NODE_ENGINE } from '../pkijs';
 
-const OID_SHA256 = '2.16.840.1.101.3.4.2.1';
 const OID_RSA_OAEP = '1.2.840.113549.1.1.7';
 const OID_AWALA_ORIGINATOR_EPHEMERAL_CERT_SERIAL_NUMBER = '1.3.6.1.4.1.58708.0.1.0';
 
@@ -250,7 +249,7 @@ describe('SessionlessEnvelopedData', () => {
         const algorithmParams = new pkijs.RSAESOAEPParams({
           schema: keyTransRecipientInfo.keyEncryptionAlgorithm.algorithmParams,
         });
-        expect(algorithmParams.hashAlgorithm.algorithmId).toEqual(OID_SHA256);
+        expect(algorithmParams.hashAlgorithm.algorithmId).toEqual(CRYPTO_OIDS.SHA_256);
       });
     });
 

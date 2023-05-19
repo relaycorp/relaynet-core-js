@@ -1,9 +1,9 @@
 /* tslint:disable:max-classes-per-file */
-import bufferToArray from 'buffer-to-arraybuffer';
 
 import { SignatureOptions } from '../..';
 import { PayloadPlaintext } from '../messages/payloads/PayloadPlaintext';
 import { RAMFMessage } from '../messages/RAMFMessage';
+import * as serialization from './serialization';
 
 export class StubPayload implements PayloadPlaintext {
   constructor(public readonly content: ArrayBuffer) {}
@@ -14,13 +14,29 @@ export class StubPayload implements PayloadPlaintext {
 }
 
 export class StubMessage extends RAMFMessage<StubPayload> {
+  protected static readonly concreteMessageTypeOctet = 0xff;
+  protected static readonly concreteMessageVersionOctet = 0xf0;
+
+  public static async deserialize(messageSerialized: ArrayBuffer): Promise<StubMessage> {
+    return serialization.deserialize(
+      messageSerialized,
+      StubMessage.concreteMessageTypeOctet,
+      StubMessage.concreteMessageVersionOctet,
+      StubMessage,
+    );
+  }
+
   public async serialize(
-    // tslint:disable-next-line:variable-name
-    _senderPrivateKey: CryptoKey,
-    // tslint:disable-next-line:variable-name
-    _signatureOptions?: SignatureOptions,
+    senderPrivateKey: CryptoKey,
+    signatureOptions?: SignatureOptions,
   ): Promise<ArrayBuffer> {
-    return bufferToArray(Buffer.from('hi'));
+    return serialization.serialize(
+      this,
+      StubMessage.concreteMessageTypeOctet,
+      StubMessage.concreteMessageVersionOctet,
+      senderPrivateKey,
+      signatureOptions,
+    );
   }
 
   protected deserializePayload(payloadPlaintext: ArrayBuffer): StubPayload {
