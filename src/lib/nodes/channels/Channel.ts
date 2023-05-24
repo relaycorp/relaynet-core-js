@@ -76,6 +76,6 @@ export abstract class Channel<
   }
 
   public getOutboundRAMFRecipient(): Recipient {
-    return { id: this.peer.id };
+    return { id: this.peer.id, internetAddress: this.peer.internetAddress };
   }
 }
