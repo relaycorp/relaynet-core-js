@@ -88,13 +88,6 @@ beforeEach(() => {
   );
 });
 
-test('getOutboundRAMFRecipient should return Internet address of Internet gateway', async () => {
-  expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({
-    id: internetGateway.id,
-    internetAddress: INTERNET_GATEWAY_INTERNET_ADDRESS,
-  });
-});
-
 describe('Endpoint registration', () => {
   const GATEWAY_DATA = arrayBufferFrom('the gw data');
   const EXPIRY_DATE = setMilliseconds(addDays(new Date(), 1), 0);

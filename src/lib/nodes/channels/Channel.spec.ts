@@ -4,12 +4,11 @@ import { arrayBufferFrom, CRYPTO_OIDS, reSerializeCertificate } from '../../_tes
 import { SessionEnvelopedData } from '../../crypto/cms/envelopedData';
 import { generateRSAKeyPair } from '../../crypto/keys/generation';
 import { MockKeyStoreSet } from '../../keyStores/testMocks';
-import { Recipient } from '../../messages/Recipient';
 import { issueGatewayCertificate } from '../../pki/issuance';
 import { StubMessage, StubPayload } from '../../ramf/_test_utils';
 import { NodeError } from '../errors';
 import { getIdFromIdentityKey } from '../../crypto/keys/digest';
-import { StubNode } from '../_test_utils';
+import { StubEndpoint, StubEndpointChannel, StubNode } from '../_test_utils';
 import { Peer } from '../peer';
 import { StubNodeChannel } from './_test_utils';
 import { CertificationPath } from '../../pki/CertificationPath';
@@ -252,6 +251,33 @@ describe('getOutboundRAMFRecipient', () => {
   test('Id should be output', () => {
     const channel = new StubNodeChannel(node, peer, deliveryAuthPath, KEY_STORES);
 
-    expect(channel.getOutboundRAMFRecipient()).toEqual<Recipient>({ id: peer.id });
+    const recipient = channel.getOutboundRAMFRecipient();
+    expect(recipient.id).toBe(peer.id);
+  });
+
+  test('Internet address should not be output if peer is private', () => {
+    const channel = new StubNodeChannel(node, peer, deliveryAuthPath, KEY_STORES);
+
+    const recipient = channel.getOutboundRAMFRecipient();
+    expect(recipient.internetAddress).toBeUndefined();
+  });
+
+  test('Internet address should be output if peer has one', () => {
+    const endpoint = new StubEndpoint(
+      node.id,
+      node.identityKeyPair,
+      node.keyStores,
+      node.cryptoOptions,
+    );
+    const internetAddress = 'example.com';
+    const channel = new StubEndpointChannel(
+      endpoint,
+      { ...peer, internetAddress },
+      deliveryAuthPath,
+      KEY_STORES,
+    );
+
+    const recipient = channel.getOutboundRAMFRecipient();
+    expect(recipient.internetAddress).toBe(internetAddress);
   });
 });

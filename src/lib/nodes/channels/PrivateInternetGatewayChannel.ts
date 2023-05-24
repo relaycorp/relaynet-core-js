@@ -4,7 +4,6 @@ import { PrivateNodeRegistration } from '../../bindings/gsc/PrivateNodeRegistrat
 import { PrivateNodeRegistrationAuthorization } from '../../bindings/gsc/PrivateNodeRegistrationAuthorization';
 import { CargoCollectionAuthorization } from '../../messages/CargoCollectionAuthorization';
 import { CargoCollectionRequest } from '../../messages/payloads/CargoCollectionRequest';
-import { Recipient } from '../../messages/Recipient';
 import { issueEndpointCertificate, issueGatewayCertificate } from '../../pki/issuance';
 import { PrivateGatewayChannel } from './PrivateGatewayChannel';
 
@@ -15,15 +14,6 @@ const OUTBOUND_CARGO_TTL_DAYS = 14;
  * Channel between a private gateway (the node) and its Internet gateway (the peer).
  */
 export class PrivateInternetGatewayChannel extends PrivateGatewayChannel<string> {
-  override getOutboundRAMFRecipient(): Recipient {
-    return {
-      ...super.getOutboundRAMFRecipient(),
-      internetAddress: this.peer.internetAddress,
-    };
-  }
-
-  //region Private endpoint registration
-
   /**
    * Generate a `PrivateNodeRegistrationAuthorization` with the `gatewayData` and `expiryDate`.
    *
@@ -74,8 +64,6 @@ export class PrivateInternetGatewayChannel extends PrivateGatewayChannel<string>
     );
     return registration.serialize();
   }
-
-  //endregion
 
   public async generateCCA(): Promise<ArrayBuffer> {
     const now = new Date();
