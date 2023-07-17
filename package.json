@@ -41,7 +41,7 @@
     "asn1js": "^3.0.5",
     "buffer-to-arraybuffer": "0.0.6",
     "date-fns": "^2.30.0",
-    "dohdec": "^3.1.0",
+    "dohdec": "^5.0.3",
     "is-valid-domain": "^0.1.6",
     "moment": "^2.29.4",
     "pkijs": "^3.0.15",
