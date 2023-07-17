@@ -31,7 +31,10 @@ export class ServiceMessage implements PayloadPlaintext {
     new Primitive({ name: 'content' }),
   ]);
 
-  constructor(readonly type: string, readonly content: Buffer) {}
+  constructor(
+    readonly type: string,
+    readonly content: Buffer,
+  ) {}
 
   /**
    * Serialize service message.

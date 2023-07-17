@@ -11,7 +11,10 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 
   public sessionKeys: { [keyId: string]: SessionPrivateKeyData } = {};
 
-  constructor(protected readonly failOnSave = false, protected readonly failOnFetch = false) {
+  constructor(
+    protected readonly failOnSave = false,
+    protected readonly failOnFetch = false,
+  ) {
     super();
   }
 
@@ -58,7 +61,10 @@ export class MockPublicKeyStore extends PublicKeyStore {
 
   public sessionKeys: { [peerId: string]: SessionPublicKeyData } = {};
 
-  constructor(protected readonly failOnSave = false, protected fetchError?: Error) {
+  constructor(
+    protected readonly failOnSave = false,
+    protected fetchError?: Error,
+  ) {
     super();
   }
 

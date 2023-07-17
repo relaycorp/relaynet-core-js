@@ -24,7 +24,10 @@ export class ParcelDelivery {
     new Primitive({ name: 'parcelSerialized' }),
   ]);
 
-  constructor(public deliveryId: string, public parcelSerialized: ArrayBuffer) {}
+  constructor(
+    public deliveryId: string,
+    public parcelSerialized: ArrayBuffer,
+  ) {}
 
   public serialize(): ArrayBuffer {
     return makeImplicitlyTaggedSequence(
