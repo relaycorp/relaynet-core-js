@@ -14,7 +14,10 @@ export abstract class Signer {
    * @param certificate The certificate of the node
    * @param privateKey The private key of the node
    */
-  constructor(public certificate: Certificate, private privateKey: CryptoKey) {}
+  constructor(
+    public certificate: Certificate,
+    private privateKey: CryptoKey,
+  ) {}
 
   public async sign(plaintext: ArrayBuffer): Promise<ArrayBuffer> {
     const safePlaintext = makeSafePlaintext(plaintext, this.oid);

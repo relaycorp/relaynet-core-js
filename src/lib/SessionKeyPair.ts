@@ -13,5 +13,8 @@ export class SessionKeyPair {
     return new SessionKeyPair(sessionKey, keyPair.privateKey);
   }
 
-  constructor(public readonly sessionKey: SessionKey, public readonly privateKey: CryptoKey) {}
+  constructor(
+    public readonly sessionKey: SessionKey,
+    public readonly privateKey: CryptoKey,
+  ) {}
 }

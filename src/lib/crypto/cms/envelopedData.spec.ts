@@ -188,11 +188,11 @@ describe('EnvelopedData', () => {
       );
       const unsupportedEnvelopedDataSerialized = unsupportedEnvelopedData.serialize();
 
-      jest
-        .spyOn(pkijs.RecipientInfo.prototype, 'fromSchema')
-        .mockImplementationOnce(function (this: pkijs.RecipientInfo): void {
-          this.variant = 3;
-        });
+      jest.spyOn(pkijs.RecipientInfo.prototype, 'fromSchema').mockImplementationOnce(function (
+        this: pkijs.RecipientInfo,
+      ): void {
+        this.variant = 3;
+      });
       expect(() =>
         EnvelopedData.deserialize(unsupportedEnvelopedDataSerialized),
       ).toThrowWithMessage(CMSError, 'Unsupported RecipientInfo (variant: 3)');
