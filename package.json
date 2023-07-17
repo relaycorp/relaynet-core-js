@@ -13,7 +13,7 @@
   "homepage": "https://docs.relaycorp.tech/relaynet-core-js/",
   "license": "MIT",
   "keywords": [
-    "relaynet"
+    "awala"
   ],
   "scripts": {
     "build": "run-s clean tsc",

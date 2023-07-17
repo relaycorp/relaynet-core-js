@@ -215,7 +215,9 @@ describe('RAMFMessage', () => {
         );
 
         await expect(message.validate([rootCertificate])).rejects.toEqual(
-          new InvalidMessageError(`Sender is not authorized to reach ${message.recipient.id}`),
+          new InvalidMessageError(
+            `Sender is authorized to reach ${recipient.id}, not ${message.recipient.id}`,
+          ),
         );
       });
     });
