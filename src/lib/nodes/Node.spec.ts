@@ -14,6 +14,7 @@ import { InvalidMessageError } from '../messages/InvalidMessageError';
 import { derSerializePublicKey } from '../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
 import { PrivateGateway } from './PrivateGateway';
+import { NodeError } from './errors';
 
 const PEER_INTERNET_ADDRESS = 'example.com';
 
@@ -235,11 +236,14 @@ describe('getChannel', () => {
     await expect(node.getChannel(peerId, undefined)).resolves.toBeNull();
   });
 
-  test('Null should be returned if delivery authorization is not found', async () => {
+  test('Error should be thrown if delivery authorization is not found', async () => {
     await KEY_STORES.publicKeyStore.saveIdentityKey(peerIdentityPublicKey);
     const node = new StubNode(nodeId, nodeKeyPair, KEY_STORES, {});
 
-    await expect(node.getChannel(peerId, undefined)).resolves.toBeNull();
+    await expect(node.getChannel(peerId, undefined)).rejects.toThrowWithMessage(
+      NodeError,
+      `Could not find delivery authorization for peer ${peerId}; it might have have expired`,
+    );
   });
 
   test('Node in returned channel should be current one', async () => {

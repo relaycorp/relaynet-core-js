@@ -10,6 +10,7 @@ import { InvalidMessageError } from '../messages/InvalidMessageError';
 import { PeerInternetAddress } from './peer';
 import { ChannelConstructor } from './channels/ChannelConstructor';
 import { Channel } from './channels/Channel';
+import { NodeError } from './errors';
 
 export abstract class Node<
   Payload extends PayloadPlaintext,
@@ -95,30 +96,27 @@ export abstract class Node<
     peerId: string,
     peerInternetAddress: PeerAddress,
   ): Promise<Channel<Payload, PeerAddress> | null> {
-    const internetGatewayPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(
-      peerId,
-    );
-    if (!internetGatewayPublicKey) {
+    const peerPublicKey = await this.keyStores.publicKeyStore.retrieveIdentityKey(peerId);
+    if (!peerPublicKey) {
       return null;
     }
 
-    const privateGatewayDeliveryAuth = await this.keyStores.certificateStore.retrieveLatest(
-      this.id,
-      peerId,
-    );
-    if (!privateGatewayDeliveryAuth) {
-      return null;
+    const deliveryAuth = await this.keyStores.certificateStore.retrieveLatest(this.id, peerId);
+    if (!deliveryAuth) {
+      throw new NodeError(
+        `Could not find delivery authorization for peer ${peerId}; it might have have expired`,
+      );
     }
 
-    const internetGateway = {
+    const peer = {
       id: peerId,
-      identityPublicKey: internetGatewayPublicKey,
+      identityPublicKey: peerPublicKey,
       internetAddress: peerInternetAddress,
     };
     return new this.channelConstructor(
       this,
-      internetGateway,
-      privateGatewayDeliveryAuth,
+      peer,
+      deliveryAuth,
       this.keyStores,
       this.cryptoOptions,
     );
