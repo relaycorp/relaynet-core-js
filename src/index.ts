@@ -42,7 +42,7 @@ export { CMSError } from './lib/crypto/cms/CMSError';
 export { PayloadPlaintext as Payload } from './lib/messages/payloads/PayloadPlaintext';
 export { RAMFError } from './lib/ramf/RAMFError';
 export { RAMFSyntaxError } from './lib/ramf/RAMFSyntaxError';
-export { MAX_RAMF_MESSAGE_LENGTH } from './lib/ramf/serialization';
+export { MAX_RAMF_MESSAGE_LENGTH, MAX_SDU_PLAINTEXT_LENGTH } from './lib/ramf/serialization';
 export { RAMFMessage } from './lib/messages/RAMFMessage';
 export { Recipient } from './lib/messages/Recipient';
 export { Parcel } from './lib/messages/Parcel';
