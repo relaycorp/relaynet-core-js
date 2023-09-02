@@ -58,7 +58,7 @@
     "@relaycorp/shared-config": "^1.14.1",
     "@types/jest": "^27.5.0",
     "@types/node": "^20.5.1",
-    "del-cli": "^5.0.1",
+    "del-cli": "^5.1.0",
     "jest": "^27.5.1",
     "jest-date-mock": "^1.0.8",
     "jest-extended": "^4.0.1",
