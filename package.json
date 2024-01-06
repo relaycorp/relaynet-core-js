@@ -40,7 +40,7 @@
     "@types/verror": "^1.10.9",
     "asn1js": "^3.0.5",
     "buffer-to-arraybuffer": "0.0.6",
-    "date-fns": "^3.0.6",
+    "date-fns": "^3.1.0",
     "dohdec": "^3.1.0",
     "is-valid-domain": "^0.1.6",
     "moment": "^2.30.1",
