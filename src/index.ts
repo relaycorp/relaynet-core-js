@@ -70,7 +70,6 @@ export { CertificateRotation } from './lib/messages/CertificateRotation';
 export * from './lib/messages/bindings/signatures';
 
 // Nodes
-export type { InternetNode } from './lib/nodes/InternetNode';
 export { Endpoint } from './lib/nodes/Endpoint';
 export { EndpointManager } from './lib/nodes/managers/EndpointManager';
 export { GatewayManager } from './lib/nodes/managers/GatewayManager';
