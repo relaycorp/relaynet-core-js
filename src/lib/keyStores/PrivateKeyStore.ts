@@ -59,22 +59,30 @@ export abstract class PrivateKeyStore {
   }
 
   /**
-   * Return the private component of an initial session key pair.
+   * Return the private component of the latest, unbound session key for the specified `nodeId`.
    *
-   * @param keyId The key pair id (typically the serial number)
    * @param nodeId The id of the node that owns the key
    * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look-up could not be done
    */
-  public async retrieveUnboundSessionKey(keyId: Buffer, nodeId: string): Promise<CryptoKey> {
-    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, nodeId);
+  public async retrieveLatestUnboundSessionKey(nodeId: string): Promise<CryptoKey | null> {
+    const keySerialised = await this.retrieveLatestUnboundSessionKeySerialised(nodeId);
 
-    if (keyData.peerId) {
-      throw new UnknownKeyError(`Key ${keyId.toString('hex')} is bound`);
+    if (!keySerialised) {
+      return null;
     }
 
-    return derDeserializeECDHPrivateKey(keyData.keySerialized, 'P-256');
+    return derDeserializeECDHPrivateKey(keySerialised, 'P-256');
   }
+
+  /**
+   * Return the data of the latest, unbound session key for the specified `nodeId`.
+   *
+   * @param nodeId The id of the node that owns the key
+   */
+  protected abstract retrieveLatestUnboundSessionKeySerialised(
+    nodeId: string,
+  ): Promise<Buffer | null>;
 
   /**
    * Retrieve private session key, regardless of whether it's an initial key or not.

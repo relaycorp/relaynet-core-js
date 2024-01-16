@@ -111,11 +111,10 @@ describe('generateSessionKey', () => {
 
     const sessionKey = await node.generateSessionKey();
 
-    await expect(
-      derSerializePublicKey(
-        await KEY_STORES.privateKeyStore.retrieveUnboundSessionKey(sessionKey.keyId, node.id),
-      ),
-    ).resolves.toEqual(await derSerializePublicKey(sessionKey.publicKey));
+    const publicKey = await KEY_STORES.privateKeyStore.retrieveLatestUnboundSessionKey(node.id);
+    await expect(derSerializePublicKey(publicKey!!)).resolves.toEqual(
+      await derSerializePublicKey(sessionKey.publicKey),
+    );
   });
 
   test('Key should be bound to a peer if explicitly set', async () => {
