@@ -4,7 +4,12 @@ import { generateRSAKeyPair, RSAKeyGenOptions } from '../crypto/keys/generation'
 import { IdentityKeyPair } from '../IdentityKeyPair';
 import { KeyStoreError } from './KeyStoreError';
 import { UnknownKeyError } from './UnknownKeyError';
-import { derDeserializeECDHPrivateKey, derSerializePrivateKey } from '../crypto/keys/serialisation';
+import {
+  derDeserializeECDHPrivateKey,
+  derDeserializeECDHPublicKey,
+  derSerializePrivateKey,
+  derSerializePublicKey,
+} from '../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
 
 /**
@@ -59,22 +64,32 @@ export abstract class PrivateKeyStore {
   }
 
   /**
-   * Return the private component of an initial session key pair.
+   * Return the public key of the latest, unbound session key pair for the specified `nodeId`.
    *
-   * @param keyId The key pair id (typically the serial number)
    * @param nodeId The id of the node that owns the key
-   * @throws UnknownKeyError when the key does not exist
    * @throws PrivateKeyStoreError when the look-up could not be done
+   * @return The public key if it exists or `null` otherwise
    */
-  public async retrieveUnboundSessionKey(keyId: Buffer, nodeId: string): Promise<CryptoKey> {
-    const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, nodeId);
+  public async retrieveUnboundSessionPublicKey(nodeId: string): Promise<CryptoKey | null> {
+    const privateKeySerialised = await this.retrieveLatestUnboundSessionKeySerialised(nodeId);
 
-    if (keyData.peerId) {
-      throw new UnknownKeyError(`Key ${keyId.toString('hex')} is bound`);
+    if (!privateKeySerialised) {
+      return null;
     }
 
-    return derDeserializeECDHPrivateKey(keyData.keySerialized, 'P-256');
+    const privateKey = await derDeserializeECDHPrivateKey(privateKeySerialised);
+    const publicKeySerialised = await derSerializePublicKey(privateKey);
+    return derDeserializeECDHPublicKey(publicKeySerialised);
   }
+
+  /**
+   * Return the data of the latest, unbound session key for the specified `nodeId`.
+   *
+   * @param nodeId The id of the node that owns the key
+   */
+  protected abstract retrieveLatestUnboundSessionKeySerialised(
+    nodeId: string,
+  ): Promise<Buffer | null>;
 
   /**
    * Retrieve private session key, regardless of whether it's an initial key or not.

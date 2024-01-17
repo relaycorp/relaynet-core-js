@@ -54,6 +54,15 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
 
     return this.sessionKeys[keyId] ?? null;
   }
+
+  protected override async retrieveLatestUnboundSessionKeySerialised(
+    nodeId: string,
+  ): Promise<Buffer | null> {
+    const keyData = Object.values(this.sessionKeys).find(
+      (data) => data.nodeId === nodeId && !data.peerId,
+    );
+    return keyData?.keySerialized ?? null;
+  }
 }
 
 export class MockPublicKeyStore extends PublicKeyStore {

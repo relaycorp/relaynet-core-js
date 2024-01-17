@@ -125,7 +125,7 @@ describe('Session keys', () => {
     });
   });
 
-  describe('retrieveUnboundSessionKey', () => {
+  describe('retrieveUnboundSessionPublicKey', () => {
     test('Existing key should be returned', async () => {
       await MOCK_STORE.saveSessionKey(
         sessionKeyPair.privateKey,
@@ -133,53 +133,16 @@ describe('Session keys', () => {
         NODE_ID,
       );
 
-      const keySerialized = await MOCK_STORE.retrieveUnboundSessionKey(
-        sessionKeyPair.sessionKey.keyId,
-        NODE_ID,
-      );
+      const publicKey = await MOCK_STORE.retrieveUnboundSessionPublicKey(NODE_ID);
 
-      expect(await derSerializePrivateKey(keySerialized)).toEqual(
-        await derSerializePrivateKey(sessionKeyPair.privateKey),
+      expect(publicKey!.type).toBe('public');
+      expect(await derSerializePublicKey(publicKey!!)).toEqual(
+        await derSerializePublicKey(sessionKeyPair.sessionKey.publicKey),
       );
     });
 
-    test('UnknownKeyError should be thrown if key id does not exist', async () => {
-      await expect(
-        MOCK_STORE.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId, NODE_ID),
-      ).rejects.toThrowWithMessage(UnknownKeyError, `Key ${sessionKeyIdHex} does not exist`);
-    });
-
-    test('Key should not be returned if owned by different node', async () => {
-      await MOCK_STORE.saveSessionKey(
-        sessionKeyPair.privateKey,
-        sessionKeyPair.sessionKey.keyId,
-        NODE_ID,
-      );
-
-      await expect(
-        MOCK_STORE.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId, `not-${NODE_ID}`),
-      ).rejects.toThrowWithMessage(UnknownKeyError, 'Key is owned by a different node');
-    });
-
-    test('Subsequent session keys should not be returned', async () => {
-      await MOCK_STORE.saveSessionKey(
-        sessionKeyPair.privateKey,
-        sessionKeyPair.sessionKey.keyId,
-        NODE_ID,
-        PEER_ID,
-      );
-
-      await expect(
-        MOCK_STORE.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId, NODE_ID),
-      ).rejects.toThrowWithMessage(UnknownKeyError, `Key ${sessionKeyIdHex} is bound`);
-    });
-
-    test('Errors should be wrapped', async () => {
-      const store = new MockPrivateKeyStore(false, true);
-
-      await expect(
-        store.retrieveUnboundSessionKey(sessionKeyPair.sessionKey.keyId, NODE_ID),
-      ).rejects.toEqual(new KeyStoreError('Failed to retrieve key: Denied'));
+    test('Null should be returned if node has no unbound keys', async () => {
+      await expect(MOCK_STORE.retrieveUnboundSessionPublicKey(NODE_ID)).resolves.toBeNull();
     });
   });
 
