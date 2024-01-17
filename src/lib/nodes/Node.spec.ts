@@ -111,8 +111,8 @@ describe('generateSessionKey', () => {
 
     const sessionKey = await node.generateSessionKey();
 
-    const publicKey = await KEY_STORES.privateKeyStore.retrieveUnboundSessionPublicKey(node.id);
-    await expect(derSerializePublicKey(publicKey!!)).resolves.toEqual(
+    const key = await KEY_STORES.privateKeyStore.retrieveUnboundSessionPublicKey(node.id);
+    await expect(derSerializePublicKey(key!.publicKey)).resolves.toEqual(
       await derSerializePublicKey(sessionKey.publicKey),
     );
   });

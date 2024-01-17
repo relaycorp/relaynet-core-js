@@ -133,10 +133,11 @@ describe('Session keys', () => {
         NODE_ID,
       );
 
-      const publicKey = await MOCK_STORE.retrieveUnboundSessionPublicKey(NODE_ID);
+      const data = await MOCK_STORE.retrieveUnboundSessionPublicKey(NODE_ID);
 
-      expect(publicKey!.type).toBe('public');
-      expect(await derSerializePublicKey(publicKey!!)).toEqual(
+      expect(data?.keyId).toMatchObject(sessionKeyPair.sessionKey.keyId);
+      expect(data!.publicKey.type).toBe('public');
+      expect(await derSerializePublicKey(data!.publicKey)).toEqual(
         await derSerializePublicKey(sessionKeyPair.sessionKey.publicKey),
       );
     });
