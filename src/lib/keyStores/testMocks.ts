@@ -3,7 +3,11 @@
 import { CertificationPath } from '../pki/CertificationPath';
 import { CertificateStore } from './CertificateStore';
 import { KeyStoreSet } from './KeyStoreSet';
-import { PrivateKeyStore, SessionPrivateKeyData } from './PrivateKeyStore';
+import {
+  PrivateKeyStore,
+  SessionPrivateKeyData,
+  UnboundSessionPrivateKeyData,
+} from './PrivateKeyStore';
 import { PublicKeyStore, SessionPublicKeyData } from './PublicKeyStore';
 
 export class MockPrivateKeyStore extends PrivateKeyStore {
@@ -55,13 +59,17 @@ export class MockPrivateKeyStore extends PrivateKeyStore {
     return this.sessionKeys[keyId] ?? null;
   }
 
-  protected override async retrieveLatestUnboundSessionKeySerialised(
+  protected override async retrieveLatestUnboundSessionKeyData(
     nodeId: string,
-  ): Promise<Buffer | null> {
-    const keyData = Object.values(this.sessionKeys).find(
-      (data) => data.nodeId === nodeId && !data.peerId,
+  ): Promise<UnboundSessionPrivateKeyData | null> {
+    const entry = Object.entries(this.sessionKeys).find(
+      ([_, d]) => d.nodeId === nodeId && !d.peerId,
     );
-    return keyData?.keySerialized ?? null;
+    if (!entry) {
+      return null;
+    }
+    const [keyId, data] = entry;
+    return { keyId, keySerialized: data.keySerialized };
   }
 }
 

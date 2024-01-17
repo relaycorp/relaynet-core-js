@@ -18,7 +18,11 @@ export { CertificateError } from './lib/crypto/x509/CertificateError';
 export * from './lib/pki/issuance';
 
 // Key stores
-export { PrivateKeyStore, SessionPrivateKeyData } from './lib/keyStores/PrivateKeyStore';
+export {
+  PrivateKeyStore,
+  SessionPrivateKeyData,
+  UnboundSessionPrivateKeyData,
+} from './lib/keyStores/PrivateKeyStore';
 export * from './lib/keyStores/PublicKeyStore';
 export { KeyStoreSet } from './lib/keyStores/KeyStoreSet';
 export { CertificateStore } from './lib/keyStores/CertificateStore';

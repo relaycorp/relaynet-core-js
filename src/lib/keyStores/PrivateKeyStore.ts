@@ -11,6 +11,7 @@ import {
   derSerializePublicKey,
 } from '../crypto/keys/serialisation';
 import { getIdFromIdentityKey } from '../crypto/keys/digest';
+import { SessionKey } from '../SessionKey';
 
 /**
  * Data for a private key of a session key pair.
@@ -19,6 +20,14 @@ export interface SessionPrivateKeyData {
   readonly keySerialized: Buffer;
   readonly nodeId: string;
   readonly peerId?: string;
+}
+
+/**
+ * Data for an unbound, private key of a session key pair.
+ */
+export interface UnboundSessionPrivateKeyData {
+  readonly keyId: string;
+  readonly keySerialized: Buffer;
 }
 
 export abstract class PrivateKeyStore {
@@ -54,7 +63,7 @@ export abstract class PrivateKeyStore {
     nodeId: string,
     peerId?: string,
   ): Promise<void> {
-    const keyIdString = keyId.toString('hex');
+    const keyIdString = encodeKeyId(keyId);
     const privateKeyDer = await derSerializePrivateKey(privateKey);
     try {
       await this.saveSessionKeySerialized(keyIdString, privateKeyDer, nodeId, peerId);
@@ -70,26 +79,27 @@ export abstract class PrivateKeyStore {
    * @throws PrivateKeyStoreError when the look-up could not be done
    * @return The public key if it exists or `null` otherwise
    */
-  public async retrieveUnboundSessionPublicKey(nodeId: string): Promise<CryptoKey | null> {
-    const privateKeySerialised = await this.retrieveLatestUnboundSessionKeySerialised(nodeId);
+  public async retrieveUnboundSessionPublicKey(nodeId: string): Promise<SessionKey | null> {
+    const data = await this.retrieveLatestUnboundSessionKeyData(nodeId);
 
-    if (!privateKeySerialised) {
+    if (!data) {
       return null;
     }
 
-    const privateKey = await derDeserializeECDHPrivateKey(privateKeySerialised);
+    const privateKey = await derDeserializeECDHPrivateKey(data.keySerialized);
     const publicKeySerialised = await derSerializePublicKey(privateKey);
-    return derDeserializeECDHPublicKey(publicKeySerialised);
+    const publicKey = await derDeserializeECDHPublicKey(publicKeySerialised);
+    return { keyId: decodeKeyId(data.keyId), publicKey };
   }
 
   /**
-   * Return the data of the latest, unbound session key for the specified `nodeId`.
+   * Return the latest unbound session key for the specified `nodeId`.
    *
    * @param nodeId The id of the node that owns the key
    */
-  protected abstract retrieveLatestUnboundSessionKeySerialised(
+  protected abstract retrieveLatestUnboundSessionKeyData(
     nodeId: string,
-  ): Promise<Buffer | null>;
+  ): Promise<UnboundSessionPrivateKeyData | null>;
 
   /**
    * Retrieve private session key, regardless of whether it's an initial key or not.
@@ -107,7 +117,7 @@ export abstract class PrivateKeyStore {
     peerId: string,
   ): Promise<CryptoKey> {
     const keyData = await this.retrieveSessionKeyDataOrThrowError(keyId, nodeId);
-    const keyIdHex = keyId.toString('hex');
+    const keyIdHex = encodeKeyId(keyId);
 
     if (keyData.peerId && peerId !== keyData.peerId) {
       throw new UnknownKeyError(
@@ -135,7 +145,7 @@ export abstract class PrivateKeyStore {
     keyId: Buffer,
     nodeId: string,
   ): Promise<SessionPrivateKeyData> {
-    const keyIdHex = keyId.toString('hex');
+    const keyIdHex = encodeKeyId(keyId);
     let keyData: SessionPrivateKeyData | null;
     try {
       keyData = await this.retrieveSessionKeyData(keyIdHex);
@@ -156,4 +166,12 @@ export abstract class PrivateKeyStore {
   ): Promise<CryptoKeyPair> {
     return generateRSAKeyPair(keyOptions);
   }
+}
+
+function encodeKeyId(keyId: Buffer): string {
+  return keyId.toString('hex');
+}
+
+function decodeKeyId(keyIdHex: string): Buffer {
+  return Buffer.from(keyIdHex, 'hex');
 }
