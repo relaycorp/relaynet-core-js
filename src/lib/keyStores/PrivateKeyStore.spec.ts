@@ -125,7 +125,7 @@ describe('Session keys', () => {
     });
   });
 
-  describe('retrieveLatestUnboundSessionKey', () => {
+  describe('retrieveUnboundSessionPublicKey', () => {
     test('Existing key should be returned', async () => {
       await MOCK_STORE.saveSessionKey(
         sessionKeyPair.privateKey,
@@ -133,15 +133,16 @@ describe('Session keys', () => {
         NODE_ID,
       );
 
-      const keySerialized = await MOCK_STORE.retrieveLatestUnboundSessionKey(NODE_ID);
+      const publicKey = await MOCK_STORE.retrieveUnboundSessionPublicKey(NODE_ID);
 
-      expect(await derSerializePrivateKey(keySerialized!!)).toEqual(
-        await derSerializePrivateKey(sessionKeyPair.privateKey),
+      expect(publicKey!.type).toBe('public');
+      expect(await derSerializePublicKey(publicKey!!)).toEqual(
+        await derSerializePublicKey(sessionKeyPair.sessionKey.publicKey),
       );
     });
 
     test('Null should be returned if node has no unbound keys', async () => {
-      await expect(MOCK_STORE.retrieveLatestUnboundSessionKey(NODE_ID)).resolves.toBeNull();
+      await expect(MOCK_STORE.retrieveUnboundSessionPublicKey(NODE_ID)).resolves.toBeNull();
     });
   });
 
