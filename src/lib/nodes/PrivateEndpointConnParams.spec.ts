@@ -106,7 +106,7 @@ describe('PrivateEndpointConnParams', () => {
       );
     });
 
-    test('Session key should be serialised if present', async () => {
+    test('Session key should be serialised', async () => {
       const params = new PrivateEndpointConnParams(
         peerIdentityKeyPair.publicKey,
         INTERNET_ADDRESS,
@@ -121,19 +121,6 @@ describe('PrivateEndpointConnParams', () => {
       expect(
         Buffer.from(AsnSerializer.serialize(paramsDeserialized.sessionKey!.publicKey)),
       ).toStrictEqual(await derSerializePublicKey(peerSessionKey.publicKey));
-    });
-
-    test('Session key should be skipped if missing', async () => {
-      const params = new PrivateEndpointConnParams(
-        peerIdentityKeyPair.publicKey,
-        INTERNET_ADDRESS,
-        deliveryAuth,
-      );
-
-      const serialisation = await params.serialize();
-
-      const paramsDeserialized = AsnParser.parse(serialisation, PrivateEndpointConnParamsSchema);
-      expect(paramsDeserialized.sessionKey).toBeUndefined();
     });
   });
 
@@ -184,26 +171,13 @@ describe('PrivateEndpointConnParams', () => {
       ).toBeTrue();
     });
 
-    test('Session key should be output if present', async () => {
+    test('Session key should be output', async () => {
       const params = await PrivateEndpointConnParams.deserialize(paramsSerialized);
 
       expect(params.sessionKey!.keyId).toStrictEqual(peerSessionKey.keyId);
       await expect(derSerializePublicKey(params.sessionKey!.publicKey)).resolves.toStrictEqual(
         await derSerializePublicKey(peerSessionKey.publicKey),
       );
-    });
-
-    test('Session should be skipped if absent', async () => {
-      const params = new PrivateEndpointConnParams(
-        peerIdentityKeyPair.publicKey,
-        INTERNET_ADDRESS,
-        deliveryAuth,
-      );
-      const serialization = await params.serialize();
-
-      const paramsDeserialized = await PrivateEndpointConnParams.deserialize(serialization);
-
-      expect(paramsDeserialized.sessionKey).toBeUndefined();
     });
   });
 });

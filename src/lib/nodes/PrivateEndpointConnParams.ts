@@ -27,7 +27,7 @@ export class PrivateEndpointConnParams {
     const identityKey = await derDeserializeRSAPublicKey(
       AsnSerializer.serialize(schema.identityKey),
     );
-    const sessionKey = schema.sessionKey ? await decodeSessionKey(schema.sessionKey) : undefined;
+    const sessionKey = await decodeSessionKey(schema.sessionKey);
     const leafCertificate = convertAsnToCertificate(schema.deliveryAuth.leaf);
     const cas = schema.deliveryAuth.certificateAuthorities.map(convertAsnToCertificate);
     return new PrivateEndpointConnParams(
@@ -42,7 +42,7 @@ export class PrivateEndpointConnParams {
     public readonly identityKey: CryptoKey,
     public readonly internetGatewayAddress: string,
     public readonly deliveryAuth: CertificationPath,
-    public readonly sessionKey?: SessionKey,
+    public readonly sessionKey: SessionKey,
   ) {}
 
   public async serialize(): Promise<ArrayBuffer> {
@@ -61,7 +61,7 @@ export class PrivateEndpointConnParams {
       this.deliveryAuth.certificateAuthorities.map(convertCertificateToAsn),
     );
 
-    schema.sessionKey = this.sessionKey ? await encodeSessionKey(this.sessionKey) : undefined;
+    schema.sessionKey = await encodeSessionKey(this.sessionKey);
 
     return AsnSerializer.serialize(schema);
   }

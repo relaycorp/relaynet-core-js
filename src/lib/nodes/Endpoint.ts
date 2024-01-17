@@ -29,13 +29,11 @@ export abstract class Endpoint extends Node<ServiceMessage, string> {
     await this.keyStores.certificateStore.save(connectionParams.deliveryAuth, peer.id);
     await this.keyStores.publicKeyStore.saveIdentityKey(peer.identityPublicKey);
 
-    if (connectionParams.sessionKey) {
-      await this.keyStores.publicKeyStore.saveSessionKey(
-        connectionParams.sessionKey,
-        peer.id,
-        new Date(),
-      );
-    }
+    await this.keyStores.publicKeyStore.saveSessionKey(
+      connectionParams.sessionKey,
+      peer.id,
+      new Date(),
+    );
 
     return new this.channelConstructor(
       this,
