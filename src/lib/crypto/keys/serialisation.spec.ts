@@ -31,10 +31,20 @@ describe('Key serializers', () => {
       expect(publicKeyDer).toEqual(Buffer.from(stubPublicKeyDer));
     });
 
-    test('Public key should be extracted first if input is PrivateKey', async () => {
-      const publicKeyDer = await derSerializePublicKey(stubKeyPair.privateKey);
+    test('Provider should be used directly first if input is CryptoKeyWithProvider', async () => {
+      const mockPublicKey = Buffer.from('mock public key');
+      const mockExportKey = jest.fn().mockResolvedValue(mockPublicKey);
+      const privateKeyWithProvider = {
+        ...stubKeyPair.privateKey,
+        provider: {
+          exportKey: mockExportKey,
+        },
+      };
 
-      expect(publicKeyDer).toEqual(Buffer.from(stubPublicKeyDer));
+      const publicKeyDer = await derSerializePublicKey(privateKeyWithProvider);
+
+      expect(publicKeyDer).toEqual(mockPublicKey);
+      expect(mockExportKey).toBeCalledWith('spki', privateKeyWithProvider);
     });
   });
 
