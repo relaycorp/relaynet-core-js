@@ -1,6 +1,7 @@
 import bufferToArray from 'buffer-to-arraybuffer';
 
-import { getEngineForKey, NODE_ENGINE } from '../pkijs';
+import { NODE_ENGINE } from '../pkijs';
+import { CryptoKeyWithProvider } from './CryptoKeyWithProvider';
 
 const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
   hash: { name: 'SHA-256' },
@@ -12,9 +13,19 @@ const DEFAULT_RSA_KEY_PARAMS: RsaHashedImportParams = {
  *
  * @param publicKey
  */
-export async function derSerializePublicKey(publicKey: CryptoKey): Promise<Buffer> {
-  const engine = getEngineForKey(publicKey);
-  const publicKeyDer = await engine.exportKey('spki', publicKey);
+export async function derSerializePublicKey(
+  publicKey: CryptoKey | CryptoKeyWithProvider,
+): Promise<Buffer> {
+  let publicKeyDer: ArrayBuffer;
+  if ((publicKey as CryptoKeyWithProvider).provider) {
+    // This is likely a KMS-backed private key, so use the provider directly to prevent the
+    // engine from exporting the key to JWK first.
+    // https://github.com/relaycorp/cloud-gateway/issues/93
+    const provider = (publicKey as CryptoKeyWithProvider).provider;
+    publicKeyDer = (await provider.exportKey('spki', publicKey as CryptoKey)) as ArrayBuffer;
+  } else {
+    publicKeyDer = await NODE_ENGINE.exportKey('spki', publicKey as CryptoKey);
+  }
   return Buffer.from(publicKeyDer);
 }
 
